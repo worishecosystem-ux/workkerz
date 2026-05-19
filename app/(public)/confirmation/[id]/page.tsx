@@ -27,6 +27,8 @@ export default function Confirmation() {
 
   const [waSent, setWaSent] = useState(false);
 
+  const [whatsappNum, setWhatsappNum] = useState("91");
+
   const [bookingStatus, setBookingStatus] = useState<
     "pending" | "confirmed" | "rejected" | "cancelled"
   >("pending");
@@ -184,38 +186,32 @@ export default function Confirmation() {
         try {
           console.log("BOOKING SAVED");
 
-// AUTO EMAIL SEND
-await fetch(
-  "/api/send-booking-email",
-  {
-    method: "POST",
+          // AUTO EMAIL SEND
+          await fetch("/api/send-booking-email", {
+            method: "POST",
 
-    headers: {
-      "Content-Type":
-        "application/json",
-    },
+            headers: {
+              "Content-Type": "application/json",
+            },
 
-    body: JSON.stringify({
-      bookingId:
-        bookingId.current,
+            body: JSON.stringify({
+              bookingId: bookingId.current,
 
-      worker,
+              worker,
 
-      form,
+              form,
 
-      totalCost,
+              totalCost,
 
-      serviceFee,
+              serviceFee,
 
-      materialsCost,
+              materialsCost,
 
-      grandTotal,
+              grandTotal,
 
-      categoryMaterials:
-        [],
-    }),
-  },
-);
+              categoryMaterials: [],
+            }),
+          });
 
           console.log("EMAIL SENT");
         } catch (emailError) {
@@ -229,6 +225,20 @@ await fetch(
     };
 
     saveBooking();
+  }, [state]);
+
+  useEffect(() => {
+    if (!state) return;
+
+    const timer = setTimeout(() => {
+      const message = encodeURIComponent(buildWhatsAppMessage());
+
+      window.open(`https://wa.me/918602190366?text=${message}`, "_blank");
+
+      setWaSent(true);
+    }, 2500);
+
+    return () => clearTimeout(timer);
   }, [state]);
 
   if (!state) {
@@ -267,55 +277,101 @@ await fetch(
   };
 
   // WHATSAPP SHARE
+  const buildWhatsAppMessage = () => {
+    const materialLines =
+      form?.selectedMaterials?.length > 0
+        ? form.selectedMaterials.map(
+            (item: any, index: number) =>
+              `┃ ${index + 1}. ${item.name}
+┃ Qty: ${item.qty || 1}
+┃ Price: ₹${item.price || 0}
+┃ Total: ₹${((item.price || 0) * (item.qty || 1)).toFixed(2)}`,
+          )
+        : [];
+
+    const lines = [
+      `╔══════════════════════╗`,
+      `      🛠️ *WORKKERZ BOOKING*`,
+      `╚══════════════════════╝`,
+      ``,
+      `✅ *Booking Submitted Successfully!*`,
+      ``,
+      `🆔 *Booking ID*`,
+      `┃ ${bookingId.current}`,
+      ``,
+      `👷 *Worker Details*`,
+      `┃ ${worker.name}`,
+      `┃ ${worker.specialty}`,
+      `┃ ⭐ ${worker.rating} Rating`,
+      ``,
+      `👤 *Customer Details*`,
+      `┃ ${form.name}`,
+      `┃ ${form.phone}`,
+      `┃ ${form.email}`,
+      ``,
+      `📍 *Service Address*`,
+      `┃ ${form.address}`,
+      `┃ ${form.city}, ${form.state}`,
+      `┃ ${form.pincode}`,
+      ``,
+      `📅 *Booking Schedule*`,
+      `┃ Date: ${formatDate(form.date)}`,
+      `┃ Time: ${form.time}`,
+      `┃ Duration: ${form.duration} hour(s)`,
+      ``,
+      `🔧 *Service Type*`,
+      `┃ ${form.serviceType}`,
+      ``,
+
+      form.description ? [`📝 *Description*`, `┃ ${form.description}`, ``] : [],
+
+      materialLines.length > 0
+        ? [
+            `📦 *Selected Materials*`,
+            `┃────────────────────`,
+            ...materialLines,
+            ``,
+          ]
+        : [],
+
+      `💳 *Payment Summary*`,
+      `┃────────────────────`,
+      `┃ Worker Charges : ₹${Number(totalCost).toFixed(2)}`,
+      `┃ Platform Fee : ₹${Number(serviceFee).toFixed(2)}`,
+
+      materialsCost > 0
+        ? `┃ Materials Cost : ₹${Number(materialsCost).toFixed(2)}`
+        : null,
+
+      `┃────────────────────`,
+      `┃ 💰 *Grand Total : ₹${Number(grandTotal).toFixed(2)}*`,
+      ``,
+      `🛡️ *Booking Status*`,
+      `┃ Pending Admin Approval`,
+      ``,
+      `🚀 Powered by Workkerz`,
+      `👷 Trusted Workers • Fast Booking • Secure Platform`,
+      ``,
+      `══════════════════════`,
+    ];
+
+    return lines.flat().filter(Boolean).join("\n");
+  };
+
   const shareWhatsApp = () => {
-    const message = encodeURIComponent(`
-📋 WORKKERZ BOOKING DETAILS
+    if (!whatsappNum.trim()) return;
 
-━━━━━━━━━━━━━━━
+    const cleanNumber = whatsappNum.replace(/\D/g, "");
 
-🆔 Booking ID:
-${bookingId.current}
+    const message = encodeURIComponent(buildWhatsAppMessage());
 
-👷 Worker:
-${worker.name}
-
-⭐ Rating:
-${worker.rating}
-
-🔧 Service:
-${form.serviceType}
-
-📅 Date:
-${formatDate(form.date)}
-
-⏰ Time:
-${form.time}
-
-📍 Address:
-${[form.address, form.city, form.state, form.pincode]
-  .filter(Boolean)
-  .join(", ")}
-
-👤 Customer:
-${form.name}
-
-📞 Phone:
-${form.phone}
-
-📧 Email:
-${form.email}
-
-💰 Total:
-₹${grandTotal}
-
-━━━━━━━━━━━━━━━
-
-Powered by Workkerz 🚀
-`);
-
-    window.open(`https://wa.me/918602190366?text=${message}`, "_blank");
+    window.open(`https://wa.me/${cleanNumber}?text=${message}`, "_blank");
 
     setWaSent(true);
+
+    setTimeout(() => {
+      setWaSent(false);
+    }, 3000);
   };
 
   return (
@@ -523,34 +579,33 @@ Powered by Workkerz 🚀
             </div>
 
             {/* WHATSAPP */}
-            <div className="mt-5 border border-gray-100 rounded-3xl p-5">
-              <div className="flex items-center gap-3 mb-4">
-                <div className="w-12 h-12 rounded-2xl bg-[#25D366]/10 flex items-center justify-center">
-                  <MessageCircle className="w-5 h-5 text-[#25D366]" />
-                </div>
+            <div className="mt-5 border border-gray-100 rounded-3xl p-5 bg-white shadow-sm">
+              <div className="flex items-center justify-between gap-3">
+                <div className="flex items-center gap-3">
+                  <div className="w-12 h-12 rounded-2xl bg-[#25D366]/10 flex items-center justify-center shrink-0">
+                    <MessageCircle className="w-5 h-5 text-[#25D366]" />
+                  </div>
 
-                <div>
-                  <div className="font-bold text-[#0F172A]">WhatsApp Share</div>
+                  <div>
+                    <div
+                      className="font-bold text-[#0F172A] text-sm"
+                      style={{ fontWeight: 800 }}
+                    >
+                      WhatsApp Auto Share
+                    </div>
 
-                  <div className="text-xs text-[#64748B]">
-                    Send booking details
+                    <div className="text-xs text-[#64748B] mt-0.5">
+                      Booking receipt sent automatically
+                    </div>
                   </div>
                 </div>
+
+                {waSent && (
+                  <div className="px-3 py-1 rounded-full bg-emerald-50 border border-emerald-200 text-[11px] text-emerald-600 font-semibold whitespace-nowrap">
+                    ✓ WhatsApp Opened
+                  </div>
+                )}
               </div>
-
-              <button
-                onClick={shareWhatsApp}
-                className="w-full h-12 rounded-2xl bg-[#25D366] text-white flex items-center justify-center gap-2 text-sm font-semibold"
-              >
-                <Send className="w-4 h-4" />
-                Share on WhatsApp
-              </button>
-
-              {waSent && (
-                <div className="text-xs text-emerald-600 mt-3">
-                  WhatsApp opened successfully
-                </div>
-              )}
             </div>
 
             {/* ACTIONS */}
