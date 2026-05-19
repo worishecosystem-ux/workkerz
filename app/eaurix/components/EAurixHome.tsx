@@ -13,10 +13,7 @@ import {
   Zap,
 } from "lucide-react";
 
-import {
-  productCategories,
-  type Product,
-} from "@/app/data/products";
+import { productCategories, type Product } from "@/app/data/products";
 
 import { usePlatform } from "@/app/components/context/PlatformContext";
 
@@ -30,13 +27,8 @@ import { useState } from "react";
 
 /* ===================================================== */
 
-function ProductCard({
-  product,
-}: {
-  product: Product;
-}) {
-  const { addToCart } =
-    usePlatform();
+function ProductCard({ product }: { product: Product }) {
+  const { addToCart } = usePlatform();
 
   const badgeMap: Record<
     string,
@@ -66,17 +58,9 @@ function ProductCard({
     },
   };
 
-  const badge = product.badge
-    ? badgeMap[product.badge]
-    : null;
+  const badge = product.badge ? badgeMap[product.badge] : null;
 
   return (
-
-    <div className="bg-rose-500 text-white text-[50px] px-2 py-1 " >
-      <h1>
-        Undedr processing
-      </h1>
-    </div>
     <Link
       href={`/eaurix/product/${product.id}`}
       className="bg-white rounded-2xl border border-gray-100 overflow-hidden hover:shadow-lg hover:border-sky-100 transition-all duration-200 group flex flex-col"
@@ -89,10 +73,7 @@ function ProductCard({
         }}
       >
         <img
-          src={
-            product.image ||
-            "/placeholder.png"
-          }
+          src={product.image || "/placeholder.png"}
           alt={product.name}
           className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
         />
@@ -117,14 +98,7 @@ function ProductCard({
               fontWeight: 700,
             }}
           >
-            -
-            {Math.round(
-              (1 -
-                product.price /
-                  product.originalPrice) *
-                100,
-            )}
-            %
+            -{Math.round((1 - product.price / product.originalPrice) * 100)}%
           </div>
         )}
       </div>
@@ -157,8 +131,7 @@ function ProductCard({
           <Star className="w-3 h-3 text-amber-400 fill-amber-400" />
 
           <span className="text-xs text-[#64748B]">
-            {product.rating} (
-            {product.reviewCount})
+            {product.rating} ({product.reviewCount})
           </span>
         </div>
 
@@ -175,16 +148,11 @@ function ProductCard({
               ₹{product.price}
             </div>
 
-            <div className="text-[#94A3B8] text-xs">
-              {product.unit}
-            </div>
+            <div className="text-[#94A3B8] text-xs">{product.unit}</div>
 
             {product.originalPrice && (
               <div className="text-xs text-[#94A3B8] line-through">
-                ₹
-                {
-                  product.originalPrice
-                }
+                ₹{product.originalPrice}
               </div>
             )}
           </div>
@@ -195,28 +163,21 @@ function ProductCard({
               e.preventDefault();
 
               addToCart({
-                productId:
-                  product.id,
+                productId: product.id,
 
                 name: product.name,
 
-                brand:
-                  product.brand,
+                brand: product.brand,
 
-                price:
-                  product.price,
+                price: product.price,
 
                 qty: 1,
 
-                icon:
-                  product.image ||
-                  "/placeholder.png",
+                icon: product.image || "/placeholder.png",
 
-                color:
-                  product.color,
+                color: product.color,
 
-                unit:
-                  product.unit,
+                unit: product.unit,
               });
             }}
             className="w-10 h-10 rounded-xl bg-[#0EA5E9] hover:bg-[#0284C7] flex items-center justify-center transition-colors"
@@ -232,33 +193,21 @@ function ProductCard({
 /* ===================================================== */
 
 export function EAurixHome() {
-  const { products = [] } =
-    useAdmin();
+  const { products = [] } = useAdmin();
 
-  const {
-    platform,
-    setPlatform,
-  } = usePlatform();
+  const { platform, setPlatform } = usePlatform();
 
-  const [mobileOpen, setMobileOpen] =
-    useState(false);
+  const [mobileOpen, setMobileOpen] = useState(false);
 
   const router = useRouter();
 
-  const isEaurix =
-    platform === "eaurix";
+  const isEaurix = platform === "eaurix";
 
-  const featured =
-    products.filter(
-      (p) =>
-        p.badge ===
-          "popular" ||
-        p.badge === "pro",
-    );
+  const featured = products.filter(
+    (p) => p.badge === "popular" || p.badge === "pro",
+  );
 
-  const handleToggle = (
-    p: "workkerz" | "eaurix",
-  ) => {
+  const handleToggle = (p: "workkerz" | "eaurix") => {
     setPlatform(p);
 
     if (p === "eaurix") {
@@ -284,8 +233,7 @@ export function EAurixHome() {
           style={{
             backgroundImage:
               "linear-gradient(rgba(14,165,233,0.4) 1px, transparent 1px), linear-gradient(90deg, rgba(14,165,233,0.4) 1px, transparent 1px)",
-            backgroundSize:
-              "40px 40px",
+            backgroundSize: "40px 40px",
           }}
         />
 
@@ -297,10 +245,11 @@ export function EAurixHome() {
           {/* BADGE */}
           <div className="inline-flex items-center gap-2 bg-sky-500/20 border border-sky-400/30 rounded-full px-4 py-1.5 mb-6 backdrop-blur-sm">
             <Zap className="w-3.5 h-3.5 text-yellow-400" />
-
             <span className="text-sky-200 text-xs font-semibold">
-              Workkerz-integrated
-              marketplace
+              E-aurix under processing, coming soon!
+            </span>
+            <span className="text-sky-200 text-xs font-semibold">
+              Workkerz-integrated marketplace
             </span>
           </div>
 
@@ -308,25 +257,19 @@ export function EAurixHome() {
           <h1
             className="text-white mb-4"
             style={{
-              fontSize:
-                "clamp(2rem, 5vw, 3rem)",
+              fontSize: "clamp(2rem, 5vw, 3rem)",
 
               fontWeight: 900,
 
               lineHeight: 1.1,
             }}
           >
-            Everything your workers
-            need,
-            <span className="text-[#38BDF8]">
-              {" "}
-              delivered.
-            </span>
+            Everything your workers need,
+            <span className="text-[#38BDF8]"> delivered.</span>
           </h1>
 
           <p className="text-sky-200 mb-8 max-w-xl mx-auto text-[1.05rem]">
-            Order tools, materials
-            and safety supplies.
+            Order tools, materials and safety supplies.
           </p>
 
           {/* SEARCH */}
@@ -360,8 +303,7 @@ export function EAurixHome() {
             </h2>
 
             <p className="text-[#64748B] text-sm">
-              Everything organized by
-              trade type
+              Everything organized by trade type
             </p>
           </div>
 
@@ -376,54 +318,42 @@ export function EAurixHome() {
 
         {/* CATEGORY GRID */}
         <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-          {productCategories.map(
-            (cat) => (
-              <Link
-                key={cat.id}
-                href={`/eaurix/shop?category=${cat.id}`}
-                className="rounded-2xl overflow-hidden border border-gray-100 bg-white hover:shadow-lg transition-all"
+          {productCategories.map((cat) => (
+            <Link
+              key={cat.id}
+              href={`/eaurix/shop?category=${cat.id}`}
+              className="rounded-2xl overflow-hidden border border-gray-100 bg-white hover:shadow-lg transition-all"
+            >
+              <div
+                className="h-full p-5 flex flex-col justify-between min-h-42.5"
+                style={{
+                  background: cat.bgColor,
+                }}
               >
                 <div
-                  className="h-full p-5 flex flex-col justify-between min-h-42.5"
+                  className="w-14 h-14 rounded-2xl"
                   style={{
-                    background:
-                      cat.bgColor,
+                    background: cat.color,
                   }}
-                >
-                  <div
-                    className="w-14 h-14 rounded-2xl"
-                    style={{
-                      background:
-                        cat.color,
-                    }}
-                  />
+                />
 
-                  <div>
-                    <div className="text-[#0F172A] text-sm font-bold mb-1">
-                      {cat.label}
-                    </div>
+                <div>
+                  <div className="text-[#0F172A] text-sm font-bold mb-1">
+                    {cat.label}
+                  </div>
 
-                    <div className="text-xs text-[#64748B] mb-2">
-                      {
-                        cat.description
-                      }
-                    </div>
+                  <div className="text-xs text-[#64748B] mb-2">
+                    {cat.description}
+                  </div>
 
-                    <div className="text-xs text-[#0EA5E9] font-semibold">
-                      {
-                        products.filter(
-                          (p) =>
-                            p.category ===
-                            cat.id,
-                        ).length
-                      }{" "}
-                      Products
-                    </div>
+                  <div className="text-xs text-[#0EA5E9] font-semibold">
+                    {products.filter((p) => p.category === cat.id).length}{" "}
+                    Products
                   </div>
                 </div>
-              </Link>
-            ),
-          )}
+              </div>
+            </Link>
+          ))}
         </div>
       </div>
 
@@ -436,8 +366,7 @@ export function EAurixHome() {
             </h2>
 
             <p className="text-[#64748B] text-sm">
-              Top picks across all
-              categories
+              Top picks across all categories
             </p>
           </div>
 
@@ -451,14 +380,9 @@ export function EAurixHome() {
         </div>
 
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-          {featured
-            .slice(0, 8)
-            .map((p) => (
-              <ProductCard
-                key={p.id}
-                product={p}
-              />
-            ))}
+          {featured.slice(0, 8).map((p) => (
+            <ProductCard key={p.id} product={p} />
+          ))}
         </div>
       </div>
 
@@ -474,41 +398,34 @@ export function EAurixHome() {
               {
                 icon: Truck,
 
-                title:
-                  "Next-Day Delivery",
+                title: "Next-Day Delivery",
 
                 desc: "Fast delivery for every order.",
 
-                color:
-                  "#0EA5E9",
+                color: "#0EA5E9",
               },
 
               {
                 icon: Shield,
 
-                title:
-                  "Trade-Grade Quality",
+                title: "Trade-Grade Quality",
 
                 desc: "Certified quality materials.",
 
-                color:
-                  "#10B981",
+                color: "#10B981",
               },
 
               {
                 icon: Tag,
 
-                title:
-                  "Trade Pricing",
+                title: "Trade Pricing",
 
                 desc: "Best prices for workers.",
 
-                color:
-                  "#F97316",
+                color: "#F97316",
               },
             ].map((f) => {
-              const Icon =
-                f.icon;
+              const Icon = f.icon;
 
               return (
                 <div
@@ -524,19 +441,14 @@ export function EAurixHome() {
                     <Icon
                       className="w-6 h-6"
                       style={{
-                        color:
-                          f.color,
+                        color: f.color,
                       }}
                     />
                   </div>
 
-                  <div className="text-[#0F172A] font-bold mb-2">
-                    {f.title}
-                  </div>
+                  <div className="text-[#0F172A] font-bold mb-2">{f.title}</div>
 
-                  <p className="text-[#64748B] text-sm">
-                    {f.desc}
-                  </p>
+                  <p className="text-[#64748B] text-sm">{f.desc}</p>
                 </div>
               );
             })}
