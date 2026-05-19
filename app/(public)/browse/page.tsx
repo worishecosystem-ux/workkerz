@@ -1,6 +1,7 @@
 "use client";
 import { useState, useEffect, useRef } from "react";
-import { useSearchParams, useRouter } from "next/navigation";
+import { Suspense } from "react";
+import { useSearchParams,useRouter } from "next/navigation";
 import {
   Search,
   SlidersHorizontal,
@@ -50,7 +51,7 @@ const sortOptions = [
   { value: "reviews", label: "Most Reviewed" },
 ];
 
-export default function BrowsePage() {
+function BrowseContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
   const [query, setQuery] = useState(searchParams.get("q") || "");
@@ -527,5 +528,14 @@ export default function BrowsePage() {
         </div>
       </div>
     </div>
+  );
+}
+
+
+export default function BrowsePage() {
+  return (
+    <Suspense fallback={<div>Loading...</div>}>
+      <BrowseContent />
+    </Suspense>
   );
 }
