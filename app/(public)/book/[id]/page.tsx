@@ -1,0 +1,1690 @@
+"use client";
+import { useEffect, useState } from "react";
+import { supabase } from "@/lib/supabase";
+import Link from "next/link";
+import { useParams, useRouter } from "next/navigation";
+import {
+  ChevronLeft,
+  ChevronRight,
+  Check,
+  MapPin,
+  User,
+  Phone,
+  Mail,
+  Lock,
+  Star,
+  Info,
+  CalendarDays,
+  Timer,
+  Clock3,
+  X,
+  BadgeCheck,
+  ShieldCheck,
+  QrCode,
+  Receipt,
+  CheckCircle2,
+} from "lucide-react";
+import { materialsByCategory } from "@/app/data/materials";
+import { EAurixMaterials } from "@/app/components/EAurixMaterials";
+import { useAdmin } from "@/app/components/context/AdminContext";
+
+const steps = [
+  { id: 1, label: "Service Details" },
+  { id: 2, label: "Schedule" },
+  { id: 3, label: "Your Info" },
+  { id: 4, label: "Payment" },
+];
+
+const timeSlots = [
+  "8:00 AM",
+  "9:00 AM",
+  "10:00 AM",
+  "11:00 AM",
+  "12:00 PM",
+  "1:00 PM",
+  "2:00 PM",
+  "3:00 PM",
+  "4:00 PM",
+  "5:00 PM",
+  "6:00 PM",
+];
+
+const durations = [
+  { label: "1 hour", hours: 1 },
+  { label: "2 hours", hours: 2 },
+  { label: "3 hours", hours: 3 },
+  { label: "4 hours", hours: 4 },
+  { label: "6 hours", hours: 6 },
+  { label: "Full Day (8h)", hours: 8 },
+];
+
+function CalendarPicker({
+  selectedDate,
+  onSelect,
+}: {
+  selectedDate: string;
+  onSelect: (d: string) => void;
+   disabledDates?: string[];
+}) {
+  const today = new Date();
+  const [viewMonth, setViewMonth] = useState(today.getMonth());
+  const [viewYear, setViewYear] = useState(today.getFullYear());
+
+  const daysInMonth = new Date(viewYear, viewMonth + 1, 0).getDate();
+  const firstDay = new Date(viewYear, viewMonth, 1).getDay();
+  const monthName = new Date(viewYear, viewMonth).toLocaleString("default", {
+    month: "long",
+  });
+
+  const prevMonth = () => {
+    if (viewMonth === 0) {
+      setViewMonth(11);
+      setViewYear((y) => y - 1);
+    } else setViewMonth((m) => m - 1);
+  };
+  const nextMonth = () => {
+    if (viewMonth === 11) {
+      setViewMonth(0);
+      setViewYear((y) => y + 1);
+    } else setViewMonth((m) => m + 1);
+  };
+
+  const formatDate = (day: number) =>
+    `${viewYear}-${String(viewMonth + 1).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
+  const isToday = (day: number) =>
+    new Date(viewYear, viewMonth, day).toDateString() === today.toDateString();
+  const isPast = (day: number) =>
+    new Date(viewYear, viewMonth, day) <
+    new Date(today.getFullYear(), today.getMonth(), today.getDate());
+
+  return (
+    <div className="bg-white border border-gray-100 rounded-2xl p-5">
+      <div className="flex items-center justify-between mb-4">
+        <button
+          onClick={prevMonth}
+          className="w-8 h-8 rounded-lg hover:bg-gray-100 flex items-center justify-center transition-colors"
+        >
+          <ChevronLeft className="w-4 h-4 text-gray-500" />
+        </button>
+        <span style={{ fontWeight: 600, color: "#0F172A" }}>
+          {monthName} {viewYear}
+        </span>
+        <button
+          onClick={nextMonth}
+          className="w-8 h-8 rounded-lg hover:bg-gray-100 flex items-center justify-center transition-colors"
+        >
+          <ChevronRight className="w-4 h-4 text-gray-500" />
+        </button>
+      </div>
+
+      <div className="grid grid-cols-7 mb-2">
+        {["Su", "Mo", "Tu", "We", "Th", "Fr", "Sa"].map((d) => (
+          <div
+            key={d}
+            className="text-center text-xs text-[#94A3B8] py-1"
+            style={{ fontWeight: 500 }}
+          >
+            {d}
+          </div>
+        ))}
+      </div>
+
+      <div className="grid grid-cols-7 gap-0.5">
+        {Array.from({ length: firstDay }).map((_, i) => (
+          <div key={`e-${i}`} />
+        ))}
+        {Array.from({ length: daysInMonth }).map((_, i) => {
+          const day = i + 1;
+          const dateStr = formatDate(day);
+          const selected = selectedDate === dateStr;
+          const past = isPast(day);
+          const todayFlag = isToday(day);
+          return (
+            <button
+              key={day}
+              onClick={() => !past && onSelect(dateStr)}
+              disabled={past}
+              className={`aspect-square rounded-lg text-sm flex items-center justify-center transition-colors ${
+                selected
+                  ? "bg-[#FF5C39] text-white"
+                  : past
+                    ? "text-gray-200 cursor-not-allowed"
+                    : todayFlag
+                      ? "bg-orange-50 text-[#FF5C39] border border-[#FF5C39]/30"
+                      : "hover:bg-gray-100 text-[#475569]"
+              }`}
+              style={{ fontWeight: selected || todayFlag ? 600 : 400 }}
+            >
+              {day}
+            </button>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+export default function BookingPage() {
+  const params = useParams();
+  const id = params.id as string;
+  const router = useRouter();
+  const { getWorkerById } = useAdmin();
+  const worker = getWorkerById(id || "");
+  const [showCalendar, setShowCalendar] = useState(false);
+  const [step, setStep] = useState(1);
+  const STORAGE_KEY = `booking-form-${id}`;
+  const [form, setForm] = useState({
+    serviceType: "",
+    description: "",
+
+    // ADDRESS
+    pincode: "",
+    district: "",
+    state: "",
+    city: "",
+    address: "",
+
+    // SCHEDULE
+    date: "",
+    time: "",
+    duration: 2,
+
+    // USER INFO
+    name: "",
+    phone: "",
+    email: "",
+    notes: "",
+
+    // PAYMENT
+    cardNumber: "",
+    cardExpiry: "",
+    cardCVV: "",
+    cardName: "",
+
+    // MATERIALS
+    selectedMaterials: {} as Record<string, number>,
+
+    paymentName: "",
+    paymentUpi: "",
+    transactionId: "",
+  });
+  // STATES
+  const [bookedSlots, setBookedSlots] = useState<string[]>([]);
+
+  const [bookedDates, setBookedDates] = useState<string[]>([]);
+  // FETCH BOOKED DATES + SLOTS
+  useEffect(() => {
+    const fetchBookings = async () => {
+      if (!worker?.id) return;
+
+      const { data, error } = await supabase
+        .from("bookings")
+        .select(
+          `
+        booking_date,
+        booking_time,
+        booking_status,
+        worker_available
+      `,
+        )
+        .eq("worker_id", worker.id)
+        .in("booking_status", ["pending", "confirmed"])
+        .eq("worker_available", false);
+
+      if (error) {
+        console.log(error);
+        return;
+      }
+
+      // BOOKED DATES
+      const dates = [...new Set(data.map((b) => b.booking_date))];
+
+      setBookedDates(dates);
+
+      // BOOKED SLOTS
+      if (form.date) {
+        const slots = data
+          .filter((b) => b.booking_date === form.date)
+          .map((b) => b.booking_time);
+
+        setBookedSlots(slots);
+      } else {
+        setBookedSlots([]);
+      }
+    };
+
+    fetchBookings();
+  }, [form.date, worker?.id]);
+  // LOAD SAVED FORM
+  useEffect(() => {
+    const savedData = localStorage.getItem(STORAGE_KEY);
+
+    if (savedData) {
+      const parsed = JSON.parse(savedData);
+
+      setForm(parsed.form || parsed);
+
+      if (parsed.step) {
+        setStep(parsed.step);
+      }
+    }
+  }, [STORAGE_KEY]);
+
+  // AUTO SAVE FORM
+  useEffect(() => {
+    localStorage.setItem(
+      STORAGE_KEY,
+      JSON.stringify({
+        form,
+        step,
+      }),
+    );
+  }, [form, step, STORAGE_KEY]);
+
+  const [pincodeLoading, setPincodeLoading] = useState(false);
+
+  const fetchLocationByPincode = async (pincode: string) => {
+    if (pincode.length !== 6) return;
+
+    try {
+      setPincodeLoading(true);
+
+      const res = await fetch(
+        `https://api.postalpincode.in/pincode/${pincode}`,
+      );
+
+      const data = await res.json();
+
+      const postOffice = data?.[0]?.PostOffice?.[0];
+
+      if (!postOffice) return;
+
+      setForm((prev) => ({
+        ...prev,
+
+        district: postOffice.District || "",
+
+        state: postOffice.State || "",
+
+        city: postOffice.Block || postOffice.Name || "",
+      }));
+    } catch (err) {
+      console.log(err);
+    } finally {
+      setPincodeLoading(false);
+    }
+  };
+
+  if (!worker) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center">
+          <h2 className="text-[#0F172A] mb-2" style={{ fontWeight: 700 }}>
+            Worker not found
+          </h2>
+          <Link href="/browse" className="text-[#FF5C39]">
+            Back to Browse
+          </Link>
+        </div>
+      </div>
+    );
+  }
+
+  const serviceOptions = worker.services || [];
+  const totalCost = worker.hourlyRate * form.duration;
+  const serviceFee = Math.round(totalCost * 0.1);
+  const categoryMaterials = materialsByCategory[worker.category] || [];
+  const materialsCost = categoryMaterials.reduce(
+    (sum, m) => sum + m.price * (form.selectedMaterials[m.id] || 0),
+    0,
+  );
+  const grandTotal = totalCost + serviceFee + materialsCost;
+
+  const handleNext = () => {
+    if (step < 4) {
+      setStep(step + 1);
+    } else {
+      sessionStorage.setItem(
+        "booking-data",
+        JSON.stringify({
+          form,
+          worker,
+          totalCost,
+          serviceFee,
+          materialsCost,
+          grandTotal,
+        }),
+      );
+      localStorage.removeItem(STORAGE_KEY);
+
+      router.push(`/confirmation/${worker.id}`);
+      router.push(`/confirmation/${worker.id}`);
+    }
+  };
+
+  const handleBack = () => {
+    if (step > 1) setStep(step - 1);
+    else router.push(`/workers/${worker.id}`);
+  };
+
+  const canProceed = () => {
+    if (step === 1) {
+      return form.serviceType.trim() !== "" && form.address.trim() !== "";
+    }
+
+    if (step === 2) {
+      return form.date.trim() !== "" && form.time.trim() !== "";
+    }
+
+    if (step === 3) {
+      return (
+        form.name.trim() !== "" &&
+        form.phone.trim() !== "" &&
+        form.email.trim() !== ""
+      );
+    }
+
+    // STEP 4 FIXED
+    if (step === 4) {
+      return form.transactionId.trim() !== "";
+    }
+
+    return true;
+  };
+
+  const formatDate = (dateStr: string) => {
+    if (!dateStr) return "";
+    return new Date(dateStr + "T00:00:00").toLocaleDateString("en-US", {
+      weekday: "long",
+      month: "long",
+      day: "numeric",
+      year: "numeric",
+    });
+  };
+
+  const inp =
+    "w-full bg-[#F8FAFC] border border-gray-200 rounded-xl px-4 py-3 text-sm text-[#0F172A] placeholder-gray-400 outline-none focus:border-[#FF5C39] transition-colors";
+
+  return (
+    <div className="min-h-screen bg-[#F8FAFC]">
+      {/* Header */}
+      <div className="bg-[#0F172A] pt-16">
+        <div className="max-w-5xl mx-auto px-6 py-6">
+          <button
+            onClick={handleBack}
+            className="flex items-center gap-2 text-gray-400 hover:text-white transition-colors text-sm mb-5"
+          >
+            <ChevronLeft className="w-4 h-4" /> Back
+          </button>
+          <h1
+            className="text-white"
+            style={{ fontWeight: 700, fontSize: "1.4rem" }}
+          >
+            Book {worker.name}
+          </h1>
+
+          {/* Step progress */}
+          <div className="flex items-center gap-2 mt-6">
+            {steps.map((s, i) => (
+              <div key={s.id} className="flex items-center gap-2 flex-1">
+                <div className="flex items-center gap-2 shrink-0">
+                  <div
+                    className={`w-8 h-8 rounded-full flex items-center justify-center text-xs transition-all ${
+                      step > s.id
+                        ? "bg-[#FF5C39] text-white"
+                        : step === s.id
+                          ? "bg-white text-[#0F172A]"
+                          : "bg-white/10 text-gray-400"
+                    }`}
+                    style={{ fontWeight: 700 }}
+                  >
+                    {step > s.id ? <Check className="w-4 h-4" /> : s.id}
+                  </div>
+                  <span
+                    className={`text-xs hidden sm:block ${
+                      step === s.id
+                        ? "text-white"
+                        : step > s.id
+                          ? "text-[#FF5C39]"
+                          : "text-gray-500"
+                    }`}
+                    style={{ fontWeight: step === s.id ? 600 : 400 }}
+                  >
+                    {s.label}
+                  </span>
+                </div>
+                {i < steps.length - 1 && (
+                  <div
+                    className="flex-1 h-0.5 mx-1"
+                    style={{
+                      backgroundColor:
+                        step > s.id ? "#FF5C39" : "rgba(255,255,255,0.1)",
+                    }}
+                  />
+                )}
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      <div className="max-w-400 mx-auto px-4 sm:px-6 py-5">
+        <div className="grid grid-cols-1 xl:grid-cols-[1.25fr_0.75fr] gap-6 items-start">
+          {/* Form */}
+          <div className="min-w-0">
+            <div className="bg-white rounded-4xl border border-gray-100 p-5 sm:p-7 shadow-[0_10px_40px_rgba(15,23,42,0.04)]">
+              {/* STEP 1 */}
+              {step === 1 && (
+                <div className="space-y-5">
+                  <div>
+                    <h2
+                      className="text-[#0F172A] mb-1"
+                      style={{ fontWeight: 700 }}
+                    >
+                      Service Details
+                    </h2>
+                    <p className="text-[#64748B] text-sm">
+                      Tell us what you need done
+                    </p>
+                  </div>
+
+                  <div>
+                    <label className="block text-sm text-[#0F172A] mb-2">
+                      Service Type *
+                    </label>
+                    <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                      {serviceOptions.map((opt) => (
+                        <button
+                          key={opt}
+                          onClick={() => setForm({ ...form, serviceType: opt })}
+                          className={`text-sm px-3 py-2.5 rounded-xl border transition-all text-left ${
+                            form.serviceType === opt
+                              ? "border-[#FF5C39] bg-orange-50 text-[#FF5C39]"
+                              : "border-gray-200 text-[#475569] hover:border-gray-300"
+                          }`}
+                          style={{
+                            fontWeight: form.serviceType === opt ? 600 : 400,
+                          }}
+                        >
+                          {opt}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="block text-sm text-[#0F172A] mb-2">
+                      Work Description
+                    </label>
+                    <textarea
+                      rows={3}
+                      value={form.description}
+                      onChange={(e) =>
+                        setForm({ ...form, description: e.target.value })
+                      }
+                      placeholder="Describe the work you need done in detail..."
+                      className={inp + " resize-none"}
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <div>
+                      <label className="block text-sm text-[#0F172A] mb-2">
+                        Pincode *
+                      </label>
+
+                      <div className="relative">
+                        <MapPin className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+
+                        <input
+                          type="text"
+                          maxLength={6}
+                          value={form.pincode || ""}
+                          onChange={(e) => {
+                            const value = e.target.value.replace(/\D/g, "");
+
+                            setForm({
+                              ...form,
+                              pincode: value,
+                            });
+
+                            if (value.length === 6) {
+                              fetchLocationByPincode(value);
+                            }
+                          }}
+                          placeholder="Enter 6 digit pincode"
+                          className={inp + " pl-11"}
+                        />
+
+                        {pincodeLoading && (
+                          <div className="absolute right-4 top-1/2 -translate-y-1/2">
+                            <div className="w-4 h-4 border-2 border-[#FF5C39] border-t-transparent rounded-full animate-spin" />
+                          </div>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* DISTRICT + STATE */}
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <label className="block text-sm text-[#0F172A] mb-2">
+                          District
+                        </label>
+
+                        <input
+                          type="text"
+                          value={form.district || ""}
+                          onChange={(e) =>
+                            setForm({
+                              ...form,
+                              district: e.target.value,
+                            })
+                          }
+                          placeholder="District"
+                          className={inp}
+                        />
+                      </div>
+
+                      <div>
+                        <label className="block text-sm text-[#0F172A] mb-2">
+                          State
+                        </label>
+
+                        <input
+                          type="text"
+                          value={form.state || ""}
+                          onChange={(e) =>
+                            setForm({
+                              ...form,
+                              state: e.target.value,
+                            })
+                          }
+                          placeholder="State"
+                          className={inp}
+                        />
+                      </div>
+                    </div>
+
+                    {/* CITY */}
+                    <div>
+                      <label className="block text-sm text-[#0F172A] mb-2">
+                        Area / City
+                      </label>
+
+                      <input
+                        type="text"
+                        value={form.city || ""}
+                        onChange={(e) =>
+                          setForm({
+                            ...form,
+                            city: e.target.value,
+                          })
+                        }
+                        placeholder="Area / City"
+                        className={inp}
+                      />
+                    </div>
+
+                    {/* FULL ADDRESS */}
+                    <div>
+                      <label className="block text-sm text-[#0F172A] mb-2">
+                        Full Address *
+                      </label>
+
+                      <div className="relative">
+                        <MapPin className="absolute left-4 top-5 w-4 h-4 text-gray-400" />
+
+                        <textarea
+                          rows={4}
+                          value={form.address}
+                          onChange={(e) =>
+                            setForm({
+                              ...form,
+                              address: e.target.value,
+                            })
+                          }
+                          placeholder="House no, street, landmark..."
+                          className={inp + " pl-11 resize-none"}
+                        />
+                      </div>
+                    </div>
+                  </div>
+
+                  <EAurixMaterials
+                    category={worker.category}
+                    selectedMaterials={form.selectedMaterials}
+                    onChange={(mats) =>
+                      setForm({ ...form, selectedMaterials: mats })
+                    }
+                  />
+
+                  <div className="p-4 bg-blue-50 border border-blue-100 rounded-xl flex gap-3 text-sm text-blue-700">
+                    <Info className="w-4 h-4 shrink-0 mt-0.5" />
+                    The worker will confirm availability before your booking is
+                    finalized.
+                  </div>
+                </div>
+              )}
+
+              {/* STEP 2 */}
+              {step === 2 && (
+                <div className="space-y-6">
+                  {/* HEADER */}
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <h2
+                        className="text-[#0F172A] text-[1.3rem]"
+                        style={{ fontWeight: 800 }}
+                      >
+                        Schedule Booking
+                      </h2>
+
+                      <p className="text-[#64748B] text-sm mt-1">
+                        Pick your preferred booking slot
+                      </p>
+                    </div>
+
+                    <div className="w-12 h-12 rounded-2xl bg-[#FFF4EF] flex items-center justify-center shrink-0">
+                      <CalendarDays className="w-5 h-5 text-[#FF5C39]" />
+                    </div>
+                  </div>
+
+                  {/* DATE SELECTOR */}
+                  <div className="rounded-[28px] border border-gray-100 bg-white p-5 shadow-sm">
+                    <div className="flex items-center justify-between mb-5">
+                      <div>
+                        <div
+                          className="text-[#0F172A] text-sm"
+                          style={{ fontWeight: 700 }}
+                        >
+                          Choose Date
+                        </div>
+
+                        <div className="text-xs text-[#94A3B8] mt-1">
+                          Next available booking days
+                        </div>
+                      </div>
+
+                      <div className="px-3 py-1.5 rounded-full bg-[#FFF4EF] text-[#FF5C39] text-xs font-bold">
+                        Live Availability
+                      </div>
+                    </div>
+
+                    {/* DATE CARDS */}
+                    <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-8 gap-3">
+                      {Array.from({ length: 7 }).map((_, i) => {
+                        const date = new Date();
+
+                        date.setDate(date.getDate() + i);
+
+                        const iso = date.toISOString().split("T")[0];
+
+                        const active = form.date === iso;
+
+                        const fullyBooked = bookedDates.includes(iso);
+
+                        return (
+                          <button
+                            key={iso}
+                            disabled={fullyBooked}
+                            onClick={() =>
+                              setForm({
+                                ...form,
+                                date: iso,
+                                time: "",
+                              })
+                            }
+                            className={`relative rounded-3xl border p-4 transition-all duration-200 text-left overflow-hidden ${
+                              active
+                                ? "bg-[#FF5C39] border-[#FF5C39] text-white shadow-lg shadow-orange-200 scale-[1.02]"
+                                : fullyBooked
+                                  ? "bg-red-50 border-red-200 opacity-70 cursor-not-allowed"
+                                  : "bg-white border-gray-200 hover:border-[#FF5C39]/40 hover:bg-orange-50 hover:-translate-y-0.5"
+                            }`}
+                          >
+                            {/* ACTIVE DOT */}
+                            {active && (
+                              <div className="absolute top-3 right-3 w-2 h-2 rounded-full bg-white animate-pulse" />
+                            )}
+
+                            {/* BOOKED BADGE */}
+                            {fullyBooked && (
+                              <div className="absolute top-2 right-2 px-2 py-1 rounded-full bg-red-500 text-white text-[9px] font-bold shadow">
+                                FULL
+                              </div>
+                            )}
+
+                            {/* DAY */}
+                            <div
+                              className={`text-xs ${
+                                active
+                                  ? "text-white/70"
+                                  : fullyBooked
+                                    ? "text-red-400"
+                                    : "text-[#94A3B8]"
+                              }`}
+                              style={{
+                                fontWeight: 700,
+                              }}
+                            >
+                              {date.toLocaleDateString("en-US", {
+                                weekday: "short",
+                              })}
+                            </div>
+
+                            {/* NUMBER */}
+                            <div
+                              className={`mt-3 text-3xl ${
+                                fullyBooked ? "text-red-500" : ""
+                              }`}
+                              style={{
+                                fontWeight: 900,
+                              }}
+                            >
+                              {date.getDate()}
+                            </div>
+
+                            {/* MONTH */}
+                            <div
+                              className={`text-xs mt-2 ${
+                                active
+                                  ? "text-white/80"
+                                  : fullyBooked
+                                    ? "text-red-400"
+                                    : "text-[#64748B]"
+                              }`}
+                            >
+                              {date.toLocaleDateString("en-US", {
+                                month: "short",
+                              })}
+                            </div>
+
+                            {/* STATUS */}
+                            <div
+                              className={`mt-4 text-[10px] font-bold tracking-wide ${
+                                active
+                                  ? "text-white"
+                                  : fullyBooked
+                                    ? "text-red-500"
+                                    : "text-emerald-600"
+                              }`}
+                            >
+                              {active
+                                ? "SELECTED"
+                                : fullyBooked
+                                  ? "UNAVAILABLE"
+                                  : "AVAILABLE"}
+                            </div>
+                          </button>
+                        );
+                      })}
+
+                      {/* OTHER DATE BUTTON */}
+                      <button
+                        onClick={() => setShowCalendar(!showCalendar)}
+                        className="rounded-3xl border border-dashed border-gray-300 bg-[#FAFAFA] hover:border-[#FF5C39] hover:bg-orange-50 transition-all duration-200 p-2 flex flex-col items-center justify-center"
+                      >
+                        <div className="w-12 h-12 rounded-2xl bg-white border border-gray-200 flex items-center justify-center mb-3">
+                          <CalendarDays className="w-5 h-5 text-[#FF5C39]" />
+                        </div>
+
+                        <div
+                          className="text-sm text-[#0F172A]"
+                          style={{
+                            fontWeight: 700,
+                          }}
+                        >
+                          Other Date
+                        </div>
+
+                        <div className="text-[10px] text-[#94A3B8] mt-1">
+                          Open calendar
+                        </div>
+                      </button>
+                    </div>
+
+                    {/* CALENDAR */}
+                    {showCalendar && (
+                      <div className="mt-5 rounded-3xl border border-gray-100 bg-[#FCFCFC] p-4">
+                        <div className="flex items-center justify-between mb-4">
+                          <div>
+                            <div
+                              className="text-[#0F172A] text-sm"
+                              style={{
+                                fontWeight: 700,
+                              }}
+                            >
+                              Select Custom Date
+                            </div>
+
+                            <div className="text-xs text-[#94A3B8] mt-1">
+                              Choose any future booking date
+                            </div>
+                          </div>
+
+                          <button
+                            onClick={() => setShowCalendar(false)}
+                            className="w-9 h-9 rounded-xl hover:bg-gray-100 flex items-center justify-center"
+                          >
+                            <X className="w-4 h-4 text-gray-500" />
+                          </button>
+                        </div>
+
+                        <CalendarPicker
+                          selectedDate={form.date}
+                          disabledDates={bookedDates}
+                          onSelect={(d) => {
+                            if (bookedDates.includes(d)) return;
+
+                            setForm({
+                              ...form,
+                              date: d,
+                              time: "",
+                            });
+
+                            setShowCalendar(false);
+                          }}
+                        />
+                      </div>
+                    )}
+                  </div>
+
+                  {/* TIME SECTION */}
+                  {form.date && (
+                    <div className="rounded-[28px] border border-gray-100 bg-white p-5 shadow-sm">
+                      <div className="flex items-center gap-3 mb-5">
+                        <div className="w-11 h-11 rounded-2xl bg-[#EEF9FF] flex items-center justify-center shrink-0">
+                          <Clock3 className="w-5 h-5 text-[#0EA5E9]" />
+                        </div>
+
+                        <div>
+                          <div
+                            className="text-[#0F172A] text-sm"
+                            style={{ fontWeight: 700 }}
+                          >
+                            Select Time Slot
+                          </div>
+
+                          <div className="text-xs text-[#94A3B8] mt-0.5">
+                            Available worker timings
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
+                        {timeSlots.map((slot) => {
+                          const active = form.time === slot;
+
+                          const booked = bookedSlots.includes(slot);
+
+                          return (
+                            <button
+                              key={slot}
+                              disabled={booked}
+                              onClick={() =>
+                                setForm({
+                                  ...form,
+                                  time: slot,
+                                })
+                              }
+                              className={`rounded-2xl border px-4 py-4 transition-all duration-200 ${
+                                booked
+                                  ? "bg-red-50 border-red-200 text-red-400 cursor-not-allowed opacity-70"
+                                  : active
+                                    ? "bg-[#0F172A] border-[#0F172A] text-white shadow-lg"
+                                    : "bg-white border-gray-200 hover:border-[#0F172A]/20 hover:bg-gray-50"
+                              }`}
+                            >
+                              <div
+                                className="text-sm"
+                                style={{
+                                  fontWeight: 800,
+                                }}
+                              >
+                                {slot}
+                              </div>
+
+                              <div
+                                className={`text-[10px] mt-1 ${
+                                  booked
+                                    ? "text-red-400"
+                                    : active
+                                      ? "text-white/70"
+                                      : "text-[#94A3B8]"
+                                }`}
+                              >
+                                {booked ? "Booked" : "Available"}
+                              </div>
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* DURATION */}
+                  {form.time && (
+                    <div className="rounded-[28px] border border-gray-100 bg-white p-5 shadow-sm">
+                      <div className="flex items-center gap-3 mb-5">
+                        <div className="w-11 h-11 rounded-2xl bg-[#F3F4FF] flex items-center justify-center shrink-0">
+                          <Timer className="w-5 h-5 text-[#6366F1]" />
+                        </div>
+
+                        <div>
+                          <div
+                            className="text-[#0F172A] text-sm"
+                            style={{ fontWeight: 700 }}
+                          >
+                            Booking Duration
+                          </div>
+
+                          <div className="text-xs text-[#94A3B8] mt-0.5">
+                            Estimated working hours
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
+                        {durations.map((d) => {
+                          const active = form.duration === d.hours;
+
+                          return (
+                            <button
+                              key={d.hours}
+                              onClick={() =>
+                                setForm({
+                                  ...form,
+                                  duration: d.hours,
+                                })
+                              }
+                              className={`rounded-2xl border p-4 transition-all duration-200 ${
+                                active
+                                  ? "bg-[#6366F1] border-[#6366F1] text-white shadow-lg shadow-indigo-100"
+                                  : "bg-white border-gray-200 hover:border-[#6366F1]/30 hover:bg-indigo-50"
+                              }`}
+                            >
+                              <div
+                                className="text-base"
+                                style={{
+                                  fontWeight: 800,
+                                }}
+                              >
+                                {d.label}
+                              </div>
+
+                              <div
+                                className={`text-[10px] mt-1 ${
+                                  active ? "text-white/70" : "text-[#94A3B8]"
+                                }`}
+                              >
+                                Duration
+                              </div>
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* STEP 3 */}
+              {step === 3 && (
+                <div className="space-y-5">
+                  <div>
+                    <h2
+                      className="text-[#0F172A] mb-1"
+                      style={{ fontWeight: 700 }}
+                    >
+                      Your Information
+                    </h2>
+                    <p className="text-[#64748B] text-sm">
+                      So the worker can reach you
+                    </p>
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-sm text-[#0F172A] mb-2">
+                        Full Name *
+                      </label>
+                      <div className="relative">
+                        <User className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                        <input
+                          type="text"
+                          value={form.name}
+                          onChange={(e) =>
+                            setForm({ ...form, name: e.target.value })
+                          }
+                          placeholder="John Smith"
+                          className={inp + " pl-11"}
+                        />
+                      </div>
+                    </div>
+                    <div>
+                      <label className="block text-sm text-[#0F172A] mb-2">
+                        Phone Number *
+                      </label>
+                      <div className="relative">
+                        <Phone className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                        <input
+                          type="tel"
+                          value={form.phone}
+                          onChange={(e) =>
+                            setForm({ ...form, phone: e.target.value })
+                          }
+                          placeholder="+1 (555) 000-0000"
+                          className={inp + " pl-11"}
+                        />
+                      </div>
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="block text-sm text-[#0F172A] mb-2">
+                      Email Address *
+                    </label>
+                    <div className="relative">
+                      <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                      <input
+                        type="email"
+                        value={form.email}
+                        onChange={(e) =>
+                          setForm({ ...form, email: e.target.value })
+                        }
+                        placeholder="john@example.com"
+                        className={inp + " pl-11"}
+                      />
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="block text-sm text-[#0F172A] mb-2">
+                      Additional Notes
+                    </label>
+                    <textarea
+                      rows={3}
+                      value={form.notes}
+                      onChange={(e) =>
+                        setForm({ ...form, notes: e.target.value })
+                      }
+                      placeholder="Any special instructions, access codes, or additional information..."
+                      className={inp + " resize-none"}
+                    />
+                  </div>
+                </div>
+              )}
+
+              {/* STEP 4 */}
+              {step === 4 && (
+                <div className="space-y-6">
+                  {/* HEADER */}
+                  <div>
+                    <h2
+                      className="text-[#0F172A] text-[1.35rem] mb-1"
+                      style={{ fontWeight: 800 }}
+                    >
+                      Complete Payment
+                    </h2>
+
+                    <p className="text-[#64748B] text-sm">
+                      Scan QR & enter transaction ID to continue
+                    </p>
+                  </div>
+
+                  {/* PAYMENT CARD */}
+                  <div className="rounded-4xl border border-gray-100 bg-white p-5 shadow-sm">
+                    {/* TOP */}
+                    <div className="flex items-center justify-between mb-5">
+                      <div>
+                        <div
+                          className="text-[#0F172A] text-lg"
+                          style={{ fontWeight: 800 }}
+                        >
+                          Pay ₹15 Booking Fee
+                        </div>
+
+                        <div className="text-sm text-[#64748B] mt-1">
+                          UPI / Paytm / PhonePe / GPay
+                        </div>
+                      </div>
+
+                      <div className="px-3 py-1 rounded-full bg-[#E8FFF3] text-[#10B981] text-xs">
+                        Secure
+                      </div>
+                    </div>
+
+                    {/* QR BOX */}
+                    <div className="mx-auto max-w-[320px]">
+                      <div className="rounded-4xl border-10 border-[#0F172A] bg-white p-4 shadow-2xl">
+                        {/* HEADER */}
+                        <div className="flex items-center justify-between mb-4">
+                          <div>
+                            <div
+                              className="text-[#0F172A] text-sm"
+                              style={{ fontWeight: 800 }}
+                            >
+                              WORKKERZ
+                            </div>
+
+                            <div className="text-[11px] text-[#64748B]">
+                              Secure UPI Payment
+                            </div>
+                          </div>
+
+                          <div className="px-2 py-1 rounded-lg bg-[#EEF9FF] text-[#0EA5E9] text-[10px]">
+                            UPI
+                          </div>
+                        </div>
+
+                        {/* QR */}
+                        <div className="rounded-2xl overflow-hidden border border-gray-200 bg-white">
+                          <img
+                            src="/workkerzpay.jpeg"
+                            alt="Workkerz Payment QR"
+                            className="w-full aspect-square object-cover"
+                          />
+                        </div>
+
+                        {/* FOOTER */}
+                        <div className="mt-4 text-center">
+                          <div
+                            className="text-[#0F172A] text-base"
+                            style={{ fontWeight: 800 }}
+                          >
+                            Scan & Pay ₹15
+                          </div>
+
+                          <div className="text-xs text-[#64748B] mt-1">
+                            Booking confirmation charge
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* TRANSACTION ID */}
+                    <div className="mt-6">
+                      <label className="block text-sm text-[#0F172A] mb-2">
+                        Transaction ID *
+                      </label>
+
+                      <div className="relative">
+                        <Receipt className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+
+                        <input
+                          type="text"
+                          value={form.transactionId}
+                          onChange={(e) =>
+                            setForm({
+                              ...form,
+                              transactionId: e.target.value,
+                            })
+                          }
+                          placeholder="Enter UPI transaction/reference ID"
+                          className={inp + " pl-11"}
+                        />
+                      </div>
+                    </div>
+
+                    {/* NOTE */}
+                    <div className="mt-5 rounded-2xl border border-blue-100 bg-blue-50 p-4 flex gap-3">
+                      <ShieldCheck className="w-5 h-5 text-[#0EA5E9] shrink-0 mt-0.5" />
+
+                      <div>
+                        <div
+                          className="text-sm text-[#0F172A]"
+                          style={{ fontWeight: 700 }}
+                        >
+                          Booking Verification
+                        </div>
+
+                        <div className="text-xs text-[#64748B] mt-1 leading-relaxed">
+                          Booking continues only after valid transaction ID is
+                          entered.
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Navigation */}
+              <div className="flex items-center justify-between mt-8 pt-6 border-t border-gray-100">
+                <button
+                  onClick={handleBack}
+                  className="flex items-center gap-2 text-[#64748B] hover:text-[#0F172A] text-sm transition-colors"
+                >
+                  <ChevronLeft className="w-4 h-4" />{" "}
+                  {step === 1 ? "Cancel" : "Back"}
+                </button>
+                <button
+                  onClick={handleNext}
+                  disabled={!canProceed()}
+                  className={`flex items-center gap-2 px-6 py-3 rounded-xl text-sm text-white transition-all ${
+                    canProceed()
+                      ? "bg-[#FF5C39] hover:bg-[#e54e2e] shadow-lg shadow-orange-200"
+                      : "bg-gray-200 text-gray-400 cursor-not-allowed"
+                  }`}
+                  style={{ fontWeight: 600 }}
+                >
+                  {step === 4 ? (
+                    <>
+                      <Lock className="w-4 h-4" /> Confirm & Pay ${grandTotal}
+                    </>
+                  ) : (
+                    <>
+                      Continue <ChevronRight className="w-4 h-4" />
+                    </>
+                  )}
+                </button>
+              </div>
+            </div>
+          </div>
+
+          {/* Booking Summary */}
+          <div className="xl:min-w-95">
+            <div className="xl:sticky xl:top-24 overflow-hidden rounded-4xl border border-white/60 bg-white shadow-[0_20px_80px_rgba(15,23,42,0.08)]">
+              {/* TOP HEADER */}
+              <div className="relative overflow-hidden bg-linear-to-br from-[#0F172A] via-[#172033] to-[#1E293B] p-5">
+                {/* GLOW */}
+                <div className="absolute -top-10 -right-10 w-32 h-32 rounded-full bg-[#FF5C39]/20 blur-3xl" />
+
+                <div className="relative z-10">
+                  <div className="flex items-start gap-4">
+                    {/* PHOTO */}
+                    <div className="relative shrink-0">
+                      <img
+                        src={worker.photo}
+                        alt={worker.name}
+                        className="w-18 h-18 rounded-3xl object-cover border-3 border-white/20 shadow-xl"
+                        onError={(e) => {
+                          (e.target as HTMLImageElement).src =
+                            `https://ui-avatars.com/api/?name=${encodeURIComponent(worker.name)}&background=f97316&color=fff`;
+                        }}
+                      />
+
+                      {worker.available && (
+                        <div className="absolute bottom-1 right-1 w-4 h-4 rounded-full bg-emerald-400 border-2 border-[#0F172A]" />
+                      )}
+                    </div>
+
+                    {/* INFO */}
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center justify-between gap-3">
+                        <div>
+                          <h3
+                            className="text-white text-[1.05rem] truncate"
+                            style={{ fontWeight: 800 }}
+                          >
+                            {worker.name}
+                          </h3>
+
+                          <p className="text-white/70 text-sm mt-0.5 truncate">
+                            {worker.specialty}
+                          </p>
+                        </div>
+
+                        <div className="px-3 py-1.5 rounded-2xl bg-white/10 backdrop-blur text-white text-xs">
+                          Verified
+                        </div>
+                      </div>
+
+                      {/* STATS */}
+                      <div className="flex items-center gap-4 mt-4">
+                        <div className="flex items-center gap-1.5">
+                          <Star className="w-4 h-4 text-amber-400 fill-amber-400" />
+
+                          <span
+                            className="text-white text-sm"
+                            style={{ fontWeight: 700 }}
+                          >
+                            {worker.rating}
+                          </span>
+
+                          <span className="text-white/60 text-xs">
+                            ({worker.reviewCount})
+                          </span>
+                        </div>
+
+                        <div className="w-1 h-1 rounded-full bg-white/30" />
+
+                        <div className="text-white/80 text-sm">
+                          {worker.completedJobs}+ works
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* BODY */}
+              <div className="p-4 sm:p-5 space-y-5">
+                {/* TITLE */}
+                <div className="flex items-center justify-between">
+                  <div>
+                    <h3
+                      className="text-[#0F172A]"
+                      style={{
+                        fontWeight: 800,
+                        fontSize: "1.05rem",
+                      }}
+                    >
+                      Booking Summary
+                    </h3>
+
+                    <p className="text-sm text-[#64748B] mt-1">
+                      Review your booking details
+                    </p>
+                  </div>
+
+                  <div className="px-3 py-1.5 rounded-2xl bg-[#FFF4EF] text-[#FF5C39] text-xs">
+                    Protected
+                  </div>
+                </div>
+
+                {/* DETAILS */}
+                <div className="space-y-3">
+                  {/* SERVICE */}
+                  {form.serviceType && (
+                    <div className="rounded-2xl border border-gray-100 bg-[#FAFAFA] p-4">
+                      <div className="text-sm text-[#94A3B8] mb-1">Service</div>
+
+                      <div
+                        className="text-[#0F172A]"
+                        style={{ fontWeight: 500 }}
+                      >
+                        {form.serviceType}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* DESCRIPTION */}
+                  {form.description && (
+                    <div className="rounded-2xl border border-gray-100 bg-[#FAFAFA] p-3">
+                      <div className="text-sm text-[#94A3B8] mb-1">
+                        Work Description
+                      </div>
+
+                      <div className="text-sm text-[#334155] leading-relaxed wrap-break-word">
+                        {form.description}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* LOCATION */}
+                  {(form.address ||
+                    form.city ||
+                    form.district ||
+                    form.state ||
+                    form.pincode) && (
+                    <div className="rounded-2xl border border-gray-100 bg-[#FAFAFA] p-2">
+                      <div className="flex items-start gap-3">
+                        <div className="w-10 h-10 rounded-2xl bg-[#FFF4EF] flex items-center justify-center shrink-0">
+                          <MapPin className="w-4 h-4 text-[#FF5C39]" />
+                        </div>
+
+                        <div className="min-w-0 flex-1">
+                          <div className="text-xs text-[#94A3B8] mb-1">
+                            Work Location
+                          </div>
+
+                          <div
+                            className="text-sm text-[#0F172A] wrap-break-word leading-6"
+                            style={{ fontWeight: 400 }}
+                          >
+                            {[
+                              form.address,
+                              form.city,
+                              form.district,
+                              form.state,
+                              form.pincode,
+                            ]
+                              .filter(Boolean)
+                              .join(", ")}
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* DATE & TIME */}
+                  {(form.date || form.time) && (
+                    <div className="grid grid-cols-2 gap-3">
+                      {form.date && (
+                        <div className="rounded-2xl border border-gray-100 bg-[#FAFAFA] p-4">
+                          <div className="text-xs text-[#94A3B8] mb-1">
+                            Date
+                          </div>
+
+                          <div
+                            className="text-sm text-[#0F172A]"
+                            style={{ fontWeight: 500 }}
+                          >
+                            {formatDate(form.date)}
+                          </div>
+                        </div>
+                      )}
+
+                      {form.time && (
+                        <div className="rounded-2xl border border-gray-100 bg-[#FAFAFA] p-4">
+                          <div className="text-xs text-[#94A3B8] mb-1">
+                            Time
+                          </div>
+
+                          <div
+                            className="text-sm text-[#0F172A]"
+                            style={{ fontWeight: 500 }}
+                          >
+                            {form.time}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  )}
+
+                  {/* MATERIALS */}
+                  {materialsCost > 0 && (
+                    <div className="rounded-2xl border border-[#BAE6FD] bg-[#F0F9FF] p-4">
+                      <div className="flex items-center justify-between mb-3">
+                        <div
+                          className="text-[#0284C7]"
+                          style={{ fontWeight: 800 }}
+                        >
+                          E-Aurix Materials
+                        </div>
+
+                        <div
+                          className="text-[#0284C7]"
+                          style={{ fontWeight: 800 }}
+                        >
+                          ₹{materialsCost}
+                        </div>
+                      </div>
+
+                      <div className="space-y-2">
+                        {categoryMaterials
+                          .filter(
+                            (m) => (form.selectedMaterials[m.id] || 0) > 0,
+                          )
+                          .map((m) => (
+                            <div
+                              key={m.id}
+                              className="flex items-center justify-between text-sm"
+                            >
+                              <span className="text-[#475569]">
+                                {m.name} × {form.selectedMaterials[m.id]}
+                              </span>
+
+                              <span
+                                className="text-[#0F172A]"
+                                style={{ fontWeight: 400 }}
+                              >
+                                ₹{m.price * form.selectedMaterials[m.id]}
+                              </span>
+                            </div>
+                          ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                {/* CUSTOMER DETAILS */}
+                {(form.name || form.phone || form.email || form.notes) && (
+                  <div className="rounded-2xl border border-gray-100 bg-white p-4">
+                    {/* HEADER */}
+                    <div className="flex items-center gap-3 mb-4">
+                      <div className="w-10 h-10 rounded-2xl bg-[#EEF9FF] flex items-center justify-center shrink-0">
+                        <User className="w-4 h-4 text-[#0EA5E9]" />
+                      </div>
+
+                      <div>
+                        <div
+                          className="text-sm text-[#0F172A]"
+                          style={{ fontWeight: 600 }}
+                        >
+                          Customer Details
+                        </div>
+
+                        <div className="text-xs text-[#94A3B8] mt-0.5">
+                          Booking contact information
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="space-y-1">
+                      {/* NAME */}
+                      {form.name && (
+                        <div className="flex items-start justify-between gap-3">
+                          <span className="text-[#64748B] text-sm">
+                            Full Name
+                          </span>
+
+                          <span
+                            className="text-[#0F172A] text-sm text-right"
+                            style={{ fontWeight: 300 }}
+                          >
+                            {form.name}
+                          </span>
+                        </div>
+                      )}
+
+                      {/* PHONE */}
+                      {form.phone && (
+                        <div className="flex items-start justify-between gap-3">
+                          <span className="text-[#64748B] text-sm">Phone</span>
+
+                          <span
+                            className="text-[#0F172A] text-sm text-right"
+                            style={{ fontWeight: 300 }}
+                          >
+                            {form.phone}
+                          </span>
+                        </div>
+                      )}
+
+                      {/* EMAIL */}
+                      {form.email && (
+                        <div className="flex items-start justify-between gap-1">
+                          <span className="text-[#64748B] text-sm">Email</span>
+
+                          <span
+                            className="text-[#0F172A] text-sm text-right break-all"
+                            style={{ fontWeight: 300 }}
+                          >
+                            {form.email}
+                          </span>
+                        </div>
+                      )}
+
+                      {/* NOTES */}
+                      {form.notes && (
+                        <div className="pt-3 border-t border-gray-100">
+                          <div className="text-[#64748B] text-sm mb-1">
+                            Additional Notes
+                          </div>
+
+                          <div
+                            className="text-sm text-[#0F172A] leading-relaxed"
+                            style={{ fontWeight: 200 }}
+                          >
+                            {form.notes}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                )}
+
+                {/* PRICE */}
+                <div className="rounded-3xl bg-[#0F172A] p-3 text-white">
+                  <div className="space-y-2">
+                    <div className="flex justify-between text-sm">
+                      <span className="text-white/70">Worker Charges</span>
+
+                      <span style={{ fontWeight: 300 }}>₹{totalCost}</span>
+                    </div>
+
+                    <div className="flex justify-between text-sm">
+                      <span className="text-white/70">Platform Fee</span>
+
+                      <span style={{ fontWeight: 300 }}>₹{serviceFee}</span>
+                    </div>
+
+                    {materialsCost > 0 && (
+                      <div className="flex justify-between text-sm">
+                        <span className="text-white/70">Materials</span>
+
+                        <span style={{ fontWeight: 300 }}>
+                          ₹{materialsCost}
+                        </span>
+                      </div>
+                    )}
+                  </div>
+
+                  <div className="h-px bg-white/10 my-4" />
+
+                  <div className="flex items-end justify-between">
+                    <div>
+                      <div className="text-white/60 text-xs">Grand Total</div>
+
+                      <div
+                        className="text-[1.7rem]"
+                        style={{ fontWeight: 500 }}
+                      >
+                        ₹{grandTotal}
+                      </div>
+                    </div>
+
+                    <div className="px-3 py-2 rounded-2xl bg-[#FF5C39] text-sm">
+                      {form.duration}hr work
+                    </div>
+                  </div>
+                </div>
+
+                {/* SECURITY */}
+                <div className="flex items-center gap-3 rounded-2xl border border-emerald-100 bg-emerald-50 p-4">
+                  <div className="w-10 h-10 rounded-2xl bg-white flex items-center justify-center shrink-0">
+                    <Lock className="w-4 h-4 text-emerald-600" />
+                  </div>
+
+                  <div>
+                    <div
+                      className="text-sm text-emerald-700"
+                      style={{ fontWeight: 300 }}
+                    >
+                      Secure Booking Protection
+                    </div>
+
+                    <div className="text-xs text-emerald-600 mt-0.5">
+                      Payment released only after work completion
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
