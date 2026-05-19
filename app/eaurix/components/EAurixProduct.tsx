@@ -59,7 +59,7 @@ export function EAurixProduct() {
       brand: product.brand,
       price: product.price,
       qty,
-      icon: product.icon,
+      icon: product.image || "",
       color: product.color,
       unit: product.unit,
     });
@@ -74,7 +74,7 @@ export function EAurixProduct() {
       brand: product.brand,
       price: product.price,
       qty,
-      icon: product.icon,
+      icon: product.image || "",
       color: product.color,
       unit: product.unit,
     });
@@ -132,7 +132,19 @@ export function EAurixProduct() {
                 background: `linear-gradient(135deg, ${product.color} 0%, ${product.color}70 100%)`,
               }}
             >
-              <span className="text-[8rem]">{product.icon}</span>
+              <span className="text-[8rem]">
+                {product.image ? (
+                  <img
+                    src={product.image}
+                    alt={product.name}
+                    className="w-52 h-52 object-contain"
+                  />
+                ) : (
+                  <div className="w-52 h-52 rounded-2xl bg-white/40 flex items-center justify-center text-white text-5xl font-bold">
+                    {product.name.charAt(0)}
+                  </div>
+                )}
+              </span>
               {badge && (
                 <div
                   className={`absolute top-4 left-4 text-white text-xs px-3 py-1 rounded-full ${badge.cls}`}
@@ -193,7 +205,7 @@ export function EAurixProduct() {
                 className="text-[#0EA5E9] text-xs px-2 py-0.5 bg-sky-50 border border-sky-200 rounded-full"
                 style={{ fontWeight: 700 }}
               >
-                {catData?.icon} {catData?.label}
+                {catData?.label}
               </span>
               <span className="text-[#64748B] text-xs">{product.brand}</span>
             </div>
@@ -409,7 +421,17 @@ export function EAurixProduct() {
                     }}
                   >
                     <span className="text-4xl group-hover:scale-110 transition-transform">
-                      {p.icon}
+                      {p.image ? (
+                        <img
+                          src={p.image}
+                          alt={p.name}
+                          className="w-16 h-16 object-contain group-hover:scale-110 transition-transform"
+                        />
+                      ) : (
+                        <div className="w-16 h-16 rounded-xl bg-white/40 flex items-center justify-center text-white text-xl font-bold">
+                          {p.name.charAt(0)}
+                        </div>
+                      )}
                     </span>
                   </div>
                   <div className="p-3">

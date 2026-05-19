@@ -169,7 +169,7 @@ export default function LiveNewsStrip() {
           {cards.map((worker, i) => (
             <div
               key={i}
-              className="mx-4 min-w-[370px] bg-white rounded-3xl shadow-lg p-4 flex items-center gap-4"
+              className="mx-4 min-w-92.5 bg-white rounded-3xl shadow-lg p-4 flex items-center gap-4"
             >
               {/* IMAGE */}
               <img

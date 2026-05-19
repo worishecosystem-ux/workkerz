@@ -69,7 +69,17 @@ function ProductCard({ product }: { product: Product }) {
             <div className="absolute inset-0 bg-black/5" />
 
             <span className="relative text-5xl sm:text-6xl group-hover:scale-110 transition-transform duration-300">
-              {product.icon}
+              {product.image ? (
+                <img
+                  src={product.image}
+                  alt={product.name}
+                  className="relative w-24 h-24 sm:w-32 sm:h-32 object-contain group-hover:scale-110 transition-transform duration-300"
+                />
+              ) : (
+                <div className="relative w-24 h-24 sm:w-32 sm:h-32 rounded-2xl bg-white/30 flex items-center justify-center text-white text-3xl font-bold">
+                  {product.name.charAt(0)}
+                </div>
+              )}
             </span>
 
             {/* Badge */}
@@ -159,7 +169,7 @@ function ProductCard({ product }: { product: Product }) {
                     brand: product.brand,
                     price: product.price,
                     qty: 1,
-                    icon: product.icon,
+                    icon: product.image || "",
                     color: product.color,
                     unit: product.unit,
                   });
@@ -260,9 +270,7 @@ export function EAurixShop() {
             className="text-white mb-1"
             style={{ fontWeight: 800, fontSize: "1.6rem" }}
           >
-            {activeCatData
-              ? `${activeCatData.icon} ${activeCatData.label}`
-              : "All Products"}
+            {activeCatData ? activeCatData.label : "All Products"}
           </h1>
           <p className="text-sky-300 text-sm">
             {filtered.length} product{filtered.length !== 1 ? "s" : ""}{" "}
@@ -494,7 +502,7 @@ export function EAurixShop() {
                   return (
                     <button
                       key={cat.id}
-                      onClick={() => setCategory(cat.id)}
+                      onClick={() => setCategory(cat.id as ProductCategory)}
                       className={`shrink-0 group relative overflow-hidden rounded-2xl transition-all duration-300 ${
                         active
                           ? "bg-linear-to-br from-sky-500 to-cyan-400 text-white shadow-xl shadow-sky-100"
@@ -507,11 +515,14 @@ export function EAurixShop() {
 
                       <div className="relative flex items-center gap-3 px-4 py-3 min-w-45">
                         <div
-                          className={`w-11 h-11 rounded-xl flex items-center justify-center text-xl ${
+                          className={`w-11 h-11 rounded-xl flex items-center justify-center ${
                             active ? "bg-white/15" : "bg-[#F8FAFC]"
                           }`}
                         >
-                          {cat.icon}
+                          <div
+                            className="w-4 h-4 rounded-full"
+                            style={{ backgroundColor: cat.color }}
+                          />
                         </div>
 
                         <div className="flex-1 text-left">
