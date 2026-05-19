@@ -70,7 +70,7 @@ type Booking = {
 export default function OrdersTab() {
   const [orders, setOrders] = useState<Booking[]>([]);
   const [loading, setLoading] = useState(true);
-
+  const [refreshing, setRefreshing] = useState(false);
   const [selectedOrder, setSelectedOrder] = useState<Booking | null>(null);
   const [filterDate, setFilterDate] = useState("");
   const [serviceFilter, setServiceFilter] = useState("");
@@ -84,87 +84,90 @@ export default function OrdersTab() {
   const [search, setSearch] = useState("");
 
   // FETCH
- 
- const fetchOrders = async () => {
-  try {
-    setLoading(true);
 
-    const { data, error } = await supabase
-      .from("bookings")
-      .select(`
-        id,
-        booking_id,
-        booking_status,
-        worker_name,
-        worker_specialty,
-        worker_rating,
-        service_type,
-        booking_date,
-        booking_time,
-        duration,
-        customer_name,
-        customer_phone,
-        city,
-        state,
-        total_cost,
-        service_fee,
-        materials_cost,
-        grand_total,
-        created_at
-      `)
-      .order("created_at", {
-        ascending: false,
-      })
-      .limit(20);
+  const fetchOrders = async () => {
+    try {
+      setRefreshing(true);
+      setLoading(true);
 
-    if (error) {
-      console.log("SUPABASE ERROR =>", error);
+      const { data, error } = await supabase
+        .from("bookings")
+        .select(
+          `
+    id,
+    booking_id,
+    booking_status,
+    worker_name,
+    worker_specialty,
+    worker_rating,
+    service_type,
+    booking_date,
+    booking_time,
+    duration,
+    customer_name,
+    customer_phone,
+    city,
+    state,
+    total_cost,
+    service_fee,
+    materials_cost,
+    grand_total,
+    created_at
+  `,
+        )
+        .order("created_at", {
+          ascending: false,
+        })
+        .limit(50);
 
-      toast.error(error.message);
+      if (error) {
+        console.log("SUPABASE ERROR =>", error);
 
-      return;
+        toast.error(error.message);
+
+        return;
+      }
+
+      setOrders((data || []) as Booking[]);
+    } catch (err) {
+      console.log("FETCH ERROR =>", err);
+
+      toast.error("Something went wrong");
+    } finally {
+      setLoading(false);
+      setRefreshing(false);
     }
-
-    setOrders((data || []) as Booking[]);
-  } catch (err) {
-    console.log("FETCH ERROR =>", err);
-
-    toast.error("Something went wrong");
-  } finally {
-    setLoading(false);
-  }
-};
-
-  
+  };
 
   // LOAD
   useEffect(() => {
     fetchOrders();
 
-    let timeout: NodeJS.Timeout;
+    // AUTO REFRESH EVERY 2 SEC
+    const refreshInterval = setInterval(() => {
+      fetchOrders();
+    }, 2000);
 
-    const channel = supabase.channel("bookings-channel");
+    // REALTIME
+    const channel = supabase
+      .channel("bookings-live-channel")
 
-    channel.on(
-      "postgres_changes",
-      {
-        event: "*",
-        schema: "public",
-        table: "bookings",
-      },
-      () => {
-        clearTimeout(timeout);
-
-        timeout = setTimeout(() => {
+      .on(
+        "postgres_changes",
+        {
+          event: "*",
+          schema: "public",
+          table: "bookings",
+        },
+        () => {
           fetchOrders();
-        }, 1000);
-      },
-    );
+        },
+      )
 
-    channel.subscribe();
+      .subscribe();
 
     return () => {
-      clearTimeout(timeout);
+      clearInterval(refreshInterval);
 
       supabase.removeChannel(channel);
     };
@@ -257,6 +260,14 @@ export default function OrdersTab() {
         .map((o) => o.worker_name),
     ),
   ];
+
+  {
+    refreshing && (
+      <div className="fixed top-5 right-5 z-50 bg-[#0F172A] text-white px-4 py-2 rounded-2xl text-xs font-bold shadow-xl">
+        Refreshing...
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-[#F8FAFC] p-6">
