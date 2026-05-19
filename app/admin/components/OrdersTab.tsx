@@ -90,7 +90,36 @@ export default function OrdersTab() {
 
       const { data, error } = await supabase
         .from("bookings")
-        .select("*")
+        .select(
+          `
+  id,
+  booking_id,
+  booking_status,
+  worker_id,
+  worker_name,
+  worker_photo,
+  worker_specialty,
+  worker_rating,
+  service_type,
+  booking_date,
+  booking_time,
+  duration,
+  customer_name,
+  customer_phone,
+  customer_email,
+  notes,
+  address,
+  city,
+  district,
+  state,
+  pincode,
+  total_cost,
+  service_fee,
+  materials_cost,
+  grand_total,
+  created_at
+`,
+        )
         .order("created_at", {
           ascending: false,
         });
@@ -113,7 +142,9 @@ export default function OrdersTab() {
 
   // LOAD
   useEffect(() => {
-    fetchOrders();
+    fetchOrders();setTimeout(() => {
+  fetchOrders();
+}, 500);
 
     const channel = supabase
       .channel("bookings-channel")
