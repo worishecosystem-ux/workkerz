@@ -45,7 +45,7 @@ function StarRating({ rating }: { rating: number }) {
   );
 }
 
-export function WorkerProfile() {
+export default function WorkerProfilePage() {
   const { id } = useParams();
   const router = useRouter();
 
