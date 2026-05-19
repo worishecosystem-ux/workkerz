@@ -1,7 +1,18 @@
 import "./globals.css";
+import type { Metadata } from "next";
 import { PlatformProvider } from "./components/context/PlatformContext";
 import { AdminProvider } from "./components/context/AdminContext";
 import { Toaster } from "sonner";
+
+export const metadata: Metadata = {
+  title: "Workkerz",
+  description: "Workkerz Platform",
+  icons: {
+    icon: "/favicon.ico",
+    shortcut: "/favicon.ico",
+    apple: "/favicon.ico",
+  },
+};
 
 export default function RootLayout({
   children,
@@ -14,6 +25,7 @@ export default function RootLayout({
         <PlatformProvider>
           <AdminProvider>{children}</AdminProvider>
         </PlatformProvider>
+
         <Toaster
           position="top-right"
           richColors
