@@ -852,7 +852,12 @@ export function EAurixCheckout() {
                     Add a Worker (Optional)
                   </h2>
                   <WorkerAddonStep
-                    cart={cart}
+                    cart={cart.map(item => ({
+  productId: item.productId,
+  name: item.name,
+  icon: item.icon || "",
+  color: item.color || "",
+}))}
                     addon={workerAddon}
                     onSelect={setWorkerAddon}
                   />
