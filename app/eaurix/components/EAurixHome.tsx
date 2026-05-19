@@ -71,6 +71,12 @@ function ProductCard({
     : null;
 
   return (
+
+    <div className="bg-rose-500 text-white text-[50px] px-2 py-1 " >
+      <h1>
+        Undedr processing
+      </h1>
+    </div>
     <Link
       href={`/eaurix/product/${product.id}`}
       className="bg-white rounded-2xl border border-gray-100 overflow-hidden hover:shadow-lg hover:border-sky-100 transition-all duration-200 group flex flex-col"
