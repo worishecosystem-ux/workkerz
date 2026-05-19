@@ -1,10 +1,9 @@
 "use client";
 import { useState, useEffect } from "react";
-import Link from "next/link";
 import { supabase } from "@/lib/supabase";
 import OrdersTab from "@/app/admin/components/OrdersTab";
 import AdminSidebar from "./components/AdminSidebar";
-import ProductForm from "./components/ProductForm";
+import { toast } from "sonner";
 import ProductsTab from "./components/ProductsTab";
 
 import {
@@ -354,7 +353,71 @@ function WorkerForm({
     return "";
   };
 
+
+  
   const [saving, setSaving] = useState(false);
+
+const compressImage = (file: File): Promise<string> => {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+
+    reader.readAsDataURL(file);
+
+    reader.onload = (event) => {
+      const img = new Image();
+
+      img.src = event.target?.result as string;
+
+      img.onload = () => {
+        // MAX SIZE
+        const MAX_WIDTH = 500;
+        const MAX_HEIGHT = 500;
+
+        let width = img.width;
+        let height = img.height;
+
+        // RESIZE
+        if (width > MAX_WIDTH) {
+          height *= MAX_WIDTH / width;
+
+          width = MAX_WIDTH;
+        }
+
+        if (height > MAX_HEIGHT) {
+          width *= MAX_HEIGHT / height;
+
+          height = MAX_HEIGHT;
+        }
+
+        const canvas = document.createElement("canvas");
+
+        canvas.width = width;
+        canvas.height = height;
+
+        const ctx = canvas.getContext("2d");
+
+        if (!ctx) {
+          reject("Canvas error");
+          return;
+        }
+
+        ctx.drawImage(img, 0, 0, width, height);
+
+        // LOW QUALITY WEBP
+        const compressedBase64 = canvas.toDataURL(
+          "image/webp",
+          0.4,
+        );
+
+        resolve(compressedBase64);
+      };
+
+      img.onerror = reject;
+    };
+
+    reader.onerror = reject;
+  });
+};
 
   const handleSave = async () => {
     if (saving) return;
@@ -437,6 +500,8 @@ function WorkerForm({
     }
   };
 
+  
+
   return (
     <div className="flex flex-col h-full bg-white">
       {/* HEADER */}
@@ -503,18 +568,26 @@ function WorkerForm({
                   type="file"
                   accept="image/*"
                   className="hidden"
-                  onChange={(e) => {
+                  onChange={async (e) => {
                     const file = e.target.files?.[0];
 
                     if (!file) return;
 
-                    const reader = new FileReader();
+                    // LIMIT SIZE
+                    if (file.size > 2 * 1024 * 1024) {
+                      toast.error("Image must be less than 2MB");
+                      return;
+                    }
 
-                    reader.onloadend = () => {
-                      u("photo", reader.result as string);
-                    };
+                    try {
+                      const compressed = await compressImage(file);
 
-                    reader.readAsDataURL(file);
+                      u("photo", compressed);
+                    } catch (err) {
+                      console.log(err);
+
+                      toast.error("Image compression failed");
+                    }
                   }}
                 />
               </label>
@@ -2046,8 +2119,6 @@ function WorkersTab() {
     </div>
   );
 }
-
-
 
 // ═══════════════════════════════════════════════════════════════════════════════
 // MAIN ADMIN PANEL
