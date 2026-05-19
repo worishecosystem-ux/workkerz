@@ -84,17 +84,19 @@ export default function OrdersTab() {
   const [search, setSearch] = useState("");
 
   // FETCH
- const fetchOrders = async () => {
-  try {
-    setLoading(true);
+  // FETCH
+  const fetchOrders = async () => {
+    try {
+      setLoading(true);
 
-    const { data, error } = await supabase
-      .from("bookings")
-      .select(`
+      const { data, error } = await supabase
+        .from("bookings")
+        .select(
+          `
         id,
+        worker_id,
         booking_id,
         booking_status,
-        worker_id,
         worker_name,
         worker_photo,
         worker_specialty,
@@ -118,33 +120,66 @@ export default function OrdersTab() {
         materials_cost,
         grand_total,
         created_at
-      `)
-      .order("created_at", {
-        ascending: false,
-      })
-      .limit(100);
+      `,
+        )
+        .order("created_at", {
+          ascending: false,
+        })
+        .limit(100);
 
-    if (error) {
-      console.log("SUPABASE ERROR =>", error);
+      if (error) {
+        console.log("SUPABASE ERROR =>", error);
 
-      toast.error("Failed to fetch orders");
+        toast.error("Failed to fetch orders");
 
-      return;
+        return;
+      }
+
+      setOrders((data || []) as Booking[]);
+    } catch (err) {
+      console.log("FETCH ERROR =>", err);
+
+      toast.error("Something went wrong");
+    } finally {
+      setLoading(false);
     }
-
-    setOrders((data || []) as Booking[]);
-  } catch (err) {
-    console.log(err);
-  } finally {
-    setLoading(false);
-  }
-};
+  };
 
   // LOAD
   useEffect(() => {
-    fetchOrders();setTimeout(() => {
-  fetchOrders();
-}, 500);
+    fetchOrders();
+
+    let timeout: NodeJS.Timeout;
+
+    const channel = supabase
+      .channel("bookings-channel")
+      .on(
+        "postgres_changes",
+        {
+          event: "*",
+          schema: "public",
+          table: "bookings",
+        },
+        () => {
+          clearTimeout(timeout);
+
+          timeout = setTimeout(() => {
+            fetchOrders();
+          }, 1000);
+        },
+      )
+      .subscribe();
+
+    return () => {
+      clearTimeout(timeout);
+
+      supabase.removeChannel(channel);
+    };
+  }, []);
+
+  // LOAD
+  useEffect(() => {
+    fetchOrders();
 
     const channel = supabase
       .channel("bookings-channel")
@@ -849,7 +884,10 @@ export default function OrdersTab() {
                   <div className="bg-white rounded-[30px] border border-gray-100 p-5 shadow-sm">
                     <div className="flex flex-col items-center text-center">
                       <img
-                        src={selectedOrder.worker_photo}
+                        src={
+                          selectedOrder.worker_photo ||
+                          "https://placehold.co/200x200/png"
+                        }
                         alt=""
                         className="w-24 h-24 rounded-[28px] object-cover border-4 border-[#FFF4EF]"
                       />
