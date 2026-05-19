@@ -84,61 +84,61 @@ export default function OrdersTab() {
   const [search, setSearch] = useState("");
 
   // FETCH
-  const fetchOrders = async () => {
-    try {
-      setLoading(true);
+ const fetchOrders = async () => {
+  try {
+    setLoading(true);
 
-      const { data, error } = await supabase
-        .from("bookings")
-        .select(
-          `
-  id,
-  booking_id,
-  booking_status,
-  worker_id,
-  worker_name,
-  worker_photo,
-  worker_specialty,
-  worker_rating,
-  service_type,
-  booking_date,
-  booking_time,
-  duration,
-  customer_name,
-  customer_phone,
-  customer_email,
-  notes,
-  address,
-  city,
-  district,
-  state,
-  pincode,
-  total_cost,
-  service_fee,
-  materials_cost,
-  grand_total,
-  created_at
-`,
-        )
-        .order("created_at", {
-          ascending: false,
-        });
+    const { data, error } = await supabase
+      .from("bookings")
+      .select(`
+        id,
+        booking_id,
+        booking_status,
+        worker_id,
+        worker_name,
+        worker_photo,
+        worker_specialty,
+        worker_rating,
+        service_type,
+        description,
+        booking_date,
+        booking_time,
+        duration,
+        customer_name,
+        customer_phone,
+        customer_email,
+        notes,
+        address,
+        city,
+        district,
+        state,
+        pincode,
+        total_cost,
+        service_fee,
+        materials_cost,
+        grand_total,
+        created_at
+      `)
+      .order("created_at", {
+        ascending: false,
+      })
+      .limit(100);
 
-      if (error) {
-        console.log(error);
+    if (error) {
+      console.log("SUPABASE ERROR =>", error);
 
-        toast.error("Failed to fetch orders");
+      toast.error("Failed to fetch orders");
 
-        return;
-      }
-
-      setOrders((data || []) as Booking[]);
-    } catch (err) {
-      console.log(err);
-    } finally {
-      setLoading(false);
+      return;
     }
-  };
+
+    setOrders((data || []) as Booking[]);
+  } catch (err) {
+    console.log(err);
+  } finally {
+    setLoading(false);
+  }
+};
 
   // LOAD
   useEffect(() => {
