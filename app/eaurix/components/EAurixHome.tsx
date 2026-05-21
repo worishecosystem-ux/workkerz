@@ -4,13 +4,18 @@ import Link from "next/link";
 
 import {
   ShoppingCart,
-  Search,
-  ArrowRight,
-  Truck,
   Shield,
   Tag,
   Star,
   Zap,
+  ArrowRight,
+  Hammer,
+  PaintBucket,
+  Wrench,
+  Building2,
+  Truck,
+  Package,
+  ChevronRight,
 } from "lucide-react";
 
 import { productCategories, type Product } from "@/app/data/products";
@@ -60,6 +65,15 @@ function ProductCard({ product }: { product: Product }) {
 
   const badge = product.badge ? badgeMap[product.badge] : null;
 
+  /* =========================================
+     IMAGE FIX
+  ========================================= */
+
+  const imageSrc =
+    product.image && product.image !== "undefined"
+      ? product.image
+      : "/placeholder.png";
+
   return (
     <Link
       href={`/eaurix/product/${product.id}`}
@@ -67,15 +81,19 @@ function ProductCard({ product }: { product: Product }) {
     >
       {/* IMAGE */}
       <div
-        className="relative h-52 overflow-hidden"
+        className="relative h-52 overflow-hidden bg-[#F8FAFC]"
         style={{
           background: `linear-gradient(135deg, ${product.color} 0%, ${product.color}90 100%)`,
         }}
       >
         <img
-          src={product.image || "/placeholder.png"}
+          src={imageSrc}
           alt={product.name}
-          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+          loading="lazy"
+          onError={(e) => {
+            (e.target as HTMLImageElement).src = "/placeholder.png";
+          }}
+          className="w-full h-full object-contain p-4 group-hover:scale-105 transition-transform duration-300"
         />
 
         {/* BADGE */}
@@ -173,7 +191,7 @@ function ProductCard({ product }: { product: Product }) {
 
                 qty: 1,
 
-                icon: product.image || "/placeholder.png",
+                icon: imageSrc,
 
                 color: product.color,
 
@@ -200,8 +218,6 @@ export function EAurixHome() {
   const [mobileOpen, setMobileOpen] = useState(false);
 
   const router = useRouter();
-
-  const isEaurix = platform === "eaurix";
 
   const featured = products.filter(
     (p) => p.badge === "popular" || p.badge === "pro",
@@ -245,9 +261,11 @@ export function EAurixHome() {
           {/* BADGE */}
           <div className="inline-flex items-center gap-2 bg-sky-500/20 border border-sky-400/30 rounded-full px-4 py-1.5 mb-6 backdrop-blur-sm">
             <Zap className="w-3.5 h-3.5 text-yellow-400" />
+
             <span className="text-sky-200 text-xs font-semibold">
               E-aurix under processing, coming soon!
             </span>
+
             <span className="text-sky-200 text-xs font-semibold">
               Workkerz-integrated marketplace
             </span>
@@ -271,31 +289,11 @@ export function EAurixHome() {
           <p className="text-sky-200 mb-8 max-w-xl mx-auto text-[1.05rem]">
             Order tools, materials and safety supplies.
           </p>
-
-          {/* SEARCH */}
-          <div className="max-w-lg mx-auto flex gap-2">
-            <div className="flex-1 flex items-center gap-3 bg-white rounded-xl px-4 py-3 shadow-xl">
-              <Search className="w-4 h-4 text-gray-400" />
-
-              <input
-                type="text"
-                placeholder="Search products..."
-                className="flex-1 text-sm outline-none bg-transparent"
-              />
-            </div>
-
-            <Link
-              href="/eaurix/shop"
-              className="flex items-center gap-2 bg-[#0EA5E9] hover:bg-[#0284C7] text-white px-5 py-3 rounded-xl text-sm transition-colors"
-            >
-              Shop Now
-            </Link>
-          </div>
         </div>
       </div>
 
       {/* CATEGORY */}
-      <div className="max-w-5xl mx-auto px-6 py-12">
+      <div className="max-w-7xl mx-auto px-6 py-12">
         <div className="flex items-center justify-between mb-6">
           <div>
             <h2 className="text-[#0F172A] text-[1.3rem] font-extrabold">
@@ -331,11 +329,33 @@ export function EAurixHome() {
                 }}
               >
                 <div
-                  className="w-14 h-14 rounded-2xl"
+                  className="
+    w-14
+    h-14
+    rounded-2xl
+    flex
+    items-center
+    justify-center
+  "
                   style={{
                     background: cat.color,
                   }}
-                />
+                >
+                  {(() => {
+                    const icons = {
+                      cement: Hammer,
+                      sand: Package,
+                      tiles: Building2,
+                      plumbing: Wrench,
+                      paint: PaintBucket,
+                      tmt: Truck,
+                    };
+
+                    const Icon = icons[cat.id as keyof typeof icons] || Package;
+
+                    return <Icon className="w-7 h-7 text-white" />;
+                  })()}
+                </div>
 
                 <div>
                   <div className="text-[#0F172A] text-sm font-bold mb-1">
@@ -357,8 +377,52 @@ export function EAurixHome() {
         </div>
       </div>
 
+      {/* HERO CARD */}
+
+      <div className="bg-[#ECE8F6] max-w-7xl mb-3 mx-auto px-6 py-12 rounded-4xl lg:px-8 lg:py-6 flex flex-col xl:flex-row items-center justify-between gap-6 overflow-hidden shadow-sm">
+        {/* LEFT */}
+        <div className="max-w-lg">
+          <div className="inline-flex items-center gap-2 bg-white rounded-full px-3 py-1.5 shadow-sm mb-4">
+            <span className="w-2 h-2 rounded-full bg-emerald-500" />
+
+            <span className="text-xs font-bold text-[#0F172A]">
+              Professional Materials
+            </span>
+          </div>
+
+          <h1 className="text-[#0F172A] text-3xl xl:text-5xl leading-[0.95] font-black">
+            Premium <br />
+            Construction <br />
+            Materials
+          </h1>
+
+          <div className="text-2xl font-black text-[#0F172A] mt-4">
+            Up to 50% Off
+          </div>
+
+          <p className="text-[#475569] text-sm lg:text-base mt-3 max-w-md">
+            Construction products, hardware & industrial materials.
+          </p>
+
+          <button className="mt-5 h-12 px-6 rounded-2xl bg-[#081225] hover:bg-black text-white inline-flex items-center gap-2 text-sm font-black transition-all">
+            Explore Now
+            <ChevronRight className="w-4 h-4" />
+          </button>
+        </div>
+
+        {/* IMAGE */}
+
+        <div className="w-full xl:w-105 shrink-0">
+          <img
+            src="https://images.unsplash.com/photo-1504307651254-35680f356dfd?q=80&w=1200&auto=format&fit=crop"
+            alt=""
+            className="w-full h-55 xl:h-60 object-cover rounded-[26px] shadow-xl"
+          />
+        </div>
+      </div>
+
       {/* FEATURED */}
-      <div className="max-w-5xl mx-auto px-6 pb-12">
+      <div className="max-w-7xl mx-auto px-6 pb-12">
         <div className="flex items-center justify-between mb-6">
           <div>
             <h2 className="text-[#0F172A] text-[1.3rem] font-extrabold">

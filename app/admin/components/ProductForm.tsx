@@ -2,11 +2,7 @@
 
 import { useState } from "react";
 
-import {
-  X,
-  Pencil,
-  AlertTriangle,
-} from "lucide-react";
+import { X, Pencil, AlertTriangle } from "lucide-react";
 
 import { supabase } from "@/lib/supabase";
 
@@ -18,26 +14,21 @@ import {
 
 /* ========================================= */
 
-const PRODUCT_CATEGORIES: ProductCategory[] =
-  [
-    "masonry",
-    "plumbing",
-    "electrical",
-    "moving",
-    "tools",
-    "safety",
-  ];
+const PRODUCT_CATEGORIES: ProductCategory[] = [
+  "masonry",
+  "plumbing",
+  "electrical",
+  "moving",
+  "tools",
+  "safety",
+];
 
-const CATEGORY_LABELS: Record<
-  ProductCategory,
-  string
-> = {
+const CATEGORY_LABELS: Record<ProductCategory, string> = {
   masonry: "Masonry & Concrete",
 
   plumbing: "Plumbing Supplies",
 
-  electrical:
-    "Electrical Components",
+  electrical: "Electrical Components",
 
   moving: "Moving & Packing",
 
@@ -46,10 +37,7 @@ const CATEGORY_LABELS: Record<
   safety: "Safety & PPE",
 };
 
-const CATEGORY_COLORS: Record<
-  ProductCategory,
-  string
-> = {
+const CATEGORY_COLORS: Record<ProductCategory, string> = {
   masonry: "#FFF7ED",
 
   plumbing: "#EFF6FF",
@@ -68,6 +56,12 @@ const inp =
 
 /* ========================================= */
 
+const MAX_IMAGE_SIZE = 5 * 1024 * 1024;
+
+const MAX_PDF_SIZE = 10 * 1024 * 1024;
+
+/* ========================================= */
+
 function ProductForm({
   initial,
 
@@ -77,37 +71,27 @@ function ProductForm({
 }: {
   initial?: Product;
 
-  onSave: (
-    p: Omit<Product, "id">,
-  ) => Promise<void>;
+  onSave: (p: Omit<Product, "id">) => Promise<void>;
 
   onClose: () => void;
 }) {
-  const [form, setForm] =
-    useState<Omit<Product, "id">>(
-      initial
-        ? {
-            ...initial,
-          }
-        : emptyProduct(),
-    );
+  const [form, setForm] = useState<Omit<Product, "id">>(
+    initial
+      ? {
+          ...initial,
+        }
+      : emptyProduct(),
+  );
 
-  const [error, setError] =
-    useState("");
+  const [error, setError] = useState("");
 
-  const [loading, setLoading] =
-    useState(false);
+  const [loading, setLoading] = useState(false);
 
-  const [imagePreview, setImagePreview] =
-    useState(form.image || "");
+  const [imagePreview, setImagePreview] = useState(form.image || "");
 
-  /* FILE STATES */
+  const [imageFile, setImageFile] = useState<File | null>(null);
 
-  const [imageFile, setImageFile] =
-    useState<File | null>(null);
-
-  const [brochureFile, setBrochureFile] =
-    useState<File | null>(null);
+  const [brochureFile, setBrochureFile] = useState<File | null>(null);
 
   /* ========================================= */
 
@@ -124,15 +108,9 @@ function ProductForm({
       };
 
       if (field === "category") {
-        updated.categoryLabel =
-          CATEGORY_LABELS[
-            val as ProductCategory
-          ];
+        updated.categoryLabel = CATEGORY_LABELS[val as ProductCategory];
 
-        updated.color =
-          CATEGORY_COLORS[
-            val as ProductCategory
-          ];
+        updated.color = CATEGORY_COLORS[val as ProductCategory];
       }
 
       return updated;
@@ -173,72 +151,110 @@ function ProductForm({
 
       setError("");
 
-      let imagePath =
-        form.image || "";
-
-      let brochurePath =
-        form.brochure || "";
-
       /* =========================================
-         IMAGE UPLOAD
+         IMAGE FILE NAME ONLY
       ========================================= */
 
+      let imagePath = form.image || "";
+
       if (imageFile) {
-        const imageName = `${Date.now()}-${imageFile.name}`;
+        /* SIZE LIMIT */
 
-        const {
-          error: uploadError,
-        } = await supabase.storage
-          .from("products")
-          .upload(
-            `images/${imageName}`,
-            imageFile,
-          );
-
-        if (uploadError) {
-          console.log(uploadError);
-
-          setError(
-            "Image upload failed",
-          );
+        if (imageFile.size > MAX_IMAGE_SIZE) {
+          setError("Image size must be less than 5MB");
 
           setLoading(false);
 
           return;
         }
 
-        imagePath = `images/${imageName}`;
+        /* TYPE CHECK */
+
+        const allowedTypes = [
+          "image/png",
+          "image/jpeg",
+          "image/jpg",
+          "image/webp",
+        ];
+
+        if (!allowedTypes.includes(imageFile.type)) {
+          setError("Only PNG, JPG and WEBP images allowed");
+
+          setLoading(false);
+
+          return;
+        }
+
+        const ext = imageFile.name.split(".").pop();
+
+        const fileName = `product-${Date.now()}.${ext}`;
+
+        const storagePath = fileName;
+
+        const { error: uploadError } = await supabase.storage
+          .from("products")
+          .upload(`images/${storagePath}`, imageFile, {
+            cacheControl: "3600",
+
+            upsert: false,
+          });
+
+        if (uploadError) {
+          console.log(uploadError);
+
+          setError("Image upload failed");
+
+          setLoading(false);
+
+          return;
+        }
+
+        /* SAVE ONLY STORAGE PATH */
+
+        imagePath = storagePath;
       }
 
       /* =========================================
-         PDF UPLOAD
+         PDF FILE
       ========================================= */
 
+      let brochurePath = form.brochure || "";
+
       if (brochureFile) {
-        const pdfName = `${Date.now()}-${brochureFile.name}`;
-
-        const {
-          error: uploadError,
-        } = await supabase.storage
-          .from("products")
-          .upload(
-            `brochures/${pdfName}`,
-            brochureFile,
-          );
-
-        if (uploadError) {
-          console.log(uploadError);
-
-          setError(
-            "PDF upload failed",
-          );
+        if (brochureFile.size > MAX_PDF_SIZE) {
+          setError("PDF size must be less than 10MB");
 
           setLoading(false);
 
           return;
         }
 
-        brochurePath = `brochures/${pdfName}`;
+        const ext = brochureFile.name.split(".").pop();
+
+        const fileName = `brochure-${Date.now()}.${ext}`;
+
+       const storagePath = fileName;
+
+        const { error: uploadError } = await supabase.storage
+          .from("products")
+          .upload(
+  `brochures/${storagePath}`, brochureFile, {
+            cacheControl: "3600",
+
+            upsert: false,
+          });
+
+        if (uploadError) {
+          console.log(uploadError);
+
+          setError("PDF upload failed");
+
+          setLoading(false);
+
+          return;
+        }
+
+        brochurePath = storagePath;
       }
 
       /* =========================================
@@ -250,17 +266,14 @@ function ProductForm({
 
         image: imagePath,
 
-        brochure:
-          brochurePath,
+        brochure: brochurePath,
       });
 
       onClose();
     } catch (e) {
       console.log(e);
 
-      setError(
-        "Failed to save product",
-      );
+      setError("Failed to save product");
     } finally {
       setLoading(false);
     }
@@ -275,14 +288,10 @@ function ProductForm({
       <div className="flex items-center justify-between p-5 border-b border-gray-100">
         <div>
           <h2 className="text-xl font-bold text-[#0F172A]">
-            {initial
-              ? "Edit Product"
-              : "Add Product"}
+            {initial ? "Edit Product" : "Add Product"}
           </h2>
 
-          <p className="text-xs text-[#64748B] mt-1">
-            Manage E-Aurix products
-          </p>
+          <p className="text-xs text-[#64748B] mt-1">Manage E-Aurix products</p>
         </div>
 
         <button
@@ -306,7 +315,7 @@ function ProductForm({
           </div>
         )}
 
-        {/* PRODUCT IMAGE */}
+        {/* IMAGE */}
 
         <div>
           <label className="block text-xs font-semibold text-[#64748B] mb-2">
@@ -322,43 +331,41 @@ function ProductForm({
                   className="w-full h-full object-cover"
                 />
               ) : (
-                <span className="text-xs text-gray-400">
-                  No Image
-                </span>
+                <span className="text-xs text-gray-400">No Image</span>
               )}
             </div>
 
             <div className="flex-1">
               <label className="h-11 px-4 rounded-xl bg-[#0EA5E9] text-white text-sm font-semibold flex items-center justify-center gap-2 cursor-pointer">
                 <Pencil className="w-4 h-4" />
-
                 Upload Image
-
                 <input
                   type="file"
-                  accept="image/*"
+                  accept="image/png,image/jpeg,image/webp"
                   hidden
                   onChange={(e) => {
-                    const file =
-                      e.target.files?.[0];
+                    const file = e.target.files?.[0];
 
                     if (!file) return;
 
-                    setImageFile(
-                      file,
-                    );
+                    if (file.size > MAX_IMAGE_SIZE) {
+                      setError("Image size must be less than 5MB");
 
-                    const preview =
-                      URL.createObjectURL(
-                        file,
-                      );
+                      return;
+                    }
 
-                    setImagePreview(
-                      preview,
-                    );
+                    setError("");
+
+                    setImageFile(file);
+
+                    setImagePreview(URL.createObjectURL(file));
                   }}
                 />
               </label>
+
+              <p className="text-xs text-[#64748B] mt-2">
+                PNG, JPG, WEBP • Max 5MB
+              </p>
             </div>
           </div>
         </div>
@@ -375,30 +382,30 @@ function ProductForm({
             accept=".pdf"
             className={inp}
             onChange={(e) => {
-              const file =
-                e.target.files?.[0];
+              const file = e.target.files?.[0];
 
               if (!file) return;
 
-              setBrochureFile(
-                file,
-              );
+              if (file.size > MAX_PDF_SIZE) {
+                setError("PDF size must be less than 10MB");
+
+                return;
+              }
+
+              setError("");
+
+              setBrochureFile(file);
             }}
           />
         </div>
 
-        {/* NAME + BRAND */}
+        {/* FORM */}
 
         <div className="grid grid-cols-2 gap-4">
           <Field label="Product Name">
             <input
               value={form.name}
-              onChange={(e) =>
-                u(
-                  "name",
-                  e.target.value,
-                )
-              }
+              onChange={(e) => u("name", e.target.value)}
               className={inp}
             />
           </Field>
@@ -406,45 +413,24 @@ function ProductForm({
           <Field label="Brand">
             <input
               value={form.brand}
-              onChange={(e) =>
-                u(
-                  "brand",
-                  e.target.value,
-                )
-              }
+              onChange={(e) => u("brand", e.target.value)}
               className={inp}
             />
           </Field>
         </div>
 
-        {/* CATEGORY */}
-
         <div className="grid grid-cols-2 gap-4">
           <Field label="Category">
             <select
               value={form.category}
-              onChange={(e) =>
-                u(
-                  "category",
-                  e.target.value,
-                )
-              }
+              onChange={(e) => u("category", e.target.value)}
               className={inp}
             >
-              {PRODUCT_CATEGORIES.map(
-                (c) => (
-                  <option
-                    key={c}
-                    value={c}
-                  >
-                    {
-                      CATEGORY_LABELS[
-                        c
-                      ]
-                    }
-                  </option>
-                ),
-              )}
+              {PRODUCT_CATEGORIES.map((c) => (
+                <option key={c} value={c}>
+                  {CATEGORY_LABELS[c]}
+                </option>
+              ))}
             </select>
           </Field>
 
@@ -452,34 +438,18 @@ function ProductForm({
             <input
               type="number"
               value={form.stock}
-              onChange={(e) =>
-                u(
-                  "stock",
-                  Number(
-                    e.target.value,
-                  ),
-                )
-              }
+              onChange={(e) => u("stock", Number(e.target.value))}
               className={inp}
             />
           </Field>
         </div>
-
-        {/* PRICE */}
 
         <div className="grid grid-cols-2 gap-4">
           <Field label="Price">
             <input
               type="number"
               value={form.price}
-              onChange={(e) =>
-                u(
-                  "price",
-                  Number(
-                    e.target.value,
-                  ),
-                )
-              }
+              onChange={(e) => u("price", Number(e.target.value))}
               className={inp}
             />
           </Field>
@@ -487,46 +457,25 @@ function ProductForm({
           <Field label="Unit">
             <input
               value={form.unit}
-              onChange={(e) =>
-                u(
-                  "unit",
-                  e.target.value,
-                )
-              }
+              onChange={(e) => u("unit", e.target.value)}
               className={inp}
             />
           </Field>
         </div>
 
-        {/* SHORT DESCRIPTION */}
-
         <Field label="Short Description">
           <input
             value={form.description}
-            onChange={(e) =>
-              u(
-                "description",
-                e.target.value,
-              )
-            }
+            onChange={(e) => u("description", e.target.value)}
             className={inp}
           />
         </Field>
 
-        {/* FULL DESCRIPTION */}
-
         <Field label="Full Description">
           <textarea
             rows={5}
-            value={
-              form.longDescription
-            }
-            onChange={(e) =>
-              u(
-                "longDescription",
-                e.target.value,
-              )
-            }
+            value={form.longDescription}
+            onChange={(e) => u("longDescription", e.target.value)}
             className={`${inp} resize-none`}
           />
         </Field>
@@ -547,11 +496,7 @@ function ProductForm({
           disabled={loading}
           className="flex-1 h-11 rounded-xl bg-[#0EA5E9] text-white text-sm font-bold disabled:opacity-50"
         >
-          {loading
-            ? "Saving..."
-            : initial
-              ? "Save Changes"
-              : "Add Product"}
+          {loading ? "Saving..." : initial ? "Save Changes" : "Add Product"}
         </button>
       </div>
     </div>

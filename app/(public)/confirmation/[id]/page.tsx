@@ -591,18 +591,18 @@ export default function Confirmation() {
                       className="font-bold text-[#0F172A] text-sm"
                       style={{ fontWeight: 800 }}
                     >
-                      WhatsApp Auto Share
+                    Booking Details sent to whatsapp 
                     </div>
 
                     <div className="text-xs text-[#64748B] mt-0.5">
-                      Booking receipt sent automatically
+                      Booking receipt sent to workkerz
                     </div>
                   </div>
                 </div>
 
                 {waSent && (
                   <div className="px-3 py-1 rounded-full bg-emerald-50 border border-emerald-200 text-[11px] text-emerald-600 font-semibold whitespace-nowrap">
-                    ✓ WhatsApp Opened
+                    ✓ WhatsApp request sent
                   </div>
                 )}
               </div>

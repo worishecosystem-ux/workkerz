@@ -14,6 +14,7 @@ import {
   CheckCircle,
   Tag,
   ArrowRight,
+  X,
 } from "lucide-react";
 import { productCategories } from "../../data/products";
 import { usePlatform } from "@/app/components/context/PlatformContext";
@@ -27,7 +28,7 @@ export function EAurixProduct() {
   const { getProductById, getRelatedProducts } = useAdmin();
   const [qty, setQty] = useState(1);
   const [added, setAdded] = useState(false);
-
+  const [showBrochure, setShowBrochure] = useState(false);
   const product = getProductById(id);
   if (!product) {
     return (
@@ -248,7 +249,7 @@ export function EAurixProduct() {
                   className="text-[#0F172A]"
                   style={{ fontWeight: 900, fontSize: "2rem" }}
                 >
-                  ${product.price}
+                  ${product.price.toFixed(2)}
                 </span>
                 <span className="text-[#94A3B8] text-sm ml-2">
                   {product.unit}
@@ -364,6 +365,73 @@ export function EAurixProduct() {
                 Buy Now <ArrowRight className="w-4 h-4" />
               </button>
             </div>
+            {/* VIEW BROCHURE BUTTON */}
+            {product.brochure && (
+              <>
+                <button
+                  onClick={() => setShowBrochure(true)}
+                  className="
+        w-full mt-4
+        h-12
+        rounded-2xl
+        bg-white
+        border border-gray-200
+        hover:border-[#0EA5E9]
+        hover:bg-sky-50
+        text-[#0F172A]
+        text-sm
+        transition-all
+      "
+                  style={{
+                    fontWeight: 700,
+                  }}
+                >
+                  View Brochure
+                </button>
+
+                {/* POPUP */}
+                {showBrochure && (
+                  <div className="fixed inset-0 z-100 bg-black/70 flex items-center justify-center p-4">
+                    <div className="relative w-full max-w-6xl h-[90vh] bg-white rounded-3xl overflow-hidden shadow-2xl">
+                      {/* HEADER */}
+                      <div className="h-16 border-b border-gray-100 flex items-center justify-between px-5">
+                        <div>
+                          <h2
+                            className="text-[#0F172A] text-lg"
+                            style={{ fontWeight: 800 }}
+                          >
+                            Product Brochure
+                          </h2>
+
+                          <p className="text-[#64748B] text-xs">
+                            {product.name}
+                          </p>
+                        </div>
+
+                        <button
+                          onClick={() => setShowBrochure(false)}
+                          className="
+                w-10 h-10
+                rounded-xl
+                hover:bg-gray-100
+                flex items-center justify-center
+              "
+                        >
+                          <X className="w-5 h-5 text-[#64748B]" />
+                        </button>
+                      </div>
+
+                      {/* PDF */}
+                      <iframe
+                        src={product.brochure}
+                        className="w-full h-[calc(90vh-64px)]"
+                        title="Brochure"
+                      />
+                    </div>
+                  </div>
+                )}
+              </>
+            )}
           </div>
         </div>
 

@@ -1,8 +1,12 @@
+/* =========================================
+   products.ts
+========================================= */
+
 import { supabase } from "@/lib/supabase";
 
-/* =========================
+/* =========================================
    TYPES
-========================= */
+========================================= */
 
 export type ProductCategory =
   | "masonry"
@@ -52,16 +56,21 @@ export interface Product {
   specs: Record<string, string>;
 }
 
-/* =========================
+/* =========================================
+   STORAGE
+========================================= */
+
+const BUCKET = "products";
+
+/* =========================================
    PRODUCT CATEGORIES
-========================= */
+========================================= */
 
 export const productCategories = [
   {
     id: "masonry",
     label: "Masonry & Concrete",
-    description:
-      "Cement, bricks & construction materials",
+    description: "Cement, bricks & construction materials",
     color: "#F97316",
     bgColor: "#FFF7ED",
   },
@@ -69,8 +78,7 @@ export const productCategories = [
   {
     id: "plumbing",
     label: "Plumbing Supplies",
-    description:
-      "Pipes, taps & plumbing materials",
+    description: "Pipes, taps & plumbing materials",
     color: "#3B82F6",
     bgColor: "#EFF6FF",
   },
@@ -78,8 +86,7 @@ export const productCategories = [
   {
     id: "electrical",
     label: "Electrical Components",
-    description:
-      "Wires, switches & lighting products",
+    description: "Wires, switches & lighting products",
     color: "#EAB308",
     bgColor: "#FEFCE8",
   },
@@ -87,8 +94,7 @@ export const productCategories = [
   {
     id: "moving",
     label: "Moving & Packing",
-    description:
-      "Packing & shifting products",
+    description: "Packing & shifting products",
     color: "#10B981",
     bgColor: "#ECFDF5",
   },
@@ -96,8 +102,7 @@ export const productCategories = [
   {
     id: "tools",
     label: "Tools & Equipment",
-    description:
-      "Professional tools & machines",
+    description: "Professional tools & machines",
     color: "#6366F1",
     bgColor: "#EEF2FF",
   },
@@ -105,86 +110,118 @@ export const productCategories = [
   {
     id: "safety",
     label: "Safety & PPE",
-    description:
-      "Safety equipment & PPE kits",
+    description: "Safety equipment & PPE kits",
     color: "#EF4444",
     bgColor: "#FEF2F2",
   },
 ];
 
-/* =========================
+/* =========================================
    EMPTY PRODUCT
-========================= */
+========================================= */
 
-export const emptyProduct = (): Omit<
-  Product,
-  "id"
-> => ({
+export const emptyProduct = (): Omit<Product, "id"> => ({
   name: "",
-
   brand: "",
-
   category: "masonry",
-
-  categoryLabel:
-    "Masonry & Concrete",
-
+  categoryLabel: "Masonry & Concrete",
   description: "",
-
   longDescription: "",
-
   price: 0,
-
   originalPrice: undefined,
-
   rating: 4.8,
-
   reviewCount: 0,
-
   stock: 0,
-
   unit: "per item",
-
   image: "",
-
   brochure: "",
-
   color: "#FFF7ED",
-
   badge: undefined,
-
   tags: [],
-
   specs: {},
 });
 
-/* =========================
-   MAP PRODUCT
-========================= */
+/* =========================================
+   GET IMAGE URL
+========================================= */
 
-/* =========================
-   MAP PRODUCT
-========================= */
+const getBucketImage = (fileName?: string) => {
+  try {
+    if (!fileName) {
+      return "/placeholder.png";
+    }
 
-const mapProduct = (
-  p: any,
-): Product => {
-  let imageUrl = "";
+    let cleanPath = fileName.trim();
 
-  if (p.image) {
-    imageUrl = supabase.storage
-      .from("products")
-      .getPublicUrl(p.image).data.publicUrl;
+    cleanPath = cleanPath.replace(/^\/+/, "");
+
+    /* if already full url */
+    if (
+      cleanPath.startsWith("http://") ||
+      cleanPath.startsWith("https://")
+    ) {
+      return cleanPath;
+    }
+
+    /* prevent double images/images */
+    if (!cleanPath.startsWith("images/")) {
+      cleanPath = `images/${cleanPath}`;
+    }
+
+    const { data } = supabase.storage
+      .from(BUCKET)
+      .getPublicUrl(cleanPath);
+
+    return data.publicUrl;
+  } catch (error) {
+    console.log("IMAGE ERROR:", error);
+
+    return "/placeholder.png";
   }
+};
 
-  let brochureUrl = "";
+/* =========================================
+   GET BROCHURE URL
+========================================= */
 
-  if (p.brochure) {
-    brochureUrl = supabase.storage
-      .from("products")
-      .getPublicUrl(p.brochure).data.publicUrl;
+const getBrochureUrl = (fileName?: string) => {
+  try {
+    if (!fileName) {
+      return "";
+    }
+
+    let cleanPath = fileName.trim();
+
+    cleanPath = cleanPath.replace(/^\/+/, "");
+
+    if (
+      cleanPath.startsWith("http://") ||
+      cleanPath.startsWith("https://")
+    ) {
+      return cleanPath;
+    }
+
+    if (!cleanPath.startsWith("brochures/")) {
+      cleanPath = `brochures/${cleanPath}`;
+    }
+
+    const { data } = supabase.storage
+      .from(BUCKET)
+      .getPublicUrl(cleanPath);
+
+    return data.publicUrl;
+  } catch (error) {
+    console.log("BROCHURE ERROR:", error);
+
+    return "";
   }
+};
 
+/* =========================================
+   MAP PRODUCT
+========================================= */
+
+const mapProduct = (p: any): Product => {
   return {
     id: String(p.id),
 
@@ -192,106 +229,86 @@ const mapProduct = (
 
     brand: p.brand || "",
 
-    category:
-      p.category || "masonry",
+    category: p.category || "masonry",
 
-    categoryLabel:
-      p.category_label || "",
+    categoryLabel: p.category_label || "",
 
-    description:
-      p.description || "",
+    description: p.description || "",
 
-    longDescription:
-      p.long_description || "",
+    longDescription: p.long_description || "",
 
     price: Number(p.price || 0),
 
-    originalPrice:
-      p.original_price
-        ? Number(p.original_price)
-        : undefined,
+    originalPrice: p.original_price
+      ? Number(p.original_price)
+      : undefined,
 
-    rating: Number(
-      p.rating || 0,
-    ),
+    rating: Number(p.rating || 0),
 
-    reviewCount: Number(
-      p.review_count || 0,
-    ),
+    reviewCount: Number(p.review_count || 0),
 
-    stock: Number(
-      p.stock || 0,
-    ),
+    stock: Number(p.stock || 0),
 
-    unit: p.unit || "",
+    unit: p.unit || "per item",
 
-    image: imageUrl,
+    /* IMAGE FROM BUCKET */
+    image: getBucketImage(p.image),
 
-    brochure: brochureUrl,
+    /* PDF FROM BUCKET */
+    brochure: getBrochureUrl(p.brochure),
 
-    color:
-      p.color || "#F8FAFC",
+    color: p.color || "#F8FAFC",
 
-    badge:
-      p.badge || undefined,
+    badge: p.badge || undefined,
 
-    tags: Array.isArray(
-      p.tags,
-    )
+    tags: Array.isArray(p.tags)
       ? p.tags
       : [],
 
     specs:
-      typeof p.specs ===
-        "object" &&
+      typeof p.specs === "object" &&
       p.specs !== null
         ? p.specs
         : {},
   };
 };
 
-/* =========================
-   FETCH ALL PRODUCTS
-========================= */
+/* =========================================
+   GET PRODUCTS
+========================================= */
 
-export async function getProducts(): Promise<
-  Product[]
-> {
-  const { data, error } =
-    await supabase
-      .from("products")
-      .select("*")
-      .order("created_at", {
-        ascending: false,
-      });
+export async function getProducts(): Promise<Product[]> {
+  const { data, error } = await supabase
+    .from("products")
+    .select("*")
+    .order("created_at", {
+      ascending: false,
+    });
 
   if (error) {
-    console.log(error);
+    console.log("GET PRODUCTS ERROR:", error);
 
     return [];
   }
 
-  return (data || []).map(
-    mapProduct,
-  );
+  return (data || []).map(mapProduct);
 }
 
-/* =========================
-   FETCH SINGLE PRODUCT
-========================= */
+/* =========================================
+   GET PRODUCT BY ID
+========================================= */
 
 export async function getProductById(
   id: string,
 ): Promise<Product | null> {
-  const { data, error } =
-    await supabase
-      .from("products")
-      .select("*")
-      .eq("id", id)
-      .maybeSingle();
+  const { data, error } = await supabase
+    .from("products")
+    .select("*")
+    .eq("id", id)
+    .maybeSingle();
 
   if (error || !data) {
-    console.log(error);
+    console.log("GET PRODUCT ERROR:", error);
 
     return null;
   }
@@ -299,91 +316,22 @@ export async function getProductById(
   return mapProduct(data);
 }
 
-/* =========================
+/* =========================================
    ADD PRODUCT
-========================= */
+========================================= */
 
 export async function addProduct(
   product: Omit<Product, "id">,
 ) {
-  const { error } =
-    await supabase
-      .from("products")
-      .insert([
-        {
-          name: product.name,
-
-          brand: product.brand,
-
-          category:
-            product.category,
-
-          category_label:
-            product.categoryLabel,
-
-          description:
-            product.description,
-
-          long_description:
-            product.longDescription,
-
-          price: product.price,
-
-          original_price:
-            product.originalPrice,
-
-          rating:
-            product.rating,
-
-          review_count:
-            product.reviewCount,
-
-          stock: product.stock,
-
-          unit: product.unit,
-
-          image: product.image,
-
-          brochure:
-            product.brochure,
-
-          color: product.color,
-
-          badge: product.badge,
-
-          tags: product.tags,
-
-          specs: product.specs,
-        },
-      ]);
-
-  if (error) {
-    console.log(error);
-
-    return false;
-  }
-
-  return true;
-}
-
-/* =========================
-   UPDATE PRODUCT
-========================= */
-
-export async function updateProduct(
-  id: string,
-  product: Partial<Product>,
-) {
-  const { error } =
-    await supabase
-      .from("products")
-      .update({
+  const { error } = await supabase
+    .from("products")
+    .insert([
+      {
         name: product.name,
 
         brand: product.brand,
 
-        category:
-          product.category,
+        category: product.category,
 
         category_label:
           product.categoryLabel,
@@ -399,8 +347,7 @@ export async function updateProduct(
         original_price:
           product.originalPrice,
 
-        rating:
-          product.rating,
+        rating: product.rating,
 
         review_count:
           product.reviewCount,
@@ -409,10 +356,10 @@ export async function updateProduct(
 
         unit: product.unit,
 
+        /* SAVE ONLY FILE NAME */
         image: product.image,
 
-        brochure:
-          product.brochure,
+        brochure: product.brochure,
 
         color: product.color,
 
@@ -421,11 +368,14 @@ export async function updateProduct(
         tags: product.tags,
 
         specs: product.specs,
-      })
-      .eq("id", id);
+      },
+    ]);
 
   if (error) {
-    console.log(error);
+    console.log(
+      "ADD PRODUCT ERROR:",
+      error,
+    );
 
     return false;
   }
@@ -433,21 +383,89 @@ export async function updateProduct(
   return true;
 }
 
-/* =========================
+/* =========================================
+   UPDATE PRODUCT
+========================================= */
+
+export async function updateProduct(
+  id: string,
+  product: Partial<Product>,
+) {
+  const { error } = await supabase
+    .from("products")
+    .update({
+      name: product.name,
+
+      brand: product.brand,
+
+      category: product.category,
+
+      category_label:
+        product.categoryLabel,
+
+      description:
+        product.description,
+
+      long_description:
+        product.longDescription,
+
+      price: product.price,
+
+      original_price:
+        product.originalPrice,
+
+      rating: product.rating,
+
+      review_count:
+        product.reviewCount,
+
+      stock: product.stock,
+
+      unit: product.unit,
+
+      image: product.image,
+
+      brochure: product.brochure,
+
+      color: product.color,
+
+      badge: product.badge,
+
+      tags: product.tags,
+
+      specs: product.specs,
+    })
+    .eq("id", id);
+
+  if (error) {
+    console.log(
+      "UPDATE PRODUCT ERROR:",
+      error,
+    );
+
+    return false;
+  }
+
+  return true;
+}
+
+/* =========================================
    DELETE PRODUCT
-========================= */
+========================================= */
 
 export async function deleteProduct(
   id: string,
 ) {
-  const { error } =
-    await supabase
-      .from("products")
-      .delete()
-      .eq("id", id);
+  const { error } = await supabase
+    .from("products")
+    .delete()
+    .eq("id", id);
 
   if (error) {
-    console.log(error);
+    console.log(
+      "DELETE PRODUCT ERROR:",
+      error,
+    );
 
     return false;
   }
@@ -455,9 +473,9 @@ export async function deleteProduct(
   return true;
 }
 
-/* =========================
+/* =========================================
    HELPERS
-========================= */
+========================================= */
 
 export async function getProductsByCategory(
   cat: ProductCategory,
@@ -491,8 +509,7 @@ export async function getRelatedProducts(
   return products
     .filter(
       (p) =>
-        p.category ===
-          product.category &&
+        p.category === product.category &&
         p.id !== product.id,
     )
     .slice(0, count);
