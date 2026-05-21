@@ -682,10 +682,10 @@ export function EAurixShop() {
               {/* SORT */}
 
               <div className="relative shrink-0">
-  <select
-    value={sort}
-    onChange={(e) => setSort(e.target.value as SortOption)}
-    className="
+                <select
+                  value={sort}
+                  onChange={(e) => setSort(e.target.value as SortOption)}
+                  className="
       h-12
       rounded-2xl
       border border-gray-200
@@ -699,20 +699,20 @@ export function EAurixShop() {
       appearance-none
       cursor-pointer
     "
-  >
-    {Object.entries(sortLabels).map(([k, v]) => (
-      <option key={k} value={k}>
-        {v}
-      </option>
-    ))}
-  </select>
+                >
+                  {Object.entries(sortLabels).map(([k, v]) => (
+                    <option key={k} value={k}>
+                      {v}
+                    </option>
+                  ))}
+                </select>
 
-  {/* CUSTOM ARROW */}
+                {/* CUSTOM ARROW */}
 
-  <div className="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 text-[#64748B]">
-    ▼
-  </div>
-</div>
+                <div className="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 text-[#64748B]">
+                  ▼
+                </div>
+              </div>
 
               {/* CATEGORIES */}
 
@@ -786,54 +786,107 @@ export function EAurixShop() {
 
       {/* MAIN SECTION */}
 
-      <div className="max-w-600 mx-auto px-8 lg:px-0 mt-2 relative z-20">
-        <div className="flex gap-6 items-start">
-          {/* MOBILE OVERLAY */}
+      <div className="w-full max-w-[1800px] mx-auto px-0 sm:px-4 lg:px-6 mt-2 relative z-20">
+  <div className="flex gap-4 lg:gap-6 items-start">
+    {/* MOBILE OVERLAY */}
+    {mobileMenu && (
+      <div
+        onClick={() => setMobileMenu(false)}
+        className="fixed inset-0 bg-black/50 z-[55] lg:hidden backdrop-blur-sm"
+      />
+    )}
 
-          {mobileMenu && (
-            <div
-              onClick={() => setMobileMenu(false)}
-              className="fixed inset-0 bg-black/50 z-55 lg:hidden"
-            />
-          )}
+    {/* MAIN */}
+    <main
+      className="
+        flex-1
+        min-w-0
+        h-[calc(100vh-40px)]
+        overflow-y-auto
+        overflow-x-hidden
+        scrollbar-hide
+      "
+      style={{
+        scrollbarWidth: "none",
+        msOverflowStyle: "none",
+      }}
+    >
+      {/* PRODUCTS */}
+      <div
+        className="
+          mt-4
+          sm:mt-6
+          pb-24
+          px-3
+          sm:px-5
+          lg:px-8
+          2xl:px-10
+        "
+      >
+        {/* HEADER */}
+        <div className="flex items-center justify-between gap-3 mb-5">
+          <div className="min-w-0">
+            <h2
+              className="
+                text-[22px]
+                sm:text-[28px]
+                lg:text-3xl
+                font-black
+                text-[#0F172A]
+                leading-none
+                truncate
+              "
+            >
+              Products
+            </h2>
 
-          {/* MAIN */}
+            <p className="text-xs sm:text-sm text-[#64748B] mt-1">
+              Explore premium materials & products
+            </p>
+          </div>
 
-          <main
+          <div
             className="
-    flex-1
-    min-w-0
-    h-[calc(100vh-40px)]
-    overflow-y-auto
-    overflow-x-hidden
-    pr-1
-    scrollbar-hide
-  "
-            style={{
-              scrollbarWidth: "none",
-              msOverflowStyle: "none",
-            }}
+              shrink-0
+              px-3
+              py-1.5
+              rounded-2xl
+              bg-white
+              border
+              border-gray-200
+              text-[#0F172A]
+              text-xs
+              sm:text-sm
+              font-semibold
+              shadow-sm
+            "
           >
-            {/* PRODUCTS */}
+            {filtered.length} items
+          </div>
+        </div>
 
-            <div className="mt-10 pb-20 px-14">
-              <div className="flex items-center justify-between mb-6">
-                <h2 className="text-3xl font-black text-[#0F172A]">Products</h2>
-
-                <div className="text-[#64748B] font-medium">
-                  {filtered.length} items
-                </div>
-              </div>
-
-              <div className="grid grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4 gap-5">
-                {filtered.map((product) => (
-                  <ProductCard key={product.id} product={product} />
-                ))}
-              </div>
-            </div>
-          </main>
+        {/* PRODUCT GRID */}
+        <div
+          className="
+            grid
+            grid-cols-2
+            sm:grid-cols-2
+            md:grid-cols-3
+            xl:grid-cols-4
+            2xl:grid-cols-5
+            gap-3
+            sm:gap-5
+            items-start
+          "
+        >
+          {filtered.map((product) => (
+            <ProductCard key={product.id} product={product} />
+          ))}
         </div>
       </div>
+    </main>
+  </div>
+</div>
 
       {/* MOBILE OVERLAY */}
       <Link
