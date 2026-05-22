@@ -127,44 +127,79 @@ export function EAurixProduct() {
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-10 mb-12">
           {/* Product Visual */}
           <div>
-            <div
-              className="rounded-3xl h-80 flex items-center justify-center relative overflow-hidden shadow-lg"
-              style={{
-                background: `linear-gradient(135deg, ${product.color} 0%, ${product.color}70 100%)`,
-              }}
-            >
-              <span className="text-[8rem]">
+            {/* MAIN PRODUCT CARD */}
+           
+              {/* INNER CARD */}
+              <div
+                className="relative h-90 rounded-[30px] overflow-hidden flex items-center justify-center"
+                style={{
+                  background: `linear-gradient(135deg, ${product.color} 0%, ${product.color}90 100%)`,
+                }}
+              >
+                {/* SOFT GLOW */}
+                <div
+                  className="absolute w-72 h-72 rounded-full blur-3xl opacity-20"
+                  style={{
+                    background: "#fff",
+                  }}
+                />
+
+                {/* PRODUCT IMAGE */}
                 {product.image ? (
                   <img
                     src={product.image}
                     alt={product.name}
-                    className="w-52 h-52 object-contain"
+                    className="
+            relative z-10
+            w-[88%]
+            h-[88%]
+            object-cover
+            rounded-3xl
+            shadow-[0_20px_40px_rgba(0,0,0,0.18)]
+            transition-all duration-500
+            hover:scale-[1.02]
+          "
                   />
                 ) : (
-                  <div className="w-52 h-52 rounded-2xl bg-white/40 flex items-center justify-center text-white text-5xl font-bold">
+                  <div
+                    className="
+            relative z-10
+            w-52 h-52
+            rounded-3xl
+            bg-white/30
+            flex items-center justify-center
+            text-white text-6xl
+            font-bold
+          "
+                  >
                     {product.name.charAt(0)}
                   </div>
                 )}
-              </span>
-              {badge && (
-                <div
-                  className={`absolute top-4 left-4 text-white text-xs px-3 py-1 rounded-full ${badge.cls}`}
-                  style={{ fontWeight: 700 }}
-                >
-                  {badge.label}
-                </div>
-              )}
-              {discount > 0 && (
-                <div
-                  className="absolute top-4 right-4 bg-rose-500 text-white text-xs px-3 py-1 rounded-full"
-                  style={{ fontWeight: 700 }}
-                >
-                  -{discount}% OFF
-                </div>
-              )}
-            </div>
 
-            {/* Trust badges */}
+                {/* BADGES */}
+                <div className="absolute top-4 left-4 flex gap-2 z-20">
+                  {badge && (
+                    <div
+                      className={`text-white text-xs px-3 py-1 rounded-full shadow-lg ${badge.cls}`}
+                      style={{ fontWeight: 700 }}
+                    >
+                      {badge.label}
+                    </div>
+                  )}
+
+                  {discount > 0 && (
+                    <div
+                      className="bg-rose-500 text-white text-xs px-3 py-1 rounded-full shadow-lg"
+                      style={{ fontWeight: 700 }}
+                    >
+                      -{discount}% OFF
+                    </div>
+                  )}
+                </div>
+              </div>
+      
+
+            {/* TRUST BADGES */}
             <div className="grid grid-cols-3 gap-3 mt-4">
               {[
                 {
@@ -177,22 +212,41 @@ export function EAurixProduct() {
                   label: "Quality Guarantee",
                   sub: "Trade-certified",
                 },
-                { icon: Package, label: "Easy Returns", sub: "30-day policy" },
+                {
+                  icon: Package,
+                  label: "Easy Returns",
+                  sub: "30-day policy",
+                },
               ].map((t) => {
                 const Icon = t.icon;
+
                 return (
                   <div
                     key={t.label}
-                    className="bg-white border border-gray-100 rounded-xl p-3 text-center"
+                    className="
+            bg-white
+            border border-gray-100
+            rounded-2xl
+            p-4
+            text-center
+            hover:shadow-lg
+            transition-all
+          "
                   >
-                    <Icon className="w-5 h-5 text-[#0EA5E9] mx-auto mb-1.5" />
+                    <div className="w-10 h-10 rounded-xl bg-sky-50 flex items-center justify-center mx-auto mb-2">
+                      <Icon className="w-5 h-5 text-[#0EA5E9]" />
+                    </div>
+
                     <div
                       className="text-[#0F172A] text-xs"
-                      style={{ fontWeight: 600 }}
+                      style={{ fontWeight: 700 }}
                     >
                       {t.label}
                     </div>
-                    <div className="text-[#94A3B8] text-[10px]">{t.sub}</div>
+
+                    <div className="text-[#94A3B8] text-[11px] mt-1">
+                      {t.sub}
+                    </div>
                   </div>
                 );
               })}
@@ -249,7 +303,7 @@ export function EAurixProduct() {
                   className="text-[#0F172A]"
                   style={{ fontWeight: 900, fontSize: "2rem" }}
                 >
-                  ${product.price.toFixed(2)}
+                  ₹{product.price.toFixed(2)}
                 </span>
                 <span className="text-[#94A3B8] text-sm ml-2">
                   {product.unit}
@@ -258,13 +312,13 @@ export function EAurixProduct() {
               {product.originalPrice && (
                 <div className="mb-1">
                   <div className="text-[#94A3B8] text-sm line-through">
-                    ${product.originalPrice}
+                    ₹{product.originalPrice}
                   </div>
                   <div
                     className="text-rose-500 text-xs"
                     style={{ fontWeight: 700 }}
                   >
-                    Save ${product.originalPrice - product.price}
+                    Save ₹{product.originalPrice - product.price}
                   </div>
                 </div>
               )}
@@ -311,7 +365,7 @@ export function EAurixProduct() {
                 <span className="text-sm text-[#64748B]">
                   Subtotal:{" "}
                   <span className="text-[#0F172A]" style={{ fontWeight: 700 }}>
-                    ${(product.price * qty).toFixed(2)}
+                    ₹{(product.price * qty).toFixed(2)}
                   </span>
                 </span>
               </div>
@@ -467,66 +521,126 @@ export function EAurixProduct() {
         </div>
 
         {/* Related Products */}
-        {related.length > 0 && (
-          <div>
-            <h2
-              className="text-[#0F172A] mb-5"
-              style={{ fontWeight: 700, fontSize: "1.1rem" }}
+       {related.length > 0 && (
+  <div>
+    <h2
+      className="text-[#0F172A] mb-5"
+      style={{ fontWeight: 700, fontSize: "1.1rem" }}
+    >
+      Related Products
+    </h2>
+
+    <div className="grid grid-cols-2 md:grid-cols-4 gap-5">
+      {related.map((p) => (
+        <Link
+          key={p.id}
+          href={`/eaurix/product/${p.id}`}
+          className="
+            group
+            bg-white
+            rounded-[26px]
+            overflow-hidden
+            border border-gray-100
+            hover:border-sky-100
+            hover:shadow-[0_18px_40px_rgba(0,0,0,0.08)]
+            transition-all duration-300
+          "
+        >
+          {/* IMAGE AREA */}
+          <div
+            className="
+              relative
+              h-44
+              p-3
+              overflow-hidden
+            "
+            style={{
+              background: `linear-gradient(135deg, ${p.color}15, ${p.color}35)`,
+            }}
+          >
+            {/* INNER IMAGE CARD */}
+            <div
+              className="
+                w-full h-full
+                rounded-[22px]
+                overflow-hidden
+                flex items-center justify-center
+                relative
+              "
+              style={{
+                background: `linear-gradient(135deg, ${p.color}, ${p.color}90)`,
+              }}
             >
-              Related Products
-            </h2>
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-              {related.map((p) => (
-                <Link
-                  key={p.id}
-                  href={`/eaurix/product/${p.id}`}
-                  className="bg-white rounded-2xl border border-gray-100 overflow-hidden hover:shadow-md hover:border-sky-100 transition-all group"
+              {/* GLOW */}
+              <div className="absolute inset-0 bg-white/10" />
+
+              {p.image ? (
+                <img
+                  src={p.image}
+                  alt={p.name}
+                  className="
+                    relative z-10
+                    w-[92%]
+                    h-[92%]
+                    object-cover
+                    rounded-[18px]
+                    shadow-[0_12px_30px_rgba(0,0,0,0.16)]
+                    group-hover:scale-[1.04]
+                    transition-all duration-500
+                  "
+                />
+              ) : (
+                <div
+                  className="
+                    w-20 h-20
+                    rounded-2xl
+                    bg-white/30
+                    flex items-center justify-center
+                    text-white text-2xl
+                    font-bold
+                  "
                 >
-                  <div
-                    className="h-24 flex items-center justify-center"
-                    style={{
-                      background: `linear-gradient(135deg, ${p.color}, ${p.color}80)`,
-                    }}
-                  >
-                    <span className="text-4xl group-hover:scale-110 transition-transform">
-                      {p.image ? (
-                        <img
-                          src={p.image}
-                          alt={p.name}
-                          className="w-16 h-16 object-contain group-hover:scale-110 transition-transform"
-                        />
-                      ) : (
-                        <div className="w-16 h-16 rounded-xl bg-white/40 flex items-center justify-center text-white text-xl font-bold">
-                          {p.name.charAt(0)}
-                        </div>
-                      )}
-                    </span>
-                  </div>
-                  <div className="p-3">
-                    <div
-                      className="text-[10px] text-[#0EA5E9] mb-0.5"
-                      style={{ fontWeight: 600 }}
-                    >
-                      {p.brand}
-                    </div>
-                    <div
-                      className="text-[#0F172A] text-xs line-clamp-2 mb-1"
-                      style={{ fontWeight: 600 }}
-                    >
-                      {p.name}
-                    </div>
-                    <div
-                      className="text-[#0F172A] text-sm"
-                      style={{ fontWeight: 800 }}
-                    >
-                      ${p.price}
-                    </div>
-                  </div>
-                </Link>
-              ))}
+                  {p.name.charAt(0)}
+                </div>
+              )}
             </div>
           </div>
-        )}
+
+          {/* CONTENT */}
+          <div className="p-4">
+            <div
+              className="text-[11px] text-[#0EA5E9] mb-1"
+              style={{ fontWeight: 700 }}
+            >
+              {p.brand}
+            </div>
+
+            <div
+              className="
+                text-[#0F172A]
+                text-sm
+                line-clamp-2
+                min-h-10.5
+                leading-[1.35]
+                mb-2
+              "
+              style={{ fontWeight: 700 }}
+            >
+              {p.name}
+            </div>
+
+            <div
+              className="text-[#0F172A] text-lg"
+              style={{ fontWeight: 800 }}
+            >
+              ₹{p.price}
+            </div>
+          </div>
+        </Link>
+      ))}
+    </div>
+  </div>
+)}
       </div>
     </div>
   );

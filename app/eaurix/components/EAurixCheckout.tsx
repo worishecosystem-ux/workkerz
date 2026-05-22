@@ -1,5 +1,5 @@
 "use client";
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
@@ -20,6 +20,9 @@ import {
   CheckCircle,
   X,
   Zap,
+  CalendarDays,
+  Clock3,
+  Timer,
 } from "lucide-react";
 import { usePlatform } from "@/app/components/context/PlatformContext";
 import { useAdmin } from "@/app/components/context/AdminContext";
@@ -45,7 +48,14 @@ const steps = [
 
 interface WorkerAddon {
   worker: Worker;
+
   hours: number;
+
+  bookingDate?: string;
+
+  startTime?: string;
+
+  endTime?: string;
 }
 
 // ── Worker Add-On Step ─────────────────────────────────────────────────────────
@@ -60,6 +70,27 @@ function WorkerAddonStep({
 }) {
   const { workers } = useAdmin();
   const [hours, setHours] = useState(addon?.hours || 2);
+
+  const [bookingDate, setBookingDate] = useState(
+    addon?.bookingDate || new Date().toISOString().split("T")[0],
+  );
+
+  const [startTime, setStartTime] = useState(addon?.startTime || "09:00");
+
+  const calculateEndTime = (startTime: string, hours: number) => {
+    const [h, m] = startTime.split(":").map(Number);
+
+    const date = new Date();
+
+    date.setHours(h);
+    date.setMinutes(m);
+
+    date.setHours(date.getHours() + hours);
+
+    return date.toTimeString().slice(0, 5);
+  };
+
+  const endTime = calculateEndTime(startTime, hours);
 
   // Collect relevant worker categories from cart items (we need product categories)
   // We embed the product category info in the cart item via a lookup
@@ -99,13 +130,34 @@ function WorkerAddonStep({
     if (addon?.worker.id === w.id) {
       onSelect(null); // deselect
     } else {
-      onSelect({ worker: w, hours });
+      onSelect({
+        worker: w,
+
+        hours,
+
+        bookingDate,
+
+        startTime,
+
+        endTime,
+      });
     }
   };
 
   const handleHoursChange = (h: number) => {
     setHours(h);
-    if (addon) onSelect({ worker: addon.worker, hours: h });
+    if (addon)
+      onSelect({
+        worker: addon.worker,
+
+        hours: h,
+
+        bookingDate,
+
+        startTime,
+
+        endTime: calculateEndTime(startTime, h),
+      });
   };
 
   return (
@@ -179,12 +231,20 @@ function WorkerAddonStep({
                   <div className="flex items-center gap-3">
                     <div className="relative shrink-0">
                       <img
-                        src={w.photo}
+                        src={
+                          w.photo && w.photo.trim() !== ""
+                            ? w.photo
+                            : `https://ui-avatars.com/api/?name=${encodeURIComponent(
+                                w.name,
+                              )}&background=f97316&color=fff`
+                        }
                         alt={w.name}
-                        className="w-12 h-12 rounded-xl object-cover border border-gray-100"
+                        className="w-16 h-16 rounded-xl object-cover border border-gray-100"
                         onError={(e) => {
                           (e.target as HTMLImageElement).src =
-                            `https://ui-avatars.com/api/?name=${encodeURIComponent(w.name)}&background=f97316&color=fff`;
+                            `https://ui-avatars.com/api/?name=${encodeURIComponent(
+                              w.name,
+                            )}&background=f97316&color=fff`;
                         }}
                       />
                       {selected && (
@@ -264,54 +324,348 @@ function WorkerAddonStep({
         </div>
       )}
 
-      {/* Hours picker — shown when a worker is selected */}
+      {/* PREMIUM WORKER BOOKING */}
       {addon && (
-        <div className="p-4 bg-white border-2 border-[#FF5C39] rounded-2xl">
-          <div
-            className="text-sm text-[#0F172A] mb-3"
-            style={{ fontWeight: 700 }}
-          >
-            How many hours do you need {addon.worker.name.split(" ")[0]}?
-          </div>
-          <div className="flex items-center gap-4">
-            <div className="flex items-center gap-3 bg-[#F8FAFC] border border-gray-200 rounded-xl p-1.5">
-              <button
-                onClick={() => handleHoursChange(Math.max(1, hours - 1))}
-                className="w-8 h-8 rounded-lg bg-white border border-gray-200 hover:bg-gray-50 flex items-center justify-center transition-colors"
-              >
-                <Minus className="w-4 h-4 text-[#64748B]" />
-              </button>
-              <span
-                className="w-10 text-center text-[#0F172A]"
-                style={{ fontWeight: 800, fontSize: "1.1rem" }}
-              >
-                {hours}
-              </span>
-              <button
-                onClick={() => handleHoursChange(Math.min(12, hours + 1))}
-                className="w-8 h-8 rounded-lg bg-orange-50 border border-orange-200 hover:bg-orange-100 flex items-center justify-center transition-colors"
-              >
-                <Plus className="w-4 h-4 text-[#FF5C39]" />
-              </button>
-            </div>
+        <div className="space-y-6">
+          {/* HEADER */}
+          <div className="flex items-center justify-between">
             <div>
-              <div className="text-xs text-[#64748B]">Hours of service</div>
-              <div
-                className="text-[#0F172A] text-sm"
-                style={{ fontWeight: 700 }}
+              <h2
+                className="text-[#0F172A] text-[1.2rem]"
+                style={{ fontWeight: 800 }}
               >
-                Total:{" "}
-                <span className="text-[#FF5C39]">
-                  ${(addon.worker.hourlyRate * hours).toFixed(2)}
-                </span>
-              </div>
+                Schedule Worker
+              </h2>
+
+              <p className="text-[#64748B] text-sm mt-1">
+                Select booking date, timing & duration
+              </p>
             </div>
+
             <button
               onClick={() => onSelect(null)}
-              className="ml-auto w-8 h-8 rounded-lg hover:bg-rose-50 flex items-center justify-center transition-colors"
+              className="
+          w-11 h-11
+          rounded-2xl
+          bg-rose-50
+          hover:bg-rose-100
+          flex items-center justify-center
+          transition-colors
+        "
             >
-              <X className="w-4 h-4 text-rose-400" />
+              <X className="w-4 h-4 text-rose-500" />
             </button>
+          </div>
+
+          {/* WORKER CARD */}
+          <div className="rounded-[28px] border border-gray-100 bg-white p-5 shadow-sm">
+            <div className="flex items-center gap-4">
+              {/* IMAGE */}
+              <div className="relative shrink-0">
+                <img
+                  src={
+                    addon.worker.photo && addon.worker.photo.trim() !== ""
+                      ? addon.worker.photo
+                      : `https://ui-avatars.com/api/?name=${encodeURIComponent(
+                          addon.worker.name,
+                        )}&background=f97316&color=fff`
+                  }
+                  alt={addon.worker.name}
+                  className="
+              w-20 h-20
+              rounded-3xl
+              object-cover
+              border border-gray-100
+            "
+                />
+
+                <div
+                  className="
+            absolute -bottom-1 -right-1
+            w-6 h-6
+            rounded-full
+            bg-emerald-500
+            border-2 border-white
+            flex items-center justify-center
+          "
+                >
+                  <Check className="w-3 h-3 text-white" />
+                </div>
+              </div>
+
+              {/* INFO */}
+              <div className="flex-1 min-w-0">
+                <div
+                  className="text-[#0F172A] text-base truncate"
+                  style={{ fontWeight: 800 }}
+                >
+                  {addon.worker.name}
+                </div>
+
+                <div className="text-sm text-[#64748B] mt-1">
+                  {addon.worker.specialty}
+                </div>
+
+                <div className="flex items-center gap-2 mt-3">
+                  <Star className="w-4 h-4 fill-amber-400 text-amber-400" />
+
+                  <span
+                    className="text-sm text-[#0F172A]"
+                    style={{ fontWeight: 700 }}
+                  >
+                    {addon.worker.rating}
+                  </span>
+
+                  <span className="text-xs text-[#94A3B8]">
+                    ({addon.worker.reviewCount} reviews)
+                  </span>
+                </div>
+              </div>
+
+              {/* PRICE */}
+              <div className="text-right shrink-0">
+                <div
+                  className="text-[#FF5C39] text-xl"
+                  style={{ fontWeight: 900 }}
+                >
+                  ₹{addon.worker.hourlyRate}
+                </div>
+
+                <div className="text-xs text-[#94A3B8]">per hour</div>
+              </div>
+            </div>
+          </div>
+
+          {/* DATE + TIME */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {/* DATE */}
+            <div className="rounded-[28px] border border-gray-100 bg-white p-5 shadow-sm">
+              <div className="flex items-center gap-3 mb-4">
+                <div className="w-11 h-11 rounded-2xl bg-[#FFF4EF] flex items-center justify-center">
+                  <CalendarDays className="w-5 h-5 text-[#FF5C39]" />
+                </div>
+
+                <div>
+                  <div
+                    className="text-[#0F172A] text-sm"
+                    style={{ fontWeight: 700 }}
+                  >
+                    Booking Date
+                  </div>
+
+                  <div className="text-xs text-[#94A3B8]">
+                    Select preferred date
+                  </div>
+                </div>
+              </div>
+
+              <input
+                type="date"
+                min={new Date().toISOString().split("T")[0]}
+                value={bookingDate}
+                onChange={(e) => {
+                  setBookingDate(e.target.value);
+
+                  onSelect({
+                    ...addon,
+                    bookingDate: e.target.value,
+                  });
+                }}
+                className="
+            w-full h-14
+            rounded-2xl
+            border border-gray-200
+            bg-[#F8FAFC]
+            px-4
+            outline-none
+            focus:border-[#FF5C39]
+          "
+              />
+            </div>
+
+            {/* TIME */}
+            <div className="rounded-[28px] border border-gray-100 bg-white p-5 shadow-sm">
+              <div className="flex items-center gap-3 mb-4">
+                <div className="w-11 h-11 rounded-2xl bg-[#EEF9FF] flex items-center justify-center">
+                  <Clock3 className="w-5 h-5 text-[#0EA5E9]" />
+                </div>
+
+                <div>
+                  <div
+                    className="text-[#0F172A] text-sm"
+                    style={{ fontWeight: 700 }}
+                  >
+                    Start Time
+                  </div>
+
+                  <div className="text-xs text-[#94A3B8]">
+                    Worker arrival timing
+                  </div>
+                </div>
+              </div>
+
+              <input
+                type="time"
+                value={startTime}
+                onChange={(e) => {
+                  setStartTime(e.target.value);
+
+                  onSelect({
+                    ...addon,
+                    startTime: e.target.value,
+                    endTime: calculateEndTime(e.target.value, hours),
+                  });
+                }}
+                className="
+            w-full h-14
+            rounded-2xl
+            border border-gray-200
+            bg-[#F8FAFC]
+            px-4
+            outline-none
+            focus:border-[#0EA5E9]
+          "
+              />
+            </div>
+          </div>
+
+          {/* HOURS */}
+          <div className="rounded-[28px] border border-gray-100 bg-white p-5 shadow-sm">
+            <div className="flex items-center gap-3 mb-5">
+              <div className="w-11 h-11 rounded-2xl bg-[#F3F4FF] flex items-center justify-center">
+                <Timer className="w-5 h-5 text-[#6366F1]" />
+              </div>
+
+              <div>
+                <div
+                  className="text-[#0F172A] text-sm"
+                  style={{ fontWeight: 700 }}
+                >
+                  Booking Duration
+                </div>
+
+                <div className="text-xs text-[#94A3B8]">
+                  Select working hours
+                </div>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-5">
+              {/* COUNTER */}
+              <div
+                className="
+          flex items-center gap-3
+          bg-[#F8FAFC]
+          border border-gray-200
+          rounded-2xl
+          p-2
+        "
+              >
+                <button
+                  onClick={() => handleHoursChange(Math.max(1, hours - 1))}
+                  className="
+              w-10 h-10
+              rounded-xl
+              bg-white
+              border border-gray-200
+              flex items-center justify-center
+            "
+                >
+                  <Minus className="w-4 h-4 text-[#64748B]" />
+                </button>
+
+                <span
+                  className="w-10 text-center text-[#0F172A]"
+                  style={{
+                    fontWeight: 900,
+                    fontSize: "1.2rem",
+                  }}
+                >
+                  {hours}
+                </span>
+
+                <button
+                  onClick={() => handleHoursChange(Math.min(12, hours + 1))}
+                  className="
+              w-10 h-10
+              rounded-xl
+              bg-orange-50
+              border border-orange-200
+              flex items-center justify-center
+            "
+                >
+                  <Plus className="w-4 h-4 text-[#FF5C39]" />
+                </button>
+              </div>
+
+              {/* TIMING */}
+              <div>
+                <div className="text-xs text-[#94A3B8]">Estimated Shift</div>
+
+                <div
+                  className="text-[#0F172A] text-sm mt-1"
+                  style={{ fontWeight: 700 }}
+                >
+                  {startTime} → {endTime}
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* TOTAL */}
+          <div
+            className="
+      rounded-[30px]
+      bg-[#0F172A]
+      p-5
+      text-white
+      overflow-hidden
+      relative
+    "
+          >
+            <div
+              className="
+        absolute
+        -top-10 -right-10
+        w-40 h-40
+        rounded-full
+        bg-[#FF5C39]/20
+        blur-3xl
+      "
+            />
+
+            <div className="relative z-10">
+              <div className="flex items-center justify-between mb-3">
+                <span className="text-white/70">Worker Charges</span>
+
+                <span style={{ fontWeight: 700 }}>
+                  ₹{addon.worker.hourlyRate} × {hours}
+                </span>
+              </div>
+
+              <div className="h-px bg-white/10 mb-4" />
+
+              <div className="flex items-end justify-between">
+                <div>
+                  <div className="text-white/60 text-xs">Total Worker Cost</div>
+
+                  <div className="text-[2rem]" style={{ fontWeight: 900 }}>
+                    ₹{(addon.worker.hourlyRate * hours).toFixed(2)}
+                  </div>
+                </div>
+
+                <div
+                  className="
+            px-4 py-2
+            rounded-2xl
+            bg-[#FF5C39]
+            text-sm
+          "
+                >
+                  {hours}h booking
+                </div>
+              </div>
+            </div>
           </div>
         </div>
       )}
@@ -429,6 +783,20 @@ export function EAurixCheckout() {
       router.push("/eaurix/confirmed");
     }, 100);
   };
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  if (!mounted) {
+    return (
+      <div className="min-h-screen bg-[#F0F9FF] flex items-center justify-center">
+        <div className="w-10 h-10 border-4 border-[#0EA5E9] border-t-transparent rounded-full animate-spin" />
+      </div>
+    );
+  }
+
   if (cart.length === 0) {
     return (
       <div className="min-h-screen bg-[#F0F9FF] pt-24 flex items-center justify-center">
@@ -525,11 +893,14 @@ export function EAurixCheckout() {
         </div>
       </div>
 
-      <div className="max-w-4xl mx-auto px-6 mt-8">
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <div className="max-w-7xl mx-auto px-6 mt-8">
+        <div className="grid grid-cols-1 xl:grid-cols-[1.6fr_0.9fr] gap-8 items-start">
           {/* Form panel */}
-          <div className="lg:col-span-2">
-            <div className="bg-white rounded-2xl border border-gray-100 p-6 shadow-sm">
+          <div className="min-w-0">
+            <div
+              className=" bg-white rounded-4xl border border-gray-100 p-8 shadow-[0_20px_60px_rgba(15,23,42,0.06)]
+  "
+            >
               {/* ── STEP 1: Delivery ── */}
               {step === 1 && (
                 <div className="space-y-4">
@@ -897,12 +1268,21 @@ export function EAurixCheckout() {
                   {workerAddon && (
                     <div className="p-4 bg-orange-50 border-2 border-[#FF5C39] rounded-xl flex items-center gap-3">
                       <img
-                        src={workerAddon.worker.photo}
+                        src={
+                          workerAddon.worker.photo &&
+                          workerAddon.worker.photo.trim() !== ""
+                            ? workerAddon.worker.photo
+                            : `https://ui-avatars.com/api/?name=${encodeURIComponent(
+                                workerAddon.worker.name,
+                              )}&background=f97316&color=fff`
+                        }
                         alt={workerAddon.worker.name}
-                        className="w-10 h-10 rounded-xl object-cover border border-orange-200 shrink-0"
+                        className="w-12 h-12 rounded-2xl object-cover border border-orange-200 shrink-0"
                         onError={(e) => {
                           (e.target as HTMLImageElement).src =
-                            `https://ui-avatars.com/api/?name=${encodeURIComponent(workerAddon.worker.name)}&background=f97316&color=fff`;
+                            `https://ui-avatars.com/api/?name=${encodeURIComponent(
+                              workerAddon.worker.name,
+                            )}&background=f97316&color=fff`;
                         }}
                       />
                       <div className="flex-1 min-w-0">
@@ -921,7 +1301,7 @@ export function EAurixCheckout() {
                         className="text-[#FF5C39]"
                         style={{ fontWeight: 800 }}
                       >
-                        +${workerCost.toFixed(2)}
+                        +₹{workerCost.toFixed(2)}
                       </div>
                       <button
                         onClick={() => setWorkerAddon(null)}
@@ -933,36 +1313,63 @@ export function EAurixCheckout() {
                   )}
 
                   {/* Items */}
-                  <div className="space-y-2 max-h-64 overflow-y-auto">
+                  <div className="space-y-3 max-h-72 overflow-y-auto pr-1">
                     {cart.map((item) => (
                       <div
                         key={item.id}
-                        className="flex items-center gap-3 p-3 bg-white rounded-xl border border-gray-100"
+                        className="flex items-center gap-3 p-3 bg-white rounded-2xl border border-gray-100"
                       >
+                        {/* IMAGE */}
                         <div
-                          className="w-10 h-10 rounded-lg flex items-center justify-center text-2xl shrink-0"
+                          className="w-14 h-14 rounded-2xl overflow-hidden shrink-0 p-1"
                           style={{
-                            background: `linear-gradient(135deg, ${item.color}, ${item.color}80)`,
+                            background: `linear-gradient(135deg, ${item.color}15, ${item.color}35)`,
                           }}
                         >
-                          {item.icon}
+                          <div
+                            className="w-full h-full rounded-xl overflow-hidden flex items-center justify-center"
+                            style={{
+                              background: `linear-gradient(135deg, ${item.color}, ${item.color}90)`,
+                            }}
+                          >
+                            {item.icon && item.icon.trim() !== "" ? (
+                              <img
+                                src={item.icon}
+                                alt={item.name}
+                                className="w-full h-full object-cover"
+                                onError={(e) => {
+                                  (e.target as HTMLImageElement).src =
+                                    "/placeholder.png";
+                                }}
+                              />
+                            ) : (
+                              <div className="text-white text-lg font-bold">
+                                {item.name.charAt(0)}
+                              </div>
+                            )}
+                          </div>
                         </div>
+
+                        {/* INFO */}
                         <div className="flex-1 min-w-0">
                           <div
                             className="text-sm text-[#0F172A] line-clamp-1"
-                            style={{ fontWeight: 600 }}
+                            style={{ fontWeight: 700 }}
                           >
                             {item.name}
                           </div>
-                          <div className="text-xs text-[#94A3B8]">
+
+                          <div className="text-xs text-[#94A3B8] mt-0.5">
                             {item.brand} · Qty {item.qty}
                           </div>
                         </div>
+
+                        {/* PRICE */}
                         <div
-                          className="text-sm text-[#0F172A]"
-                          style={{ fontWeight: 700 }}
+                          className="text-sm text-[#0F172A] shrink-0"
+                          style={{ fontWeight: 800 }}
                         >
-                          ${(item.price * item.qty).toFixed(2)}
+                          ₹{(item.price * item.qty).toFixed(2)}
                         </div>
                       </div>
                     ))}
@@ -1029,8 +1436,16 @@ export function EAurixCheckout() {
           </div>
 
           {/* Order Summary sidebar */}
-          <div>
-            <div className="bg-white rounded-2xl border border-gray-100 p-4 sticky top-24 shadow-sm">
+          <div className="xl:sticky xl:top-24 h-fit">
+            <div
+              className="
+      bg-white
+      rounded-4xl
+      border border-gray-100
+      p-6
+      shadow-[0_20px_60px_rgba(15,23,42,0.06)]
+    "
+            >
               <h3 className="text-[#0F172A] mb-3" style={{ fontWeight: 700 }}>
                 Order Total
               </h3>
@@ -1040,7 +1455,7 @@ export function EAurixCheckout() {
                     Items ({cart.reduce((s, c) => s + c.qty, 0)})
                   </span>
                   <span className="text-[#0F172A]">
-                    ${cartTotal.toFixed(2)}
+                    ₹{cartTotal.toFixed(2)}
                   </span>
                 </div>
                 <div className="flex justify-between">
@@ -1054,13 +1469,13 @@ export function EAurixCheckout() {
                     </span>
                   ) : (
                     <span className="text-[#0F172A]">
-                      ${delivery.toFixed(2)}
+                      ₹{delivery.toFixed(2)}
                     </span>
                   )}
                 </div>
                 <div className="flex justify-between">
                   <span className="text-[#64748B]">Tax (8%)</span>
-                  <span className="text-[#0F172A]">${tax.toFixed(2)}</span>
+                  <span className="text-[#0F172A]">₹{tax.toFixed(2)}</span>
                 </div>
                 {workerAddon && (
                   <div className="flex justify-between items-center py-1 border-t border-orange-100 mt-1">
@@ -1076,7 +1491,7 @@ export function EAurixCheckout() {
                       className="text-[#FF5C39]"
                       style={{ fontWeight: 700 }}
                     >
-                      +${workerCost.toFixed(2)}
+                      +₹{workerCost.toFixed(2)}
                     </span>
                   </div>
                 )}
@@ -1091,21 +1506,69 @@ export function EAurixCheckout() {
                       color: step === 4 ? "#FF5C39" : "#0EA5E9",
                     }}
                   >
-                    ${grandTotal.toFixed(2)}
+                    ₹{grandTotal.toFixed(2)}
                   </span>
                 </div>
               </div>
 
-              <div className="space-y-2 max-h-48 overflow-y-auto">
+              <div
+                className="
+  space-y-3
+  max-h-105
+  overflow-y-auto
+  pr-1
+"
+              >
                 {cart.map((item) => (
-                  <div key={item.id} className="flex items-center gap-2">
+                  <div
+                    key={item.id}
+                    className="
+  flex items-center gap-3
+  p-2.5
+  rounded-2xl
+  border border-gray-100
+  bg-[#F8FAFC]
+"
+                  >
                     <div
-                      className="w-8 h-8 rounded-lg flex items-center justify-center text-lg shrink-0"
+                      className="
+    w-12 h-12
+    rounded-xl
+    overflow-hidden
+    shrink-0
+    p-1
+  "
                       style={{
-                        background: `linear-gradient(135deg, ${item.color}, ${item.color}80)`,
+                        background: `linear-gradient(135deg, ${item.color}15, ${item.color}35)`,
                       }}
                     >
-                      {item.icon}
+                      <div
+                        className="
+      w-full h-full
+      rounded-[10px]
+      overflow-hidden
+      flex items-center justify-center
+    "
+                        style={{
+                          background: `linear-gradient(135deg, ${item.color}, ${item.color}90)`,
+                        }}
+                      >
+                        {item.icon ? (
+                          <img
+                            src={item.icon}
+                            alt={item.name}
+                            className="
+          w-full
+          h-full
+          object-cover
+        "
+                          />
+                        ) : (
+                          <div className="text-white text-sm font-bold">
+                            {item.name.charAt(0)}
+                          </div>
+                        )}
+                      </div>
                     </div>
                     <div className="flex-1 min-w-0">
                       <div
@@ -1122,7 +1585,7 @@ export function EAurixCheckout() {
                       className="text-xs text-[#0F172A]"
                       style={{ fontWeight: 600 }}
                     >
-                      ${(item.price * item.qty).toFixed(2)}
+                      ₹{(item.price * item.qty).toFixed(2)}
                     </div>
                   </div>
                 ))}

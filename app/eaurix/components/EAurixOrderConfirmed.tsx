@@ -22,7 +22,6 @@ export function EAurixOrderConfirmed() {
   const fired = useRef(false);
   const autoSent = useRef(false);
 
-  
   const orderId = useRef(
     `EAX-${Math.random().toString(36).slice(2, 8).toUpperCase()}`,
   );
@@ -48,77 +47,68 @@ export function EAurixOrderConfirmed() {
   } | null>(null);
 
   useEffect(() => {
-  if (!fired.current) {
-    fired.current = true;
+    if (!fired.current) {
+      fired.current = true;
 
-    confetti({
-      particleCount: 100,
-      spread: 70,
-      origin: { y: 0.5 },
-      colors: ["#0EA5E9", "#0284C7", "#38BDF8", "#BAE6FD", "#0F172A"],
-    });
+      confetti({
+        particleCount: 100,
+        spread: 70,
+        origin: { y: 0.5 },
+        colors: ["#0EA5E9", "#0284C7", "#38BDF8", "#BAE6FD", "#0F172A"],
+      });
+    }
+  }, []);
+
+  useEffect(() => {
+    if (!state || autoSent.current) return;
+
+    autoSent.current = true;
+
+    const adminNumber = "918602190366";
+
+    const msg = encodeURIComponent(buildWhatsAppMessage());
+
+    // Small delay for smooth page load
+    const timer = setTimeout(() => {
+      window.open(`https://wa.me/${adminNumber}?text=${msg}`, "_blank");
+
+      setWaSent(true);
+
+      setTimeout(() => {
+        setWaSent(false);
+      }, 4000);
+    }, 1500);
+
+    return () => clearTimeout(timer);
+  }, [state]);
+
+  useEffect(() => {
+    const savedOrder = sessionStorage.getItem("eaurix-order");
+
+    if (savedOrder) {
+      setState(JSON.parse(savedOrder));
+    }
+  }, []);
+
+  if (state === undefined) {
+    return null;
   }
-}, []);
 
-useEffect(() => {
-  if (!state || autoSent.current) return;
+  if (!state) {
+    return (
+      <div className="min-h-screen bg-[#F0F9FF] pt-24 flex items-center justify-center">
+        <div className="text-center">
+          <h2 className="text-[#0F172A] mb-2" style={{ fontWeight: 700 }}>
+            No order found
+          </h2>
 
-  autoSent.current = true;
-
-  const adminNumber = "918602190366";
-
-  const msg = encodeURIComponent(buildWhatsAppMessage());
-
-  // Small delay for smooth page load
-  const timer = setTimeout(() => {
-    window.open(
-      `https://wa.me/${adminNumber}?text=${msg}`,
-      "_blank"
-    );
-
-    setWaSent(true);
-
-    setTimeout(() => {
-      setWaSent(false);
-    }, 4000);
-  }, 1500);
-
-  return () => clearTimeout(timer);
-}, [state]);
-
-useEffect(() => {
-  const savedOrder = sessionStorage.getItem("eaurix-order");
-
-  if (savedOrder) {
-    setState(JSON.parse(savedOrder));
-  }
-}, []);
-
- if (state === undefined) {
-  return null;
-}
-
-if (!state) {
-  return (
-    <div className="min-h-screen bg-[#F0F9FF] pt-24 flex items-center justify-center">
-      <div className="text-center">
-        <h2
-          className="text-[#0F172A] mb-2"
-          style={{ fontWeight: 700 }}
-        >
-          No order found
-        </h2>
-
-        <Link
-          href="/eaurix/shop"
-          className="text-[#0EA5E9] text-sm"
-        >
-          Go Shopping
-        </Link>
+          <Link href="/eaurix/shop" className="text-[#0EA5E9] text-sm">
+            Go Shopping
+          </Link>
+        </div>
       </div>
-    </div>
-  );
-}
+    );
+  }
 
   const { form, cart, cartTotal, delivery, tax, grandTotal, workerAddon } =
     state;
@@ -126,12 +116,12 @@ if (!state) {
   const deliveryDays = isExpress ? "1 business day" : "3–5 business days";
 
   // ── WhatsApp ────────────────────────────────────────────────────────────────
-  const buildWhatsAppMessage = () => {
+ const buildWhatsAppMessage = () => {
   const itemLines = cart.map(
     (item: any, index: number) =>
       `┃ ${index + 1}. ${item.name}
-┃ Qty: ${item.qty} × $${item.price}
-┃ Total: $${(item.price * item.qty).toFixed(2)}`
+┃ Qty: ${item.qty} × ₹${item.price}
+┃ Total: ₹${(item.price * item.qty).toFixed(2)}`
   );
 
   const lines = [
@@ -154,7 +144,11 @@ if (!state) {
     `┃ ${form.city}, ${form.zip}`,
     ``,
     `🚚 *Delivery Type*`,
-    `┃ ${isExpress ? "⚡ Express Delivery" : "📦 Standard Delivery"}`,
+    `┃ ${
+      isExpress
+        ? "⚡ Express Delivery"
+        : "📦 Standard Delivery"
+    }`,
     `┃ ETA: ${deliveryDays}`,
     ``,
     `📦 *Ordered Items*`,
@@ -167,30 +161,34 @@ if (!state) {
           `🔧 *Worker Add-On*`,
           `┃ ${workerAddon.workerName}`,
           `┃ ${workerAddon.workerSpecialty}`,
-          `┃ ${workerAddon.hours} hour(s) × $${workerAddon.workerRate}/hr`,
-          `┃ Total: $${workerAddon.cost.toFixed(2)}`,
+          `┃ ${workerAddon.hours} hour(s) × ₹${workerAddon.workerRate}/hr`,
+          `┃ Total: ₹${workerAddon.cost.toFixed(2)}`,
           ``,
         ]
       : [],
 
     `💳 *Payment Summary*`,
     `┃────────────────────`,
-    `┃ Subtotal : $${cartTotal.toFixed(2)}`,
+    `┃ Subtotal : ₹${cartTotal.toFixed(2)}`,
     `┃ Delivery : ${
-      delivery === 0 ? "FREE" : `$${delivery.toFixed(2)}`
+      delivery === 0
+        ? "FREE"
+        : `₹${delivery.toFixed(2)}`
     }`,
-    `┃ Tax (8%) : $${tax.toFixed(2)}`,
+    `┃ Tax (8%) : ₹${tax.toFixed(2)}`,
 
     workerAddon
-      ? `┃ Worker Add-On : $${workerAddon.cost.toFixed(2)}`
+      ? `┃ Worker Add-On : ₹${workerAddon.cost.toFixed(2)}`
       : null,
 
     `┃────────────────────`,
-    `┃ 💰 *Grand Total: $${grandTotal.toFixed(2)}*`,
+    `┃ 💰 *Grand Total: ₹${grandTotal.toFixed(2)}*`,
     ``,
     `💳 Payment Method`,
     `┃ •••• •••• •••• ${
-      form.cardNumber ? form.cardNumber.slice(-4) : "****"
+      form.cardNumber
+        ? form.cardNumber.slice(-4)
+        : "****"
     }`,
     ``,
     `✨ Thank you for shopping with`,
@@ -202,31 +200,22 @@ if (!state) {
     `══════════════════════`,
   ];
 
-  return lines
-    .flat()
-    .filter(Boolean)
-    .join("\n");
+  return lines.flat().filter(Boolean).join("\n");
 };
 
   const handleShareWhatsApp = () => {
-  const adminNumber = "918602190366"; // India country code included
+    const adminNumber = "918602190366"; // India country code included
 
-  const msg = encodeURIComponent(buildWhatsAppMessage());
+    const msg = encodeURIComponent(buildWhatsAppMessage());
 
-  window.open(
-    `https://wa.me/${adminNumber}?text=${msg}`,
-    "_blank"
-  );
+    window.open(`https://wa.me/${adminNumber}?text=${msg}`, "_blank");
 
-  setWaSent(true);
+    setWaSent(true);
 
-  setTimeout(() => {
-    setWaSent(false);
-  }, 4000);
-};
-
-
-
+    setTimeout(() => {
+      setWaSent(false);
+    }, 4000);
+  };
 
   const handlePrint = () => window.print();
 
@@ -319,12 +308,33 @@ if (!state) {
                     className="flex items-center gap-3 py-2 border-b border-gray-50 last:border-0"
                   >
                     <div
-                      className="w-10 h-10 rounded-xl flex items-center justify-center text-2xl shrink-0"
+                      className="w-14 h-14 rounded-2xl overflow-hidden shrink-0 p-1"
                       style={{
-                        background: `linear-gradient(135deg, ${item.color}, ${item.color}80)`,
+                        background: `linear-gradient(135deg, ${item.color}15, ${item.color}35)`,
                       }}
                     >
-                      {item.icon}
+                      <div
+                        className="w-full h-full rounded-xl overflow-hidden flex items-center justify-center"
+                        style={{
+                          background: `linear-gradient(135deg, ${item.color}, ${item.color}90)`,
+                        }}
+                      >
+                        {item.icon && item.icon.trim() !== "" ? (
+                          <img
+                            src={item.icon}
+                            alt={item.name}
+                            className="w-full h-full object-cover"
+                            onError={(e) => {
+                              (e.target as HTMLImageElement).src =
+                                "/placeholder.png";
+                            }}
+                          />
+                        ) : (
+                          <div className="text-white text-lg font-bold">
+                            {item.name.charAt(0)}
+                          </div>
+                        )}
+                      </div>
                     </div>
                     <div className="flex-1 min-w-0">
                       <div
@@ -341,7 +351,7 @@ if (!state) {
                       className="text-sm text-[#0F172A]"
                       style={{ fontWeight: 700 }}
                     >
-                      ${(item.price * item.qty).toFixed(2)}
+                      ₹{(item.price * item.qty).toFixed(2)}
                     </div>
                   </div>
                 ))}
@@ -377,7 +387,7 @@ if (!state) {
                       className="text-sm text-[#FF5C39]"
                       style={{ fontWeight: 700 }}
                     >
-                      ${workerAddon.cost.toFixed(2)}
+                      ₹{workerAddon.cost.toFixed(2)}
                     </div>
                   </div>
                 )}
@@ -388,7 +398,7 @@ if (!state) {
                 <div className="flex justify-between">
                   <span className="text-[#64748B]">Subtotal</span>
                   <span className="text-[#0F172A]">
-                    ${cartTotal.toFixed(2)}
+                    ₹{cartTotal.toFixed(2)}
                   </span>
                 </div>
                 <div className="flex justify-between">
@@ -402,13 +412,13 @@ if (!state) {
                     </span>
                   ) : (
                     <span className="text-[#0F172A]">
-                      ${delivery.toFixed(2)}
+                      ₹{delivery.toFixed(2)}
                     </span>
                   )}
                 </div>
                 <div className="flex justify-between">
                   <span className="text-[#64748B]">Tax (8%)</span>
-                  <span className="text-[#0F172A]">${tax.toFixed(2)}</span>
+                  <span className="text-[#0F172A]">₹{tax.toFixed(2)}</span>
                 </div>
                 {workerAddon && (
                   <div className="flex justify-between">
@@ -423,7 +433,7 @@ if (!state) {
                       className="text-[#FF5C39]"
                       style={{ fontWeight: 600 }}
                     >
-                      ${workerAddon.cost.toFixed(2)}
+                      ₹{workerAddon.cost.toFixed(2)}
                     </span>
                   </div>
                 )}
@@ -435,7 +445,7 @@ if (!state) {
                     className="text-[#0EA5E9]"
                     style={{ fontWeight: 900, fontSize: "1.1rem" }}
                   >
-                    ${grandTotal.toFixed(2)}
+                    ₹{grandTotal.toFixed(2)}
                   </span>
                 </div>
               </div>
