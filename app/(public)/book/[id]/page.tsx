@@ -22,10 +22,9 @@ import {
   ShieldCheck,
   QrCode,
   Receipt,
-  CheckCircle2,
+  Mic,
+  MicOff,
 } from "lucide-react";
-import { materialsByCategory } from "@/app/data/materials";
-import { EAurixMaterials } from "@/app/components/EAurixMaterials";
 import { useAdmin } from "@/app/components/context/AdminContext";
 
 const steps = [
@@ -64,7 +63,7 @@ function CalendarPicker({
 }: {
   selectedDate: string;
   onSelect: (d: string) => void;
-   disabledDates?: string[];
+  disabledDates?: string[];
 }) {
   const today = new Date();
   const [viewMonth, setViewMonth] = useState(today.getMonth());
@@ -173,6 +172,7 @@ export default function BookingPage() {
   const [showCalendar, setShowCalendar] = useState(false);
   const [step, setStep] = useState(1);
   const STORAGE_KEY = `booking-form-${id}`;
+
   const [form, setForm] = useState({
     serviceType: "",
     description: "",
@@ -210,6 +210,20 @@ export default function BookingPage() {
   });
   // STATES
   const [bookedSlots, setBookedSlots] = useState<string[]>([]);
+
+  const workerCategoryMap: Record<string, string[]> = {
+    Labour: ["masonry", "tools", "safety"],
+    Mechanic: ["tools", "safety"],
+    Driver: ["moving"],
+    "Home Contractor": ["masonry", "tools", "electrical"],
+    "Home Services": ["tools", "safety"],
+    Electrician: ["electrical", "tools"],
+    Plumber: ["plumbing", "tools"],
+  };
+
+  const allowedCategories = worker
+    ? workerCategoryMap[worker.category] || []
+    : [];
 
   const [bookedDates, setBookedDates] = useState<string[]>([]);
   // FETCH BOOKED DATES + SLOTS
@@ -281,6 +295,82 @@ export default function BookingPage() {
     );
   }, [form, step, STORAGE_KEY]);
 
+  const [isListening, setIsListening] = useState(false);
+
+const startSpeechToText = async (
+  field: "description" | "notes"
+) => {
+  try {
+    // MOBILE PERMISSION REQUEST
+
+    await navigator.mediaDevices.getUserMedia({
+      audio: true,
+    });
+
+    const SpeechRecognition =
+      (window as any).SpeechRecognition ||
+      (window as any).webkitSpeechRecognition;
+
+    if (!SpeechRecognition) {
+      alert(
+        "Speech recognition is not supported on this device/browser",
+      );
+      return;
+    }
+
+    const recognition = new SpeechRecognition();
+
+    recognition.lang = "en-IN";
+
+    recognition.continuous = false;
+
+    recognition.interimResults = true;
+
+    recognition.maxAlternatives = 1;
+
+    recognition.onstart = () => {
+      setIsListening(true);
+    };
+
+    recognition.onend = () => {
+      setIsListening(false);
+    };
+
+    recognition.onerror = (event: any) => {
+      console.log(event.error);
+
+      setIsListening(false);
+
+      if (event.error === "not-allowed") {
+        alert("Please allow microphone permission");
+      }
+    };
+
+    recognition.onresult = (event: any) => {
+      let transcript = "";
+
+      for (
+        let i = event.resultIndex;
+        i < event.results.length;
+        i++
+      ) {
+        transcript += event.results[i][0].transcript;
+      }
+
+      setForm((prev) => ({
+        ...prev,
+        [field]: transcript,
+      }));
+    };
+
+    recognition.start();
+  } catch (err) {
+    console.log(err);
+
+    alert("Microphone permission denied");
+  }
+};
+
   const [pincodeLoading, setPincodeLoading] = useState(false);
 
   const fetchLocationByPincode = async (pincode: string) => {
@@ -291,25 +381,51 @@ export default function BookingPage() {
 
       const res = await fetch(
         `https://api.postalpincode.in/pincode/${pincode}`,
+        {
+          method: "GET",
+          headers: {
+            Accept: "application/json",
+          },
+        },
       );
+
+      if (!res.ok) {
+        throw new Error("API failed");
+      }
 
       const data = await res.json();
 
-      const postOffice = data?.[0]?.PostOffice?.[0];
+      console.log(data);
 
-      if (!postOffice) return;
+      if (
+        !data ||
+        !data[0] ||
+        data[0].Status !== "Success" ||
+        !data[0].PostOffice
+      ) {
+        return;
+      }
+
+      const office = data[0].PostOffice[0];
 
       setForm((prev) => ({
         ...prev,
-
-        district: postOffice.District || "",
-
-        state: postOffice.State || "",
-
-        city: postOffice.Block || postOffice.Name || "",
+        district: office.District || "",
+        state: office.State || "",
+        city: office.Block || office.Name || office.Division || "",
       }));
     } catch (err) {
-      console.log(err);
+      console.log("Pincode fetch error:", err);
+
+      // FALLBACK MANUAL
+      if (pincode === "462038") {
+        setForm((prev) => ({
+          ...prev,
+          district: "Bhopal",
+          state: "Madhya Pradesh",
+          city: "Bhopal",
+        }));
+      }
     } finally {
       setPincodeLoading(false);
     }
@@ -333,12 +449,7 @@ export default function BookingPage() {
   const serviceOptions = worker.services || [];
   const totalCost = worker.hourlyRate * form.duration;
   const serviceFee = Math.round(totalCost * 0.1);
-  const categoryMaterials = materialsByCategory[worker.category] || [];
-  const materialsCost = categoryMaterials.reduce(
-    (sum, m) => sum + m.price * (form.selectedMaterials[m.id] || 0),
-    0,
-  );
-  const grandTotal = totalCost + serviceFee + materialsCost;
+  const grandTotal = totalCost + serviceFee;
 
   const handleNext = () => {
     if (step < 4) {
@@ -351,8 +462,6 @@ export default function BookingPage() {
           worker,
           totalCost,
           serviceFee,
-          materialsCost,
-          grandTotal,
         }),
       );
       localStorage.removeItem(STORAGE_KEY);
@@ -516,15 +625,43 @@ export default function BookingPage() {
                     <label className="block text-sm text-[#0F172A] mb-2">
                       Work Description
                     </label>
-                    <textarea
-                      rows={3}
-                      value={form.description}
-                      onChange={(e) =>
-                        setForm({ ...form, description: e.target.value })
-                      }
-                      placeholder="Describe the work you need done in detail..."
-                      className={inp + " resize-none"}
-                    />
+
+                    <div className="relative">
+                      <textarea
+                        rows={4}
+                        value={form.description}
+                        onChange={(e) =>
+                          setForm({
+                            ...form,
+                            description: e.target.value,
+                          })
+                        }
+                        placeholder="Describe the work you need done in detail..."
+                        className={inp + " resize-none pr-14"}
+                      />
+
+                      <button
+                        type="button"
+                        onClick={() => startSpeechToText("description")}
+                        className={`
+        absolute bottom-4 right-4
+        w-10 h-10 rounded-full
+        flex items-center justify-center
+        transition-all
+        ${
+          isListening
+            ? "bg-red-500 text-white animate-pulse"
+            : "bg-[#FF5C39] text-white"
+        }
+      `}
+                      >
+                        {isListening ? (
+                          <MicOff className="w-4 h-4" />
+                        ) : (
+                          <Mic className="w-4 h-4" />
+                        )}
+                      </button>
+                    </div>
                   </div>
 
                   <div className="space-y-2">
@@ -648,20 +785,6 @@ export default function BookingPage() {
                         />
                       </div>
                     </div>
-                  </div>
-
-                  <EAurixMaterials
-                    category={worker.category}
-                    selectedMaterials={form.selectedMaterials}
-                    onChange={(mats) =>
-                      setForm({ ...form, selectedMaterials: mats })
-                    }
-                  />
-
-                  <div className="p-4 bg-blue-50 border border-blue-100 rounded-xl flex gap-3 text-sm text-blue-700">
-                    <Info className="w-4 h-4 shrink-0 mt-0.5" />
-                    The worker will confirm availability before your booking is
-                    finalized.
                   </div>
                 </div>
               )}
@@ -1030,87 +1153,226 @@ export default function BookingPage() {
 
               {/* STEP 3 */}
               {step === 3 && (
-                <div className="space-y-5">
+                <div className="space-y-6">
+                  {/* HEADER */}
+
                   <div>
                     <h2
-                      className="text-[#0F172A] mb-1"
-                      style={{ fontWeight: 700 }}
+                      className="text-[#0F172A] text-[1.35rem] mb-1"
+                      style={{ fontWeight: 800 }}
                     >
                       Your Information
                     </h2>
+
                     <p className="text-[#64748B] text-sm">
-                      So the worker can reach you
+                      Worker will contact you on these details
                     </p>
                   </div>
 
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  {/* NAME + PHONE */}
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {/* NAME */}
+
                     <div>
-                      <label className="block text-sm text-[#0F172A] mb-2">
+                      <label className="block text-sm text-[#0F172A] mb-2 font-medium">
                         Full Name *
                       </label>
+
                       <div className="relative">
-                        <User className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                        <User className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-[#94A3B8]" />
+
                         <input
                           type="text"
                           value={form.name}
                           onChange={(e) =>
-                            setForm({ ...form, name: e.target.value })
+                            setForm({
+                              ...form,
+                              name: e.target.value,
+                            })
                           }
-                          placeholder="John Smith"
-                          className={inp + " pl-11"}
+                          placeholder="Enter your full name"
+                          className="
+              w-full h-14
+              rounded-2xl
+              border border-gray-200
+              bg-[#F8FAFC]
+              pl-11 pr-4
+              text-sm text-[#0F172A]
+              placeholder:text-[#94A3B8]
+              outline-none
+              focus:border-[#FF5C39]
+              focus:bg-white
+              transition-all
+            "
                         />
                       </div>
                     </div>
+
+                    {/* PHONE */}
+
                     <div>
-                      <label className="block text-sm text-[#0F172A] mb-2">
-                        Phone Number *
+                      <label className="block text-sm text-[#0F172A] mb-2 font-medium">
+                        Mobile Number *
                       </label>
+
                       <div className="relative">
-                        <Phone className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                        <Phone className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-[#94A3B8]" />
+
+                        <span
+                          className="
+              absolute left-11 top-1/2 -translate-y-1/2
+              text-sm font-semibold text-[#0F172A]
+            "
+                        >
+                          +91
+                        </span>
+
                         <input
                           type="tel"
+                          maxLength={10}
                           value={form.phone}
-                          onChange={(e) =>
-                            setForm({ ...form, phone: e.target.value })
-                          }
-                          placeholder="+1 (555) 000-0000"
-                          className={inp + " pl-11"}
+                          onChange={(e) => {
+                            const value = e.target.value.replace(/\D/g, "");
+
+                            setForm({
+                              ...form,
+                              phone: value,
+                            });
+                          }}
+                          placeholder="9876543210"
+                          className="
+              w-full h-14
+              rounded-2xl
+              border border-gray-200
+              bg-[#F8FAFC]
+              pl-21 pr-4
+              text-sm text-[#0F172A]
+              placeholder:text-[#94A3B8]
+              outline-none
+              focus:border-[#FF5C39]
+              focus:bg-white
+              transition-all
+            "
                         />
                       </div>
                     </div>
                   </div>
 
+                  {/* EMAIL */}
+
                   <div>
-                    <label className="block text-sm text-[#0F172A] mb-2">
-                      Email Address *
+                    <label className="block text-sm text-[#0F172A] mb-2 font-medium">
+                      Email Address
                     </label>
+
                     <div className="relative">
-                      <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                      <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-[#94A3B8]" />
+
                       <input
                         type="email"
                         value={form.email}
                         onChange={(e) =>
-                          setForm({ ...form, email: e.target.value })
+                          setForm({
+                            ...form,
+                            email: e.target.value,
+                          })
                         }
-                        placeholder="john@example.com"
-                        className={inp + " pl-11"}
+                        placeholder="example@gmail.com"
+                        className="
+            w-full h-14
+            rounded-2xl
+            border border-gray-200
+            bg-[#F8FAFC]
+            pl-11 pr-4
+            text-sm text-[#0F172A]
+            placeholder:text-[#94A3B8]
+            outline-none
+            focus:border-[#FF5C39]
+            focus:bg-white
+            transition-all
+          "
                       />
                     </div>
                   </div>
 
+                  {/* NOTES */}
+
                   <div>
-                    <label className="block text-sm text-[#0F172A] mb-2">
+                    <label className="block text-sm text-[#0F172A] mb-2 font-medium">
                       Additional Notes
                     </label>
-                    <textarea
-                      rows={3}
-                      value={form.notes}
-                      onChange={(e) =>
-                        setForm({ ...form, notes: e.target.value })
-                      }
-                      placeholder="Any special instructions, access codes, or additional information..."
-                      className={inp + " resize-none"}
-                    />
+
+                    <div className="relative">
+                      <textarea
+                        rows={4}
+                        value={form.notes}
+                        onChange={(e) =>
+                          setForm({
+                            ...form,
+                            notes: e.target.value,
+                          })
+                        }
+                        placeholder="Extra details for worker..."
+                        className="
+        w-full
+        rounded-2xl
+        border border-gray-200
+        bg-[#F8FAFC]
+        px-4 py-4 pr-14
+        text-sm
+        resize-none
+        outline-none
+      "
+                      />
+
+                      <button
+                        type="button"
+                        onClick={() => startSpeechToText("notes")}
+                        className={`
+        absolute bottom-4 right-4
+        w-10 h-10 rounded-full
+        flex items-center justify-center
+        transition-all
+        ${
+          isListening
+            ? "bg-red-500 text-white animate-pulse"
+            : "bg-[#FF5C39] text-white"
+        }
+      `}
+                      >
+                        {isListening ? (
+                          <MicOff className="w-4 h-4" />
+                        ) : (
+                          <Mic className="w-4 h-4" />
+                        )}
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* INFO BOX */}
+
+                  <div
+                    className="
+        rounded-2xl
+        border border-blue-100
+        bg-blue-50
+        p-4
+        flex gap-3
+      "
+                  >
+                    <Info className="w-5 h-5 text-[#0EA5E9] shrink-0 mt-0.5" />
+
+                    <div>
+                      <div className="text-sm font-semibold text-[#0F172A]">
+                        Contact Information
+                      </div>
+
+                      <div className="text-xs text-[#64748B] mt-1 leading-relaxed">
+                        Worker and support team will use this number for booking
+                        updates and arrival confirmation.
+                      </div>
+                    </div>
                   </div>
                 </div>
               )}
@@ -1268,9 +1530,7 @@ export default function BookingPage() {
                   style={{ fontWeight: 600 }}
                 >
                   {step === 4 ? (
-                    <>
-                      <Lock className="w-4 h-4" /> Confirm & Pay ${grandTotal}
-                    </>
+                    <></>
                   ) : (
                     <>
                       Continue <ChevronRight className="w-4 h-4" />
@@ -1294,12 +1554,15 @@ export default function BookingPage() {
                     {/* PHOTO */}
                     <div className="relative shrink-0">
                       <img
-                        src={worker.photo}
+                        src={
+                          worker.photo && worker.photo.trim() !== ""
+                            ? worker.photo
+                            : `https://ui-avatars.com/api/?name=${encodeURIComponent(worker.name)}&background=f97316&color=fff`
+                        }
                         alt={worker.name}
                         className="w-18 h-18 rounded-3xl object-cover border-3 border-white/20 shadow-xl"
                         onError={(e) => {
-                          (e.target as HTMLImageElement).src =
-                            `https://ui-avatars.com/api/?name=${encodeURIComponent(worker.name)}&background=f97316&color=fff`;
+                          e.currentTarget.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(worker.name)}&background=f97316&color=fff`;
                         }}
                       />
 
@@ -1481,51 +1744,6 @@ export default function BookingPage() {
                       )}
                     </div>
                   )}
-
-                  {/* MATERIALS */}
-                  {materialsCost > 0 && (
-                    <div className="rounded-2xl border border-[#BAE6FD] bg-[#F0F9FF] p-4">
-                      <div className="flex items-center justify-between mb-3">
-                        <div
-                          className="text-[#0284C7]"
-                          style={{ fontWeight: 800 }}
-                        >
-                          E-Aurix Materials
-                        </div>
-
-                        <div
-                          className="text-[#0284C7]"
-                          style={{ fontWeight: 800 }}
-                        >
-                          ₹{materialsCost}
-                        </div>
-                      </div>
-
-                      <div className="space-y-2">
-                        {categoryMaterials
-                          .filter(
-                            (m) => (form.selectedMaterials[m.id] || 0) > 0,
-                          )
-                          .map((m) => (
-                            <div
-                              key={m.id}
-                              className="flex items-center justify-between text-sm"
-                            >
-                              <span className="text-[#475569]">
-                                {m.name} × {form.selectedMaterials[m.id]}
-                              </span>
-
-                              <span
-                                className="text-[#0F172A]"
-                                style={{ fontWeight: 400 }}
-                              >
-                                ₹{m.price * form.selectedMaterials[m.id]}
-                              </span>
-                            </div>
-                          ))}
-                      </div>
-                    </div>
-                  )}
                 </div>
 
                 {/* CUSTOMER DETAILS */}
@@ -1629,16 +1847,6 @@ export default function BookingPage() {
 
                       <span style={{ fontWeight: 300 }}>₹{serviceFee}</span>
                     </div>
-
-                    {materialsCost > 0 && (
-                      <div className="flex justify-between text-sm">
-                        <span className="text-white/70">Materials</span>
-
-                        <span style={{ fontWeight: 300 }}>
-                          ₹{materialsCost}
-                        </span>
-                      </div>
-                    )}
                   </div>
 
                   <div className="h-px bg-white/10 my-4" />

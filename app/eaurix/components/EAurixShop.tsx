@@ -786,13 +786,13 @@ export function EAurixShop() {
 
       {/* MAIN SECTION */}
 
-      <div className="w-full max-w-[1800px] mx-auto px-0 sm:px-4 lg:px-6 mt-2 relative z-20">
+      <div className="w-full max-w-450 mx-auto px-0 sm:px-4 lg:px-6 mt-2 relative z-20">
   <div className="flex gap-4 lg:gap-6 items-start">
     {/* MOBILE OVERLAY */}
     {mobileMenu && (
       <div
         onClick={() => setMobileMenu(false)}
-        className="fixed inset-0 bg-black/50 z-[55] lg:hidden backdrop-blur-sm"
+        className="fixed inset-0 bg-black/50 z-55 lg:hidden backdrop-blur-sm"
       />
     )}
 

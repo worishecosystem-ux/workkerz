@@ -293,12 +293,34 @@ export default function WorkerProfile() {
 
               <div className="px-6 pb-6">
                 <div className="flex flex-col sm:flex-row sm:items-end gap-4 mt-2 mb-5">
-                  <div className="relative shrink-0 w-24 h-24">
-                    <img
-                      src={worker.photo}
-                      alt={worker.name}
-                      className="w-full h-full rounded-2xl border-4 border-white object-cover shadow-lg"
-                    />
+                  <div className="relative shrink-0 w-30 h-34">
+                    {worker.photo && worker.photo.trim() !== "" ? (
+                      <img
+                        src={worker.photo}
+                        alt={worker.name}
+                        className="w-full h-full rounded-2xl border-4 border-white object-cover shadow-lg"
+                        onError={(e) => {
+                          e.currentTarget.style.display = "none";
+                        }}
+                      />
+                    ) : (
+                      <div
+                        className="
+        w-full h-full
+        rounded-2xl
+        border-4 border-white
+        bg-[#F1F5F9]
+        shadow-lg
+        flex items-center justify-center
+      "
+                      >
+                        <div className="w-10 h-10 rounded-full bg-[#CBD5E1] flex items-center justify-center">
+                          <span className="text-white text-xl font-black">
+                            {worker.name?.charAt(0)}
+                          </span>
+                        </div>
+                      </div>
+                    )}
 
                     {worker.available && (
                       <div className="absolute bottom-1 right-1 z-20 flex items-center justify-center">

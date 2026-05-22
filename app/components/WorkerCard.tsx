@@ -1,4 +1,4 @@
-import { Star, MapPin, Clock, CheckCircle, Zap } from "lucide-react";
+import { Star, MapPin, Clock, User, Zap } from "lucide-react";
 import Link from "next/link";
 import type { Worker } from "../data/workers";
 
@@ -88,12 +88,30 @@ export function WorkerCard({ worker }: WorkerCardProps) {
       {/* Header */}
       <div className="flex items-start gap-4 min-h-18">
         {/* Image */}
-        <div className="w-16 h-16 relative shrink-0">
-          <img
-            src={worker.photo}
-            alt={worker.name}
-            className="w-25 h-18 rounded-2xl object-cover"
-          />
+        {/* Image */}
+        <div className="w-18 h-22 relative shrink-0">
+          {worker.photo && worker.photo.trim() !== "" ? (
+            <img
+              src={worker.photo}
+              alt={worker.name}
+              className="w-full h-full rounded-2xl object-cover bg-gray-100"
+              onError={(e) => {
+                e.currentTarget.style.display = "none";
+              }}
+            />
+          ) : (
+            <div
+              className="
+        w-full h-full
+        rounded-2xl
+        bg-gray-100
+        flex items-center justify-center
+        border border-gray-200
+      "
+            >
+              <User className="w-8 h-8 text-gray-400" />
+            </div>
+          )}
 
           {worker.available && (
             <span className="absolute -bottom-1 -right-1 w-4 h-4 rounded-full border-2 border-white bg-emerald-400" />

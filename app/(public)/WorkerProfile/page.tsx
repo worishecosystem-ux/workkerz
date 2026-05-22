@@ -144,7 +144,7 @@ console.log("CURRENT WORKER =>", worker);
                     <img
                       src={worker.photo}
                       alt={worker.name}
-                      className="w-24 h-24 rounded-2xl border-4 border-white object-cover shadow-lg"
+                      className="w-24 h-2 rounded-2xl border-4 border-white object-cover shadow-lg"
                     />
                     {worker.available && (
                       <span className="absolute bottom-1 right-1 w-4 h-4 bg-emerald-400 rounded-full border-2 border-white"></span>
