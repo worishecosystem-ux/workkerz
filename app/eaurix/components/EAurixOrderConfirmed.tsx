@@ -9,7 +9,6 @@ import {
   Truck,
   ArrowRight,
   Home,
-  ShoppingBag,
   MessageCircle,
   Printer,
   Send,

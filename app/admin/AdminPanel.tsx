@@ -41,37 +41,48 @@ type Tab = "dashboard" | "workers" | "products" | "orders";
 const WORKER_CATEGORIES = [
   {
     name: "Labour",
-    subcategories: ["Labour", "Skilled Labour", "Certified Labour"],
+    subcategories: [
+      "General Labour",
+      "Skilled Labour",
+      "Certified Labour",
+      "Construction Helper",
+      "Site Helper",
+    ],
   },
 
   {
     name: "Driver",
     subcategories: [
       "Car Driver",
-      "Commercial Driver",
       "Taxi Driver",
+      "Truck Driver",
+      "Bus Driver",
+      "Commercial Driver",
       "Heavy Vehicle Driver",
-      "Heavy Vehicle Helper",
+      "Delivery Driver",
     ],
   },
 
   {
     name: "Mechanic",
     subcategories: [
-      "Two Wheeler Mechanic",
-      "Three Wheeler Mechanic",
-      "Four Wheeler Mechanic",
-      "Heavy Vehicle Mechanic",
+      "Bike Mechanic",
+      "Car Mechanic",
+      "Truck Mechanic",
+      "Diesel Mechanic",
+      "Garage Mechanic",
+      "Puncture Repair",
     ],
   },
 
   {
     name: "Washer",
     subcategories: [
-      "Two Wheeler Washer",
-      "Three Wheeler Washer",
-      "Four Wheeler Washer",
-      "Heavy Vehicle Washer",
+      "Car Washer",
+      "Bike Washer",
+      "Foam Wash",
+      "Truck Washer",
+      "Interior Cleaning",
     ],
   },
 
@@ -79,27 +90,49 @@ const WORKER_CATEGORIES = [
     name: "Computer Operator",
     subcategories: [
       "Web Developer",
-      "Application Developer",
-      "Graphic Designer",
       "Software Developer",
-      "Computer Technician",
+      "Graphic Designer",
+      "Video Editor",
       "Data Entry Operator",
+      "Computer Technician",
+      "Billing Executive",
     ],
   },
 
   {
     name: "Office Worker",
-    subcategories: ["Peon", "Cleaner", "Helper", "Assistant"],
+    subcategories: [
+      "Office Boy",
+      "Office Assistant",
+      "Receptionist",
+      "Back Office Staff",
+      "Helper",
+      "Cleaner",
+    ],
   },
 
   {
     name: "Home Services",
     subcategories: [
-      "Chef",
       "Maid",
       "Cook",
+      "Chef",
+      "Babysitter",
       "Laundry Worker",
-      "Washroom Cleaner",
+      "House Cleaner",
+      "Bathroom Cleaner",
+    ],
+  },
+
+  {
+    name: "Salon & Beauty",
+    subcategories: [
+      "Hair Stylist",
+      "Beautician",
+      "Makeup Artist",
+      "Mehndi Artist",
+      "Spa Therapist",
+      "Nail Artist",
     ],
   },
 
@@ -107,36 +140,94 @@ const WORKER_CATEGORIES = [
     name: "Restaurant",
     subcategories: [
       "Chef",
+      "Cook",
       "Kitchen Helper",
       "Waiter",
-      "Waiter Helper",
       "Captain",
-      "Manager",
+      "Restaurant Manager",
     ],
   },
 
   {
     name: "Home Contractor",
-    subcategories: ["Welder", "Plumber", "Carpenter", "Electrician", "Roofer"],
+    subcategories: [
+      "Plumber",
+      "Electrician",
+      "Welder",
+      "Carpenter",
+      "Painter",
+      "Roofer",
+      "Fabricator",
+    ],
+  },
+
+  {
+    name: "Construction",
+    subcategories: [
+      "Mason",
+      "Tiles Worker",
+      "POP Worker",
+      "Steel Fixer",
+      "Scaffolding Worker",
+      "Concrete Worker",
+    ],
   },
 
   {
     name: "Factory",
     subcategories: [
-      "Assembly Line Worker",
       "Machine Operator",
+      "Packaging Worker",
+      "Warehouse Worker",
       "Maintenance Technician",
-      "Warehouse Associate",
+      "Assembly Worker",
     ],
   },
 
   {
     name: "Roads",
     subcategories: [
+      "Road Labour",
       "Roller Operator",
-      "General Labour",
-      "Mason",
+      "Paver Machine Operator",
+      "Drain Worker",
       "Concrete Finisher",
+    ],
+  },
+
+  {
+    name: "Delivery",
+    subcategories: [
+      "Food Delivery",
+      "Parcel Delivery",
+      "Courier Boy",
+      "E-commerce Delivery",
+    ],
+  },
+
+  {
+    name: "Security",
+    subcategories: [
+      "Security Guard",
+      "Night Guard",
+      "Bouncer",
+      "Society Guard",
+    ],
+  },
+
+  {
+    name: "Healthcare",
+    subcategories: ["Ward Boy", "Caretaker", "Home Nurse", "Patient Helper"],
+  },
+
+  {
+    name: "Event Services",
+    subcategories: [
+      "Decorator",
+      "DJ Helper",
+      "Tent Worker",
+      "Catering Staff",
+      "Photographer",
     ],
   },
 ];
@@ -152,6 +243,8 @@ const RESPONSE_OPTIONS = [
 // ── Helpers ──────────────────────────────────────────────────────────────────
 const emptyWorker = (): Omit<Worker, "id"> => ({
   name: "",
+
+  phone: "",
 
   category: "",
 
@@ -186,35 +279,224 @@ const emptyWorker = (): Omit<Worker, "id"> => ({
   certifications: [],
 });
 
-const SERVICES_BY_CATEGORY: Record<string, string[]> = {
-  Labour: [
-    "Mason",
-    "Construction Helper",
-    "Painter",
-    "Tiles Work",
-    "POP Work",
+const SERVICES_BY_SUBCATEGORY: Record<string, string[]> = {
+  // LABOUR
+  "General Labour": [
     "Loading",
+    "Unloading",
+    "Helper Work",
+    "Material Shifting",
+    "Packing Work",
   ],
 
-  Driver: ["Car Driver", "Truck Driver", "Taxi Driver", "Delivery Driver"],
+  "Skilled Labour": [
+    "Construction Work",
+    "Machine Work",
+    "Industrial Work",
+    "Site Work",
+  ],
 
-  Mechanic: ["Bike Repair", "Car Repair", "Engine Work", "Puncture Repair"],
+  "Certified Labour": ["Safety Work", "Industrial Work", "Heavy Duty Work"],
 
-  Washer: ["Car Wash", "Bike Wash", "Foam Wash"],
+  "Construction Helper": ["Cement Mixing", "Material Carry", "Site Cleaning"],
 
-  "Computer Operator": ["Data Entry", "Excel Work", "Billing", "Typing"],
+  "Site Helper": ["Construction Support", "Helper Work", "Equipment Support"],
 
-  "Office Worker": ["Office Assistant", "Reception", "Back Office"],
+  // DRIVER
+  "Car Driver": ["Personal Driver", "Outstation Driver", "Daily Driver"],
 
-  "Home Services": ["Electrician", "Plumber", "Cleaner", "AC Repair"],
+  "Taxi Driver": ["Cab Service", "Airport Pickup", "City Ride"],
 
-  Restaurant: ["Cook", "Chef", "Waiter", "Kitchen Helper"],
+  "Truck Driver": ["Goods Transport", "Long Route Driving", "Heavy Transport"],
 
-  "Home Contractor": ["Interior Work", "Renovation", "Furniture Work"],
+  "Bus Driver": ["Passenger Transport", "School Bus Service"],
 
-  Factory: ["Machine Operator", "Packaging", "Warehouse Worker"],
+  "Commercial Driver": ["Commercial Transport", "Heavy Driving"],
 
-  Roads: ["Road Construction", "Paver Work", "Drain Work"],
+  "Heavy Vehicle Driver": ["Trailer Driving", "Container Transport"],
+
+  "Delivery Driver": ["Food Delivery", "Parcel Delivery", "Courier Delivery"],
+
+  // MECHANIC
+  "Bike Mechanic": ["Bike Repair", "Engine Repair", "Oil Change"],
+
+  "Car Mechanic": ["Car Repair", "AC Repair", "Engine Work"],
+
+  "Truck Mechanic": ["Truck Service", "Diesel Engine Repair"],
+
+  "Diesel Mechanic": ["Diesel Engine Work", "Machine Repair"],
+
+  "Garage Mechanic": ["Garage Service", "Vehicle Repair"],
+
+  "Puncture Repair": ["Tyre Repair", "Tube Change"],
+
+  // WASHER
+  "Car Washer": ["Car Wash", "Interior Cleaning", "Foam Wash"],
+
+  "Bike Washer": ["Bike Wash", "Foam Wash"],
+
+  "Foam Wash": ["Premium Foam Wash", "Deep Cleaning"],
+
+  "Truck Washer": ["Truck Cleaning", "Heavy Vehicle Wash"],
+
+  "Interior Cleaning": ["Dashboard Cleaning", "Seat Cleaning"],
+
+  // COMPUTER
+  "Web Developer": [
+    "Website Design",
+    "Frontend Development",
+    "Backend Development",
+  ],
+
+  "Software Developer": ["Software Development", "App Development"],
+
+  "Graphic Designer": ["Logo Design", "Banner Design", "Poster Design"],
+
+  "Video Editor": ["Video Editing", "Reel Editing", "YouTube Editing"],
+
+  "Data Entry Operator": ["Typing", "Excel Work", "Data Management"],
+
+  "Computer Technician": ["Computer Repair", "Laptop Repair", "System Setup"],
+
+  "Billing Executive": ["Billing", "Invoice Management"],
+
+  // OFFICE
+  "Office Boy": ["Tea Service", "Office Cleaning", "File Management"],
+
+  "Office Assistant": ["Documentation", "Office Support"],
+
+  Receptionist: ["Call Management", "Customer Handling"],
+
+  "Back Office Staff": ["Backend Support", "Office Data Work"],
+
+  Helper: ["Support Work", "Office Helper"],
+
+  Cleaner: ["Cleaning", "Sanitization"],
+
+  // HOME SERVICES
+  Maid: ["House Cleaning", "Utensils Cleaning"],
+
+  Cook: ["Home Cooking", "Daily Cooking"],
+
+  Chef: ["Restaurant Cooking", "Special Dishes"],
+
+  Babysitter: ["Child Care", "Home Babysitting"],
+
+  "Laundry Worker": ["Clothes Washing", "Iron Service"],
+
+  "House Cleaner": ["Full Home Cleaning", "Deep Cleaning"],
+
+  "Bathroom Cleaner": ["Toilet Cleaning", "Bathroom Wash"],
+
+  // SALON & BEAUTY
+  "Hair Stylist": ["Hair Cut", "Hair Styling", "Hair Spa", "Beard Styling"],
+
+  Beautician: ["Facial", "Cleanup", "Waxing", "Threading"],
+
+  "Makeup Artist": ["Bridal Makeup", "Party Makeup"],
+
+  "Mehndi Artist": ["Bridal Mehndi", "Hand Mehndi"],
+
+  "Spa Therapist": ["Spa Massage", "Relax Therapy"],
+
+  "Nail Artist": ["Nail Art", "Nail Extension"],
+
+  // RESTAURANT
+  Waiter: ["Food Serving", "Customer Handling"],
+
+  "Kitchen Helper": ["Food Preparation", "Kitchen Cleaning"],
+
+  Captain: ["Restaurant Supervision", "Customer Service"],
+
+  "Restaurant Manager": ["Restaurant Management", "Staff Handling"],
+
+  // HOME CONTRACTOR
+  Plumber: ["Pipe Repair", "Bathroom Fitting"],
+
+  Electrician: ["Wiring", "Fan Installation", "Switch Repair"],
+
+  Welder: ["Gate Welding", "Steel Fabrication"],
+
+  Carpenter: ["Furniture Work", "Wood Repair"],
+
+  Painter: ["Wall Painting", "Texture Paint"],
+
+  Roofer: ["Roof Installation", "Roof Repair"],
+
+  Fabricator: ["Metal Fabrication", "Steel Work"],
+
+  // CONSTRUCTION
+  Mason: ["Brick Work", "Cement Work"],
+
+  "Tiles Worker": ["Floor Tiles", "Bathroom Tiles"],
+
+  "POP Worker": ["POP Design", "Ceiling Work"],
+
+  "Steel Fixer": ["Steel Binding", "Construction Steel Work"],
+
+  "Scaffolding Worker": ["Scaffolding Setup", "Support Structure"],
+
+  "Concrete Worker": ["Concrete Mixing", "Concrete Finishing"],
+
+  // FACTORY
+  "Machine Operator": ["Factory Machine Work", "Machine Handling"],
+
+  "Packaging Worker": ["Product Packing", "Box Packaging"],
+
+  "Warehouse Worker": ["Loading", "Packing", "Inventory Work"],
+
+  "Maintenance Technician": ["Machine Maintenance", "Repair Work"],
+
+  "Assembly Worker": ["Assembly Line Work", "Factory Assembly"],
+
+  // ROADS
+  "Road Labour": ["Road Construction", "Material Loading"],
+
+  "Roller Operator": ["Road Roller Operation"],
+
+  "Paver Machine Operator": ["Paver Machine Work"],
+
+  "Drain Worker": ["Drain Cleaning", "Drain Construction"],
+
+  "Concrete Finisher": ["Road Finishing", "Concrete Finish"],
+
+  // DELIVERY
+  "Food Delivery": ["Restaurant Delivery", "Fast Delivery"],
+
+  "Parcel Delivery": ["Courier Delivery", "Parcel Service"],
+
+  "Courier Boy": ["Courier Pickup", "Document Delivery"],
+
+  "E-commerce Delivery": ["Online Order Delivery", "COD Delivery"],
+
+  // SECURITY
+  "Security Guard": ["Society Security", "Office Security"],
+
+  "Night Guard": ["Night Patrol", "Night Security"],
+
+  Bouncer: ["Club Security", "Event Security"],
+
+  "Society Guard": ["Gate Security", "Visitor Management"],
+
+  // HEALTHCARE
+  "Ward Boy": ["Patient Care", "Hospital Support"],
+
+  Caretaker: ["Elder Care", "Patient Assistance"],
+
+  "Home Nurse": ["Home Nursing", "Medical Care"],
+
+  "Patient Helper": ["Hospital Assistance", "Patient Support"],
+
+  // EVENT
+  Decorator: ["Wedding Decoration", "Event Decoration"],
+
+  "DJ Helper": ["DJ Setup", "Sound Support"],
+
+  "Tent Worker": ["Tent Setup", "Event Support"],
+
+  "Catering Staff": ["Food Serving", "Event Catering"],
+
+  Photographer: ["Wedding Shoot", "Event Photography"],
 };
 
 const CATEGORY_COLORS: Record<ProductCategory, string> = {
@@ -307,9 +589,7 @@ function WorkerForm({
   onClose,
 }: {
   initial?: Worker;
-
   onSave: (w: Omit<Worker, "id">) => Promise<void>;
-
   onClose: () => void;
 }) {
   const [form, setForm] = useState<Omit<Worker, "id">>(
@@ -317,11 +597,13 @@ function WorkerForm({
       ? { ...initial }
       : {
           ...emptyWorker(),
+          phone: "",
           services: [],
         },
   );
 
   const [error, setError] = useState("");
+  const [saving, setSaving] = useState(false);
 
   const u = (field: keyof Omit<Worker, "id">, val: any) =>
     setForm((f) => ({
@@ -333,91 +615,112 @@ function WorkerForm({
     (c) => c.name === form.category,
   );
 
-  const selectedServices = SERVICES_BY_CATEGORY[form.category] || [];
+  const selectedServices =
+    SERVICES_BY_SUBCATEGORY[form.subcategory] || [];
+
+  useEffect(() => {
+    if (form.subcategory) {
+      u("specialty", form.subcategory);
+    }
+  }, [form.subcategory]);
 
   const validate = () => {
-    if (!form.name.trim()) return "Name is required";
+    if (!form.name.trim())
+      return "Name is required";
 
-    if (!form.category) return "Category is required";
+    if (!form.phone.trim())
+      return "Mobile number is required";
 
-    if (!form.subcategory) return "Sub Category is required";
+    if (form.phone.length < 10)
+      return "Enter valid mobile number";
 
-    if (!form.specialty.trim()) return "Specialty is required";
+    if (!form.category)
+      return "Category is required";
 
-    if (!form.location.trim()) return "Location is required";
+    if (!form.subcategory)
+      return "Sub Category is required";
 
-    if (form.hourlyRate <= 0) return "Hourly rate must be greater than 0";
+    if (!form.specialty.trim())
+      return "Specialty is required";
 
-    if (!form.services?.length) return "Add at least one service";
+    if (!form.location.trim())
+      return "Location is required";
+
+    if (form.hourlyRate <= 0)
+      return "Hourly rate must be greater than 0";
+
+    if (!form.services?.length)
+      return "Select at least one service";
 
     return "";
   };
 
+  const compressImage = (
+    file: File,
+  ): Promise<string> => {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
 
-  
-  const [saving, setSaving] = useState(false);
+      reader.readAsDataURL(file);
 
-const compressImage = (file: File): Promise<string> => {
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader();
+      reader.onload = (event) => {
+        const img = new Image();
 
-    reader.readAsDataURL(file);
+        img.src = event.target?.result as string;
 
-    reader.onload = (event) => {
-      const img = new Image();
+        img.onload = () => {
+          const MAX_WIDTH = 500;
+          const MAX_HEIGHT = 500;
 
-      img.src = event.target?.result as string;
+          let width = img.width;
+          let height = img.height;
 
-      img.onload = () => {
-        // MAX SIZE
-        const MAX_WIDTH = 500;
-        const MAX_HEIGHT = 500;
+          if (width > MAX_WIDTH) {
+            height *= MAX_WIDTH / width;
+            width = MAX_WIDTH;
+          }
 
-        let width = img.width;
-        let height = img.height;
+          if (height > MAX_HEIGHT) {
+            width *= MAX_HEIGHT / height;
+            height = MAX_HEIGHT;
+          }
 
-        // RESIZE
-        if (width > MAX_WIDTH) {
-          height *= MAX_WIDTH / width;
+          const canvas =
+            document.createElement("canvas");
 
-          width = MAX_WIDTH;
-        }
+          canvas.width = width;
+          canvas.height = height;
 
-        if (height > MAX_HEIGHT) {
-          width *= MAX_HEIGHT / height;
+          const ctx = canvas.getContext("2d");
 
-          height = MAX_HEIGHT;
-        }
+          if (!ctx) {
+            reject("Canvas error");
+            return;
+          }
 
-        const canvas = document.createElement("canvas");
+          ctx.drawImage(
+            img,
+            0,
+            0,
+            width,
+            height,
+          );
 
-        canvas.width = width;
-        canvas.height = height;
+          const compressedBase64 =
+            canvas.toDataURL(
+              "image/webp",
+              0.4,
+            );
 
-        const ctx = canvas.getContext("2d");
+          resolve(compressedBase64);
+        };
 
-        if (!ctx) {
-          reject("Canvas error");
-          return;
-        }
-
-        ctx.drawImage(img, 0, 0, width, height);
-
-        // LOW QUALITY WEBP
-        const compressedBase64 = canvas.toDataURL(
-          "image/webp",
-          0.4,
-        );
-
-        resolve(compressedBase64);
+        img.onerror = reject;
       };
 
-      img.onerror = reject;
-    };
-
-    reader.onerror = reject;
-  });
-};
+      reader.onerror = reject;
+    });
+  };
 
   const handleSave = async () => {
     if (saving) return;
@@ -436,38 +739,27 @@ const compressImage = (file: File): Promise<string> => {
 
       const payload = {
         name: form.name,
-
+        phone: form.phone,
         category: form.category,
-
         subcategory: form.subcategory,
-
         specialty: form.specialty,
-
         services: form.services,
-
         rating: form.rating,
-
         review_count: form.reviewCount,
-
         hourly_rate: form.hourlyRate,
-
         location: form.location,
-
         available: form.available,
-
-        years_experience: form.yearsExperience,
-
-        completed_jobs: form.completedJobs,
-
+        years_experience:
+          form.yearsExperience,
+        completed_jobs:
+          form.completedJobs,
         bio: form.bio,
-
         skills: form.skills,
-
         photo: form.photo,
-
-        response_time: form.responseTime,
-
-        certifications: form.certifications,
+        response_time:
+          form.responseTime,
+        certifications:
+          form.certifications,
       };
 
       let error = null;
@@ -480,7 +772,9 @@ const compressImage = (file: File): Promise<string> => {
 
         error = res.error;
       } else {
-        const res = await supabase.from("workers").insert([payload]);
+        const res = await supabase
+          .from("workers")
+          .insert([payload]);
 
         error = res.error;
       }
@@ -500,25 +794,25 @@ const compressImage = (file: File): Promise<string> => {
     }
   };
 
-  
-
   return (
     <div className="flex flex-col h-full bg-white">
       {/* HEADER */}
       <div className="flex items-center justify-between p-5 border-b border-gray-100 shrink-0">
         <div>
-          <h2 className="text-[#0F172A]" style={{ fontWeight: 800 }}>
-            {initial ? "Edit Worker" : "Add New Worker"}
+          <h2 className="text-[#0F172A] font-extrabold">
+            {initial
+              ? "Edit Worker"
+              : "Add New Worker"}
           </h2>
 
           <p className="text-[#64748B] text-xs mt-1">
-            Fill all worker information carefully
+            Fill all worker information
           </p>
         </div>
 
         <button
           onClick={onClose}
-          className="w-9 h-9 rounded-xl hover:bg-gray-100 flex items-center justify-center transition-all"
+          className="w-9 h-9 rounded-xl hover:bg-gray-100 flex items-center justify-center"
         >
           <X className="w-4 h-4 text-[#64748B]" />
         </button>
@@ -537,13 +831,12 @@ const compressImage = (file: File): Promise<string> => {
         {/* PHOTO */}
         <Field label="Profile Photo">
           <div className="flex gap-4 items-start">
-            {/* PREVIEW */}
             <div className="w-18 h-18 rounded-2xl overflow-hidden border border-gray-200 bg-gray-100 shrink-0">
               {form.photo ? (
                 <img
                   src={form.photo}
                   alt=""
-                  className="w-full h-full object-contain"
+                  className="w-full h-full object-cover"
                 />
               ) : (
                 <div className="w-full h-full flex items-center justify-center">
@@ -552,41 +845,44 @@ const compressImage = (file: File): Promise<string> => {
               )}
             </div>
 
-            {/* INPUTS */}
             <div className="flex-1 space-y-2">
               <input
                 value={form.photo}
-                onChange={(e) => u("photo", e.target.value)}
+                onChange={(e) =>
+                  u("photo", e.target.value)
+                }
                 placeholder="Paste image URL..."
                 className={inp + " w-full"}
               />
 
-              <label className="flex items-center justify-center gap-2 px-4 py-2.5 border border-gray-200 rounded-xl cursor-pointer hover:bg-gray-50 transition-all text-sm text-[#475569]">
+              <label className="flex items-center justify-center gap-2 px-4 py-2.5 border border-gray-200 rounded-xl cursor-pointer hover:bg-gray-50 text-sm text-[#475569]">
                 <Upload className="w-4 h-4" />
                 Upload Image
+
                 <input
                   type="file"
                   accept="image/*"
                   className="hidden"
                   onChange={async (e) => {
-                    const file = e.target.files?.[0];
+                    const file =
+                      e.target.files?.[0];
 
                     if (!file) return;
 
-                    // LIMIT SIZE
-                    if (file.size > 2 * 1024 * 1024) {
-                      toast.error("Image must be less than 2MB");
-                      return;
-                    }
-
                     try {
-                      const compressed = await compressImage(file);
+                      const compressed =
+                        await compressImage(
+                          file,
+                        );
 
-                      u("photo", compressed);
-                    } catch (err) {
-                      console.log(err);
-
-                      toast.error("Image compression failed");
+                      u(
+                        "photo",
+                        compressed,
+                      );
+                    } catch {
+                      toast.error(
+                        "Image compression failed",
+                      );
                     }
                   }}
                 />
@@ -595,22 +891,35 @@ const compressImage = (file: File): Promise<string> => {
           </div>
         </Field>
 
-        {/* NAME + SPECIALTY */}
+        {/* NAME + PHONE */}
         <div className="grid grid-cols-2 gap-4">
           <Field label="Full Name" required>
             <input
               value={form.name}
-              onChange={(e) => u("name", e.target.value)}
-              placeholder="e.g. Ramesh Kumar"
+              onChange={(e) =>
+                u("name", e.target.value)
+              }
+              placeholder="Ramesh Kumar"
               className={inp}
             />
           </Field>
 
-          <Field label="Specialty / Role" required>
+          <Field
+            label="Mobile Number"
+            required
+          >
             <input
-              value={form.specialty}
-              onChange={(e) => u("specialty", e.target.value)}
-              placeholder="e.g. AC Repair Expert"
+              type="tel"
+              value={form.phone}
+              onChange={(e) =>
+                u(
+                  "phone",
+                  e.target.value
+                    .replace(/\D/g, "")
+                    .slice(0, 10),
+                )
+              }
+              placeholder="9876543210"
               className={inp}
             />
           </Field>
@@ -622,100 +931,157 @@ const compressImage = (file: File): Promise<string> => {
             <select
               value={form.category}
               onChange={(e) => {
-                u("category", e.target.value);
-
+                u(
+                  "category",
+                  e.target.value,
+                );
                 u("subcategory", "");
+                u("specialty", "");
+                u("services", []);
               }}
               className={inp}
             >
-              <option value="">Select Category</option>
+              <option value="">
+                Select Category
+              </option>
 
-              {WORKER_CATEGORIES.map((c, index) => (
-                <option key={`${c.name}-${index}`} value={c.name}>
-                  {c.name}
-                </option>
-              ))}
+              {WORKER_CATEGORIES.map(
+                (cat) => (
+                  <option
+                    key={cat.name}
+                    value={cat.name}
+                  >
+                    {cat.name}
+                  </option>
+                ),
+              )}
             </select>
           </Field>
 
-          <Field label="Sub Category" required>
+          <Field
+            label="Sub Category"
+            required
+          >
             <select
               value={form.subcategory}
-              onChange={(e) => u("subcategory", e.target.value)}
+              onChange={(e) => {
+                u(
+                  "subcategory",
+                  e.target.value,
+                );
+                u("services", []);
+              }}
               className={inp}
               disabled={!form.category}
             >
-              <option value="">Select Sub Category</option>
+              <option value="">
+                Select Sub Category
+              </option>
 
-              {selectedCategory?.subcategories.map((sub, i) => (
-                <option key={`${sub}-${i}`} value={sub}>
-                  {sub}
-                </option>
-              ))}
+              {selectedCategory?.subcategories?.map(
+                (sub) => (
+                  <option
+                    key={sub}
+                    value={sub}
+                  >
+                    {sub}
+                  </option>
+                ),
+              )}
             </select>
           </Field>
         </div>
 
-        {/* SERVICES */}
-        <Field label="Services Offered" required>
-          {!form.category ? (
-            <div className="text-sm text-[#94A3B8] border border-dashed border-gray-200 rounded-2xl p-4 bg-[#FAFAFA]">
-              Select category first
-            </div>
-          ) : (
-            <div className="grid grid-cols-2 gap-2">
-              {selectedServices.map((service) => {
-                const active = form.services?.includes(service);
+        {/* SPECIALTY */}
+        <Field
+          label="Specialty / Role"
+          required
+        >
+          <input
+            value={form.specialty}
+            onChange={(e) =>
+              u(
+                "specialty",
+                e.target.value,
+              )
+            }
+            className={inp}
+          />
+        </Field>
 
-                return (
-                  <button
-                    type="button"
-                    key={service}
-                    onClick={() => {
-                      if (active) {
-                        u(
-                          "services",
-                          form.services.filter((s) => s !== service),
-                        );
-                      } else {
-                        u("services", [...(form.services || []), service]);
-                      }
-                    }}
-                    className={`px-3 py-2.5 rounded-xl border text-sm transition-all text-left ${
-                      active
-                        ? "bg-[#FF5C39] border-[#FF5C39] text-white shadow-lg shadow-orange-100"
-                        : "border-gray-200 bg-white text-[#475569] hover:border-[#FF5C39] hover:bg-orange-50"
-                    }`}
-                    style={{
-                      fontWeight: active ? 700 : 500,
-                    }}
-                  >
-                    {service}
-                  </button>
+        {/* SERVICES */}
+        <Field
+          label="Services Offered"
+          required
+        >
+          <div className="grid grid-cols-2 gap-2">
+            {selectedServices.map((service) => {
+              const active =
+                form.services?.includes(
+                  service,
                 );
-              })}
-            </div>
-          )}
+
+              return (
+                <button
+                  type="button"
+                  key={service}
+                  onClick={() => {
+                    if (active) {
+                      u(
+                        "services",
+                        form.services.filter(
+                          (s) =>
+                            s !== service,
+                        ),
+                      );
+                    } else {
+                      u("services", [
+                        ...(form.services ||
+                          []),
+                        service,
+                      ]);
+                    }
+                  }}
+                  className={`px-3 py-2.5 rounded-xl border text-sm ${
+                    active
+                      ? "bg-[#FF5C39] border-[#FF5C39] text-white"
+                      : "border-gray-200 hover:border-[#FF5C39]"
+                  }`}
+                >
+                  {service}
+                </button>
+              );
+            })}
+          </div>
         </Field>
 
         {/* LOCATION */}
         <Field label="Location" required>
           <input
             value={form.location}
-            onChange={(e) => u("location", e.target.value)}
-            placeholder="e.g. Bhopal, MP"
+            onChange={(e) =>
+              u("location", e.target.value)
+            }
+            placeholder="Bhopal, MP"
             className={inp}
           />
         </Field>
 
         {/* RATE */}
         <div className="grid grid-cols-3 gap-4">
-          <Field label="Hourly Rate (₹)" required>
+          <Field
+            label="Hourly Rate (₹)"
+            required
+          >
             <input
               type="number"
-              min="1"
               value={form.hourlyRate}
-              onChange={(e) => u("hourlyRate", +e.target.value)}
+              onChange={(e) =>
+                u(
+                  "hourlyRate",
+                  +e.target.value,
+                )
+              }
               className={inp}
             />
           </Field>
@@ -723,9 +1089,13 @@ const compressImage = (file: File): Promise<string> => {
           <Field label="Experience">
             <input
               type="number"
-              min="0"
               value={form.yearsExperience}
-              onChange={(e) => u("yearsExperience", +e.target.value)}
+              onChange={(e) =>
+                u(
+                  "yearsExperience",
+                  +e.target.value,
+                )
+              }
               className={inp}
             />
           </Field>
@@ -733,95 +1103,27 @@ const compressImage = (file: File): Promise<string> => {
           <Field label="Jobs Completed">
             <input
               type="number"
-              min="0"
               value={form.completedJobs}
-              onChange={(e) => u("completedJobs", +e.target.value)}
+              onChange={(e) =>
+                u(
+                  "completedJobs",
+                  +e.target.value,
+                )
+              }
               className={inp}
             />
           </Field>
-        </div>
-
-        {/* RESPONSE + RATING */}
-        <div className="grid grid-cols-2 gap-4">
-          <Field label="Response Time">
-            <select
-              value={form.responseTime}
-              onChange={(e) => u("responseTime", e.target.value)}
-              className={inp}
-            >
-              {RESPONSE_OPTIONS.map((o, i) => (
-                <option key={`${o}-${i}`} value={o}>
-                  {o}
-                </option>
-              ))}
-            </select>
-          </Field>
-
-          <Field label="Rating">
-            <input
-              type="number"
-              step="0.1"
-              min="0"
-              max="5"
-              value={form.rating}
-              onChange={(e) => u("rating", parseFloat(e.target.value))}
-              className={inp}
-            />
-          </Field>
-        </div>
-
-        {/* AVAILABLE */}
-        <div className="flex items-center justify-between p-4 rounded-2xl border border-gray-200 bg-[#FAFAFA]">
-          <div>
-            <div className="text-sm text-[#0F172A]" style={{ fontWeight: 700 }}>
-              Available For Booking
-            </div>
-
-            <div className="text-xs text-[#64748B] mt-1">
-              Show worker publicly
-            </div>
-          </div>
-
-          <button
-            onClick={() => u("available", !form.available)}
-            className={`w-14 h-7 rounded-full relative transition-all ${
-              form.available ? "bg-emerald-500" : "bg-gray-300"
-            }`}
-          >
-            <span
-              className={`absolute top-1 w-5 h-5 rounded-full bg-white transition-all ${
-                form.available ? "left-8" : "left-1"
-              }`}
-            />
-          </button>
         </div>
 
         {/* BIO */}
-        <Field label="Bio / Description">
+        <Field label="Bio">
           <textarea
             rows={4}
             value={form.bio}
-            onChange={(e) => u("bio", e.target.value)}
-            placeholder="Write worker background and expertise..."
+            onChange={(e) =>
+              u("bio", e.target.value)
+            }
             className={inp + " resize-none"}
-          />
-        </Field>
-
-        {/* SKILLS */}
-        <Field label="Skills">
-          <TagInput
-            tags={form.skills}
-            onChange={(t) => u("skills", t)}
-            placeholder="e.g. Framing, Tiling, Painting"
-          />
-        </Field>
-
-        {/* CERTIFICATIONS */}
-        <Field label="Certifications">
-          <TagInput
-            tags={form.certifications}
-            onChange={(t) => u("certifications", t)}
-            placeholder="e.g. OSHA 10"
           />
         </Field>
       </div>
@@ -830,8 +1132,7 @@ const compressImage = (file: File): Promise<string> => {
       <div className="p-5 border-t border-gray-100 flex gap-3">
         <button
           onClick={onClose}
-          className="flex-1 py-3 rounded-2xl border border-gray-200 hover:bg-gray-50 transition-all text-sm text-[#475569]"
-          style={{ fontWeight: 700 }}
+          className="flex-1 py-3 rounded-2xl border border-gray-200"
         >
           Cancel
         </button>
@@ -839,10 +1140,13 @@ const compressImage = (file: File): Promise<string> => {
         <button
           onClick={handleSave}
           disabled={saving}
-          className="flex-1 py-3 rounded-2xl bg-[#FF5C39] hover:bg-[#e54e2e] text-white transition-all text-sm shadow-lg shadow-orange-200 disabled:opacity-50"
-          style={{ fontWeight: 800 }}
+          className="flex-1 py-3 rounded-2xl bg-[#FF5C39] text-white disabled:opacity-50"
         >
-          {saving ? "Saving..." : initial ? "Save Changes" : "Add Worker"}
+          {saving
+            ? "Saving..."
+            : initial
+              ? "Save Changes"
+              : "Add Worker"}
         </button>
       </div>
     </div>
@@ -1378,6 +1682,35 @@ function WorkersTab() {
     Roads: {
       bg: "#D97706",
       light: "#FEF3C7",
+    },
+    "Salon & Beauty": {
+      bg: "#EC4899",
+      light: "#FCE7F3",
+    },
+
+    Construction: {
+      bg: "#F97316",
+      light: "#FFF7ED",
+    },
+
+    Delivery: {
+      bg: "#06B6D4",
+      light: "#ECFEFF",
+    },
+
+    Security: {
+      bg: "#334155",
+      light: "#F1F5F9",
+    },
+
+    Healthcare: {
+      bg: "#EF4444",
+      light: "#FEF2F2",
+    },
+
+    "Event Services": {
+      bg: "#8B5CF6",
+      light: "#F5F3FF",
     },
   };
 

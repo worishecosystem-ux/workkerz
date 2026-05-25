@@ -1,7 +1,7 @@
 "use client";
 import { useState, useEffect, useRef } from "react";
 import { Suspense } from "react";
-import { useSearchParams,useRouter } from "next/navigation";
+import { useSearchParams, useRouter } from "next/navigation";
 import {
   Search,
   SlidersHorizontal,
@@ -60,7 +60,7 @@ function BrowseContent() {
   );
   const [sortBy, setSortBy] = useState("rating");
   const [availableOnly, setAvailableOnly] = useState(false);
-  const [maxRate, setMaxRate] = useState(5000);
+  const [maxRate, setMaxRate] = useState(500);
   const [showFilters, setShowFilters] = useState(false);
   const [sortOpen, setSortOpen] = useState(false);
 
@@ -142,28 +142,72 @@ function BrowseContent() {
 
           {/* Search */}
           <div className="mt-6 flex gap-3 max-w-2xl">
-            <div className="flex-1 flex items-center gap-3 bg-white/10 border border-white/20 rounded-xl px-4 py-3 backdrop-blur-sm">
-              <Search className="w-4 h-4 text-gray-400 shrink-0" />
-              <input
-                type="text"
-                placeholder="Search by name, skill, or specialty..."
-                value={query}
-                onChange={(e) => setQuery(e.target.value)}
-                className="bg-transparent w-full outline-none text-white placeholder-gray-400 text-sm"
-              />
-              {query && (
-                <button onClick={() => setQuery("")}>
-                  <X className="w-4 h-4 text-gray-400 hover:text-white" />
-                </button>
-              )}
-            </div>
-            <div className="flex items-center gap-2 bg-white/10 border border-white/20 rounded-xl px-4 py-3">
-              <MapPin className="w-4 h-4 text-gray-400" />
-              <input
-                type="text"
-                placeholder="Location"
-                className="bg-transparent outline-none text-white placeholder-gray-400 text-sm w-28"
-              />
+            <div className="relative flex-1">
+              {/* SEARCH BAR */}
+
+              <div
+                className="
+      flex items-center gap-3
+      h-14
+      rounded-2xl
+      border border-white/15
+      bg-white/10
+      backdrop-blur-2xl
+      px-4
+      shadow-[0_8px_30px_rgba(0,0,0,0.15)]
+      transition-all duration-300
+      focus-within:border-[#0EA5E9]
+      focus-within:bg-white/15
+      focus-within:shadow-[0_0_0_4px_rgba(14,165,233,0.12)]
+    "
+              >
+                {/* ICON */}
+
+                <div className="w-9 h-9 rounded-xl bg-white/10 flex items-center justify-center shrink-0">
+                  <Search className="w-4 h-4 text-[#94A3B8]" />
+                </div>
+
+                {/* INPUT */}
+
+                <input
+                  type="text"
+                  placeholder="Search workers, skills, specialty..."
+                  value={query}
+                  onChange={(e) => setQuery(e.target.value)}
+                  className="
+        bg-transparent
+        w-full
+        outline-none
+        text-white
+        placeholder:text-[#94A3B8]
+        text-sm
+        font-medium
+      "
+                />
+
+                {/* CLEAR BUTTON */}
+
+                {query && (
+                  <button
+                    onClick={() => setQuery("")}
+                    className="
+          w-8 h-8
+          rounded-lg
+          bg-white/10
+          hover:bg-[#FF5C39]
+          flex items-center justify-center
+          transition-all duration-200
+          shrink-0
+        "
+                  >
+                    <X className="w-4 h-4 text-white" />
+                  </button>
+                )}
+              </div>
+
+              {/* SEARCH GLOW */}
+
+              <div className="absolute inset-0 rounded-2xl bg-[#0EA5E9]/5 blur-2xl -z-10" />
             </div>
           </div>
         </div>
@@ -325,7 +369,7 @@ function BrowseContent() {
                     <input
                       type="range"
                       min={30}
-                      max={5000}
+                      max={500}
                       value={maxRate}
                       onChange={(e) => setMaxRate(Number(e.target.value))}
                       className="h-2 w-full cursor-pointer appearance-none rounded-full bg-gray-200 accent-[#FF5C39]"
@@ -333,7 +377,7 @@ function BrowseContent() {
 
                     <div className="mt-3 flex justify-between text-xs text-[#94A3B8]">
                       <span>₹30</span>
-                      <span>₹5000</span>
+                      <span>₹500</span>
                     </div>
                   </div>
                 </div>
@@ -530,7 +574,6 @@ function BrowseContent() {
     </div>
   );
 }
-
 
 export default function BrowsePage() {
   return (

@@ -258,12 +258,14 @@ export default function Confirmation() {
   const {
     form,
     worker,
-    totalCost,
-    serviceFee,
+    totalCost = 0,
+    serviceFee = 0,
     materialsCost = 0,
-    grandTotal,
     confirmedAt,
   } = state;
+
+  const grandTotal =
+    Number(totalCost) + Number(serviceFee) + Number(materialsCost);
 
   const formatDate = (dateStr: string) => {
     if (!dateStr) return "—";
@@ -291,7 +293,7 @@ export default function Confirmation() {
 
     const lines = [
       `╔══════════════════════╗`,
-      `      🛠️ *WORKKERZ BOOKING*`,
+      ` 🛠️ *WORKKERZ BOOKING*`,
       `╚══════════════════════╝`,
       ``,
       `✅ *Booking Submitted Successfully!*`,
@@ -470,7 +472,7 @@ export default function Confirmation() {
                 <img
                   src={worker.photo}
                   alt={worker.name}
-                  className="w-20 h-20 rounded-3xl object-cover"
+                  className="w-25 h-28 rounded-3xl object-cover"
                 />
 
                 <div className="flex-1">
@@ -551,9 +553,11 @@ export default function Confirmation() {
 
               <div className="flex justify-between items-end">
                 <div>
-                  <div className="text-xs text-white/70">Grand Total</div>
+                  <div className="text-xs text-white/70">₹Grand Total</div>
 
-                  <div className="text-4xl font-black mt-1">₹{grandTotal}</div>
+                  <div className="text-4xl font-black mt-1">
+                    ₹{Number(grandTotal || 0).toLocaleString("en-IN")}
+                  </div>
                 </div>
 
                 <div className="bg-[#FF5C39] px-4 py-2 rounded-2xl text-sm font-semibold">
@@ -591,7 +595,7 @@ export default function Confirmation() {
                       className="font-bold text-[#0F172A] text-sm"
                       style={{ fontWeight: 800 }}
                     >
-                    Booking Details sent to whatsapp 
+                      Booking Details sent to whatsapp
                     </div>
 
                     <div className="text-xs text-[#64748B] mt-0.5">

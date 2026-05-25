@@ -10,6 +10,7 @@ export interface Worker {
   id: string;
 
   name: string;
+  phone: string;
 
   category: string;
 
@@ -158,6 +159,8 @@ const mapWorker = (w: any): Worker => ({
 
   name: w.name ?? "",
 
+  phone: w.phone ?? "",
+
   category: w.category ?? "",
 
   subcategory: w.subcategory ?? "",
@@ -188,7 +191,9 @@ const mapWorker = (w: any): Worker => ({
 
   responseTime: w.response_time ?? "Within 1 hour",
 
-  certifications: Array.isArray(w.certifications) ? w.certifications : [],
+  certifications: Array.isArray(w.certifications)
+    ? w.certifications
+    : [],
 });
 
 /* =========================
@@ -202,6 +207,7 @@ export async function getWorkers(): Promise<Worker[]> {
       `
       id,
       name,
+      phone,
       category,
       subcategory,
       specialty,
@@ -259,6 +265,7 @@ export async function getWorkerById(id: string): Promise<Worker | null> {
       id: data.id,
 
       name: data.name || "",
+      phone: data.phone || "",
 
       category: data.category || "",
 

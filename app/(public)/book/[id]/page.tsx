@@ -24,6 +24,7 @@ import {
   Receipt,
   Mic,
   MicOff,
+  CheckCircle,
 } from "lucide-react";
 import { useAdmin } from "@/app/components/context/AdminContext";
 
@@ -295,81 +296,8 @@ export default function BookingPage() {
     );
   }, [form, step, STORAGE_KEY]);
 
-  const [isListening, setIsListening] = useState(false);
-
-const startSpeechToText = async (
-  field: "description" | "notes"
-) => {
-  try {
-    // MOBILE PERMISSION REQUEST
-
-    await navigator.mediaDevices.getUserMedia({
-      audio: true,
-    });
-
-    const SpeechRecognition =
-      (window as any).SpeechRecognition ||
-      (window as any).webkitSpeechRecognition;
-
-    if (!SpeechRecognition) {
-      alert(
-        "Speech recognition is not supported on this device/browser",
-      );
-      return;
-    }
-
-    const recognition = new SpeechRecognition();
-
-    recognition.lang = "en-IN";
-
-    recognition.continuous = false;
-
-    recognition.interimResults = true;
-
-    recognition.maxAlternatives = 1;
-
-    recognition.onstart = () => {
-      setIsListening(true);
-    };
-
-    recognition.onend = () => {
-      setIsListening(false);
-    };
-
-    recognition.onerror = (event: any) => {
-      console.log(event.error);
-
-      setIsListening(false);
-
-      if (event.error === "not-allowed") {
-        alert("Please allow microphone permission");
-      }
-    };
-
-    recognition.onresult = (event: any) => {
-      let transcript = "";
-
-      for (
-        let i = event.resultIndex;
-        i < event.results.length;
-        i++
-      ) {
-        transcript += event.results[i][0].transcript;
-      }
-
-      setForm((prev) => ({
-        ...prev,
-        [field]: transcript,
-      }));
-    };
-
-    recognition.start();
-  } catch (err) {
-    console.log(err);
-
-    alert("Microphone permission denied");
-  }
-};
+  // 1. useState ke niche add karo
+  const [paymentType, setPaymentType] = useState<"full" | "fee">("fee");
 
   const [pincodeLoading, setPincodeLoading] = useState(false);
 
@@ -447,9 +375,15 @@ const startSpeechToText = async (
   }
 
   const serviceOptions = worker.services || [];
+
+  // 2. totalCost ke niche add karo
   const totalCost = worker.hourlyRate * form.duration;
-  const serviceFee = Math.round(totalCost * 0.1);
+
+  const serviceFee = 15;
+
   const grandTotal = totalCost + serviceFee;
+
+  const payableAmount = paymentType === "full" ? grandTotal : serviceFee;
 
   const handleNext = () => {
     if (step < 4) {
@@ -639,28 +573,6 @@ const startSpeechToText = async (
                         placeholder="Describe the work you need done in detail..."
                         className={inp + " resize-none pr-14"}
                       />
-
-                      <button
-                        type="button"
-                        onClick={() => startSpeechToText("description")}
-                        className={`
-        absolute bottom-4 right-4
-        w-10 h-10 rounded-full
-        flex items-center justify-center
-        transition-all
-        ${
-          isListening
-            ? "bg-red-500 text-white animate-pulse"
-            : "bg-[#FF5C39] text-white"
-        }
-      `}
-                      >
-                        {isListening ? (
-                          <MicOff className="w-4 h-4" />
-                        ) : (
-                          <Mic className="w-4 h-4" />
-                        )}
-                      </button>
                     </div>
                   </div>
 
@@ -1325,28 +1237,6 @@ const startSpeechToText = async (
         outline-none
       "
                       />
-
-                      <button
-                        type="button"
-                        onClick={() => startSpeechToText("notes")}
-                        className={`
-        absolute bottom-4 right-4
-        w-10 h-10 rounded-full
-        flex items-center justify-center
-        transition-all
-        ${
-          isListening
-            ? "bg-red-500 text-white animate-pulse"
-            : "bg-[#FF5C39] text-white"
-        }
-      `}
-                      >
-                        {isListening ? (
-                          <MicOff className="w-4 h-4" />
-                        ) : (
-                          <Mic className="w-4 h-4" />
-                        )}
-                      </button>
                     </div>
                   </div>
 
@@ -1395,77 +1285,152 @@ const startSpeechToText = async (
                   </div>
 
                   {/* PAYMENT CARD */}
-                  <div className="rounded-4xl border border-gray-100 bg-white p-5 shadow-sm">
+                  <div className="rounded-4xl border border-gray-100 bg-white p-4 sm:p-6 shadow-sm">
                     {/* TOP */}
-                    <div className="flex items-center justify-between mb-5">
-                      <div>
-                        <div
-                          className="text-[#0F172A] text-lg"
-                          style={{ fontWeight: 800 }}
-                        >
-                          Pay ₹15 Booking Fee
-                        </div>
-
-                        <div className="text-sm text-[#64748B] mt-1">
-                          UPI / Paytm / PhonePe / GPay
-                        </div>
-                      </div>
-
-                      <div className="px-3 py-1 rounded-full bg-[#E8FFF3] text-[#10B981] text-xs">
-                        Secure
-                      </div>
-                    </div>
-
-                    {/* QR BOX */}
-                    <div className="mx-auto max-w-[320px]">
-                      <div className="rounded-4xl border-10 border-[#0F172A] bg-white p-4 shadow-2xl">
-                        {/* HEADER */}
-                        <div className="flex items-center justify-between mb-4">
-                          <div>
-                            <div
-                              className="text-[#0F172A] text-sm"
-                              style={{ fontWeight: 800 }}
-                            >
-                              WORKKERZ
-                            </div>
-
-                            <div className="text-[11px] text-[#64748B]">
-                              Secure UPI Payment
-                            </div>
-                          </div>
-
-                          <div className="px-2 py-1 rounded-lg bg-[#EEF9FF] text-[#0EA5E9] text-[10px]">
-                            UPI
-                          </div>
-                        </div>
-
-                        {/* QR */}
-                        <div className="rounded-2xl overflow-hidden border border-gray-200 bg-white">
-                          <img
-                            src="/workkerzpay.jpeg"
-                            alt="Workkerz Payment QR"
-                            className="w-full aspect-square object-cover"
-                          />
-                        </div>
-
-                        {/* FOOTER */}
-                        <div className="mt-4 text-center">
-                          <div
-                            className="text-[#0F172A] text-base"
-                            style={{ fontWeight: 800 }}
+                    <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-5">
+                      {/* LEFT */}
+                      <div className="flex-1">
+                        {/* PAYMENT TYPE */}
+                        <div className="grid grid-cols-2 gap-3 mb-5">
+                          <button
+                            type="button"
+                            onClick={() => setPaymentType("fee")}
+                            className={`h-13 rounded-2xl text-sm font-bold transition-all ${
+                              paymentType === "fee"
+                                ? "bg-[#FF5C39] text-white shadow-lg shadow-orange-200"
+                                : "bg-white border border-gray-200 text-[#0F172A]"
+                            }`}
                           >
-                            Scan & Pay ₹15
+                            Booking Fee ₹15
+                          </button>
+
+                          <button
+                            type="button"
+                            onClick={() => setPaymentType("full")}
+                            className={`h-13 rounded-2xl text-sm font-bold transition-all ${
+                              paymentType === "full"
+                                ? "bg-[#0F172A] text-white shadow-lg"
+                                : "bg-white border border-gray-200 text-[#0F172A]"
+                            }`}
+                          >
+                            Full Pay ₹{grandTotal}
+                          </button>
+                        </div>
+
+                        {/* PAY TEXT */}
+                        <div className="flex items-center gap-3 flex-wrap">
+                          <div>
+                            <div className="text-3xl sm:text-4xl font-black text-[#0F172A]">
+                              ₹{payableAmount}
+                            </div>
+
+                            <div className="text-sm text-[#64748B] mt-1">
+                              UPI / Paytm / PhonePe / GPay
+                            </div>
                           </div>
 
-                          <div className="text-xs text-[#64748B] mt-1">
-                            Booking confirmation charge
+                          <div className="px-3 py-1 rounded-full bg-[#E8FFF3] text-[#10B981] text-xs font-semibold">
+                            Secure
+                          </div>
+                        </div>
+
+                        {/* APPS */}
+                        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mt-6">
+                          <a
+                            href={`upi://pay?pa=8602190366@ptaxis&pn=Workkerz&am=${payableAmount}&cu=INR`}
+                            className="h-14 rounded-2xl border border-gray-200 hover:border-[#FF5C39] flex items-center justify-center gap-2 px-3 transition-all"
+                          >
+                            <img
+                              src="/gpay.png"
+                              alt="GPay"
+                              className="w-8 h-8 object-contain"
+                            />
+
+                            <span className="text-sm font-semibold text-[#0F172A]">
+                              GPay
+                            </span>
+                          </a>
+
+                          <a
+                            href={`upi://pay?pa=8602190366@ptaxis&pn=Workkerz&am=${payableAmount}&cu=INR`}
+                            className="h-14 rounded-2xl border border-gray-200 hover:border-[#FF5C39] flex items-center justify-center p-3 transition-all"
+                          >
+                            <img
+                              src="/phonepe.svg"
+                              alt="PhonePe"
+                              className="w-28 h-8 object-contain"
+                            />
+                          </a>
+
+                          <a
+                            href={`upi://pay?pa=8602190366@ptaxis&pn=Workkerz&am=${payableAmount}&cu=INR`}
+                            className="h-14 rounded-2xl border border-gray-200 hover:border-[#FF5C39] flex items-center justify-center p-3 transition-all"
+                          >
+                            <img
+                              src="/paytm.png"
+                              alt="Paytm"
+                              className="w-28 h-8 object-contain"
+                            />
+                          </a>
+
+                          <a
+                            href={`upi://pay?pa=8602190366@ptaxis&pn=Workkerz&am=${payableAmount}&cu=INR`}
+                            className="h-14 rounded-2xl border border-gray-200 hover:border-[#FF5C39] flex items-center justify-center p-3 transition-all"
+                          >
+                            <img
+                              src="/amazon_pay.svg"
+                              alt="Amazon Pay"
+                              className="w-24 h-7 object-contain"
+                            />
+                          </a>
+                        </div>
+                      </div>
+
+                      {/* QR */}
+                      <div className="w-full max-w-75 mx-auto lg:mx-0">
+                        <div className="rounded-4xl border-10 border-[#0F172A] bg-white p-4 shadow-2xl">
+                          {/* QR TOP */}
+                          <div className="flex items-center justify-between mb-4">
+                            <div>
+                              <div className="text-sm font-black text-[#0F172A]">
+                                WORKKERZ
+                              </div>
+
+                              <div className="text-[11px] text-[#64748B]">
+                                Secure UPI Payment
+                              </div>
+                            </div>
+
+                            <div className="px-2 py-1 rounded-lg bg-[#EEF9FF] text-[#0EA5E9] text-[10px]">
+                              UPI
+                            </div>
+                          </div>
+
+                          {/* QR IMAGE */}
+                          <div className="rounded-2xl overflow-hidden border border-gray-200">
+                            <img
+                              src="/workkerzpay.jpeg"
+                              alt="QR"
+                              className="w-full aspect-square object-cover"
+                            />
+                          </div>
+
+                          {/* QR FOOTER */}
+                          <div className="mt-4 text-center">
+                            <div className="text-xl font-black text-[#0F172A]">
+                              Scan & Pay ₹{payableAmount}
+                            </div>
+
+                            <div className="text-xs text-[#64748B] mt-1">
+                              Instant secure payment
+                            </div>
                           </div>
                         </div>
                       </div>
                     </div>
 
-                    {/* TRANSACTION ID */}
-                    <div className="mt-6">
+                    {/* TRANSACTION */}
+                    <div className="mt-7">
                       <label className="block text-sm text-[#0F172A] mb-2">
                         Transaction ID *
                       </label>
@@ -1493,16 +1458,12 @@ const startSpeechToText = async (
                       <ShieldCheck className="w-5 h-5 text-[#0EA5E9] shrink-0 mt-0.5" />
 
                       <div>
-                        <div
-                          className="text-sm text-[#0F172A]"
-                          style={{ fontWeight: 700 }}
-                        >
+                        <div className="text-sm font-bold text-[#0F172A]">
                           Booking Verification
                         </div>
 
-                        <div className="text-xs text-[#64748B] mt-1 leading-relaxed">
-                          Booking continues only after valid transaction ID is
-                          entered.
+                        <div className="text-xs text-[#64748B] mt-1">
+                          Booking continues after valid payment verification.
                         </div>
                       </div>
                     </div>
@@ -1511,26 +1472,16 @@ const startSpeechToText = async (
               )}
 
               {/* Navigation */}
-              <div className="flex items-center justify-between mt-8 pt-6 border-t border-gray-100">
-                <button
-                  onClick={handleBack}
-                  className="flex items-center gap-2 text-[#64748B] hover:text-[#0F172A] text-sm transition-colors"
-                >
-                  <ChevronLeft className="w-4 h-4" />{" "}
-                  {step === 1 ? "Cancel" : "Back"}
-                </button>
+              <div className="flex justify-end mt-5">
                 <button
                   onClick={handleNext}
                   disabled={!canProceed()}
-                  className={`flex items-center gap-2 px-6 py-3 rounded-xl text-sm text-white transition-all ${
-                    canProceed()
-                      ? "bg-[#FF5C39] hover:bg-[#e54e2e] shadow-lg shadow-orange-200"
-                      : "bg-gray-200 text-gray-400 cursor-not-allowed"
-                  }`}
-                  style={{ fontWeight: 600 }}
+                  className={`min-w-35 h-12 flex items-center justify-center gap-2 px-6 rounded-2xl text-sm font-bold transition-all duration-200 shrink-0 ${canProceed() ? "bg-[#FF5C39] hover:bg-[#e54e2e] text-white shadow-lg shadow-orange-200" : "bg-gray-200 text-gray-400 cursor-not-allowed"}`}
                 >
                   {step === 4 ? (
-                    <></>
+                    <>
+                      Continue <CheckCircle className="w-4 h-4" />
+                    </>
                   ) : (
                     <>
                       Continue <ChevronRight className="w-4 h-4" />
@@ -1560,7 +1511,7 @@ const startSpeechToText = async (
                             : `https://ui-avatars.com/api/?name=${encodeURIComponent(worker.name)}&background=f97316&color=fff`
                         }
                         alt={worker.name}
-                        className="w-18 h-18 rounded-3xl object-cover border-3 border-white/20 shadow-xl"
+                        className="w-25 h-28 rounded-3xl object-cover border-3 border-white/20 shadow-xl"
                         onError={(e) => {
                           e.currentTarget.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(worker.name)}&background=f97316&color=fff`;
                         }}
