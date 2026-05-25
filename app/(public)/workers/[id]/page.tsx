@@ -45,39 +45,51 @@ const categoryColors: Record<
   },
 
   Washer: {
-    color: "#EAB308",
-    bg: "#FEFCE8",
+    color: "#06B6D4",
+    bg: "#ECFEFF",
     label: "Washer",
   },
 
   "Computer Operator": {
-    color: "#9333EA",
+    color: "#8B5CF6",
     bg: "#F3E8FF",
     label: "Computer Operator",
   },
 
   "Office Worker": {
-    color: "#DB2777",
+    color: "#EC4899",
     bg: "#FCE7F3",
     label: "Office Worker",
   },
 
   "Home Services": {
-    color: "#65A30D",
-    bg: "#ECFCCB",
+    color: "#22C55E",
+    bg: "#DCFCE7",
     label: "Home Services",
   },
 
-  Restaurant: {
-    color: "#E11D48",
+  "Salon & Beauty": {
+    color: "#F43F5E",
     bg: "#FFE4E6",
+    label: "Salon & Beauty",
+  },
+
+  Restaurant: {
+    color: "#EF4444",
+    bg: "#FEE2E2",
     label: "Restaurant",
   },
 
   "Home Contractor": {
-    color: "#0284C7",
-    bg: "#E0F2FE",
+    color: "#F59E0B",
+    bg: "#FEF3C7",
     label: "Home Contractor",
+  },
+
+  Construction: {
+    color: "#D97706",
+    bg: "#FFEDD5",
+    label: "Construction",
   },
 
   Factory: {
@@ -87,9 +99,33 @@ const categoryColors: Record<
   },
 
   Roads: {
-    color: "#D97706",
-    bg: "#FEF3C7",
+    color: "#CA8A04",
+    bg: "#FEF9C3",
     label: "Roads",
+  },
+
+  Delivery: {
+    color: "#14B8A6",
+    bg: "#CCFBF1",
+    label: "Delivery",
+  },
+
+  Security: {
+    color: "#334155",
+    bg: "#E2E8F0",
+    label: "Security",
+  },
+
+  Healthcare: {
+    color: "#0EA5E9",
+    bg: "#E0F2FE",
+    label: "Healthcare",
+  },
+
+  "Event Services": {
+    color: "#A855F7",
+    bg: "#F3E8FF",
+    label: "Event Services",
   },
 };
 

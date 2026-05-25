@@ -89,15 +89,15 @@ export const serviceCategories = [
     id: "Washer",
     label: "Washer",
     description: "Vehicle washing services",
-    color: "#EAB308",
-    bgColor: "#FEFCE8",
+    color: "#06B6D4",
+    bgColor: "#ECFEFF",
   },
 
   {
     id: "Computer Operator",
     label: "Computer Operator",
     description: "IT & office computer professionals",
-    color: "#9333EA",
+    color: "#8B5CF6",
     bgColor: "#F3E8FF",
   },
 
@@ -105,38 +105,54 @@ export const serviceCategories = [
     id: "Office Worker",
     label: "Office Worker",
     description: "Office support staff",
-    color: "#DB2777",
+    color: "#EC4899",
     bgColor: "#FCE7F3",
   },
 
   {
     id: "Home Services",
     label: "Home Services",
-    description: "Domestic and hotel services",
-    color: "#65A30D",
-    bgColor: "#ECFCCB",
+    description: "Domestic & cleaning services",
+    color: "#22C55E",
+    bgColor: "#DCFCE7",
+  },
+
+  {
+    id: "Salon & Beauty",
+    label: "Salon & Beauty",
+    description: "Salon & beauty experts",
+    color: "#F43F5E",
+    bgColor: "#FFE4E6",
   },
 
   {
     id: "Restaurant",
     label: "Restaurant",
-    description: "Restaurant staff and chefs",
-    color: "#E11D48",
-    bgColor: "#FFE4E6",
+    description: "Restaurant staff & chefs",
+    color: "#EF4444",
+    bgColor: "#FEE2E2",
   },
 
   {
     id: "Home Contractor",
     label: "Home Contractor",
-    description: "Construction & repair contractors",
-    color: "#0284C7",
-    bgColor: "#E0F2FE",
+    description: "Repair & contractor services",
+    color: "#F59E0B",
+    bgColor: "#FEF3C7",
+  },
+
+  {
+    id: "Construction",
+    label: "Construction",
+    description: "Building & construction workers",
+    color: "#D97706",
+    bgColor: "#FFEDD5",
   },
 
   {
     id: "Factory",
     label: "Factory",
-    description: "Factory and warehouse workers",
+    description: "Factory & warehouse workers",
     color: "#475569",
     bgColor: "#F1F5F9",
   },
@@ -145,8 +161,40 @@ export const serviceCategories = [
     id: "Roads",
     label: "Roads",
     description: "Road construction workers",
-    color: "#D97706",
-    bgColor: "#FEF3C7",
+    color: "#CA8A04",
+    bgColor: "#FEF9C3",
+  },
+
+  {
+    id: "Delivery",
+    label: "Delivery",
+    description: "Delivery & courier workers",
+    color: "#14B8A6",
+    bgColor: "#CCFBF1",
+  },
+
+  {
+    id: "Security",
+    label: "Security",
+    description: "Security guards & bouncers",
+    color: "#334155",
+    bgColor: "#E2E8F0",
+  },
+
+  {
+    id: "Healthcare",
+    label: "Healthcare",
+    description: "Healthcare & patient care workers",
+    color: "#0EA5E9",
+    bgColor: "#E0F2FE",
+  },
+
+  {
+    id: "Event Services",
+    label: "Event Services",
+    description: "Event & decoration staff",
+    color: "#A855F7",
+    bgColor: "#F3E8FF",
   },
 ];
 

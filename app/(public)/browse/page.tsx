@@ -15,6 +15,7 @@ import {
   Star,
   ChevronLeft,
   ChevronRight,
+  Shield
 } from "lucide-react";
 import { serviceCategories, type ServiceCategory } from "@/app/data/workers";
 import { useAdmin } from "@/app/components/context/AdminContext";
@@ -35,13 +36,25 @@ const categoryIcons: Record<string, React.ElementType> = {
 
   "Home Services": Droplets,
 
+  "Salon & Beauty": Star,
+
   Restaurant: Star,
 
   "Home Contractor": Hammer,
 
+  Construction: Hammer,
+
   Factory: Zap,
 
   Roads: Hammer,
+
+  Delivery: Car,
+
+  Security: Shield,
+
+  Healthcare: Star,
+
+  "Event Services": Star,
 };
 
 const sortOptions = [
