@@ -2,503 +2,1003 @@
 
 import { useState } from "react";
 
-import { X, Pencil, AlertTriangle } from "lucide-react";
+import {
+  X,
+  Upload,
+  FileSpreadsheet,
+  AlertTriangle,
+  ImagePlus,
+  FileText,
+  ChevronDown,
+} from "lucide-react";
+
+import * as XLSX from "xlsx";
 
 import { supabase } from "@/lib/supabase";
 
 import {
   type Product,
-  type ProductCategory,
   emptyProduct,
 } from "@/app/data/products";
 
 /* ========================================= */
+/* CATEGORY TYPES */
+/* ========================================= */
 
-const PRODUCT_CATEGORIES: ProductCategory[] = [
-  "masonry",
-  "plumbing",
-  "electrical",
-  "moving",
-  "tools",
-  "safety",
+type ProductCategory =
+  | "sand"
+  | "aggregate"
+  | "brick"
+  | "cement"
+  | "tmt"
+  | "paint"
+  | "plumbing"
+  | "tiles"
+  | "electrical";
+
+/* ========================================= */
+/* CATEGORIES */
+/* ========================================= */
+
+const PRODUCT_CATEGORIES: {
+  id: ProductCategory;
+  name: string;
+  image: string;
+}[] = [
+  {
+    id: "sand",
+    name: "Sand",
+    image: "/sand.webp",
+  },
+
+  {
+    id: "aggregate",
+    name: "Aggregate",
+    image:
+      "/20-mm-aggregates.jpg",
+  },
+
+  {
+    id: "brick",
+    name: "Brick",
+    image:
+      "/red-brick.jpeg",
+  },
+
+  {
+    id: "cement",
+    name: "Cement",
+    image:
+      "/cements_.jpg",
+  },
+
+  {
+    id: "tmt",
+    name: "TMT",
+    image:
+      "/captain-tmt-bars-500x500.webp",
+  },
+
+  {
+    id: "paint",
+    name: "Paint",
+    image:
+      "/closeup-of-house-painting-renovation-4519567.webp",
+  },
+
+  {
+    id: "plumbing",
+    name: "Plumbing",
+    image:
+      "/pipes-18242-1676036604740.webp",
+  },
+
+  {
+    id: "tiles",
+    name: "Tiles",
+    image:
+      "/tiles.avif",
+  },
+
+  {
+    id: "electrical",
+    name: "Electrical",
+    image:
+      "/electrical.avif",
+  },
 ];
-
-const CATEGORY_LABELS: Record<ProductCategory, string> = {
-  masonry: "Masonry & Concrete",
-
-  plumbing: "Plumbing Supplies",
-
-  electrical: "Electrical Components",
-
-  moving: "Moving & Packing",
-
-  tools: "Tools & Equipment",
-
-  safety: "Safety & PPE",
-};
-
-const CATEGORY_COLORS: Record<ProductCategory, string> = {
-  masonry: "#FFF7ED",
-
-  plumbing: "#EFF6FF",
-
-  electrical: "#FEFCE8",
-
-  moving: "#ECFDF5",
-
-  tools: "#EEF2FF",
-
-  safety: "#FEF2F2",
-};
-
-const inp =
-  "w-full bg-[#F8FAFC] border border-gray-200 rounded-xl px-3 py-2.5 text-sm text-[#0F172A] outline-none focus:border-[#0EA5E9] transition-colors";
 
 /* ========================================= */
 
-const MAX_IMAGE_SIZE = 5 * 1024 * 1024;
-
-const MAX_PDF_SIZE = 10 * 1024 * 1024;
+const inp =
+  "w-full bg-[#F8FAFC] border border-gray-200 rounded-2xl px-4 py-3 text-sm outline-none focus:border-[#0EA5E9]";
 
 /* ========================================= */
 
 function ProductForm({
+  shop,
   initial,
-
   onSave,
-
   onClose,
 }: {
+  shop: any;
+
   initial?: Product;
 
-  onSave: (p: Omit<Product, "id">) => Promise<void>;
+  onSave: (
+    p: Omit<Product, "id">,
+  ) => Promise<void>;
 
   onClose: () => void;
 }) {
-  const [form, setForm] = useState<Omit<Product, "id">>(
-    initial
-      ? {
-          ...initial,
-        }
-      : emptyProduct(),
-  );
+  const [mode, setMode] =
+    useState<
+      "manual" | "excel"
+    >("manual");
 
-  const [error, setError] = useState("");
+  const [loading, setLoading] =
+    useState(false);
 
-  const [loading, setLoading] = useState(false);
+  const [importLoading, setImportLoading] =
+    useState(false);
 
-  const [imagePreview, setImagePreview] = useState(form.image || "");
+  const [error, setError] =
+    useState("");
 
-  const [imageFile, setImageFile] = useState<File | null>(null);
+  const [excelFile, setExcelFile] =
+    useState<File | null>(
+      null,
+    );
 
-  const [brochureFile, setBrochureFile] = useState<File | null>(null);
+  const [imageFile, setImageFile] =
+    useState<File | null>(
+      null,
+    );
+
+  const [imagePreview, setImagePreview] =
+    useState("");
+
+  const [brochureFile, setBrochureFile] =
+    useState<File | null>(
+      null,
+    );
+
+  const [brochureName, setBrochureName] =
+    useState("");
+
+  const [
+    categoryOpen,
+    setCategoryOpen,
+  ] = useState(false);
+
+  /* ========================================= */
+
+  const [form, setForm] =
+    useState<
+      Omit<Product, "id">
+    >(
+      initial
+        ? {
+            ...initial,
+          }
+        : {
+            ...emptyProduct(),
+
+            shop_id:
+              shop?.id || "",
+
+            category:
+              "sand" as any,
+
+            categoryLabel:
+              "Sand",
+
+            color:
+              "#FFF7ED",
+          },
+    );
+
+  /* ========================================= */
+
+  const selectedCategory =
+    PRODUCT_CATEGORIES.find(
+      (c) =>
+        c.id ===
+        form.category,
+    ) ||
+    PRODUCT_CATEGORIES[0];
 
   /* ========================================= */
 
   const u = (
-    field: keyof Omit<Product, "id">,
-
-    val: any,
+    field: keyof Omit<
+      Product,
+      "id"
+    >,
+    value: any,
   ) => {
-    setForm((f) => {
-      const updated = {
-        ...f,
+    setForm((prev) => ({
+      ...prev,
 
-        [field]: val,
-      };
-
-      if (field === "category") {
-        updated.categoryLabel = CATEGORY_LABELS[val as ProductCategory];
-
-        updated.color = CATEGORY_COLORS[val as ProductCategory];
-      }
-
-      return updated;
-    });
+      [field]:
+        value,
+    }));
   };
 
   /* ========================================= */
-
-  const validate = () => {
-    if (!form.name.trim()) {
-      return "Name is required";
-    }
-
-    if (!form.brand.trim()) {
-      return "Brand is required";
-    }
-
-    if (form.price <= 0) {
-      return "Price must be greater than 0";
-    }
-
-    return "";
-  };
-
+  /* IMAGE UPLOAD */
   /* ========================================= */
 
-  const handleSave = async () => {
-    const err = validate();
+  async function uploadImage(
+    file: File,
+  ) {
+    const ext =
+      file.name
+        .split(".")
+        .pop();
 
-    if (err) {
-      setError(err);
+    const fileName = `product-${Date.now()}.${ext}`;
 
-      return;
+    const storagePath = `images/${fileName}`;
+
+    const {
+      error,
+    } =
+      await supabase.storage
+        .from(
+          "products",
+        )
+        .upload(
+          storagePath,
+          file,
+        );
+
+    if (error) {
+      throw error;
     }
 
+    return fileName;
+  }
+
+  /* ========================================= */
+  /* BROCHURE UPLOAD */
+  /* ========================================= */
+
+  async function uploadBrochure(
+    file: File,
+  ) {
+    const ext =
+      file.name
+        .split(".")
+        .pop();
+
+    const fileName = `brochure-${Date.now()}.${ext}`;
+
+    const storagePath = `brochures/${fileName}`;
+
+    const {
+      error,
+    } =
+      await supabase.storage
+        .from(
+          "products",
+        )
+        .upload(
+          storagePath,
+          file,
+        );
+
+    if (error) {
+      throw error;
+    }
+
+    return fileName;
+  }
+
+  /* ========================================= */
+  /* SAVE PRODUCT */
+  /* ========================================= */
+
+  async function handleSave() {
     try {
       setLoading(true);
 
       setError("");
 
-      /* =========================================
-         IMAGE FILE NAME ONLY
-      ========================================= */
+      let imagePath =
+        form.image || "";
 
-      let imagePath = form.image || "";
+      let brochurePath =
+        form.brochure || "";
 
-      if (imageFile) {
-        /* SIZE LIMIT */
-
-        if (imageFile.size > MAX_IMAGE_SIZE) {
-          setError("Image size must be less than 5MB");
-
-          setLoading(false);
-
-          return;
-        }
-
-        /* TYPE CHECK */
-
-        const allowedTypes = [
-          "image/png",
-          "image/jpeg",
-          "image/jpg",
-          "image/webp",
-        ];
-
-        if (!allowedTypes.includes(imageFile.type)) {
-          setError("Only PNG, JPG and WEBP images allowed");
-
-          setLoading(false);
-
-          return;
-        }
-
-        const ext = imageFile.name.split(".").pop();
-
-        const fileName = `product-${Date.now()}.${ext}`;
-
-        const storagePath = fileName;
-
-        const { error: uploadError } = await supabase.storage
-          .from("products")
-          .upload(`images/${storagePath}`, imageFile, {
-            cacheControl: "3600",
-
-            upsert: false,
-          });
-
-        if (uploadError) {
-          console.log(uploadError);
-
-          setError("Image upload failed");
-
-          setLoading(false);
-
-          return;
-        }
-
-        /* SAVE ONLY STORAGE PATH */
-
-        imagePath = storagePath;
+      if (
+        imageFile
+      ) {
+        imagePath =
+          await uploadImage(
+            imageFile,
+          );
       }
 
-      /* =========================================
-         PDF FILE
-      ========================================= */
-
-      let brochurePath = form.brochure || "";
-
-      if (brochureFile) {
-        if (brochureFile.size > MAX_PDF_SIZE) {
-          setError("PDF size must be less than 10MB");
-
-          setLoading(false);
-
-          return;
-        }
-
-        const ext = brochureFile.name.split(".").pop();
-
-        const fileName = `brochure-${Date.now()}.${ext}`;
-
-       const storagePath = fileName;
-
-        const { error: uploadError } = await supabase.storage
-          .from("products")
-          .upload(
-  `brochures/${storagePath}`, brochureFile, {
-            cacheControl: "3600",
-
-            upsert: false,
-          });
-
-        if (uploadError) {
-          console.log(uploadError);
-
-          setError("PDF upload failed");
-
-          setLoading(false);
-
-          return;
-        }
-
-        brochurePath = storagePath;
+      if (
+        brochureFile
+      ) {
+        brochurePath =
+          await uploadBrochure(
+            brochureFile,
+          );
       }
-
-      /* =========================================
-         SAVE PRODUCT
-      ========================================= */
 
       await onSave({
         ...form,
 
-        image: imagePath,
+        shop_id:
+          shop?.id,
 
-        brochure: brochurePath,
+        category:
+          form.category,
+
+        categoryLabel:
+          selectedCategory.name,
+
+        image:
+          imagePath,
+
+        images:
+          imagePath
+            ? [
+                imagePath,
+              ]
+            : [],
+
+        brochure:
+          brochurePath,
       });
 
       onClose();
-    } catch (e) {
-      console.log(e);
+    } catch (
+      err
+    ) {
+      console.log(
+        err,
+      );
 
-      setError("Failed to save product");
+      setError(
+        "Failed to save product",
+      );
     } finally {
       setLoading(false);
     }
-  };
+  }
+
+  /* ========================================= */
+  /* EXCEL IMPORT */
+  /* ========================================= */
+
+  async function handleExcelImport() {
+    try {
+      if (!excelFile) {
+        setError(
+          "Select excel file",
+        );
+
+        return;
+      }
+
+      setImportLoading(
+        true,
+      );
+
+      const buffer =
+        await excelFile.arrayBuffer();
+
+      const workbook =
+        XLSX.read(buffer);
+
+      const sheet =
+        workbook.Sheets[
+          workbook.SheetNames[0]
+        ];
+
+      const rows: any[] =
+        XLSX.utils.sheet_to_json(
+          sheet,
+        );
+
+      for (const row of rows) {
+        const category =
+          PRODUCT_CATEGORIES.find(
+            (c) =>
+              c.id ===
+              String(
+                row[
+                  "Category"
+                ] || "",
+              ).toLowerCase(),
+          );
+
+        const categoryId =
+          (category?.id ||
+            "sand") as ProductCategory;
+
+        await onSave({
+          ...emptyProduct(),
+
+          shop_id:
+            shop?.id,
+
+          name:
+            row[
+              "Material Name"
+            ] || "",
+
+          brand:
+            row[
+              "Brand"
+            ] ||
+            "Local Supplier",
+
+          category:
+            categoryId as any,
+
+          categoryLabel:
+            category?.name ||
+            "Sand",
+
+          description:
+            row[
+              "Measurement"
+            ] || "",
+
+          longDescription:
+            row[
+              "About"
+            ] || "",
+
+          price: Number(
+            String(
+              row[
+                "Price"
+              ] || 0,
+            ).replace(
+              "₹",
+              "",
+            ),
+          ),
+
+          stock: 0,
+
+          unit:
+            row[
+              "Unit Type"
+            ] || "",
+
+          image: "",
+
+          images: [],
+
+          brochure: "",
+
+          color:
+            "#FFF7ED",
+
+          badge:
+            undefined,
+
+          tags: [],
+
+          specs: {
+            measurement:
+              row[
+                "Measurement"
+              ] || "",
+          },
+        });
+      }
+
+      onClose();
+    } catch (
+      err
+    ) {
+      console.log(
+        err,
+      );
+
+      setError(
+        "Excel import failed",
+      );
+    } finally {
+      setImportLoading(
+        false,
+      );
+    }
+  }
 
   /* ========================================= */
 
   return (
-    <div className="flex flex-col h-full">
+    <div className="flex flex-col h-full bg-white">
       {/* HEADER */}
 
       <div className="flex items-center justify-between p-5 border-b border-gray-100">
         <div>
-          <h2 className="text-xl font-bold text-[#0F172A]">
-            {initial ? "Edit Product" : "Add Product"}
+          <h2 className="text-2xl font-black text-[#0F172A]">
+            Product Manager
           </h2>
 
-          <p className="text-xs text-[#64748B] mt-1">Manage E-Aurix products</p>
+          <p className="text-sm text-gray-500 mt-1">
+            {
+              shop?.shop_name
+            }
+          </p>
         </div>
 
         <button
-          onClick={onClose}
-          className="w-9 h-9 rounded-xl hover:bg-gray-100 flex items-center justify-center"
+          onClick={
+            onClose
+          }
+          className="w-11 h-11 rounded-2xl hover:bg-gray-100 flex items-center justify-center"
         >
-          <X className="w-4 h-4 text-[#64748B]" />
+          <X className="w-5 h-5" />
         </button>
       </div>
 
-      {/* BODY */}
+      {/* MODE */}
 
-      <div className="flex-1 overflow-y-auto p-5 space-y-5">
-        {/* ERROR */}
+      <div className="p-5 flex gap-3 border-b border-gray-100">
+        <button
+          onClick={() =>
+            setMode(
+              "manual",
+            )
+          }
+          className={`flex-1 h-12 rounded-2xl font-black text-sm ${
+            mode ===
+            "manual"
+              ? "bg-[#0EA5E9] text-white"
+              : "bg-gray-100 text-gray-600"
+          }`}
+        >
+          Manual Product
+        </button>
 
-        {error && (
-          <div className="flex items-center gap-2 p-3 rounded-xl border border-rose-200 bg-rose-50 text-rose-600 text-sm">
-            <AlertTriangle className="w-4 h-4" />
+        <button
+          onClick={() =>
+            setMode(
+              "excel",
+            )
+          }
+          className={`flex-1 h-12 rounded-2xl font-black text-sm ${
+            mode ===
+            "excel"
+              ? "bg-[#0EA5E9] text-white"
+              : "bg-gray-100 text-gray-600"
+          }`}
+        >
+          Import Excel
+        </button>
+      </div>
 
-            {error}
+      {/* ERROR */}
+
+      {error && (
+        <div className="mx-5 mt-5 p-3 rounded-2xl border border-red-200 bg-red-50 text-red-600 text-sm flex items-center gap-2">
+          <AlertTriangle className="w-4 h-4" />
+
+          {error}
+        </div>
+      )}
+
+      {/* ========================================= */}
+      {/* MANUAL */}
+      {/* ========================================= */}
+
+      {mode ===
+        "manual" && (
+        <div className="flex-1 overflow-y-auto p-5 space-y-5">
+          {/* CATEGORY */}
+
+          <div className="relative">
+            <label className="block text-xs font-black text-gray-500 mb-2">
+              Product Category
+            </label>
+
+            <button
+              type="button"
+              onClick={() =>
+                setCategoryOpen(
+                  !categoryOpen,
+                )
+              }
+              className="w-full h-14 px-4 rounded-2xl border border-gray-200 bg-[#F8FAFC] flex items-center justify-between"
+            >
+              <div className="flex items-center gap-3">
+                <img
+                  src={
+                    selectedCategory.image
+                  }
+                  className="w-9 h-9 rounded-xl object-cover"
+                />
+
+                <span className="text-sm font-bold text-[#0F172A]">
+                  {
+                    selectedCategory.name
+                  }
+                </span>
+              </div>
+
+              <ChevronDown className="w-4 h-4 text-gray-500" />
+            </button>
+
+            {categoryOpen && (
+              <div className="absolute z-50 top-full left-0 right-0 mt-2 rounded-2xl border border-gray-200 bg-white shadow-xl overflow-hidden">
+                {PRODUCT_CATEGORIES.map(
+                  (
+                    category,
+                  ) => (
+                    <button
+                      key={
+                        category.id
+                      }
+                      type="button"
+                      onClick={() => {
+                        u(
+                          "category",
+                          category.id,
+                        );
+
+                        u(
+                          "categoryLabel",
+                          category.name,
+                        );
+
+                        setCategoryOpen(
+                          false,
+                        );
+                      }}
+                      className="w-full px-4 py-3 flex items-center gap-3 hover:bg-sky-50 transition-colors"
+                    >
+                      <img
+                        src={
+                          category.image
+                        }
+                        className="w-10 h-10 rounded-xl object-cover"
+                      />
+
+                      <span className="text-sm font-bold text-[#0F172A]">
+                        {
+                          category.name
+                        }
+                      </span>
+                    </button>
+                  ),
+                )}
+              </div>
+            )}
           </div>
-        )}
 
-        {/* IMAGE */}
+          {/* IMAGE */}
 
-        <div>
-          <label className="block text-xs font-semibold text-[#64748B] mb-2">
-            Product Image
-          </label>
+          <div>
+            <label className="block text-xs font-black text-gray-500 mb-3">
+              Product Image
+            </label>
 
-          <div className="flex items-center gap-4">
-            <div className="w-28 h-28 rounded-2xl overflow-hidden border border-gray-200 bg-[#F8FAFC] flex items-center justify-center">
+            <label className="h-44 rounded-3xl border-2 border-dashed border-sky-300 bg-sky-50 flex flex-col items-center justify-center cursor-pointer overflow-hidden">
               {imagePreview ? (
                 <img
-                  src={imagePreview}
-                  alt="Preview"
+                  src={
+                    imagePreview
+                  }
                   className="w-full h-full object-cover"
                 />
               ) : (
-                <span className="text-xs text-gray-400">No Image</span>
+                <>
+                  <ImagePlus className="w-10 h-10 text-sky-500 mb-3" />
+
+                  <p className="text-sm font-black text-sky-700">
+                    Upload Product Image
+                  </p>
+                </>
               )}
-            </div>
 
-            <div className="flex-1">
-              <label className="h-11 px-4 rounded-xl bg-[#0EA5E9] text-white text-sm font-semibold flex items-center justify-center gap-2 cursor-pointer">
-                <Pencil className="w-4 h-4" />
-                Upload Image
-                <input
-                  type="file"
-                  accept="image/png,image/jpeg,image/webp"
-                  hidden
-                  onChange={(e) => {
-                    const file = e.target.files?.[0];
+              <input
+                type="file"
+                hidden
+                accept="image/*"
+                onChange={(
+                  e,
+                ) => {
+                  const file =
+                    e.target
+                      .files?.[0];
 
-                    if (!file) return;
+                  if (
+                    !file
+                  )
+                    return;
 
-                    if (file.size > MAX_IMAGE_SIZE) {
-                      setError("Image size must be less than 5MB");
+                  setImageFile(
+                    file,
+                  );
 
-                      return;
-                    }
-
-                    setError("");
-
-                    setImageFile(file);
-
-                    setImagePreview(URL.createObjectURL(file));
-                  }}
-                />
-              </label>
-
-              <p className="text-xs text-[#64748B] mt-2">
-                PNG, JPG, WEBP • Max 5MB
-              </p>
-            </div>
+                  setImagePreview(
+                    URL.createObjectURL(
+                      file,
+                    ),
+                  );
+                }}
+              />
+            </label>
           </div>
-        </div>
 
-        {/* PDF */}
+          {/* BROCHURE */}
 
-        <div>
-          <label className="block text-xs font-semibold text-[#64748B] mb-2">
-            Product Brochure PDF
-          </label>
+          <div>
+            <label className="block text-xs font-black text-gray-500 mb-3">
+              Product Brochure PDF
+            </label>
 
-          <input
-            type="file"
-            accept=".pdf"
-            className={inp}
-            onChange={(e) => {
-              const file = e.target.files?.[0];
+            <label className="h-32 rounded-3xl border-2 border-dashed border-emerald-300 bg-emerald-50 flex flex-col items-center justify-center cursor-pointer">
+              <FileText className="w-8 h-8 text-emerald-500 mb-2" />
 
-              if (!file) return;
+              <p className="text-sm font-black text-emerald-700">
+                Upload Brochure
+              </p>
 
-              if (file.size > MAX_PDF_SIZE) {
-                setError("PDF size must be less than 10MB");
+              <input
+                type="file"
+                hidden
+                accept=".pdf"
+                onChange={(
+                  e,
+                ) => {
+                  const file =
+                    e.target
+                      .files?.[0];
 
-                return;
-              }
+                  if (
+                    !file
+                  )
+                    return;
 
-              setError("");
+                  setBrochureFile(
+                    file,
+                  );
 
-              setBrochureFile(file);
-            }}
-          />
-        </div>
+                  setBrochureName(
+                    file.name,
+                  );
+                }}
+              />
+            </label>
 
-        {/* FORM */}
+            {brochureName && (
+              <div className="mt-3 p-3 rounded-2xl bg-gray-50 border border-gray-200">
+                <p className="text-sm font-bold">
+                  {brochureName}
+                </p>
+              </div>
+            )}
+          </div>
 
-        <div className="grid grid-cols-2 gap-4">
+          {/* NAME */}
+
           <Field label="Product Name">
             <input
-              value={form.name}
-              onChange={(e) => u("name", e.target.value)}
-              className={inp}
+              value={
+                form.name
+              }
+              onChange={(
+                e,
+              ) =>
+                u(
+                  "name",
+                  e
+                    .target
+                    .value,
+                )
+              }
+              className={
+                inp
+              }
             />
           </Field>
+
+          {/* BRAND */}
 
           <Field label="Brand">
             <input
-              value={form.brand}
-              onChange={(e) => u("brand", e.target.value)}
-              className={inp}
+              value={
+                form.brand
+              }
+              onChange={(
+                e,
+              ) =>
+                u(
+                  "brand",
+                  e
+                    .target
+                    .value,
+                )
+              }
+              className={
+                inp
+              }
             />
           </Field>
-        </div>
 
-        <div className="grid grid-cols-2 gap-4">
-          <Field label="Category">
-            <select
-              value={form.category}
-              onChange={(e) => u("category", e.target.value)}
-              className={inp}
-            >
-              {PRODUCT_CATEGORIES.map((c) => (
-                <option key={c} value={c}>
-                  {CATEGORY_LABELS[c]}
-                </option>
-              ))}
-            </select>
-          </Field>
+          {/* UNIT */}
 
-          <Field label="Stock">
+          <Field label="Unit Type">
             <input
-              type="number"
-              value={form.stock}
-              onChange={(e) => u("stock", Number(e.target.value))}
-              className={inp}
+              value={
+                form.unit
+              }
+              onChange={(
+                e,
+              ) =>
+                u(
+                  "unit",
+                  e
+                    .target
+                    .value,
+                )
+              }
+              className={
+                inp
+              }
             />
           </Field>
-        </div>
 
-        <div className="grid grid-cols-2 gap-4">
+          {/* MEASUREMENT */}
+
+          <Field label="Measurement">
+            <input
+              value={
+                form.description
+              }
+              onChange={(
+                e,
+              ) =>
+                u(
+                  "description",
+                  e
+                    .target
+                    .value,
+                )
+              }
+              className={
+                inp
+              }
+            />
+          </Field>
+
+          {/* PRICE */}
+
           <Field label="Price">
             <input
               type="number"
-              value={form.price}
-              onChange={(e) => u("price", Number(e.target.value))}
-              className={inp}
+              value={
+                form.price
+              }
+              onChange={(
+                e,
+              ) =>
+                u(
+                  "price",
+                  Number(
+                    e
+                      .target
+                      .value,
+                  ),
+                )
+              }
+              className={
+                inp
+              }
             />
           </Field>
 
-          <Field label="Unit">
-            <input
-              value={form.unit}
-              onChange={(e) => u("unit", e.target.value)}
-              className={inp}
+          {/* ABOUT */}
+
+          <Field label="About Product">
+            <textarea
+              rows={5}
+              value={
+                form.longDescription
+              }
+              onChange={(
+                e,
+              ) =>
+                u(
+                  "longDescription",
+                  e
+                    .target
+                    .value,
+                )
+              }
+              className={`${inp} resize-none`}
             />
           </Field>
+
+          {/* SAVE */}
+
+          <button
+            onClick={
+              handleSave
+            }
+            disabled={
+              loading
+            }
+            className="w-full h-12 rounded-2xl bg-[#0EA5E9] text-white font-black"
+          >
+            {loading
+              ? "Saving..."
+              : "Save Product"}
+          </button>
         </div>
+      )}
 
-        <Field label="Short Description">
-          <input
-            value={form.description}
-            onChange={(e) => u("description", e.target.value)}
-            className={inp}
-          />
-        </Field>
+      {/* EXCEL */}
 
-        <Field label="Full Description">
-          <textarea
-            rows={5}
-            value={form.longDescription}
-            onChange={(e) => u("longDescription", e.target.value)}
-            className={`${inp} resize-none`}
-          />
-        </Field>
-      </div>
+      {mode ===
+        "excel" && (
+        <div className="flex-1 overflow-y-auto p-5">
+          <div className="rounded-3xl border border-dashed border-sky-300 bg-sky-50 p-8 text-center">
+            <FileSpreadsheet className="w-14 h-14 mx-auto text-sky-500 mb-4" />
 
-      {/* FOOTER */}
+            <h3 className="text-xl font-black text-[#0F172A]">
+              Import Material List
+            </h3>
 
-      <div className="p-5 border-t border-gray-100 flex gap-3">
-        <button
-          onClick={onClose}
-          className="flex-1 h-11 rounded-xl border border-gray-200 text-sm font-medium text-[#475569]"
-        >
-          Cancel
-        </button>
+            <label className="inline-flex mt-5 h-12 px-5 rounded-2xl bg-[#0EA5E9] text-white font-black items-center justify-center gap-2 cursor-pointer">
+              <Upload className="w-4 h-4" />
 
-        <button
-          onClick={handleSave}
-          disabled={loading}
-          className="flex-1 h-11 rounded-xl bg-[#0EA5E9] text-white text-sm font-bold disabled:opacity-50"
-        >
-          {loading ? "Saving..." : initial ? "Save Changes" : "Add Product"}
-        </button>
-      </div>
+              Select Excel File
+
+              <input
+                type="file"
+                hidden
+                accept=".xlsx,.xls,.csv"
+                onChange={(
+                  e,
+                ) =>
+                  setExcelFile(
+                    e.target
+                      .files?.[0] ||
+                      null,
+                  )
+                }
+              />
+            </label>
+
+            {excelFile && (
+              <div className="mt-5 p-4 rounded-2xl bg-white border border-gray-200">
+                <p className="text-sm font-bold">
+                  {
+                    excelFile.name
+                  }
+                </p>
+              </div>
+            )}
+
+            <button
+              onClick={
+                handleExcelImport
+              }
+              disabled={
+                importLoading
+              }
+              className="w-full mt-5 h-12 rounded-2xl bg-emerald-500 text-white font-black"
+            >
+              {importLoading
+                ? "Importing..."
+                : "Import Products"}
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
@@ -507,7 +1007,6 @@ function ProductForm({
 
 function Field({
   label,
-
   children,
 }: {
   label: string;
@@ -516,7 +1015,7 @@ function Field({
 }) {
   return (
     <div>
-      <label className="block text-xs font-semibold text-[#64748B] mb-2">
+      <label className="block text-xs font-black text-gray-500 mb-2">
         {label}
       </label>
 
@@ -524,7 +1023,5 @@ function Field({
     </div>
   );
 }
-
-/* ========================================= */
 
 export default ProductForm;

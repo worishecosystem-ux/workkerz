@@ -30,13 +30,56 @@ import type { Worker } from "../../data/workers";
 import type { ProductCategory } from "../../data/products";
 
 // Map product category → worker service category
-const PRODUCT_WORKER_MAP: Record<ProductCategory, string[]> = {
-  masonry: ["construction"],
-  plumbing: ["plumbing"],
-  electrical: ["electrical"],
-  moving: ["driving"],
-  tools: ["construction", "plumbing", "electrical", "driving"],
-  safety: ["construction", "plumbing", "electrical", "driving"],
+const PRODUCT_WORKER_MAP: Record<
+  ProductCategory,
+  string[]
+> = {
+  sand: [
+    "construction",
+    "labour",
+    "driver",
+  ],
+
+  aggregate: [
+    "construction",
+    "labour",
+    "driver",
+  ],
+
+  brick: [
+    "construction",
+    "mason",
+    "labour",
+  ],
+
+  cement: [
+    "construction",
+    "mason",
+    "labour",
+  ],
+
+  tmt: [
+    "construction",
+    "fabricator",
+    "welder",
+  ],
+
+  paint: [
+    "painter",
+  ],
+
+  plumbing: [
+    "plumber",
+  ],
+
+  tiles: [
+    "tile_worker",
+    "mason",
+  ],
+
+  electrical: [
+    "electrician",
+  ],
 };
 
 const steps = [

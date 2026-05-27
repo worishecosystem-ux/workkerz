@@ -326,37 +326,17 @@ export function EAurixShop() {
 
   return (
     <div className="min-h-screen bg-[#F3F6FB]">
-      {/* MOBILE HEADER */}
-
-      <div className="lg:hidden sticky top-0 z-50 bg-white border-b border-gray-200 px-4 py-3 flex items-center justify-between">
-        <button
-          onClick={() => setMobileMenu(!mobileMenu)}
-          className="w-11 h-11 rounded-2xl bg-[#F1F5F9] flex items-center justify-center transition-all"
-        >
-          {mobileMenu ? (
-            <X className="w-5 h-5 text-[#0F172A]" />
-          ) : (
-            <Menu className="w-5 h-5 text-[#0F172A]" />
-          )}
-        </button>
-
-        <h2 className="text-xl font-black text-[#0F172A]">E-Aurix</h2>
-
-        <div className="w-11" />
-      </div>
-
       {/* TOP HERO */}
-
-      <div className="bg-[#06152D] overflow-hidden">
-        <div className="max-w-600 mx-auto px-4 lg:px-8 pt-10 lg:pt-14 pb-20 lg:pb-28 mt-2 lg:mt-10  relative ">
+      <div className="bg-[#06152D] overflow-hidden mt-15">
+        <div className="max-w-600 mx-auto px-4 lg:px-8 pt-2 lg:pt-14 pb-8 lg:pb-10 mt-2 lg:mt-10  relative ">
           <div className="max-w-2xl">
             {/* DESKTOP CONTENT */}
-            <div className="hidden lg:block">
-              <p className="text-[#B6C2D2] text-sm md:text-base mt-4 max-w-xl">
+            <div className="hidden lg:block ">
+              <p className="text-[#B6C2D2] text-sm md:text-base mt-2 max-w-xl">
                 Construction products, hardware & industrial materials.
               </p>
 
-              <div className="relative mt-6 max-w-5xl flex items-start">
+              <div className="relative mt-6 max-w-5xl flex items-start ">
                 {/* SEARCH BAR */}
 
                 <div className="w-full">

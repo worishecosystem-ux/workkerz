@@ -1,9 +1,6 @@
 "use client";
 
-import {
-  useEffect,
-  useState,
-} from "react";
+import { useEffect, useState } from "react";
 
 import {
   Plus,
@@ -13,9 +10,11 @@ import {
   Trash2,
   Package,
   CheckCircle,
+  ArrowLeft,
 } from "lucide-react";
 
 import ProductForm from "./ProductForm";
+import ShopRegistrationForm from "./ShopRegistrationForm";
 
 import {
   type Product,
@@ -29,7 +28,13 @@ import {
 
 /* ======================================= */
 
-function ProductsTab() {
+function ProductsTab({
+  shop,
+  onBack,
+}: {
+  shop: any;
+  onBack: () => void;
+}) {
   const [products, setProducts] =
     useState<Product[]>([]);
 
@@ -59,19 +64,27 @@ function ProductsTab() {
 
   const loadProducts =
     async () => {
-      setLoading(true);
+      try {
+        setLoading(true);
 
-      const data =
-        await getProducts();
+        const data =
+          await getProducts(
+            shop.id,
+          );
 
-      setProducts(data);
-
-      setLoading(false);
+        setProducts(data || []);
+      } catch (err) {
+        console.log(err);
+      } finally {
+        setLoading(false);
+      }
     };
 
   useEffect(() => {
-    loadProducts();
-  }, []);
+    if (shop?.id) {
+      loadProducts();
+    }
+  }, [shop]);
 
   /* ======================================= */
   /* FILTER */
@@ -102,18 +115,12 @@ function ProductsTab() {
   );
 
   /* ======================================= */
-  /* OPEN ADD */
-  /* ======================================= */
 
   const openAdd = () => {
     setEditing(null);
 
     setDrawerOpen(true);
   };
-
-  /* ======================================= */
-  /* OPEN EDIT */
-  /* ======================================= */
 
   const openEdit = (
     product: Product,
@@ -122,10 +129,6 @@ function ProductsTab() {
 
     setDrawerOpen(true);
   };
-
-  /* ======================================= */
-  /* CLOSE */
-  /* ======================================= */
 
   const closeDrawer = () => {
     setDrawerOpen(false);
@@ -140,30 +143,42 @@ function ProductsTab() {
   const handleSave = async (
     data: Omit<Product, "id">,
   ) => {
-    if (editing) {
-      await updateProduct(
-        editing.id,
-        data,
-      );
+    try {
+      const payload = {
+        ...data,
 
-      setSuccessMsg(
-        "Product updated successfully!",
-      );
-    } else {
-      await addProduct(data);
+        shop_id: shop.id,
+      };
 
-      setSuccessMsg(
-        "Product added successfully!",
-      );
+      if (editing) {
+        await updateProduct(
+          editing.id,
+          payload,
+        );
+
+        setSuccessMsg(
+          "Product updated successfully!",
+        );
+      } else {
+        await addProduct(
+          payload,
+        );
+
+        setSuccessMsg(
+          "Product added successfully!",
+        );
+      }
+
+      await loadProducts();
+
+      closeDrawer();
+
+      setTimeout(() => {
+        setSuccessMsg("");
+      }, 3000);
+    } catch (err) {
+      console.log(err);
     }
-
-    await loadProducts();
-
-    closeDrawer();
-
-    setTimeout(() => {
-      setSuccessMsg("");
-    }, 3000);
   };
 
   /* ======================================= */
@@ -172,6 +187,13 @@ function ProductsTab() {
 
   const handleDelete =
     async (id: string) => {
+      const confirmDelete =
+        confirm(
+          "Delete this product?",
+        );
+
+      if (!confirmDelete) return;
+
       await deleteProduct(id);
 
       await loadProducts();
@@ -189,6 +211,27 @@ function ProductsTab() {
 
   return (
     <div className="p-8">
+      {/* TOP */}
+
+      <div className="flex items-center gap-3 mb-6">
+        <button
+          onClick={onBack}
+          className="w-11 h-11 rounded-xl border border-gray-200 flex items-center justify-center hover:bg-gray-50"
+        >
+          <ArrowLeft className="w-5 h-5" />
+        </button>
+
+        <div>
+          <h1 className="text-2xl font-black text-[#0F172A]">
+            {shop.shop_name}
+          </h1>
+
+          <p className="text-sm text-[#64748B]">
+            Shop Products Management
+          </p>
+        </div>
+      </div>
+
       {/* SUCCESS */}
 
       {successMsg && (
@@ -203,9 +246,9 @@ function ProductsTab() {
 
       <div className="flex items-center justify-between mb-6">
         <div>
-          <h1 className="text-2xl font-bold text-[#0F172A]">
-            E-Aurix Products
-          </h1>
+          <h2 className="text-xl font-bold text-[#0F172A]">
+            Products
+          </h2>
 
           <p className="text-sm text-[#64748B]">
             {products.length} Products
@@ -308,7 +351,7 @@ function ProductsTab() {
             {filtered.map((p) => (
               <tr
                 key={p.id}
-                className="border-b border-gray-50"
+                className="border-b border-gray-50 hover:bg-[#FAFAFA]"
               >
                 {/* PRODUCT */}
 
@@ -316,6 +359,7 @@ function ProductsTab() {
                   <div className="flex items-center gap-3">
                     <img
                       src={
+                        p.images?.[0] ||
                         p.image ||
                         "/placeholder.png"
                       }
@@ -395,6 +439,8 @@ function ProductsTab() {
           </tbody>
         </table>
 
+        {/* EMPTY */}
+
         {!loading &&
           filtered.length ===
             0 && (
@@ -404,6 +450,14 @@ function ProductsTab() {
               No Products Found
             </div>
           )}
+
+        {/* LOADING */}
+
+        {loading && (
+          <div className="py-16 text-center text-[#94A3B8]">
+            Loading Products...
+          </div>
+        )}
       </div>
 
       {/* DRAWER */}
@@ -417,6 +471,7 @@ function ProductsTab() {
 
           <div className="w-full max-w-xl bg-white h-full overflow-y-auto">
             <ProductForm
+              shop={shop}
               initial={
                 editing ||
                 undefined

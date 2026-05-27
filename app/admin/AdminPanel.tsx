@@ -4,7 +4,7 @@ import { supabase } from "@/lib/supabase";
 import OrdersTab from "@/app/admin/components/OrdersTab";
 import AdminSidebar from "./components/AdminSidebar";
 import { toast } from "sonner";
-import ProductsTab from "./components/ProductsTab";
+import ShopsTab from "./components/ShopsTab";
 
 import {
   LayoutDashboard,
@@ -36,7 +36,11 @@ import {
 } from "../data/products";
 
 // ── Types ────────────────────────────────────────────────────────────────────
-type Tab = "dashboard" | "workers" | "products" | "orders";
+type Tab =
+  | "dashboard"
+  | "workers"
+  | "shops"
+  | "orders";
 
 const WORKER_CATEGORIES = [
   {
@@ -499,13 +503,27 @@ const SERVICES_BY_SUBCATEGORY: Record<string, string[]> = {
   Photographer: ["Wedding Shoot", "Event Photography"],
 };
 
-const CATEGORY_COLORS: Record<ProductCategory, string> = {
-  masonry: "#FFF7ED",
+const CATEGORY_COLORS: Record<
+  ProductCategory,
+  string
+> = {
+  sand: "#FFF7ED",
+
+  aggregate: "#F3F4F6",
+
+  brick: "#FEF2F2",
+
+  cement: "#F8FAFC",
+
+  tmt: "#F1F5F9",
+
+  paint: "#F5F3FF",
+
   plumbing: "#EFF6FF",
+
+  tiles: "#F0FDFA",
+
   electrical: "#FEFCE8",
-  moving: "#ECFDF5",
-  tools: "#EEF2FF",
-  safety: "#FEF2F2",
 };
 
 // ── Tag input ────────────────────────────────────────────────────────────────
@@ -1157,42 +1175,69 @@ function WorkerForm({
 // DASHBOARD TAB
 // ═══════════════════════════════════════════════════════════════════════════════
 function DashboardTab({ onGo }: { onGo: (tab: Tab) => void }) {
-  const { workers = [], products = [], stats } = useAdmin();
+  const {
+  workers = [],
+  products = [],
+  shops = [],
+  orders = [],
+  stats,
+} = useAdmin();
 
   const statCards = [
-    {
-      label: "Total Workers",
-      value: stats.totalWorkers,
-      sub: `${stats.availableWorkers} available`,
-      color: "#FF5C39",
-      bg: "#FFF5F3",
-      icon: Users,
-    },
-    {
-      label: "Total Products",
-      value: stats.totalProducts,
-      sub: `${stats.outOfStock} out of stock`,
-      color: "#0EA5E9",
-      bg: "#F0F9FF",
-      icon: Package,
-    },
-    {
-      label: "Active Workers",
-      value: stats.availableWorkers,
-      sub: `${stats.totalWorkers - stats.availableWorkers} unavailable`,
-      color: "#10B981",
-      bg: "#ECFDF5",
-      icon: CheckCircle,
-    },
-    {
-      label: "Worker Categories",
-      value: WORKER_CATEGORIES.length,
-      sub: "Active worker categories",
-      color: "#8B5CF6",
-      bg: "#F5F3FF",
-      icon: LayoutDashboard,
-    },
-  ];
+  {
+    label: "Total Workers",
+    value: stats.totalWorkers,
+    sub: `${stats.availableWorkers} available`,
+    color: "#FF5C39",
+    bg: "#FFF5F3",
+    icon: Users,
+  },
+
+  {
+    label: "Total Shops",
+    value: shops.length,
+    sub: "Registered shops",
+    color: "#8B5CF6",
+    bg: "#F5F3FF",
+    icon: Briefcase,
+  },
+
+  {
+    label: "Total Products",
+    value: stats.totalProducts,
+    sub: `${stats.outOfStock} out of stock`,
+    color: "#0EA5E9",
+    bg: "#F0F9FF",
+    icon: Package,
+  },
+
+  {
+    label: "Total Orders",
+    value: orders.length,
+    sub: "Customer orders",
+    color: "#10B981",
+    bg: "#ECFDF5",
+    icon: LayoutDashboard,
+  },
+
+  {
+    label: "Available Workers",
+    value: stats.availableWorkers,
+    sub: `${stats.totalWorkers - stats.availableWorkers} busy`,
+    color: "#22C55E",
+    bg: "#ECFDF5",
+    icon: CheckCircle,
+  },
+
+  {
+    label: "Out Of Stock",
+    value: stats.outOfStock,
+    sub: "Products unavailable",
+    color: "#EF4444",
+    bg: "#FEF2F2",
+    icon: XCircle,
+  },
+];
 
   return (
     <div className="p-8">
@@ -1209,7 +1254,7 @@ function DashboardTab({ onGo }: { onGo: (tab: Tab) => void }) {
       </div>
 
       {/* Stats */}
-      <div className="grid grid-cols-2 xl:grid-cols-4 gap-4 mb-8">
+     <div className="grid grid-cols-2 xl:grid-cols-3 2xl:grid-cols-6 gap-4 mb-8">
         {statCards.map((s) => {
           const Icon = s.icon;
           return (
@@ -1533,13 +1578,13 @@ function DashboardTab({ onGo }: { onGo: (tab: Tab) => void }) {
         <div className="bg-linear-to-br from-[#0284C7] to-[#0C3B5E] rounded-2xl p-5 text-white">
           <div className="flex items-center gap-3 mb-4">
             <Package className="w-6 h-6" />
-            <div style={{ fontWeight: 700 }}>Manage Products</div>
+            <div style={{ fontWeight: 700 }}>Manage Shops</div>
           </div>
           <p className="text-sky-200 text-sm mb-4">
-            Add, edit or remove materials and products from E-Aurix.
+            Add, edit or remove shops from E-Aurix.
           </p>
           <button
-            onClick={() => onGo("products")}
+           onClick={() => onGo("shops")}
             className="flex items-center gap-2 bg-white/20 hover:bg-white/30 text-white px-4 py-2 rounded-lg text-sm transition-colors"
             style={{ fontWeight: 600 }}
           >
@@ -2484,11 +2529,10 @@ export function AdminPanel() {
     },
 
     {
-      id: "products" as Tab,
-      icon: Package,
-      label: "Products",
-      badge: stats.totalProducts,
-    },
+  id: "shops" as Tab,
+  icon: Briefcase,
+  label: "Shops",
+},
 
     // ADD THIS
     {
@@ -2514,7 +2558,7 @@ export function AdminPanel() {
           <>
             {tab === "dashboard" && <DashboardTab onGo={setTab} />}
             {tab === "workers" && <WorkersTab />}
-            {tab === "products" && <ProductsTab />}
+            {tab === "shops" && <ShopsTab />}
             {tab === "orders" && <OrdersTab />}
           </>
         )}

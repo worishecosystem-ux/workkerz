@@ -1,5 +1,5 @@
 "use client";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import {
@@ -15,10 +15,16 @@ import {
   Tag,
   ArrowRight,
   X,
+  Mail,
+  Phone,
+  MapPin,
+  FileText,
+  Store,
 } from "lucide-react";
 import { productCategories } from "../../data/products";
 import { usePlatform } from "@/app/components/context/PlatformContext";
 import { useAdmin } from "@/app/components/context/AdminContext";
+import { getShop } from "@/app/data/shops";
 
 export function EAurixProduct() {
   const params = useParams();
@@ -30,6 +36,30 @@ export function EAurixProduct() {
   const [added, setAdded] = useState(false);
   const [showBrochure, setShowBrochure] = useState(false);
   const product = getProductById(id);
+  const [showShopDetails, setShowShopDetails] = useState(false);
+
+  const [shopData, setShopData] = useState<any>(null);
+
+  const [loadingShop, setLoadingShop] = useState(false);
+  useEffect(() => {
+    async function fetchShop() {
+      try {
+        if (!product?.shop_id) return;
+
+        setLoadingShop(true);
+
+        const data = await getShop(product.shop_id);
+
+        setShopData(data);
+      } catch (err) {
+        console.log(err);
+      } finally {
+        setLoadingShop(false);
+      }
+    }
+
+    fetchShop();
+  }, [product]);
   if (!product) {
     return (
       <div className="min-h-screen bg-[#F0F9FF] pt-24 flex items-center justify-center">
@@ -128,28 +158,28 @@ export function EAurixProduct() {
           {/* Product Visual */}
           <div>
             {/* MAIN PRODUCT CARD */}
-           
-              {/* INNER CARD */}
-              <div
-                className="relative h-90 rounded-[30px] overflow-hidden flex items-center justify-center"
-                style={{
-                  background: `linear-gradient(135deg, ${product.color} 0%, ${product.color}90 100%)`,
-                }}
-              >
-                {/* SOFT GLOW */}
-                <div
-                  className="absolute w-72 h-72 rounded-full blur-3xl opacity-20"
-                  style={{
-                    background: "#fff",
-                  }}
-                />
 
-                {/* PRODUCT IMAGE */}
-                {product.image ? (
-                  <img
-                    src={product.image}
-                    alt={product.name}
-                    className="
+            {/* INNER CARD */}
+            <div
+              className="relative h-90 rounded-[30px] overflow-hidden flex items-center justify-center"
+              style={{
+                background: `linear-gradient(135deg, ${product.color} 0%, ${product.color}90 100%)`,
+              }}
+            >
+              {/* SOFT GLOW */}
+              <div
+                className="absolute w-72 h-72 rounded-full blur-3xl opacity-20"
+                style={{
+                  background: "#fff",
+                }}
+              />
+
+              {/* PRODUCT IMAGE */}
+              {product.image ? (
+                <img
+                  src={product.image}
+                  alt={product.name}
+                  className="
             relative z-10
             w-[88%]
             h-[88%]
@@ -159,10 +189,10 @@ export function EAurixProduct() {
             transition-all duration-500
             hover:scale-[1.02]
           "
-                  />
-                ) : (
-                  <div
-                    className="
+                />
+              ) : (
+                <div
+                  className="
             relative z-10
             w-52 h-52
             rounded-3xl
@@ -171,33 +201,32 @@ export function EAurixProduct() {
             text-white text-6xl
             font-bold
           "
+                >
+                  {product.name.charAt(0)}
+                </div>
+              )}
+
+              {/* BADGES */}
+              <div className="absolute top-4 left-4 flex gap-2 z-20">
+                {badge && (
+                  <div
+                    className={`text-white text-xs px-3 py-1 rounded-full shadow-lg ${badge.cls}`}
+                    style={{ fontWeight: 700 }}
                   >
-                    {product.name.charAt(0)}
+                    {badge.label}
                   </div>
                 )}
 
-                {/* BADGES */}
-                <div className="absolute top-4 left-4 flex gap-2 z-20">
-                  {badge && (
-                    <div
-                      className={`text-white text-xs px-3 py-1 rounded-full shadow-lg ${badge.cls}`}
-                      style={{ fontWeight: 700 }}
-                    >
-                      {badge.label}
-                    </div>
-                  )}
-
-                  {discount > 0 && (
-                    <div
-                      className="bg-rose-500 text-white text-xs px-3 py-1 rounded-full shadow-lg"
-                      style={{ fontWeight: 700 }}
-                    >
-                      -{discount}% OFF
-                    </div>
-                  )}
-                </div>
+                {discount > 0 && (
+                  <div
+                    className="bg-rose-500 text-white text-xs px-3 py-1 rounded-full shadow-lg"
+                    style={{ fontWeight: 700 }}
+                  >
+                    -{discount}% OFF
+                  </div>
+                )}
               </div>
-      
+            </div>
 
             {/* TRUST BADGES */}
             <div className="grid grid-cols-3 gap-3 mt-4">
@@ -332,6 +361,62 @@ export function EAurixProduct() {
                 </div>
               </div>
             </div>
+
+            {/* ====================================================== */
+            /* ORDER FULFILLED BY */
+            /* ====================================================== */}
+
+            {shopData && (
+              <div className="mt-5 bg-white border border-gray-100 rounded-3xl p-4 shadow-sm">
+                <div className="flex items-center justify-between gap-3 flex-wrap">
+                  <div className="flex items-center gap-3">
+                    {/* LOGO */}
+
+                    <div className="w-14 h-14 rounded-[12px] bg-white border-2 border-gray-100 shadow-2xl overflow-hidden flex items-center justify-center">
+                      {shopData.logo ? (
+                        <img
+                          src={shopData.logo}
+                          alt={shopData.shop_name}
+                          className="w-full h-full object-cover"
+                          referrerPolicy="no-referrer"
+                        />
+                      ) : (
+                        <Store className="w-6 h-6 text-gray-400" />
+                      )}
+                    </div>
+
+                    {/* DETAILS */}
+
+                    <div>
+                      <h1 className="text-[10px] uppercase tracking-wider text-gray-400 font-black">
+                        Order Fulfilled By
+                      </h1>
+
+                      <h3 className="text-[15px] font-black text-[#0F172A]">
+                        {shopData.shop_name}
+                      </h3>
+                    </div>
+                  </div>
+
+                  {/* BUTTON */}
+
+                  <button
+                    onClick={() => setShowShopDetails(true)}
+                    className="
+          h-11 px-5 rounded-2xl
+          bg-[#0EA5E9]
+          hover:bg-[#0284C7]
+          text-white text-[13px]
+          font-black
+          shadow-lg shadow-sky-100
+          transition-all
+        "
+                  >
+                    View Shop
+                  </button>
+                </div>
+              </div>
+            )}
 
             {/* Quantity */}
             <div className="mb-4">
@@ -521,21 +606,21 @@ export function EAurixProduct() {
         </div>
 
         {/* Related Products */}
-       {related.length > 0 && (
-  <div>
-    <h2
-      className="text-[#0F172A] mb-5"
-      style={{ fontWeight: 700, fontSize: "1.1rem" }}
-    >
-      Related Products
-    </h2>
+        {related.length > 0 && (
+          <div>
+            <h2
+              className="text-[#0F172A] mb-5"
+              style={{ fontWeight: 700, fontSize: "1.1rem" }}
+            >
+              Related Products
+            </h2>
 
-    <div className="grid grid-cols-2 md:grid-cols-4 gap-5">
-      {related.map((p) => (
-        <Link
-          key={p.id}
-          href={`/eaurix/product/${p.id}`}
-          className="
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-5">
+              {related.map((p) => (
+                <Link
+                  key={p.id}
+                  href={`/eaurix/product/${p.id}`}
+                  className="
             group
             bg-white
             rounded-[26px]
@@ -545,40 +630,40 @@ export function EAurixProduct() {
             hover:shadow-[0_18px_40px_rgba(0,0,0,0.08)]
             transition-all duration-300
           "
-        >
-          {/* IMAGE AREA */}
-          <div
-            className="
+                >
+                  {/* IMAGE AREA */}
+                  <div
+                    className="
               relative
               h-44
               p-3
               overflow-hidden
             "
-            style={{
-              background: `linear-gradient(135deg, ${p.color}15, ${p.color}35)`,
-            }}
-          >
-            {/* INNER IMAGE CARD */}
-            <div
-              className="
+                    style={{
+                      background: `linear-gradient(135deg, ${p.color}15, ${p.color}35)`,
+                    }}
+                  >
+                    {/* INNER IMAGE CARD */}
+                    <div
+                      className="
                 w-full h-full
                 rounded-[22px]
                 overflow-hidden
                 flex items-center justify-center
                 relative
               "
-              style={{
-                background: `linear-gradient(135deg, ${p.color}, ${p.color}90)`,
-              }}
-            >
-              {/* GLOW */}
-              <div className="absolute inset-0 bg-white/10" />
+                      style={{
+                        background: `linear-gradient(135deg, ${p.color}, ${p.color}90)`,
+                      }}
+                    >
+                      {/* GLOW */}
+                      <div className="absolute inset-0 bg-white/10" />
 
-              {p.image ? (
-                <img
-                  src={p.image}
-                  alt={p.name}
-                  className="
+                      {p.image ? (
+                        <img
+                          src={p.image}
+                          alt={p.name}
+                          className="
                     relative z-10
                     w-[92%]
                     h-[92%]
@@ -588,10 +673,10 @@ export function EAurixProduct() {
                     group-hover:scale-[1.04]
                     transition-all duration-500
                   "
-                />
-              ) : (
-                <div
-                  className="
+                        />
+                      ) : (
+                        <div
+                          className="
                     w-20 h-20
                     rounded-2xl
                     bg-white/30
@@ -599,24 +684,24 @@ export function EAurixProduct() {
                     text-white text-2xl
                     font-bold
                   "
-                >
-                  {p.name.charAt(0)}
-                </div>
-              )}
-            </div>
-          </div>
+                        >
+                          {p.name.charAt(0)}
+                        </div>
+                      )}
+                    </div>
+                  </div>
 
-          {/* CONTENT */}
-          <div className="p-4">
-            <div
-              className="text-[11px] text-[#0EA5E9] mb-1"
-              style={{ fontWeight: 700 }}
-            >
-              {p.brand}
-            </div>
+                  {/* CONTENT */}
+                  <div className="p-4">
+                    <div
+                      className="text-[11px] text-[#0EA5E9] mb-1"
+                      style={{ fontWeight: 700 }}
+                    >
+                      {p.brand}
+                    </div>
 
-            <div
-              className="
+                    <div
+                      className="
                 text-[#0F172A]
                 text-sm
                 line-clamp-2
@@ -624,24 +709,203 @@ export function EAurixProduct() {
                 leading-[1.35]
                 mb-2
               "
-              style={{ fontWeight: 700 }}
-            >
-              {p.name}
-            </div>
+                      style={{ fontWeight: 700 }}
+                    >
+                      {p.name}
+                    </div>
 
-            <div
-              className="text-[#0F172A] text-lg"
-              style={{ fontWeight: 800 }}
-            >
-              ₹{p.price}
+                    <div
+                      className="text-[#0F172A] text-lg"
+                      style={{ fontWeight: 800 }}
+                    >
+                      ₹{p.price}
+                    </div>
+                  </div>
+                </Link>
+              ))}
             </div>
           </div>
-        </Link>
-      ))}
-    </div>
-  </div>
-)}
+        )}
       </div>
+      {/* ====================================================== */
+      /* SHOP DETAILS POPUP */
+      /* ====================================================== */}
+
+      {showShopDetails && shopData && (
+        <div className="fixed inset-0 z-999 bg-black/70 backdrop-blur-md flex items-center justify-center p-3">
+          <div className="relative w-full h-160 max-w-2xl bg-white rounded-[35px] overflow-hidden shadow-2xl flex flex-col">
+            {/* CLOSE */}
+
+            <button
+              onClick={() => setShowShopDetails(false)}
+              className="absolute top-5 right-5 z-50 w-12 h-12 rounded-2xl bg-white shadow-xl flex items-center justify-center"
+            >
+              <X className="w-5 h-5" />
+            </button>
+
+            {/* BANNER */}
+
+            <div className="relative h-50 bg-linear-to-r from-sky-500 via-cyan-500 to-blue-600">
+              {shopData.banner || shopData.logo ? (
+                <img
+                  src={shopData.banner || shopData.logo}
+                  alt={shopData.shop_name}
+                  className="w-full h-full object-cover"
+                  referrerPolicy="no-referrer"
+                />
+              ) : (
+                <div className="w-full h-full flex items-center justify-center">
+                  <Store className="w-24 h-24 text-white/40" />
+                </div>
+              )}
+
+              {/* OVERLAY */}
+
+              <div className="absolute inset-0 bg-black/30" />
+
+              {/* LOGO */}
+
+              <div className="absolute -bottom-16 left-10">
+                <div className="w-20 h-20 rounded-[15px] bg-white border-2 border-white shadow-2xl overflow-hidden flex items-center justify-center">
+                  {shopData.logo ? (
+                    <img
+                      src={shopData.logo}
+                      alt={shopData.shop_name}
+                      className="w-full h-full object-cover"
+                      referrerPolicy="no-referrer"
+                    />
+                  ) : (
+                    <Store className="w-14 h-14 text-gray-400" />
+                  )}
+                </div>
+              </div>
+            </div>
+
+            {/* CONTENT */}
+
+            <div className="flex-1 overflow-y-auto pt-14 px-4 pb-5 bg-[#F8FAFC] mt-2">
+              {/* TOP */}
+
+              <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-4">
+                <div>
+                  <h2 className="text-[26px] md:text-[30px] font-black text-[#0F172A] leading-tight">
+                    {shopData.shop_name}
+                  </h2>
+
+                  <p className="text-[13px] text-gray-500 mt-1 font-semibold">
+                    Owner : {shopData.owner_name}
+                  </p>
+
+                  {/* DETAILS */}
+
+                  <div className="flex flex-wrap gap-2 mt-2">
+                    <div className="px-3 py-2 rounded-xl bg-violet-50 border border-violet-100">
+                      <h3 className="text-[12px] font-black text-violet-700 ">
+                        Shop : {shopData.shop_uid || "N/A"}
+                      </h3>
+                    </div>
+
+                    <div className="px-3 py-2 rounded-xl bg-emerald-50 border border-emerald-100">
+                      <h3 className="text-[12px] font-black text-emerald-700 mt-0.5">
+                        Registration Date :{" "}
+                        {shopData.joined_date
+                          ? new Date(shopData.joined_date).toLocaleDateString(
+                              "en-GB",
+                            )
+                          : "-"}
+                      </h3>
+                    </div>
+                  </div>
+                </div>
+
+                {/* STATUS */}
+
+                <div className="flex items-center gap-2">
+                  <span
+                    className={`px-3 py-1.5 rounded-full text-[10px] font-black uppercase tracking-wide ${
+                      shopData.status === "online"
+                        ? "bg-green-100 text-green-600"
+                        : "bg-red-100 text-red-600"
+                    }`}
+                  >
+                    {shopData.status}
+                  </span>
+                </div>
+              </div>
+
+              {/* INFO */}
+
+              <div className="grid md:grid-cols-2 gap-3 mt-5">
+                {[
+                  {
+                    icon: Package,
+                    title: "Category",
+                    value: `${shopData.category || "-"}`,
+                    color: "text-orange-500",
+                    bg: "bg-orange-100",
+                  },
+
+                  {
+                    icon: MapPin,
+                    title: "Location",
+                    value: `${shopData.city || ""} ${shopData.state || ""}`,
+                    color: "text-green-500",
+                    bg: "bg-green-100",
+                  },
+                ].map((item, index) => (
+                  <div
+                    key={index}
+                    className="bg-white rounded-2xl p-3 border border-gray-100 shadow-sm"
+                  >
+                    <div className="flex items-center gap-2">
+                      <div
+                        className={`w-8 h-8 rounded-xl ${item.bg} flex items-center justify-center shrink-0`}
+                      >
+                        <item.icon className={`w-4 h-4 ${item.color}`} />
+                      </div>
+
+                      <p className="text-[13px] text-gray-700 wrap-break-word leading-relaxed">
+                        <span className="font-black text-[#0F172A]">
+                          {item.title} :
+                        </span>{" "}
+                        {item.value}
+                      </p>
+                    </div>
+                  </div>
+                ))}
+
+                {/* ADDRESS */}
+
+                <div className="md:col-span-2 bg-white rounded-2xl p-3 border border-gray-100 shadow-sm">
+                  <div className="flex items-center gap-2 mb-1.5">
+                    <div className="w-8 h-8 rounded-xl bg-violet-100 flex items-center justify-center">
+                      <Store className="w-4 h-4 text-violet-500" />
+                    </div>
+
+                    <h3 className="font-black text-[12px] text-[#0F172A]">
+                      Address : {shopData.address || "-"}
+                    </h3>
+                  </div>
+                </div>
+
+                {/* DESCRIPTION */}
+
+                <div className="md:col-span-2 bg-white rounded-2xl p-3 border border-gray-100 shadow-sm">
+                  <div className="flex items-center gap-2 mb-1.5">
+                    <div className="w-8 h-8 rounded-xl bg-cyan-100 flex items-center justify-center">
+                      <FileText className="w-4 h-4 text-cyan-500" />
+                    </div>
+
+                    <h3 className="font-black text-[12px] text-[#0F172A]">
+                      Description : {shopData.description || "-"}
+                    </h3>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

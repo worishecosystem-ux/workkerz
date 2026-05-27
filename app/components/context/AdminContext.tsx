@@ -15,8 +15,6 @@ import {
   type Review,
 } from "@/app/data/workers";
 
-import { supabase } from "@/lib/supabase";
-
 import {
   getProducts,
   addProduct as addProductDB,
@@ -25,10 +23,18 @@ import {
   type Product,
 } from "@/app/data/products";
 
+import {
+  getShops,
+  type Shop,
+} from "@/app/data/shops";
+
+import { supabase } from "@/lib/supabase";
+
 /* ===================================================== */
 
 interface AdminContextType {
-  // Workers
+  /* WORKERS */
+
   workers: Worker[];
 
   addWorker: (
@@ -44,7 +50,8 @@ interface AdminContextType {
     id: string,
   ) => Promise<void>;
 
-  // Products
+  /* PRODUCTS */
+
   products: Product[];
 
   addProduct: (
@@ -60,10 +67,20 @@ interface AdminContextType {
     id: string,
   ) => Promise<boolean>;
 
-  // Reviews
+  /* SHOPS */
+
+  shops: Shop[];
+
+  /* ORDERS */
+
+  orders: any[];
+
+  /* REVIEWS */
+
   reviews: Review[];
 
-  // Helpers
+  /* HELPERS */
+
   getWorkerById: (
     id: string,
   ) => Worker | undefined;
@@ -83,11 +100,19 @@ interface AdminContextType {
     count?: number,
   ) => Product[];
 
-  // Stats
+  /* STATS */
+
   stats: {
     totalWorkers: number;
+
     totalProducts: number;
+
+    totalShops: number;
+
+    totalOrders: number;
+
     availableWorkers: number;
+
     outOfStock: number;
   };
 }
@@ -106,11 +131,21 @@ export function AdminProvider({
 }: {
   children: ReactNode;
 }) {
+  /* ===================================================== */
+  /* STATES */
+  /* ===================================================== */
+
   const [workers, setWorkers] =
     useState<Worker[]>([]);
 
   const [products, setProducts] =
     useState<Product[]>([]);
+
+  const [shops, setShops] =
+    useState<Shop[]>([]);
+
+  const [orders, setOrders] =
+    useState<any[]>([]);
 
   /* ===================================================== */
   /* LOAD DATA */
@@ -118,196 +153,314 @@ export function AdminProvider({
 
   useEffect(() => {
     loadWorkers();
+
     loadProducts();
+
+    loadShops();
+
+    loadOrders();
   }, []);
 
-  const loadWorkers = async () => {
-    const data = await getWorkers();
+  /* ===================================================== */
+  /* LOAD WORKERS */
+  /* ===================================================== */
 
-    setWorkers(data || []);
-  };
+  const loadWorkers =
+    async () => {
+      const data =
+        await getWorkers();
 
-  const loadProducts = async () => {
-    const data = await getProducts();
+      setWorkers(
+        data || [],
+      );
+    };
 
-    setProducts(data || []);
-  };
+  /* ===================================================== */
+  /* LOAD PRODUCTS */
+  /* ===================================================== */
+
+  const loadProducts =
+    async () => {
+      const data =
+        await getProducts();
+
+      setProducts(
+        data || [],
+      );
+    };
+
+  /* ===================================================== */
+  /* LOAD SHOPS */
+  /* ===================================================== */
+
+  const loadShops =
+    async () => {
+      const data =
+        await getShops();
+
+      setShops(
+        data || [],
+      );
+    };
+
+  /* ===================================================== */
+  /* LOAD ORDERS */
+  /* ===================================================== */
+
+  const loadOrders =
+    async () => {
+      const { data } =
+        await supabase
+          .from("orders")
+          .select("*");
+
+      setOrders(
+        data || [],
+      );
+    };
 
   /* ===================================================== */
   /* WORKER CRUD */
   /* ===================================================== */
 
-  const addWorker = async (
-    worker: Omit<Worker, "id">,
-  ): Promise<any> => {
-    const { data, error } =
+  const addWorker =
+    async (
+      worker: Omit<
+        Worker,
+        "id"
+      >,
+    ): Promise<any> => {
+      const {
+        data,
+        error,
+      } =
+        await supabase
+          .from(
+            "workers",
+          )
+          .insert([
+            {
+              name:
+                worker.name,
+
+              category:
+                worker.category,
+
+              specialty:
+                worker.specialty,
+
+              rating:
+                worker.rating,
+
+              review_count:
+                worker.reviewCount,
+
+              hourly_rate:
+                worker.hourlyRate,
+
+              location:
+                worker.location,
+
+              available:
+                worker.available,
+
+              years_experience:
+                worker.yearsExperience,
+
+              completed_jobs:
+                worker.completedJobs,
+
+              bio:
+                worker.bio,
+
+              skills:
+                worker.skills,
+
+              photo:
+                worker.photo,
+
+              response_time:
+                worker.responseTime,
+
+              certifications:
+                worker.certifications,
+            },
+          ])
+          .select()
+          .single();
+
+      if (error) {
+        console.log(
+          error,
+        );
+
+        return null;
+      }
+
+      await loadWorkers();
+
+      return data;
+    };
+
+  /* ===================================================== */
+
+  const updateWorker =
+    async (
+      id: string,
+      data: Partial<Worker>,
+    ) => {
       await supabase
-        .from("workers")
-        .insert([
-          {
-            name: worker.name,
+        .from(
+          "workers",
+        )
+        .update({
+          name:
+            data.name,
 
-            category:
-              worker.category,
+          category:
+            data.category,
 
-            specialty:
-              worker.specialty,
+          specialty:
+            data.specialty,
 
-            rating: worker.rating,
+          rating:
+            data.rating,
 
-            review_count:
-              worker.reviewCount,
+          review_count:
+            data.reviewCount,
 
-            hourly_rate:
-              worker.hourlyRate,
+          hourly_rate:
+            data.hourlyRate,
 
-            location:
-              worker.location,
+          location:
+            data.location,
 
-            available:
-              worker.available,
+          available:
+            data.available,
 
-            years_experience:
-              worker.yearsExperience,
+          years_experience:
+            data.yearsExperience,
 
-            completed_jobs:
-              worker.completedJobs,
+          completed_jobs:
+            data.completedJobs,
 
-            bio: worker.bio,
+          bio:
+            data.bio,
 
-            skills: worker.skills,
+          skills:
+            data.skills,
 
-            photo: worker.photo,
+          photo:
+            data.photo,
 
-            response_time:
-              worker.responseTime,
+          response_time:
+            data.responseTime,
 
-            certifications:
-              worker.certifications,
-          },
-        ])
-        .select()
-        .single();
+          certifications:
+            data.certifications,
+        })
+        .eq("id", id);
 
-    if (error) {
-      console.log(error);
+      await loadWorkers();
+    };
 
-      return null;
-    }
+  /* ===================================================== */
 
-    await loadWorkers();
+  const deleteWorker =
+    async (
+      id: string,
+    ) => {
+      await supabase
+        .from(
+          "workers",
+        )
+        .delete()
+        .eq("id", id);
 
-    return data;
-  };
-
-  const updateWorker = async (
-    id: string,
-    data: Partial<Worker>,
-  ) => {
-    await supabase
-      .from("workers")
-      .update({
-        name: data.name,
-
-        category: data.category,
-
-        specialty:
-          data.specialty,
-
-        rating: data.rating,
-
-        review_count:
-          data.reviewCount,
-
-        hourly_rate:
-          data.hourlyRate,
-
-        location:
-          data.location,
-
-        available:
-          data.available,
-
-        years_experience:
-          data.yearsExperience,
-
-        completed_jobs:
-          data.completedJobs,
-
-        bio: data.bio,
-
-        skills: data.skills,
-
-        photo: data.photo,
-
-        response_time:
-          data.responseTime,
-
-        certifications:
-          data.certifications,
-      })
-      .eq("id", id);
-
-    await loadWorkers();
-  };
-
-  const deleteWorker = async (
-    id: string,
-  ) => {
-    await supabase
-      .from("workers")
-      .delete()
-      .eq("id", id);
-
-    await loadWorkers();
-  };
+      await loadWorkers();
+    };
 
   /* ===================================================== */
   /* PRODUCT CRUD */
   /* ===================================================== */
 
-  const addProduct = async (
-    product: Omit<Product, "id">,
-  ): Promise<boolean> => {
-    const success =
-      await addProductDB(product);
+  const addProduct =
+    async (
+      product: Omit<
+        Product,
+        "id"
+      >,
+    ): Promise<boolean> => {
+      try {
+        await addProductDB(
+          product,
+        );
 
-    if (success) {
-      await loadProducts();
-    }
+        await loadProducts();
 
-    return success;
-  };
+        return true;
+      } catch (
+        error
+      ) {
+        console.log(
+          error,
+        );
 
-  const updateProduct = async (
-    id: string,
-    data: Partial<Product>,
-  ): Promise<boolean> => {
-    const success =
-      await updateProductDB(
-        id,
-        data,
-      );
+        return false;
+      }
+    };
 
-    if (success) {
-      await loadProducts();
-    }
+  /* ===================================================== */
 
-    return success;
-  };
+  const updateProduct =
+    async (
+      id: string,
+      data: Partial<Product>,
+    ): Promise<boolean> => {
+      try {
+        await updateProductDB(
+          id,
+          data,
+        );
 
-  const deleteProduct = async (
-    id: string,
-  ): Promise<boolean> => {
-    const success =
-      await deleteProductDB(id);
+        await loadProducts();
 
-    if (success) {
-      await loadProducts();
-    }
+        return true;
+      } catch (
+        error
+      ) {
+        console.log(
+          error,
+        );
 
-    return success;
-  };
+        return false;
+      }
+    };
+
+  /* ===================================================== */
+
+  const deleteProduct =
+    async (
+      id: string,
+    ): Promise<boolean> => {
+      try {
+        await deleteProductDB(
+          id,
+        );
+
+        await loadProducts();
+
+        return true;
+      } catch (
+        error
+      ) {
+        console.log(
+          error,
+        );
+
+        return false;
+      }
+    };
 
   /* ===================================================== */
   /* HELPERS */
@@ -317,102 +470,175 @@ export function AdminProvider({
     id: string,
   ) => {
     return workers.find(
-      (worker) => worker.id === id,
+      (
+        worker,
+      ) =>
+        worker.id ===
+        id,
     );
   };
+
+  /* ===================================================== */
 
   const getProductById = (
     id: string,
   ) => {
     return products.find(
-      (product) =>
-        product.id === id,
+      (
+        product,
+      ) =>
+        product.id ===
+        id,
     );
   };
 
-  const getProductsByCategory = (
-    cat: string,
-  ) => {
-    return products.filter(
-      (product) =>
-        product.category === cat,
-    );
-  };
+  /* ===================================================== */
 
-  const getFeaturedProducts = () => {
-    return products.filter(
-      (product) =>
-        product.badge ===
-          "popular" ||
-        product.badge === "pro",
-    );
-  };
+  const getProductsByCategory =
+    (
+      cat: string,
+    ) => {
+      return products.filter(
+        (
+          product,
+        ) =>
+          product.category ===
+          cat,
+      );
+    };
 
-  const getRelatedProducts = (
-    product: Product,
-    count = 4,
-  ) => {
-    return products
-      .filter(
-        (p) =>
-          p.category ===
-            product.category &&
-          p.id !== product.id,
-      )
-      .slice(0, count);
-  };
+  /* ===================================================== */
+
+  const getFeaturedProducts =
+    () => {
+      return products.filter(
+        (
+          product,
+        ) =>
+          product.badge ===
+            "popular" ||
+          product.badge ===
+            "pro",
+      );
+    };
+
+  /* ===================================================== */
+
+  const getRelatedProducts =
+    (
+      product: Product,
+      count = 4,
+    ) => {
+      return products
+        .filter(
+          (
+            p,
+          ) =>
+            p.category ===
+              product.category &&
+            p.id !==
+              product.id,
+        )
+        .slice(
+          0,
+          count,
+        );
+    };
 
   /* ===================================================== */
   /* STATS */
   /* ===================================================== */
 
-  const stats = useMemo(
-    () => ({
-      totalWorkers:
-        workers.length,
+  const stats =
+    useMemo(
+      () => ({
+        totalWorkers:
+          workers.length,
 
-      totalProducts:
-        products.length,
+        totalProducts:
+          products.length,
 
-      availableWorkers:
-        workers.filter(
-          (worker) =>
-            worker.available,
-        ).length,
+        totalShops:
+          shops.length,
 
-      outOfStock:
-        products.filter(
-          (product) =>
-            product.stock === 0,
-        ).length,
-    }),
-    [workers, products],
-  );
+        totalOrders:
+          orders.length,
+
+        availableWorkers:
+          workers.filter(
+            (
+              worker,
+            ) =>
+              worker.available,
+          ).length,
+
+        outOfStock:
+          products.filter(
+            (
+              product,
+            ) =>
+              product.stock <=
+              0,
+          ).length,
+      }),
+      [
+        workers,
+        products,
+        shops,
+        orders,
+      ],
+    );
 
   /* ===================================================== */
 
   return (
     <AdminContext.Provider
       value={{
+        /* WORKERS */
+
         workers,
 
         addWorker,
+
         updateWorker,
+
         deleteWorker,
+
+        /* PRODUCTS */
 
         products,
 
         addProduct,
+
         updateProduct,
+
         deleteProduct,
+
+        /* SHOPS */
+
+        shops,
+
+        /* ORDERS */
+
+        orders,
+
+        /* REVIEWS */
 
         reviews: [],
 
+        /* HELPERS */
+
         getWorkerById,
+
         getProductById,
+
         getProductsByCategory,
+
         getFeaturedProducts,
+
         getRelatedProducts,
+
+        /* STATS */
 
         stats,
       }}
@@ -426,7 +652,9 @@ export function AdminProvider({
 
 export function useAdmin() {
   const ctx =
-    useContext(AdminContext);
+    useContext(
+      AdminContext,
+    );
 
   if (!ctx) {
     throw new Error(

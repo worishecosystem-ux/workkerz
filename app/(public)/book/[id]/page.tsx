@@ -452,20 +452,87 @@ export default function BookingPage() {
     <div className="min-h-screen bg-[#F8FAFC]">
       {/* Header */}
       <div className="bg-[#0F172A] pt-16">
-        <div className="max-w-5xl mx-auto px-6 py-6">
+        <div className="max-w-4xl mx-auto px-6 py-6">
           <button
             onClick={handleBack}
             className="flex items-center gap-2 text-gray-400 hover:text-white transition-colors text-sm mb-5"
           >
             <ChevronLeft className="w-4 h-4" /> Back
           </button>
-          <h1
-            className="text-white"
-            style={{ fontWeight: 700, fontSize: "1.4rem" }}
-          >
-            Book {worker.name}
-          </h1>
+          <div className="">
+            {/* GLOW */}
+            <div className="absolute -top-10 -right-10 w-32 h-32 rounded-full bg-[#FF5C39]/20 blur-3xl" />
 
+            <div className="relative z-10">
+              <div className="flex items-start gap-4">
+                {/* PHOTO */}
+                <div className="relative shrink-0">
+                  <img
+                    src={
+                      worker.photo && worker.photo.trim() !== ""
+                        ? worker.photo
+                        : `https://ui-avatars.com/api/?name=${encodeURIComponent(worker.name)}&background=f97316&color=fff`
+                    }
+                    alt={worker.name}
+                    className="w-25 h-28 rounded-3xl object-cover border-3 border-white/20 shadow-xl"
+                    onError={(e) => {
+                      e.currentTarget.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(worker.name)}&background=f97316&color=fff`;
+                    }}
+                  />
+
+                  {worker.available && (
+                    <div className="absolute bottom-1 right-1 w-4 h-4 rounded-full bg-emerald-400 border-2 border-[#0F172A]" />
+                  )}
+                </div>
+
+                {/* INFO */}
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center justify-between gap-3">
+                    <div>
+                      <h3
+                        className="text-white text-[1.05rem] truncate"
+                        style={{ fontWeight: 800 }}
+                      >
+                        {worker.name}
+                      </h3>
+
+                      <p className="text-white/70 text-sm mt-0.5 truncate">
+                        {worker.specialty}
+                      </p>
+                    </div>
+
+                    <div className="px-3 py-1.5 rounded-2xl bg-white/10 backdrop-blur text-white text-xs">
+                      Verified
+                    </div>
+                  </div>
+
+                  {/* STATS */}
+                  <div className="flex items-center gap-4 mt-4">
+                    <div className="flex items-center gap-1.5">
+                      <Star className="w-4 h-4 text-amber-400 fill-amber-400" />
+
+                      <span
+                        className="text-white text-sm"
+                        style={{ fontWeight: 700 }}
+                      >
+                        {worker.rating}
+                      </span>
+
+                      <span className="text-white/60 text-xs">
+                        ({worker.reviewCount})
+                      </span>
+                    </div>
+
+                    <div className="w-1 h-1 rounded-full bg-white/30" />
+
+                    <div className="text-white/80 text-sm">
+                      {worker.completedJobs}+ works
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
           {/* Step progress */}
           <div className="flex items-center gap-2 mt-6">
             {steps.map((s, i) => (
@@ -511,10 +578,10 @@ export default function BookingPage() {
         </div>
       </div>
 
-      <div className="max-w-400 mx-auto px-4 sm:px-6 py-5">
-        <div className="grid grid-cols-1 xl:grid-cols-[1.25fr_0.75fr] gap-6 items-start">
+      
+        <div className="max-w-8xl  items-start px-4 sm:px-6 py-5">
           {/* Form */}
-          <div className="min-w-0">
+          <div className="">
             <div className="bg-white rounded-4xl border border-gray-100 p-5 sm:p-7 shadow-[0_10px_40px_rgba(15,23,42,0.04)]">
               {/* STEP 1 */}
               {step === 1 && (
@@ -1336,54 +1403,58 @@ export default function BookingPage() {
 
                         {/* APPS */}
                         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mt-6">
-                          <a
-                            href={`upi://pay?pa=8602190366@ptaxis&pn=Workkerz&am=${payableAmount}&cu=INR`}
-                            className="h-14 rounded-2xl border border-gray-200 hover:border-[#FF5C39] flex items-center justify-center gap-2 px-3 transition-all"
-                          >
-                            <img
-                              src="/gpay.png"
-                              alt="GPay"
-                              className="w-8 h-8 object-contain"
-                            />
+  {/* GPay */}
+  <a
+    href={`gpay://upi/pay?pa=8602190366@ptaxis&pn=Workkerz&am=${payableAmount}&cu=INR`}
+    className="h-14 rounded-2xl border border-gray-200 hover:border-[#FF5C39] flex items-center justify-center gap-2 px-3 transition-all"
+  >
+    <img
+      src="/gpay.png"
+      alt="GPay"
+      className="w-8 h-8 object-contain"
+    />
 
-                            <span className="text-sm font-semibold text-[#0F172A]">
-                              GPay
-                            </span>
-                          </a>
+    <span className="text-sm font-semibold text-[#0F172A]">
+      GPay
+    </span>
+  </a>
 
-                          <a
-                            href={`upi://pay?pa=8602190366@ptaxis&pn=Workkerz&am=${payableAmount}&cu=INR`}
-                            className="h-14 rounded-2xl border border-gray-200 hover:border-[#FF5C39] flex items-center justify-center p-3 transition-all"
-                          >
-                            <img
-                              src="/phonepe.svg"
-                              alt="PhonePe"
-                              className="w-28 h-8 object-contain"
-                            />
-                          </a>
+  {/* PhonePe */}
+  <a
+    href={`phonepe://pay?pa=8602190366@ptaxis&pn=Workkerz&am=${payableAmount}&cu=INR`}
+    className="h-14 rounded-2xl border border-gray-200 hover:border-[#FF5C39] flex items-center justify-center p-3 transition-all"
+  >
+    <img
+      src="/phonepe.svg"
+      alt="PhonePe"
+      className="w-28 h-8 object-contain"
+    />
+  </a>
 
-                          <a
-                            href={`upi://pay?pa=8602190366@ptaxis&pn=Workkerz&am=${payableAmount}&cu=INR`}
-                            className="h-14 rounded-2xl border border-gray-200 hover:border-[#FF5C39] flex items-center justify-center p-3 transition-all"
-                          >
-                            <img
-                              src="/paytm.png"
-                              alt="Paytm"
-                              className="w-28 h-8 object-contain"
-                            />
-                          </a>
+  {/* Paytm */}
+  <a
+    href={`paytmmp://pay?pa=8602190366@ptaxis&pn=Workkerz&am=${payableAmount}&cu=INR`}
+    className="h-14 rounded-2xl border border-gray-200 hover:border-[#FF5C39] flex items-center justify-center p-3 transition-all"
+  >
+    <img
+      src="/paytm.png"
+      alt="Paytm"
+      className="w-28 h-8 object-contain"
+    />
+  </a>
 
-                          <a
-                            href={`upi://pay?pa=8602190366@ptaxis&pn=Workkerz&am=${payableAmount}&cu=INR`}
-                            className="h-14 rounded-2xl border border-gray-200 hover:border-[#FF5C39] flex items-center justify-center p-3 transition-all"
-                          >
-                            <img
-                              src="/amazon_pay.svg"
-                              alt="Amazon Pay"
-                              className="w-24 h-7 object-contain"
-                            />
-                          </a>
-                        </div>
+  {/* Amazon Pay */}
+  <a
+    href={`amazonpay://pay?pa=8602190366@ptaxis&pn=Workkerz&am=${payableAmount}&cu=INR`}
+    className="h-14 rounded-2xl border border-gray-200 hover:border-[#FF5C39] flex items-center justify-center p-3 transition-all"
+  >
+    <img
+      src="/amazon_pay.svg"
+      alt="Amazon Pay"
+      className="w-24 h-7 object-contain"
+    />
+  </a>
+</div>
                       </div>
 
                       {/* QR */}
@@ -1491,359 +1562,7 @@ export default function BookingPage() {
               </div>
             </div>
           </div>
-
-          {/* Booking Summary */}
-          <div className="xl:min-w-95">
-            <div className="xl:sticky xl:top-24 overflow-hidden rounded-4xl border border-white/60 bg-white shadow-[0_20px_80px_rgba(15,23,42,0.08)]">
-              {/* TOP HEADER */}
-              <div className="relative overflow-hidden bg-linear-to-br from-[#0F172A] via-[#172033] to-[#1E293B] p-5">
-                {/* GLOW */}
-                <div className="absolute -top-10 -right-10 w-32 h-32 rounded-full bg-[#FF5C39]/20 blur-3xl" />
-
-                <div className="relative z-10">
-                  <div className="flex items-start gap-4">
-                    {/* PHOTO */}
-                    <div className="relative shrink-0">
-                      <img
-                        src={
-                          worker.photo && worker.photo.trim() !== ""
-                            ? worker.photo
-                            : `https://ui-avatars.com/api/?name=${encodeURIComponent(worker.name)}&background=f97316&color=fff`
-                        }
-                        alt={worker.name}
-                        className="w-25 h-28 rounded-3xl object-cover border-3 border-white/20 shadow-xl"
-                        onError={(e) => {
-                          e.currentTarget.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(worker.name)}&background=f97316&color=fff`;
-                        }}
-                      />
-
-                      {worker.available && (
-                        <div className="absolute bottom-1 right-1 w-4 h-4 rounded-full bg-emerald-400 border-2 border-[#0F172A]" />
-                      )}
-                    </div>
-
-                    {/* INFO */}
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center justify-between gap-3">
-                        <div>
-                          <h3
-                            className="text-white text-[1.05rem] truncate"
-                            style={{ fontWeight: 800 }}
-                          >
-                            {worker.name}
-                          </h3>
-
-                          <p className="text-white/70 text-sm mt-0.5 truncate">
-                            {worker.specialty}
-                          </p>
-                        </div>
-
-                        <div className="px-3 py-1.5 rounded-2xl bg-white/10 backdrop-blur text-white text-xs">
-                          Verified
-                        </div>
-                      </div>
-
-                      {/* STATS */}
-                      <div className="flex items-center gap-4 mt-4">
-                        <div className="flex items-center gap-1.5">
-                          <Star className="w-4 h-4 text-amber-400 fill-amber-400" />
-
-                          <span
-                            className="text-white text-sm"
-                            style={{ fontWeight: 700 }}
-                          >
-                            {worker.rating}
-                          </span>
-
-                          <span className="text-white/60 text-xs">
-                            ({worker.reviewCount})
-                          </span>
-                        </div>
-
-                        <div className="w-1 h-1 rounded-full bg-white/30" />
-
-                        <div className="text-white/80 text-sm">
-                          {worker.completedJobs}+ works
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              {/* BODY */}
-              <div className="p-4 sm:p-5 space-y-5">
-                {/* TITLE */}
-                <div className="flex items-center justify-between">
-                  <div>
-                    <h3
-                      className="text-[#0F172A]"
-                      style={{
-                        fontWeight: 800,
-                        fontSize: "1.05rem",
-                      }}
-                    >
-                      Booking Summary
-                    </h3>
-
-                    <p className="text-sm text-[#64748B] mt-1">
-                      Review your booking details
-                    </p>
-                  </div>
-
-                  <div className="px-3 py-1.5 rounded-2xl bg-[#FFF4EF] text-[#FF5C39] text-xs">
-                    Protected
-                  </div>
-                </div>
-
-                {/* DETAILS */}
-                <div className="space-y-3">
-                  {/* SERVICE */}
-                  {form.serviceType && (
-                    <div className="rounded-2xl border border-gray-100 bg-[#FAFAFA] p-4">
-                      <div className="text-sm text-[#94A3B8] mb-1">Service</div>
-
-                      <div
-                        className="text-[#0F172A]"
-                        style={{ fontWeight: 500 }}
-                      >
-                        {form.serviceType}
-                      </div>
-                    </div>
-                  )}
-
-                  {/* DESCRIPTION */}
-                  {form.description && (
-                    <div className="rounded-2xl border border-gray-100 bg-[#FAFAFA] p-3">
-                      <div className="text-sm text-[#94A3B8] mb-1">
-                        Work Description
-                      </div>
-
-                      <div className="text-sm text-[#334155] leading-relaxed wrap-break-word">
-                        {form.description}
-                      </div>
-                    </div>
-                  )}
-
-                  {/* LOCATION */}
-                  {(form.address ||
-                    form.city ||
-                    form.district ||
-                    form.state ||
-                    form.pincode) && (
-                    <div className="rounded-2xl border border-gray-100 bg-[#FAFAFA] p-2">
-                      <div className="flex items-start gap-3">
-                        <div className="w-10 h-10 rounded-2xl bg-[#FFF4EF] flex items-center justify-center shrink-0">
-                          <MapPin className="w-4 h-4 text-[#FF5C39]" />
-                        </div>
-
-                        <div className="min-w-0 flex-1">
-                          <div className="text-xs text-[#94A3B8] mb-1">
-                            Work Location
-                          </div>
-
-                          <div
-                            className="text-sm text-[#0F172A] wrap-break-word leading-6"
-                            style={{ fontWeight: 400 }}
-                          >
-                            {[
-                              form.address,
-                              form.city,
-                              form.district,
-                              form.state,
-                              form.pincode,
-                            ]
-                              .filter(Boolean)
-                              .join(", ")}
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  )}
-
-                  {/* DATE & TIME */}
-                  {(form.date || form.time) && (
-                    <div className="grid grid-cols-2 gap-3">
-                      {form.date && (
-                        <div className="rounded-2xl border border-gray-100 bg-[#FAFAFA] p-4">
-                          <div className="text-xs text-[#94A3B8] mb-1">
-                            Date
-                          </div>
-
-                          <div
-                            className="text-sm text-[#0F172A]"
-                            style={{ fontWeight: 500 }}
-                          >
-                            {formatDate(form.date)}
-                          </div>
-                        </div>
-                      )}
-
-                      {form.time && (
-                        <div className="rounded-2xl border border-gray-100 bg-[#FAFAFA] p-4">
-                          <div className="text-xs text-[#94A3B8] mb-1">
-                            Time
-                          </div>
-
-                          <div
-                            className="text-sm text-[#0F172A]"
-                            style={{ fontWeight: 500 }}
-                          >
-                            {form.time}
-                          </div>
-                        </div>
-                      )}
-                    </div>
-                  )}
-                </div>
-
-                {/* CUSTOMER DETAILS */}
-                {(form.name || form.phone || form.email || form.notes) && (
-                  <div className="rounded-2xl border border-gray-100 bg-white p-4">
-                    {/* HEADER */}
-                    <div className="flex items-center gap-3 mb-4">
-                      <div className="w-10 h-10 rounded-2xl bg-[#EEF9FF] flex items-center justify-center shrink-0">
-                        <User className="w-4 h-4 text-[#0EA5E9]" />
-                      </div>
-
-                      <div>
-                        <div
-                          className="text-sm text-[#0F172A]"
-                          style={{ fontWeight: 600 }}
-                        >
-                          Customer Details
-                        </div>
-
-                        <div className="text-xs text-[#94A3B8] mt-0.5">
-                          Booking contact information
-                        </div>
-                      </div>
-                    </div>
-
-                    <div className="space-y-1">
-                      {/* NAME */}
-                      {form.name && (
-                        <div className="flex items-start justify-between gap-3">
-                          <span className="text-[#64748B] text-sm">
-                            Full Name
-                          </span>
-
-                          <span
-                            className="text-[#0F172A] text-sm text-right"
-                            style={{ fontWeight: 300 }}
-                          >
-                            {form.name}
-                          </span>
-                        </div>
-                      )}
-
-                      {/* PHONE */}
-                      {form.phone && (
-                        <div className="flex items-start justify-between gap-3">
-                          <span className="text-[#64748B] text-sm">Phone</span>
-
-                          <span
-                            className="text-[#0F172A] text-sm text-right"
-                            style={{ fontWeight: 300 }}
-                          >
-                            {form.phone}
-                          </span>
-                        </div>
-                      )}
-
-                      {/* EMAIL */}
-                      {form.email && (
-                        <div className="flex items-start justify-between gap-1">
-                          <span className="text-[#64748B] text-sm">Email</span>
-
-                          <span
-                            className="text-[#0F172A] text-sm text-right break-all"
-                            style={{ fontWeight: 300 }}
-                          >
-                            {form.email}
-                          </span>
-                        </div>
-                      )}
-
-                      {/* NOTES */}
-                      {form.notes && (
-                        <div className="pt-3 border-t border-gray-100">
-                          <div className="text-[#64748B] text-sm mb-1">
-                            Additional Notes
-                          </div>
-
-                          <div
-                            className="text-sm text-[#0F172A] leading-relaxed"
-                            style={{ fontWeight: 200 }}
-                          >
-                            {form.notes}
-                          </div>
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                )}
-
-                {/* PRICE */}
-                <div className="rounded-3xl bg-[#0F172A] p-3 text-white">
-                  <div className="space-y-2">
-                    <div className="flex justify-between text-sm">
-                      <span className="text-white/70">Worker Charges</span>
-
-                      <span style={{ fontWeight: 300 }}>₹{totalCost}</span>
-                    </div>
-
-                    <div className="flex justify-between text-sm">
-                      <span className="text-white/70">Platform Fee</span>
-
-                      <span style={{ fontWeight: 300 }}>₹{serviceFee}</span>
-                    </div>
-                  </div>
-
-                  <div className="h-px bg-white/10 my-4" />
-
-                  <div className="flex items-end justify-between">
-                    <div>
-                      <div className="text-white/60 text-xs">Grand Total</div>
-
-                      <div
-                        className="text-[1.7rem]"
-                        style={{ fontWeight: 500 }}
-                      >
-                        ₹{grandTotal}
-                      </div>
-                    </div>
-
-                    <div className="px-3 py-2 rounded-2xl bg-[#FF5C39] text-sm">
-                      {form.duration}hr work
-                    </div>
-                  </div>
-                </div>
-
-                {/* SECURITY */}
-                <div className="flex items-center gap-3 rounded-2xl border border-emerald-100 bg-emerald-50 p-4">
-                  <div className="w-10 h-10 rounded-2xl bg-white flex items-center justify-center shrink-0">
-                    <Lock className="w-4 h-4 text-emerald-600" />
-                  </div>
-
-                  <div>
-                    <div
-                      className="text-sm text-emerald-700"
-                      style={{ fontWeight: 300 }}
-                    >
-                      Secure Booking Protection
-                    </div>
-
-                    <div className="text-xs text-emerald-600 mt-0.5">
-                      Payment released only after work completion
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
         </div>
       </div>
-    </div>
   );
 }
