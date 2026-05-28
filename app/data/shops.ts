@@ -504,27 +504,34 @@ export async function toggleShopStatus(
   isActive: boolean,
 ) {
   try {
-    const { error } =
+    const nextStatus =
+      isActive
+        ? "online"
+        : "offline";
+
+    const { data, error } =
       await supabase
         .from("shops")
         .update({
-          status:
-            isActive
-              ? "online"
-              : "offline",
+          status: nextStatus,
         })
-        .eq("id", id);
+        .eq("id", id)
+        .select()
+        .single();
 
     if (error) {
-      console.log(error);
+      console.log(
+        "TOGGLE SHOP ERROR:",
+        error,
+      );
 
-      return false;
+      return null;
     }
 
-    return true;
+    return mapShop(data);
   } catch (err) {
     console.log(err);
 
-    return false;
+    return null;
   }
 }

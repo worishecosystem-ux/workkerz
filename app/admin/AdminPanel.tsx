@@ -36,11 +36,7 @@ import {
 } from "../data/products";
 
 // ── Types ────────────────────────────────────────────────────────────────────
-type Tab =
-  | "dashboard"
-  | "workers"
-  | "shops"
-  | "orders";
+type Tab = "dashboard" | "workers" | "shops" | "orders";
 
 const WORKER_CATEGORIES = [
   {
@@ -503,10 +499,7 @@ const SERVICES_BY_SUBCATEGORY: Record<string, string[]> = {
   Photographer: ["Wedding Shoot", "Event Photography"],
 };
 
-const CATEGORY_COLORS: Record<
-  ProductCategory,
-  string
-> = {
+const CATEGORY_COLORS: Record<ProductCategory, string> = {
   sand: "#FFF7ED",
 
   aggregate: "#F3F4F6",
@@ -633,8 +626,7 @@ function WorkerForm({
     (c) => c.name === form.category,
   );
 
-  const selectedServices =
-    SERVICES_BY_SUBCATEGORY[form.subcategory] || [];
+  const selectedServices = SERVICES_BY_SUBCATEGORY[form.subcategory] || [];
 
   useEffect(() => {
     if (form.subcategory) {
@@ -643,39 +635,28 @@ function WorkerForm({
   }, [form.subcategory]);
 
   const validate = () => {
-    if (!form.name.trim())
-      return "Name is required";
+    if (!form.name.trim()) return "Name is required";
 
-    if (!form.phone.trim())
-      return "Mobile number is required";
+    if (!form.phone.trim()) return "Mobile number is required";
 
-    if (form.phone.length < 10)
-      return "Enter valid mobile number";
+    if (form.phone.length < 10) return "Enter valid mobile number";
 
-    if (!form.category)
-      return "Category is required";
+    if (!form.category) return "Category is required";
 
-    if (!form.subcategory)
-      return "Sub Category is required";
+    if (!form.subcategory) return "Sub Category is required";
 
-    if (!form.specialty.trim())
-      return "Specialty is required";
+    if (!form.specialty.trim()) return "Specialty is required";
 
-    if (!form.location.trim())
-      return "Location is required";
+    if (!form.location.trim()) return "Location is required";
 
-    if (form.hourlyRate <= 0)
-      return "Hourly rate must be greater than 0";
+    if (form.hourlyRate <= 0) return "Hourly rate must be greater than 0";
 
-    if (!form.services?.length)
-      return "Select at least one service";
+    if (!form.services?.length) return "Select at least one service";
 
     return "";
   };
 
-  const compressImage = (
-    file: File,
-  ): Promise<string> => {
+  const compressImage = (file: File): Promise<string> => {
     return new Promise((resolve, reject) => {
       const reader = new FileReader();
 
@@ -703,8 +684,7 @@ function WorkerForm({
             height = MAX_HEIGHT;
           }
 
-          const canvas =
-            document.createElement("canvas");
+          const canvas = document.createElement("canvas");
 
           canvas.width = width;
           canvas.height = height;
@@ -716,19 +696,9 @@ function WorkerForm({
             return;
           }
 
-          ctx.drawImage(
-            img,
-            0,
-            0,
-            width,
-            height,
-          );
+          ctx.drawImage(img, 0, 0, width, height);
 
-          const compressedBase64 =
-            canvas.toDataURL(
-              "image/webp",
-              0.4,
-            );
+          const compressedBase64 = canvas.toDataURL("image/webp", 0.4);
 
           resolve(compressedBase64);
         };
@@ -767,17 +737,13 @@ function WorkerForm({
         hourly_rate: form.hourlyRate,
         location: form.location,
         available: form.available,
-        years_experience:
-          form.yearsExperience,
-        completed_jobs:
-          form.completedJobs,
+        years_experience: form.yearsExperience,
+        completed_jobs: form.completedJobs,
         bio: form.bio,
         skills: form.skills,
         photo: form.photo,
-        response_time:
-          form.responseTime,
-        certifications:
-          form.certifications,
+        response_time: form.responseTime,
+        certifications: form.certifications,
       };
 
       let error = null;
@@ -790,9 +756,7 @@ function WorkerForm({
 
         error = res.error;
       } else {
-        const res = await supabase
-          .from("workers")
-          .insert([payload]);
+        const res = await supabase.from("workers").insert([payload]);
 
         error = res.error;
       }
@@ -818,9 +782,7 @@ function WorkerForm({
       <div className="flex items-center justify-between p-5 border-b border-gray-100 shrink-0">
         <div>
           <h2 className="text-[#0F172A] font-extrabold">
-            {initial
-              ? "Edit Worker"
-              : "Add New Worker"}
+            {initial ? "Edit Worker" : "Add New Worker"}
           </h2>
 
           <p className="text-[#64748B] text-xs mt-1">
@@ -866,9 +828,7 @@ function WorkerForm({
             <div className="flex-1 space-y-2">
               <input
                 value={form.photo}
-                onChange={(e) =>
-                  u("photo", e.target.value)
-                }
+                onChange={(e) => u("photo", e.target.value)}
                 placeholder="Paste image URL..."
                 className={inp + " w-full"}
               />
@@ -876,31 +836,21 @@ function WorkerForm({
               <label className="flex items-center justify-center gap-2 px-4 py-2.5 border border-gray-200 rounded-xl cursor-pointer hover:bg-gray-50 text-sm text-[#475569]">
                 <Upload className="w-4 h-4" />
                 Upload Image
-
                 <input
                   type="file"
                   accept="image/*"
                   className="hidden"
                   onChange={async (e) => {
-                    const file =
-                      e.target.files?.[0];
+                    const file = e.target.files?.[0];
 
                     if (!file) return;
 
                     try {
-                      const compressed =
-                        await compressImage(
-                          file,
-                        );
+                      const compressed = await compressImage(file);
 
-                      u(
-                        "photo",
-                        compressed,
-                      );
+                      u("photo", compressed);
                     } catch {
-                      toast.error(
-                        "Image compression failed",
-                      );
+                      toast.error("Image compression failed");
                     }
                   }}
                 />
@@ -914,28 +864,18 @@ function WorkerForm({
           <Field label="Full Name" required>
             <input
               value={form.name}
-              onChange={(e) =>
-                u("name", e.target.value)
-              }
+              onChange={(e) => u("name", e.target.value)}
               placeholder="Ramesh Kumar"
               className={inp}
             />
           </Field>
 
-          <Field
-            label="Mobile Number"
-            required
-          >
+          <Field label="Mobile Number" required>
             <input
               type="tel"
               value={form.phone}
               onChange={(e) =>
-                u(
-                  "phone",
-                  e.target.value
-                    .replace(/\D/g, "")
-                    .slice(0, 10),
-                )
+                u("phone", e.target.value.replace(/\D/g, "").slice(0, 10))
               }
               placeholder="9876543210"
               className={inp}
@@ -949,95 +889,58 @@ function WorkerForm({
             <select
               value={form.category}
               onChange={(e) => {
-                u(
-                  "category",
-                  e.target.value,
-                );
+                u("category", e.target.value);
                 u("subcategory", "");
                 u("specialty", "");
                 u("services", []);
               }}
               className={inp}
             >
-              <option value="">
-                Select Category
-              </option>
+              <option value="">Select Category</option>
 
-              {WORKER_CATEGORIES.map(
-                (cat) => (
-                  <option
-                    key={cat.name}
-                    value={cat.name}
-                  >
-                    {cat.name}
-                  </option>
-                ),
-              )}
+              {WORKER_CATEGORIES.map((cat) => (
+                <option key={cat.name} value={cat.name}>
+                  {cat.name}
+                </option>
+              ))}
             </select>
           </Field>
 
-          <Field
-            label="Sub Category"
-            required
-          >
+          <Field label="Sub Category" required>
             <select
               value={form.subcategory}
               onChange={(e) => {
-                u(
-                  "subcategory",
-                  e.target.value,
-                );
+                u("subcategory", e.target.value);
                 u("services", []);
               }}
               className={inp}
               disabled={!form.category}
             >
-              <option value="">
-                Select Sub Category
-              </option>
+              <option value="">Select Sub Category</option>
 
-              {selectedCategory?.subcategories?.map(
-                (sub) => (
-                  <option
-                    key={sub}
-                    value={sub}
-                  >
-                    {sub}
-                  </option>
-                ),
-              )}
+              {selectedCategory?.subcategories?.map((sub) => (
+                <option key={sub} value={sub}>
+                  {sub}
+                </option>
+              ))}
             </select>
           </Field>
         </div>
 
         {/* SPECIALTY */}
-        <Field
-          label="Specialty / Role"
-          required
-        >
+        <Field label="Specialty / Role" required>
           <input
             value={form.specialty}
-            onChange={(e) =>
-              u(
-                "specialty",
-                e.target.value,
-              )
-            }
+            onChange={(e) => u("specialty", e.target.value)}
             className={inp}
           />
         </Field>
 
         {/* SERVICES */}
-        <Field
-          label="Services Offered"
-          required
-        >
+        <Field label="Services Offered" required>
           <div className="grid grid-cols-2 gap-2">
             {selectedServices.map((service) => {
-              const active =
-                form.services?.includes(
-                  service,
-                );
+              const active = form.services?.includes(service);
 
               return (
                 <button
@@ -1047,17 +950,10 @@ function WorkerForm({
                     if (active) {
                       u(
                         "services",
-                        form.services.filter(
-                          (s) =>
-                            s !== service,
-                        ),
+                        form.services.filter((s) => s !== service),
                       );
                     } else {
-                      u("services", [
-                        ...(form.services ||
-                          []),
-                        service,
-                      ]);
+                      u("services", [...(form.services || []), service]);
                     }
                   }}
                   className={`px-3 py-2.5 rounded-xl border text-sm ${
@@ -1077,9 +973,7 @@ function WorkerForm({
         <Field label="Location" required>
           <input
             value={form.location}
-            onChange={(e) =>
-              u("location", e.target.value)
-            }
+            onChange={(e) => u("location", e.target.value)}
             placeholder="Bhopal, MP"
             className={inp}
           />
@@ -1087,19 +981,11 @@ function WorkerForm({
 
         {/* RATE */}
         <div className="grid grid-cols-3 gap-4">
-          <Field
-            label="Hourly Rate (₹)"
-            required
-          >
+          <Field label="Hourly Rate (₹)" required>
             <input
               type="number"
               value={form.hourlyRate}
-              onChange={(e) =>
-                u(
-                  "hourlyRate",
-                  +e.target.value,
-                )
-              }
+              onChange={(e) => u("hourlyRate", +e.target.value)}
               className={inp}
             />
           </Field>
@@ -1108,12 +994,7 @@ function WorkerForm({
             <input
               type="number"
               value={form.yearsExperience}
-              onChange={(e) =>
-                u(
-                  "yearsExperience",
-                  +e.target.value,
-                )
-              }
+              onChange={(e) => u("yearsExperience", +e.target.value)}
               className={inp}
             />
           </Field>
@@ -1122,12 +1003,7 @@ function WorkerForm({
             <input
               type="number"
               value={form.completedJobs}
-              onChange={(e) =>
-                u(
-                  "completedJobs",
-                  +e.target.value,
-                )
-              }
+              onChange={(e) => u("completedJobs", +e.target.value)}
               className={inp}
             />
           </Field>
@@ -1138,9 +1014,7 @@ function WorkerForm({
           <textarea
             rows={4}
             value={form.bio}
-            onChange={(e) =>
-              u("bio", e.target.value)
-            }
+            onChange={(e) => u("bio", e.target.value)}
             className={inp + " resize-none"}
           />
         </Field>
@@ -1160,11 +1034,7 @@ function WorkerForm({
           disabled={saving}
           className="flex-1 py-3 rounded-2xl bg-[#FF5C39] text-white disabled:opacity-50"
         >
-          {saving
-            ? "Saving..."
-            : initial
-              ? "Save Changes"
-              : "Add Worker"}
+          {saving ? "Saving..." : initial ? "Save Changes" : "Add Worker"}
         </button>
       </div>
     </div>
@@ -1175,69 +1045,94 @@ function WorkerForm({
 // DASHBOARD TAB
 // ═══════════════════════════════════════════════════════════════════════════════
 function DashboardTab({ onGo }: { onGo: (tab: Tab) => void }) {
-  const {
-  workers = [],
-  products = [],
-  shops = [],
-  orders = [],
-  stats,
-} = useAdmin();
+  const { workers = [], products = [], shops = [], orders = [] } = useAdmin();
+
+  /* =========================================
+   REAL LIVE STATS
+========================================= */
+
+  const stats = {
+    totalWorkers: workers.length,
+
+    availableWorkers: workers.filter((w) => w.available).length,
+
+    totalProducts: products.filter((p) => p.is_active !== false).length,
+
+    outOfStock: products.filter((p) => {
+      return p.is_active !== false && Number(p.stock ?? 0) <= 0;
+    }).length,
+    totalShops: shops.length,
+
+    onlineShops: shops.filter((s) => s.status === "online").length,
+
+    totalOrders: orders.length,
+  };
+
+  console.log(
+  "OUT OF STOCK PRODUCTS",
+  products.filter((p) => {
+    return (
+      p.is_active !== false &&
+      Number(p.stock ?? 0) <= 0
+    );
+  })
+);
 
   const statCards = [
-  {
-    label: "Total Workers",
-    value: stats.totalWorkers,
-    sub: `${stats.availableWorkers} available`,
-    color: "#FF5C39",
-    bg: "#FFF5F3",
-    icon: Users,
-  },
+    {
+      label: "Total Workers",
+      value: stats.totalWorkers,
+      sub: `${stats.availableWorkers} available`,
+      color: "#FF5C39",
+      bg: "#FFF5F3",
+      icon: Users,
+    },
 
-  {
-    label: "Total Shops",
-    value: shops.length,
-    sub: "Registered shops",
-    color: "#8B5CF6",
-    bg: "#F5F3FF",
-    icon: Briefcase,
-  },
+    {
+      label: "Total Shops",
+      value: stats.totalShops,
+      sub: `${stats.onlineShops} online`,
+      color: "#8B5CF6",
+      bg: "#F5F3FF",
+      icon: Briefcase,
+    },
 
-  {
-    label: "Total Products",
-    value: stats.totalProducts,
-    sub: `${stats.outOfStock} out of stock`,
-    color: "#0EA5E9",
-    bg: "#F0F9FF",
-    icon: Package,
-  },
+    {
+      label: "Total Products",
+      value: stats.totalProducts,
+      sub: `${stats.outOfStock} out of stock`,
+      color: "#0EA5E9",
+      bg: "#F0F9FF",
+      icon: Package,
+    },
 
-  {
-    label: "Total Orders",
-    value: orders.length,
-    sub: "Customer orders",
-    color: "#10B981",
-    bg: "#ECFDF5",
-    icon: LayoutDashboard,
-  },
+    {
+      label: "Total Orders",
+      value: orders.length,
+      sub: "Customer orders",
+      color: "#10B981",
+      bg: "#ECFDF5",
+      icon: LayoutDashboard,
+    },
 
-  {
-    label: "Available Workers",
-    value: stats.availableWorkers,
-    sub: `${stats.totalWorkers - stats.availableWorkers} busy`,
-    color: "#22C55E",
-    bg: "#ECFDF5",
-    icon: CheckCircle,
-  },
+    {
+      label: "Available Workers",
+      value: stats.availableWorkers,
+      sub: `${stats.totalWorkers - stats.availableWorkers} busy`,
+      color: "#22C55E",
+      bg: "#ECFDF5",
+      icon: CheckCircle,
+    },
 
-  {
-    label: "Out Of Stock",
-    value: stats.outOfStock,
-    sub: "Products unavailable",
-    color: "#EF4444",
-    bg: "#FEF2F2",
-    icon: XCircle,
-  },
-];
+    {
+      label: "Out Of Stock",
+      value: stats.outOfStock,
+      sub: "Products unavailable",
+      color: "#EF4444",
+      bg: "#FEF2F2",
+      icon: XCircle,
+    },
+  ];
 
   return (
     <div className="p-8">
@@ -1254,7 +1149,7 @@ function DashboardTab({ onGo }: { onGo: (tab: Tab) => void }) {
       </div>
 
       {/* Stats */}
-     <div className="grid grid-cols-2 xl:grid-cols-3 2xl:grid-cols-6 gap-4 mb-8">
+      <div className="grid grid-cols-2 xl:grid-cols-3 2xl:grid-cols-6 gap-4 mb-8">
         {statCards.map((s) => {
           const Icon = s.icon;
           return (
@@ -1332,7 +1227,9 @@ function DashboardTab({ onGo }: { onGo: (tab: Tab) => void }) {
                   stroke="#10B981"
                   strokeWidth="12"
                   strokeDasharray={`${
-                    (stats.availableWorkers / stats.totalWorkers) * 283
+                    stats.totalWorkers > 0
+                      ? (stats.availableWorkers / stats.totalWorkers) * 283
+                      : 0
                   } 283`}
                   strokeLinecap="round"
                 />
@@ -1346,9 +1243,11 @@ function DashboardTab({ onGo }: { onGo: (tab: Tab) => void }) {
                   stroke="#FF5C39"
                   strokeWidth="12"
                   strokeDasharray={`${
-                    ((stats.totalWorkers - stats.availableWorkers) /
-                      stats.totalWorkers) *
-                    283
+                    stats.totalWorkers > 0
+                      ? ((stats.totalWorkers - stats.availableWorkers) /
+                          stats.totalWorkers) *
+                        283
+                      : 0
                   } 283`}
                   strokeDashoffset={`-${
                     (stats.availableWorkers / stats.totalWorkers) * 283
@@ -1491,7 +1390,9 @@ function DashboardTab({ onGo }: { onGo: (tab: Tab) => void }) {
                 className="h-full bg-emerald-500 rounded-full transition-all duration-1000"
                 style={{
                   width: `${
-                    (stats.availableWorkers / stats.totalWorkers) * 100
+                    stats.totalWorkers > 0
+                      ? (stats.availableWorkers / stats.totalWorkers) * 100
+                      : 0
                   }%`,
                 }}
               />
@@ -1528,10 +1429,14 @@ function DashboardTab({ onGo }: { onGo: (tab: Tab) => void }) {
               <div
                 className="h-full bg-rose-500 rounded-full transition-all duration-1000"
                 style={{
-                  width: `${Math.min(
-                    (stats.outOfStock / stats.totalProducts) * 100,
-                    100,
-                  )}%`,
+                  width: `${
+                    stats.totalProducts > 0
+                      ? Math.min(
+                          (stats.outOfStock / stats.totalProducts) * 100,
+                          100,
+                        )
+                      : 0
+                  }%`,
                 }}
               />
             </div>
@@ -1584,7 +1489,7 @@ function DashboardTab({ onGo }: { onGo: (tab: Tab) => void }) {
             Add, edit or remove shops from E-Aurix.
           </p>
           <button
-           onClick={() => onGo("shops")}
+            onClick={() => onGo("shops")}
             className="flex items-center gap-2 bg-white/20 hover:bg-white/30 text-white px-4 py-2 rounded-lg text-sm transition-colors"
             style={{ fontWeight: 600 }}
           >
@@ -2529,10 +2434,10 @@ export function AdminPanel() {
     },
 
     {
-  id: "shops" as Tab,
-  icon: Briefcase,
-  label: "Shops",
-},
+      id: "shops" as Tab,
+      icon: Briefcase,
+      label: "Shops",
+    },
 
     // ADD THIS
     {

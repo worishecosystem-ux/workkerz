@@ -125,6 +125,48 @@ export default function Home() {
 
       {/* How It Works */}
       <section id="how-it-works" className="py-20 bg-white">
+         {/* Featured Workers */}
+      <section className="py-20 bg-[#F8FAFC]">
+        <div className="max-w-7xl mx-auto px-6">
+          <div className="flex items-end justify-between mb-10">
+            <div>
+              <span
+                className="text-[#FF5C39] text-sm uppercase tracking-widest"
+                style={{ fontWeight: 600 }}
+              >
+                Top Rated
+              </span>
+              <h2
+                className="text-[#0F172A] mt-2"
+                style={{
+                  fontSize: "2rem",
+                  fontWeight: 700,
+                  letterSpacing: "-0.02em",
+                }}
+              >
+                Featured Professionals
+              </h2>
+              <p className="text-[#64748B] mt-2">
+                Hand-picked top-rated workers available now
+              </p>
+            </div>
+            <Link
+              href="/browse"
+              className="hidden md:flex items-center gap-2 text-[#FF5C39] text-sm hover:gap-3 transition-all"
+              style={{ fontWeight: 600 }}
+            >
+              View All <ArrowRight className="w-4 h-4" />
+            </Link>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+            {featuredWorkers.map((worker) => (
+              <WorkerCard key={worker.id} worker={worker} />
+            ))}
+          </div>
+        </div>
+      </section>
+
         <div className="max-w-7xl mx-auto px-6">
           {/* Header */}
           <div className="text-center mb-16">
@@ -145,7 +187,7 @@ export default function Home() {
           {/* Steps */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-10 relative">
             {/* Connector line */}
-            <div className="hidden md:block absolute top-14 left-1/3 right-1/3 h-[2px] bg-gradient-to-r from-transparent via-gray-200 to-transparent z-0" />
+            <div className="hidden md:block absolute top-14 left-1/3 right-1/3 h-0.5 bg-linear-to-r from-transparent via-gray-200 to-transparent z-0" />
 
             {howItWorks.map((step, i) => {
               const Icon = step.icon;
@@ -193,48 +235,7 @@ export default function Home() {
           </div>
         </div>
       </section>
-      {/* Featured Workers */}
-      <section className="py-20 bg-[#F8FAFC]">
-        <div className="max-w-7xl mx-auto px-6">
-          <div className="flex items-end justify-between mb-10">
-            <div>
-              <span
-                className="text-[#FF5C39] text-sm uppercase tracking-widest"
-                style={{ fontWeight: 600 }}
-              >
-                Top Rated
-              </span>
-              <h2
-                className="text-[#0F172A] mt-2"
-                style={{
-                  fontSize: "2rem",
-                  fontWeight: 700,
-                  letterSpacing: "-0.02em",
-                }}
-              >
-                Featured Professionals
-              </h2>
-              <p className="text-[#64748B] mt-2">
-                Hand-picked top-rated workers available now
-              </p>
-            </div>
-            <Link
-              href="/browse"
-              className="hidden md:flex items-center gap-2 text-[#FF5C39] text-sm hover:gap-3 transition-all"
-              style={{ fontWeight: 600 }}
-            >
-              View All <ArrowRight className="w-4 h-4" />
-            </Link>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-            {featuredWorkers.map((worker) => (
-              <WorkerCard key={worker.id} worker={worker} />
-            ))}
-          </div>
-        </div>
-      </section>
-
+     
       {/* Trust Badges */}
       <section className="py-16 bg-white">
         <div className="max-w-7xl mx-auto px-6">

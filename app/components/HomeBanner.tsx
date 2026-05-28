@@ -2,7 +2,7 @@
 
 import WorkerLive from "./WorkerLive";
 import DownloadApps from "./DownloadApps";
-import WorkerMarketplace from "./WorkerMarketplace";
+
 import MaterialMarketplace from "./MaterialMarketplace";
 import { usePlatform } from "./context/PlatformContext";
 import { useRouter } from "next/navigation";
@@ -113,11 +113,6 @@ export default function HomeBanner() {
       </div>
 
       <DownloadApps />
-
-      {/* Bottom Section */}
-      <div className="bg-gray-500 mt-16">
-        {!isEaurix ? <WorkerMarketplace /> : <MaterialMarketplace />}
-      </div>
     </section>
   );
 }

@@ -100,39 +100,112 @@ const categories = [
 function ProductCard({ product }: { product: Product }) {
   const { addToCart, cart } = usePlatform();
 
-  const inCart = cart.some((c) => c.productId === product.id);
+  const { shops } = useAdmin();
 
-  const discount = product.originalPrice
-    ? Math.round((1 - product.price / product.originalPrice) * 100)
-    : 0;
+  const inCart = cart.some(
+    (c) => c.productId === product.id,
+  );
+
+  const shop = shops.find(
+    (s) => s.id === product.shop_id,
+  );
+
+  /* =========================================
+     FIXED CONDITIONS
+  ========================================= */
+
+  const isOffline =
+    shop?.status !== "online";
+
+  const isOutOfStock =
+    product.is_active === false;
+
+  const discount =
+    product.originalPrice
+      ? Math.round(
+          (1 -
+            product.price /
+              product.originalPrice) *
+            100,
+        )
+      : 0;
 
   return (
     <Link
-      href={`/eaurix/product/${product.id}`}
-      className="
-    group bg-white rounded-3xl
-    overflow-hidden border border-gray-100
-    hover:shadow-xl transition-all duration-300
-  "
+      href={
+        isOffline || isOutOfStock
+          ? "#"
+          : `/eaurix/product/${product.id}`
+      }
+      onClick={(e) => {
+        if (
+          isOffline ||
+          isOutOfStock
+        ) {
+          e.preventDefault();
+        }
+      }}
+      className={`
+        group bg-white rounded-3xl
+        overflow-hidden border border-gray-100
+        hover:shadow-xl transition-all duration-300
+        relative
+        ${
+          isOffline ||
+          isOutOfStock
+            ? "opacity-75"
+            : ""
+        }
+      `}
     >
+      {/* STATUS DOT */}
+
+      <div
+        className={`
+          absolute top-3 left-3 z-30
+          w-4 h-4 rounded-full
+          border-2 border-white
+          shadow-lg
+          ${
+            isOffline ||
+            isOutOfStock
+              ? "bg-red-500"
+              : "bg-green-500"
+          }
+        `}
+      />
+
       {/* IMAGE */}
 
       <div
         className="
-      relative h-40 sm:h-44 lg:h-56
-      p-2 lg:p-3 overflow-hidden
-    "
+          relative h-40 sm:h-44 lg:h-56
+          p-2 lg:p-3 overflow-hidden
+        "
         style={{
           background: `linear-gradient(135deg, ${product.color}, #ffffff)`,
         }}
       >
         <div
           className="
-        w-full h-full rounded-[18px] lg:rounded-[22px]
-        overflow-hidden bg-white/50
-        border border-white/70 shadow-inner relative
-      "
+            w-full h-full rounded-[18px] lg:rounded-[22px]
+            overflow-hidden bg-white/50
+            border border-white/70 shadow-inner relative
+          "
         >
+          {/* OVERLAY */}
+
+          {(isOffline ||
+            isOutOfStock) && (
+            <div className="absolute inset-0 bg-black/40 z-10 flex items-center justify-center">
+              <div className="bg-red-500 text-white px-3 py-1 rounded-full text-xs font-black">
+                {isOffline
+                  ? "Shop Offline"
+                  : "Out of Stock"}
+              </div>
+            </div>
+          )}
+
           {product.image ? (
             <img
               src={product.image}
@@ -142,12 +215,12 @@ function ProductCard({ product }: { product: Product }) {
                   "https://placehold.co/600x600/png?text=No+Image";
               }}
               className="
-            absolute inset-0
-            w-full h-full object-cover
-            rounded-[18px] lg:rounded-[22px]
-            group-hover:scale-105
-            transition-transform duration-500
-          "
+                absolute inset-0
+                w-full h-full object-cover
+                rounded-[18px] lg:rounded-[22px]
+                group-hover:scale-105
+                transition-transform duration-500
+              "
             />
           ) : (
             <div className="w-full h-full flex items-center justify-center text-4xl font-black text-[#0F172A]">
@@ -220,29 +293,54 @@ function ProductCard({ product }: { product: Product }) {
           {/* CART */}
 
           <button
+            disabled={
+              isOffline ||
+              isOutOfStock
+            }
             onClick={(e) => {
               e.preventDefault();
 
+              if (
+                isOffline ||
+                isOutOfStock
+              )
+                return;
+
               addToCart({
-                productId: product.id,
-                name: product.name,
-                brand: product.brand,
-                price: product.price,
+                productId:
+                  product.id,
+                name:
+                  product.name,
+                brand:
+                  product.brand,
+                price:
+                  product.price,
                 qty: 1,
-                icon: product.image || "",
-                color: product.color,
-                unit: product.unit,
+                icon:
+                  product.image ||
+                  "",
+                color:
+                  product.color,
+                unit:
+                  product.unit,
               });
             }}
             className={`
-          w-9 h-9 lg:w-11 lg:h-11
-          rounded-xl lg:rounded-2xl
-          flex items-center justify-center
-          shadow-lg transition-all duration-300
-          ${inCart ? "bg-emerald-500" : "bg-[#0EA5E9]"}
-        `}
+              w-9 h-9 lg:w-11 lg:h-11
+              rounded-xl lg:rounded-2xl
+              flex items-center justify-center
+              shadow-lg transition-all duration-300
+              ${
+                isOffline ||
+                isOutOfStock
+                  ? "bg-gray-300 cursor-not-allowed"
+                  : inCart
+                    ? "bg-emerald-500"
+                    : "bg-[#0EA5E9]"
+              }
+            `}
           >
-            <ShoppingCart className="w-3.5 h-3.5 lg:w-4 lg:h-4 text-white" />
+            <ShoppingCart className="w-4 h-4 text-white" />
           </button>
         </div>
       </div>
@@ -767,18 +865,18 @@ export function EAurixShop() {
       {/* MAIN SECTION */}
 
       <div className="w-full max-w-450 mx-auto px-0 sm:px-4 lg:px-6 mt-2 relative z-20">
-  <div className="flex gap-4 lg:gap-6 items-start">
-    {/* MOBILE OVERLAY */}
-    {mobileMenu && (
-      <div
-        onClick={() => setMobileMenu(false)}
-        className="fixed inset-0 bg-black/50 z-55 lg:hidden backdrop-blur-sm"
-      />
-    )}
+        <div className="flex gap-4 lg:gap-6 items-start">
+          {/* MOBILE OVERLAY */}
+          {mobileMenu && (
+            <div
+              onClick={() => setMobileMenu(false)}
+              className="fixed inset-0 bg-black/50 z-55 lg:hidden backdrop-blur-sm"
+            />
+          )}
 
-    {/* MAIN */}
-    <main
-      className="
+          {/* MAIN */}
+          <main
+            className="
         flex-1
         min-w-0
         h-[calc(100vh-40px)]
@@ -786,14 +884,14 @@ export function EAurixShop() {
         overflow-x-hidden
         scrollbar-hide
       "
-      style={{
-        scrollbarWidth: "none",
-        msOverflowStyle: "none",
-      }}
-    >
-      {/* PRODUCTS */}
-      <div
-        className="
+            style={{
+              scrollbarWidth: "none",
+              msOverflowStyle: "none",
+            }}
+          >
+            {/* PRODUCTS */}
+            <div
+              className="
           mt-4
           sm:mt-6
           pb-24
@@ -802,12 +900,12 @@ export function EAurixShop() {
           lg:px-8
           2xl:px-10
         "
-      >
-        {/* HEADER */}
-        <div className="flex items-center justify-between gap-3 mb-5">
-          <div className="min-w-0">
-            <h2
-              className="
+            >
+              {/* HEADER */}
+              <div className="flex items-center justify-between gap-3 mb-5">
+                <div className="min-w-0">
+                  <h2
+                    className="
                 text-[22px]
                 sm:text-[28px]
                 lg:text-3xl
@@ -816,17 +914,17 @@ export function EAurixShop() {
                 leading-none
                 truncate
               "
-            >
-              Products
-            </h2>
+                  >
+                    Products
+                  </h2>
 
-            <p className="text-xs sm:text-sm text-[#64748B] mt-1">
-              Explore premium materials & products
-            </p>
-          </div>
+                  <p className="text-xs sm:text-sm text-[#64748B] mt-1">
+                    Explore premium materials & products
+                  </p>
+                </div>
 
-          <div
-            className="
+                <div
+                  className="
               shrink-0
               px-3
               py-1.5
@@ -840,14 +938,14 @@ export function EAurixShop() {
               font-semibold
               shadow-sm
             "
-          >
-            {filtered.length} items
-          </div>
-        </div>
+                >
+                  {filtered.length} items
+                </div>
+              </div>
 
-        {/* PRODUCT GRID */}
-        <div
-          className="
+              {/* PRODUCT GRID */}
+              <div
+                className="
             grid
             grid-cols-2
             sm:grid-cols-2
@@ -858,15 +956,15 @@ export function EAurixShop() {
             sm:gap-5
             items-start
           "
-        >
-          {filtered.map((product) => (
-            <ProductCard key={product.id} product={product} />
-          ))}
+              >
+                {filtered.map((product) => (
+                  <ProductCard key={product.id} product={product} />
+                ))}
+              </div>
+            </div>
+          </main>
         </div>
       </div>
-    </main>
-  </div>
-</div>
 
       {/* MOBILE OVERLAY */}
       <Link

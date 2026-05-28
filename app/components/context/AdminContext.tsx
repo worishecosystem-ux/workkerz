@@ -54,6 +54,8 @@ interface AdminContextType {
 
   products: Product[];
 
+  visibleProducts: Product[];
+
   addProduct: (
     p: Omit<Product, "id">,
   ) => Promise<boolean>;
@@ -70,6 +72,10 @@ interface AdminContextType {
   /* SHOPS */
 
   shops: Shop[];
+
+  onlineShops: Shop[];
+
+  offlineShops: Shop[];
 
   /* ORDERS */
 
@@ -107,7 +113,13 @@ interface AdminContextType {
 
     totalProducts: number;
 
+    visibleProducts: number;
+
     totalShops: number;
+
+    onlineShops: number;
+
+    offlineShops: number;
 
     totalOrders: number;
 
@@ -181,12 +193,25 @@ export function AdminProvider({
 
   const loadProducts =
     async () => {
-      const data =
-        await getProducts();
+      try {
+        const data =
+          await getProducts(
+            undefined,
+            true,
+          );
 
-      setProducts(
-        data || [],
-      );
+        setProducts(
+          data || [],
+        );
+      } catch (
+        error
+      ) {
+        console.log(
+          error,
+        );
+
+        setProducts([]);
+      }
     };
 
   /* ===================================================== */
@@ -195,12 +220,22 @@ export function AdminProvider({
 
   const loadShops =
     async () => {
-      const data =
-        await getShops();
+      try {
+        const data =
+          await getShops();
 
-      setShops(
-        data || [],
-      );
+        setShops(
+          data || [],
+        );
+      } catch (
+        error
+      ) {
+        console.log(
+          error,
+        );
+
+        setShops([]);
+      }
     };
 
   /* ===================================================== */
@@ -209,15 +244,75 @@ export function AdminProvider({
 
   const loadOrders =
     async () => {
-      const { data } =
-        await supabase
-          .from("orders")
-          .select("*");
+      try {
+        const {
+          data,
+          error,
+        } =
+          await supabase
+            .from(
+              "orders",
+            )
+            .select("*");
 
-      setOrders(
-        data || [],
-      );
+        if (error) {
+          console.log(
+            error,
+          );
+
+          return;
+        }
+
+        setOrders(
+          data || [],
+        );
+      } catch (
+        error
+      ) {
+        console.log(
+          error,
+        );
+
+        setOrders([]);
+      }
     };
+
+  /* ===================================================== */
+  /* ONLINE SHOPS */
+  /* ===================================================== */
+
+  const onlineShops =
+    shops.filter(
+      (shop) =>
+        shop.status ===
+        "online",
+    );
+
+  const offlineShops =
+    shops.filter(
+      (shop) =>
+        shop.status !==
+        "online",
+    );
+
+  const onlineShopIds =
+    onlineShops.map(
+      (shop) =>
+        shop.id,
+    );
+
+  /* ===================================================== */
+  /* VISIBLE PRODUCTS */
+  /* ===================================================== */
+
+  const visibleProducts =
+    products.filter(
+      (product) =>
+        product.shop_id &&
+        onlineShopIds.includes(
+          product.shop_id,
+        ),
+    );
 
   /* ===================================================== */
   /* WORKER CRUD */
@@ -230,76 +325,86 @@ export function AdminProvider({
         "id"
       >,
     ): Promise<any> => {
-      const {
-        data,
-        error,
-      } =
-        await supabase
-          .from(
-            "workers",
-          )
-          .insert([
-            {
-              name:
-                worker.name,
+      try {
+        const {
+          data,
+          error,
+        } =
+          await supabase
+            .from(
+              "workers",
+            )
+            .insert([
+              {
+                name:
+                  worker.name,
 
-              category:
-                worker.category,
+                category:
+                  worker.category,
 
-              specialty:
-                worker.specialty,
+                specialty:
+                  worker.specialty,
 
-              rating:
-                worker.rating,
+                rating:
+                  worker.rating,
 
-              review_count:
-                worker.reviewCount,
+                review_count:
+                  worker.reviewCount,
 
-              hourly_rate:
-                worker.hourlyRate,
+                hourly_rate:
+                  worker.hourlyRate,
 
-              location:
-                worker.location,
+                location:
+                  worker.location,
 
-              available:
-                worker.available,
+                available:
+                  worker.available,
 
-              years_experience:
-                worker.yearsExperience,
+                years_experience:
+                  worker.yearsExperience,
 
-              completed_jobs:
-                worker.completedJobs,
+                completed_jobs:
+                  worker.completedJobs,
 
-              bio:
-                worker.bio,
+                bio:
+                  worker.bio,
 
-              skills:
-                worker.skills,
+                skills:
+                  worker.skills,
 
-              photo:
-                worker.photo,
+                photo:
+                  worker.photo,
 
-              response_time:
-                worker.responseTime,
+                response_time:
+                  worker.responseTime,
 
-              certifications:
-                worker.certifications,
-            },
-          ])
-          .select()
-          .single();
+                certifications:
+                  worker.certifications,
+              },
+            ])
+            .select()
+            .single();
 
-      if (error) {
+        if (error) {
+          console.log(
+            error,
+          );
+
+          return null;
+        }
+
+        await loadWorkers();
+
+        return data;
+      } catch (
+        error
+      ) {
         console.log(
           error,
         );
 
         return null;
       }
-
-      await loadWorkers();
-
-      return data;
     };
 
   /* ===================================================== */
@@ -359,7 +464,10 @@ export function AdminProvider({
           certifications:
             data.certifications,
         })
-        .eq("id", id);
+        .eq(
+          "id",
+          id,
+        );
 
       await loadWorkers();
     };
@@ -375,7 +483,10 @@ export function AdminProvider({
           "workers",
         )
         .delete()
-        .eq("id", id);
+        .eq(
+          "id",
+          id,
+        );
 
       await loadWorkers();
     };
@@ -483,7 +594,7 @@ export function AdminProvider({
   const getProductById = (
     id: string,
   ) => {
-    return products.find(
+    return visibleProducts.find(
       (
         product,
       ) =>
@@ -498,7 +609,7 @@ export function AdminProvider({
     (
       cat: string,
     ) => {
-      return products.filter(
+      return visibleProducts.filter(
         (
           product,
         ) =>
@@ -511,14 +622,18 @@ export function AdminProvider({
 
   const getFeaturedProducts =
     () => {
-      return products.filter(
+      return visibleProducts.filter(
         (
           product,
         ) =>
-          product.badge ===
-            "popular" ||
-          product.badge ===
-            "pro",
+          (
+            product.badge ===
+              "popular" ||
+            product.badge ===
+              "pro"
+          ) &&
+          product.stock >
+            0,
       );
     };
 
@@ -529,7 +644,7 @@ export function AdminProvider({
       product: Product,
       count = 4,
     ) => {
-      return products
+      return visibleProducts
         .filter(
           (
             p,
@@ -558,8 +673,17 @@ export function AdminProvider({
         totalProducts:
           products.length,
 
+        visibleProducts:
+          visibleProducts.length,
+
         totalShops:
           shops.length,
+
+        onlineShops:
+          onlineShops.length,
+
+        offlineShops:
+          offlineShops.length,
 
         totalOrders:
           orders.length,
@@ -573,7 +697,7 @@ export function AdminProvider({
           ).length,
 
         outOfStock:
-          products.filter(
+          visibleProducts.filter(
             (
               product,
             ) =>
@@ -584,7 +708,10 @@ export function AdminProvider({
       [
         workers,
         products,
+        visibleProducts,
         shops,
+        onlineShops,
+        offlineShops,
         orders,
       ],
     );
@@ -608,6 +735,8 @@ export function AdminProvider({
 
         products,
 
+        visibleProducts,
+
         addProduct,
 
         updateProduct,
@@ -617,6 +746,10 @@ export function AdminProvider({
         /* SHOPS */
 
         shops,
+
+        onlineShops,
+
+        offlineShops,
 
         /* ORDERS */
 

@@ -14,7 +14,6 @@ import {
 } from "lucide-react";
 
 import ProductForm from "./ProductForm";
-import ShopRegistrationForm from "./ShopRegistrationForm";
 
 import {
   type Product,
@@ -24,6 +23,7 @@ import {
   addProduct,
   updateProduct,
   deleteProduct,
+  toggleProductStatus,
 } from "@/app/data/products";
 
 /* ======================================= */
@@ -45,9 +45,7 @@ function ProductsTab({
     useState("");
 
   const [catFilter, setCatFilter] =
-    useState<ProductCategory | "">(
-      "",
-    );
+    useState<ProductCategory | "">("");
 
   const [drawerOpen, setDrawerOpen] =
     useState(false);
@@ -58,9 +56,9 @@ function ProductsTab({
   const [successMsg, setSuccessMsg] =
     useState("");
 
-  /* ======================================= */
-  /* FETCH PRODUCTS */
-  /* ======================================= */
+  /* =======================================
+     LOAD PRODUCTS
+  ======================================= */
 
   const loadProducts =
     async () => {
@@ -70,6 +68,7 @@ function ProductsTab({
         const data =
           await getProducts(
             shop.id,
+            true,
           );
 
         setProducts(data || []);
@@ -86,12 +85,43 @@ function ProductsTab({
     }
   }, [shop]);
 
-  /* ======================================= */
-  /* FILTER */
-  /* ======================================= */
+  /* =======================================
+     TOGGLE PRODUCT STATUS
+  ======================================= */
 
-  const filtered = products.filter(
-    (p) => {
+  const handleToggleStatus =
+    async (
+      id: string,
+      active: boolean,
+    ) => {
+      try {
+        await toggleProductStatus(
+          id,
+          active,
+        );
+
+        await loadProducts();
+
+        setSuccessMsg(
+          active
+            ? "Product Live"
+            : "Product Out Of Stock",
+        );
+
+        setTimeout(() => {
+          setSuccessMsg("");
+        }, 3000);
+      } catch (err) {
+        console.log(err);
+      }
+    };
+
+  /* =======================================
+     FILTER
+  ======================================= */
+
+  const filtered =
+    products.filter((p) => {
       const q =
         search.toLowerCase();
 
@@ -106,13 +136,14 @@ function ProductsTab({
 
       const matchCat =
         !catFilter ||
-        p.category === catFilter;
+        p.category ===
+          catFilter;
 
       return (
-        matchQ && matchCat
+        matchQ &&
+        matchCat
       );
-    },
-  );
+    });
 
   /* ======================================= */
 
@@ -136,65 +167,75 @@ function ProductsTab({
     setEditing(null);
   };
 
-  /* ======================================= */
-  /* SAVE */
-  /* ======================================= */
+  /* =======================================
+     SAVE
+  ======================================= */
 
-  const handleSave = async (
-    data: Omit<Product, "id">,
-  ) => {
-    try {
-      const payload = {
-        ...data,
+  const handleSave =
+    async (
+      data: Omit<
+        Product,
+        "id"
+      >,
+    ) => {
+      try {
+        const payload = {
+          ...data,
 
-        shop_id: shop.id,
-      };
+          shop_id:
+            shop.id,
+        };
 
-      if (editing) {
-        await updateProduct(
-          editing.id,
-          payload,
-        );
+        if (editing) {
+          await updateProduct(
+            editing.id,
+            payload,
+          );
 
-        setSuccessMsg(
-          "Product updated successfully!",
-        );
-      } else {
-        await addProduct(
-          payload,
-        );
+          setSuccessMsg(
+            "Product updated successfully!",
+          );
+        } else {
+          await addProduct(
+            payload,
+          );
 
-        setSuccessMsg(
-          "Product added successfully!",
-        );
+          setSuccessMsg(
+            "Product added successfully!",
+          );
+        }
+
+        await loadProducts();
+
+        closeDrawer();
+
+        setTimeout(() => {
+          setSuccessMsg("");
+        }, 3000);
+      } catch (err) {
+        console.log(err);
       }
+    };
 
-      await loadProducts();
-
-      closeDrawer();
-
-      setTimeout(() => {
-        setSuccessMsg("");
-      }, 3000);
-    } catch (err) {
-      console.log(err);
-    }
-  };
-
-  /* ======================================= */
-  /* DELETE */
-  /* ======================================= */
+  /* =======================================
+     DELETE
+  ======================================= */
 
   const handleDelete =
-    async (id: string) => {
+    async (
+      id: string,
+    ) => {
       const confirmDelete =
         confirm(
           "Delete this product?",
         );
 
-      if (!confirmDelete) return;
+      if (!confirmDelete)
+        return;
 
-      await deleteProduct(id);
+      await deleteProduct(
+        id,
+      );
 
       await loadProducts();
 
@@ -227,7 +268,8 @@ function ProductsTab({
           </h1>
 
           <p className="text-sm text-[#64748B]">
-            Shop Products Management
+            Shop Products
+            Management
           </p>
         </div>
       </div>
@@ -251,7 +293,10 @@ function ProductsTab({
           </h2>
 
           <p className="text-sm text-[#64748B]">
-            {products.length} Products
+            {
+              products.length
+            }{" "}
+            Products
           </p>
         </div>
 
@@ -297,7 +342,8 @@ function ProductsTab({
           value={catFilter}
           onChange={(e) =>
             setCatFilter(
-              e.target.value as ProductCategory,
+              e.target
+                .value as ProductCategory,
             )
           }
           className="h-11 px-4 rounded-xl border border-gray-200 text-sm"
@@ -341,6 +387,10 @@ function ProductsTab({
                 Stock
               </th>
 
+              <th className="text-center text-xs px-4 py-3 text-[#64748B]">
+                Status
+              </th>
+
               <th className="text-right text-xs px-4 py-3 text-[#64748B]">
                 Actions
               </th>
@@ -348,94 +398,208 @@ function ProductsTab({
           </thead>
 
           <tbody>
-            {filtered.map((p) => (
-              <tr
-                key={p.id}
-                className="border-b border-gray-50 hover:bg-[#FAFAFA]"
-              >
-                {/* PRODUCT */}
+            {filtered.map(
+              (p) => (
+                <tr
+                  key={p.id}
+                  className="border-b border-gray-50 hover:bg-[#FAFAFA]"
+                >
+                  {/* PRODUCT */}
 
-                <td className="px-4 py-3">
-                  <div className="flex items-center gap-3">
-                    <img
-                      src={
-                        p.images?.[0] ||
-                        p.image ||
-                        "/placeholder.png"
-                      }
-                      alt={p.name}
-                      className="w-12 h-12 rounded-xl object-cover border border-gray-100"
-                    />
+                  <td className="px-4 py-3">
+                    <div className="flex items-center gap-3">
+                      <img
+                        src={
+                          p
+                            .images?.[0] ||
+                          p.image ||
+                          "/placeholder.png"
+                        }
+                        alt={
+                          p.name
+                        }
+                        className="w-12 h-12 rounded-xl object-cover border border-gray-100"
+                      />
 
-                    <div>
-                      <div className="text-sm font-semibold text-[#0F172A]">
-                        {p.name}
-                      </div>
+                      <div>
+                        <div className="flex items-center gap-2">
+                          <div className="text-sm font-semibold text-[#0F172A]">
+                            {
+                              p.name
+                            }
+                          </div>
 
-                      <div className="text-xs text-[#94A3B8]">
-                        {p.brand}
+                          {!p.is_active && (
+                            <span className="w-2.5 h-2.5 rounded-full bg-red-500" />
+                          )}
+                        </div>
+
+                        <div className="text-xs text-[#94A3B8]">
+                          {
+                            p.brand
+                          }
+                        </div>
                       </div>
                     </div>
-                  </div>
-                </td>
+                  </td>
 
-                {/* CATEGORY */}
+                  {/* CATEGORY */}
 
-                <td className="px-4 py-3 text-sm text-[#64748B]">
-                  {
-                    p.categoryLabel
-                  }
-                </td>
+                  <td className="px-4 py-3 text-sm text-[#64748B]">
+                    {
+                      p.categoryLabel
+                    }
+                  </td>
 
-                {/* PRICE */}
+                  {/* PRICE */}
 
-                <td className="px-4 py-3 text-right">
-                  <div className="font-bold text-sm">
-                    ₹{p.price}
-                  </div>
-                </td>
+                  <td className="px-4 py-3 text-right">
+                    <div className="font-bold text-sm">
+                      ₹{p.price}
+                    </div>
+                  </td>
 
-                {/* STOCK */}
+                  {/* STOCK */}
 
-                <td className="px-4 py-3 text-center">
-                  <span
-                    className={`text-xs font-semibold ${
-                      p.stock > 0
-                        ? "text-emerald-600"
-                        : "text-rose-500"
-                    }`}
-                  >
-                    {p.stock}
-                  </span>
-                </td>
+                 {/* STOCK */}
 
-                {/* ACTIONS */}
+<td className="px-4 py-3 text-center">
+  <div className="flex items-center justify-center gap-2">
+    <input
+      type="number"
+      min="0"
+      value={p.stock}
+      onChange={async (e) => {
+        const value = Number(
+          e.target.value,
+        );
 
-                <td className="px-4 py-3">
-                  <div className="flex justify-end gap-2">
-                    <button
-                      onClick={() =>
-                        openEdit(p)
+        try {
+          await updateProduct(
+            p.id,
+            {
+              stock: value,
+            },
+          );
+
+          setProducts(
+            (
+              prev,
+            ) =>
+              prev.map(
+                (
+                  item,
+                ) =>
+                  item.id ===
+                  p.id
+                    ? {
+                        ...item,
+                        stock:
+                          value,
                       }
-                      className="w-8 h-8 rounded-lg hover:bg-sky-50 flex items-center justify-center"
-                    >
-                      <Pencil className="w-4 h-4 text-sky-500" />
-                    </button>
+                    : item,
+              ),
+          );
 
+          setSuccessMsg(
+            "Stock Updated",
+          );
+
+          setTimeout(
+            () => {
+              setSuccessMsg(
+                "",
+              );
+            },
+            2000,
+          );
+        } catch (
+          err
+        ) {
+          console.log(
+            err,
+          );
+        }
+      }}
+      className={`
+        w-20
+        h-9
+        rounded-lg
+        border
+        text-center
+        text-sm
+        font-semibold
+        outline-none
+        ${
+          p.stock > 0
+            ? "border-emerald-200 text-emerald-600"
+            : "border-rose-200 text-rose-500"
+        }
+      `}
+    />
+  </div>
+</td>
+
+                  {/* STATUS */}
+
+                  <td className="px-4 py-3 text-center">
                     <button
                       onClick={() =>
-                        handleDelete(
+                        handleToggleStatus(
                           p.id,
+                          !p.is_active,
                         )
                       }
-                      className="w-8 h-8 rounded-lg hover:bg-rose-50 flex items-center justify-center"
+                      className={`relative w-14 h-7 rounded-full transition-all duration-300 ${
+                        p.is_active
+                          ? "bg-emerald-500"
+                          : "bg-red-500"
+                      }`}
                     >
-                      <Trash2 className="w-4 h-4 text-rose-500" />
+                      <div
+                        className={`absolute top-1 w-5 h-5 rounded-full bg-white transition-all duration-300 ${
+                          p.is_active
+                            ? "left-8"
+                            : "left-1"
+                        }`}
+                      />
+
+                      <span className="sr-only">
+                        Toggle
+                      </span>
                     </button>
-                  </div>
-                </td>
-              </tr>
-            ))}
+                  </td>
+
+                  {/* ACTIONS */}
+
+                  <td className="px-4 py-3">
+                    <div className="flex justify-end gap-2">
+                      <button
+                        onClick={() =>
+                          openEdit(
+                            p,
+                          )
+                        }
+                        className="w-8 h-8 rounded-lg hover:bg-sky-50 flex items-center justify-center"
+                      >
+                        <Pencil className="w-4 h-4 text-sky-500" />
+                      </button>
+
+                      <button
+                        onClick={() =>
+                          handleDelete(
+                            p.id,
+                          )
+                        }
+                        className="w-8 h-8 rounded-lg hover:bg-rose-50 flex items-center justify-center"
+                      >
+                        <Trash2 className="w-4 h-4 text-rose-500" />
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              ),
+            )}
           </tbody>
         </table>
 
@@ -455,7 +619,8 @@ function ProductsTab({
 
         {loading && (
           <div className="py-16 text-center text-[#94A3B8]">
-            Loading Products...
+            Loading
+            Products...
           </div>
         )}
       </div>
@@ -466,7 +631,9 @@ function ProductsTab({
         <div className="fixed inset-0 z-50 flex">
           <div
             className="flex-1 bg-black/40"
-            onClick={closeDrawer}
+            onClick={
+              closeDrawer
+            }
           />
 
           <div className="w-full max-w-xl bg-white h-full overflow-y-auto">

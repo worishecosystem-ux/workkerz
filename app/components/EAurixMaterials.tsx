@@ -133,7 +133,7 @@ export function EAurixMaterials({ category, selectedMaterials, onChange }: EAuri
       {/* Header */}
       <button
         onClick={() => setExpanded(!expanded)}
-        className="w-full flex items-center justify-between p-4 bg-gradient-to-r from-[#0EA5E9] to-[#0284C7] text-white transition-opacity hover:opacity-95"
+        className="w-full flex items-center justify-between p-4 bg-linear-to-r from-[#0EA5E9] to-[#0284C7] text-white transition-opacity hover:opacity-95"
       >
         <div className="flex items-center gap-3">
           {/* E-Aurix Logo Badge */}

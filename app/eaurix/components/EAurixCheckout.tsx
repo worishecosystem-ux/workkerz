@@ -30,56 +30,24 @@ import type { Worker } from "../../data/workers";
 import type { ProductCategory } from "../../data/products";
 
 // Map product category → worker service category
-const PRODUCT_WORKER_MAP: Record<
-  ProductCategory,
-  string[]
-> = {
-  sand: [
-    "construction",
-    "labour",
-    "driver",
-  ],
+const PRODUCT_WORKER_MAP: Record<ProductCategory, string[]> = {
+  sand: ["construction", "labour", "driver"],
 
-  aggregate: [
-    "construction",
-    "labour",
-    "driver",
-  ],
+  aggregate: ["construction", "labour", "driver"],
 
-  brick: [
-    "construction",
-    "mason",
-    "labour",
-  ],
+  brick: ["construction", "mason", "labour"],
 
-  cement: [
-    "construction",
-    "mason",
-    "labour",
-  ],
+  cement: ["construction", "mason", "labour"],
 
-  tmt: [
-    "construction",
-    "fabricator",
-    "welder",
-  ],
+  tmt: ["construction", "fabricator", "welder"],
 
-  paint: [
-    "painter",
-  ],
+  paint: ["painter"],
 
-  plumbing: [
-    "plumber",
-  ],
+  plumbing: ["plumber"],
 
-  tiles: [
-    "tile_worker",
-    "mason",
-  ],
+  tiles: ["tile_worker", "mason"],
 
-  electrical: [
-    "electrician",
-  ],
+  electrical: ["electrician"],
 };
 
 const steps = [
@@ -945,168 +913,360 @@ export function EAurixCheckout() {
   "
             >
               {/* ── STEP 1: Delivery ── */}
+              {/* ── STEP 1: DELIVERY ── */}
+
               {step === 1 && (
-                <div className="space-y-4">
-                  <h2 className="text-[#0F172A]" style={{ fontWeight: 700 }}>
-                    Delivery Details
-                  </h2>
+                <div className="space-y-5">
+                  {/* HEADER */}
 
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    <div>
-                      <label
-                        className="block text-xs text-[#64748B] mb-1.5"
-                        style={{ fontWeight: 600 }}
+                  <div>
+                    <h2
+                      className="text-[#0F172A] text-[1.4rem]"
+                      style={{ fontWeight: 800 }}
+                    >
+                      Delivery Details
+                    </h2>
+
+                    <p className="text-[#64748B] text-sm mt-1">
+                      Enter your address and delivery information
+                    </p>
+                  </div>
+
+                  {/* AUTO LOCATION */}
+
+                  <div className="bg-white border border-gray-100 rounded-3xl p-5 shadow-sm">
+                    <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+                      <div>
+                        <div
+                          className="text-[#0F172A] text-sm"
+                          style={{ fontWeight: 700 }}
+                        >
+                          Auto Fetch Location
+                        </div>
+
+                        <div className="text-[#64748B] text-xs mt-1">
+                          Detect your current delivery address automatically
+                        </div>
+                      </div>
+
+                      <button
+                        type="button"
+                        onClick={fetchCurrentLocation}
+                        className="
+            h-11 px-5
+            rounded-2xl
+            bg-[#0EA5E9]
+            hover:bg-[#0284C7]
+            text-white
+            text-sm
+            transition-colors
+            flex items-center justify-center gap-2
+          "
+                        style={{ fontWeight: 700 }}
                       >
-                        Full Name *
-                      </label>
-                      <div className="relative">
-                        <User className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-                        <input
-                          type="text"
-                          value={form.name}
-                          onChange={(e) => update("name", e.target.value)}
-                          placeholder="John Smith"
-                          className={inp + " pl-10"}
-                        />
+                        <MapPin className="w-4 h-4" />
+                        Use Current Location
+                      </button>
+                    </div>
+
+                    {(form.latitude || form.longitude) && (
+                      <div className="mt-4 p-3 rounded-2xl bg-emerald-50 border border-emerald-100">
+                        <div className="flex items-center gap-2 text-emerald-700 text-sm">
+                          <CheckCircle className="w-4 h-4" />
+
+                          <span style={{ fontWeight: 600 }}>
+                            Location detected successfully
+                          </span>
+                        </div>
+
+                        <div className="text-xs text-emerald-600 mt-1">
+                          Lat: {form.latitude} • Long: {form.longitude}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* USER DETAILS */}
+
+                  <div className="bg-white border border-gray-100 rounded-3xl p-5 shadow-sm">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                      {/* FULL NAME */}
+
+                      <div>
+                        <label
+                          className="block text-xs text-[#64748B] mb-1.5"
+                          style={{ fontWeight: 600 }}
+                        >
+                          Full Name *
+                        </label>
+
+                        <div className="relative">
+                          <User className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+
+                          <input
+                            type="text"
+                            value={form.name}
+                            onChange={(e) => update("name", e.target.value)}
+                            placeholder="Enter your full name"
+                            className={inp + " pl-10"}
+                          />
+                        </div>
+                      </div>
+
+                      {/* PHONE */}
+
+                      <div>
+                        <label
+                          className="block text-xs text-[#64748B] mb-1.5"
+                          style={{ fontWeight: 600 }}
+                        >
+                          Mobile Number *
+                        </label>
+
+                        <div className="relative">
+                          <Phone className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+
+                          <input
+                            type="tel"
+                            value={form.phone}
+                            onChange={(e) => update("phone", e.target.value)}
+                            placeholder="+91 9876543210"
+                            className={inp + " pl-10"}
+                          />
+                        </div>
                       </div>
                     </div>
-                    <div>
+
+                    {/* EMAIL */}
+
+                    <div className="mt-4">
                       <label
                         className="block text-xs text-[#64748B] mb-1.5"
                         style={{ fontWeight: 600 }}
                       >
-                        Phone *
+                        Email Address *
                       </label>
+
                       <div className="relative">
-                        <Phone className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                        <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+
                         <input
-                          type="tel"
-                          value={form.phone}
-                          onChange={(e) => update("phone", e.target.value)}
-                          placeholder="+1 (555) 000-0000"
+                          type="email"
+                          value={form.email}
+                          onChange={(e) => update("email", e.target.value)}
+                          placeholder="Enter your email address"
                           className={inp + " pl-10"}
                         />
                       </div>
                     </div>
                   </div>
 
-                  <div>
-                    <label
-                      className="block text-xs text-[#64748B] mb-1.5"
-                      style={{ fontWeight: 600 }}
-                    >
-                      Email *
-                    </label>
-                    <div className="relative">
-                      <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-                      <input
-                        type="email"
-                        value={form.email}
-                        onChange={(e) => update("email", e.target.value)}
-                        placeholder="john@example.com"
-                        className={inp + " pl-10"}
-                      />
-                    </div>
-                  </div>
+                  {/* ADDRESS */}
 
-                  <div>
-                    <label
-                      className="block text-xs text-[#64748B] mb-1.5"
-                      style={{ fontWeight: 600 }}
-                    >
-                      Delivery Address *
-                    </label>
-                    <div className="relative">
-                      <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-                      <input
-                        type="text"
+                  <div className="bg-white border border-gray-100 rounded-3xl p-5 shadow-sm">
+                    <div className="flex items-center gap-2 mb-4">
+                      <MapPin className="w-5 h-5 text-[#FF5C39]" />
+
+                      <div>
+                        <div
+                          className="text-[#0F172A] text-sm"
+                          style={{ fontWeight: 700 }}
+                        >
+                          Delivery Address
+                        </div>
+
+                        <div className="text-[#64748B] text-xs">
+                          Enter complete address details
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* ADDRESS */}
+
+                    <div>
+                      <label
+                        className="block text-xs text-[#64748B] mb-1.5"
+                        style={{ fontWeight: 600 }}
+                      >
+                        Full Address *
+                      </label>
+
+                      <textarea
+                        rows={3}
                         value={form.address}
                         onChange={(e) => update("address", e.target.value)}
-                        placeholder="123 Main Street"
-                        className={inp + " pl-10"}
+                        placeholder="House no, Building, Street, Area, Landmark"
+                        className={inp + " resize-none"}
                       />
+                    </div>
+
+                    {/* CITY / ZIP */}
+
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-4">
+                      <div>
+                        <label
+                          className="block text-xs text-[#64748B] mb-1.5"
+                          style={{ fontWeight: 600 }}
+                        >
+                          City *
+                        </label>
+
+                        <input
+                          type="text"
+                          value={form.city}
+                          onChange={(e) => update("city", e.target.value)}
+                          placeholder="Enter city name"
+                          className={inp}
+                        />
+                      </div>
+
+                      <div>
+                        <label
+                          className="block text-xs text-[#64748B] mb-1.5"
+                          style={{ fontWeight: 600 }}
+                        >
+                          ZIP / Pincode *
+                        </label>
+
+                        <input
+                          type="text"
+                          value={form.zip}
+                          onChange={(e) => update("zip", e.target.value)}
+                          placeholder="Enter pincode"
+                          className={inp}
+                        />
+                      </div>
                     </div>
                   </div>
 
-                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
-                    <div className="sm:col-span-2">
-                      <label
-                        className="block text-xs text-[#64748B] mb-1.5"
-                        style={{ fontWeight: 600 }}
-                      >
-                        City *
-                      </label>
-                      <input
-                        type="text"
-                        value={form.city}
-                        onChange={(e) => update("city", e.target.value)}
-                        placeholder="New York"
-                        className={inp}
-                      />
+                  {/* DELIVERY SLOT */}
+
+                  <div className="bg-white border border-gray-100 rounded-3xl p-5 shadow-sm">
+                    <div className="flex items-center gap-2 mb-4">
+                      <CalendarDays className="w-5 h-5 text-[#0EA5E9]" />
+
+                      <div>
+                        <div
+                          className="text-[#0F172A] text-sm"
+                          style={{ fontWeight: 700 }}
+                        >
+                          Delivery Slot
+                        </div>
+
+                        <div className="text-[#64748B] text-xs">
+                          Select preferred delivery timing
+                        </div>
+                      </div>
                     </div>
-                    <div>
-                      <label
-                        className="block text-xs text-[#64748B] mb-1.5"
-                        style={{ fontWeight: 600 }}
-                      >
-                        ZIP *
-                      </label>
-                      <input
-                        type="text"
-                        value={form.zip}
-                        onChange={(e) => update("zip", e.target.value)}
-                        placeholder="10001"
-                        className={inp}
-                      />
+
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                      {[
+                        "09:00 AM - 12:00 PM",
+                        "12:00 PM - 03:00 PM",
+                        "03:00 PM - 06:00 PM",
+                        "06:00 PM - 09:00 PM",
+                      ].map((slot) => (
+                        <button
+                          key={slot}
+                          onClick={() => update("deliverySlot", slot)}
+                          className={`
+              p-4
+              rounded-2xl
+              border-2
+              text-left
+              transition-all
+              ${
+                form.deliverySlot === slot
+                  ? "border-[#0EA5E9] bg-sky-50"
+                  : "border-gray-200 hover:border-sky-200"
+              }
+            `}
+                        >
+                          <div
+                            className="text-[#0F172A] text-sm"
+                            style={{ fontWeight: 700 }}
+                          >
+                            {slot}
+                          </div>
+                        </button>
+                      ))}
                     </div>
                   </div>
 
-                  {/* Delivery options */}
-                  <div>
-                    <label
-                      className="block text-xs text-[#64748B] mb-2"
-                      style={{ fontWeight: 600 }}
-                    >
-                      Delivery Option
-                    </label>
+                  {/* DELIVERY OPTION */}
+
+                  <div className="bg-white border border-gray-100 rounded-3xl p-5 shadow-sm">
+                    <div className="flex items-center gap-2 mb-4">
+                      <Truck className="w-5 h-5 text-emerald-500" />
+
+                      <div>
+                        <div
+                          className="text-[#0F172A] text-sm"
+                          style={{ fontWeight: 700 }}
+                        >
+                          Delivery Option
+                        </div>
+
+                        <div className="text-[#64748B] text-xs">
+                          Select delivery speed
+                        </div>
+                      </div>
+                    </div>
+
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                       {[
                         {
                           id: "standard",
                           label: "Standard Delivery",
-                          sub: "3–5 business days",
-                          price: cartTotal > 100 ? "FREE" : "$12.99",
+                          sub: "2 - 4 Days Delivery",
+                          price: cartTotal > 100 ? "FREE" : "₹40",
                           icon: "📦",
                         },
+
                         {
                           id: "express",
                           label: "Express Delivery",
-                          sub: "Next business day",
-                          price: "$24.99",
+                          sub: "Same Day Fast Delivery",
+                          price: "₹99",
                           icon: "⚡",
                         },
                       ].map((opt) => (
                         <button
                           key={opt.id}
                           onClick={() => update("deliveryOption", opt.id)}
-                          className={`flex items-center gap-3 p-3.5 rounded-xl border-2 text-left transition-all ${form.deliveryOption === opt.id ? "border-[#0EA5E9] bg-sky-50" : "border-gray-200 hover:border-gray-300"}`}
+                          className={`
+              flex items-center gap-3
+              p-4
+              rounded-2xl
+              border-2
+              text-left
+              transition-all
+              ${
+                form.deliveryOption === opt.id
+                  ? "border-[#10B981] bg-emerald-50"
+                  : "border-gray-200 hover:border-emerald-200"
+              }
+            `}
                         >
                           <span className="text-2xl">{opt.icon}</span>
+
                           <div className="flex-1">
                             <div
                               className="text-sm text-[#0F172A]"
-                              style={{ fontWeight: 600 }}
+                              style={{ fontWeight: 700 }}
                             >
                               {opt.label}
                             </div>
-                            <div className="text-xs text-[#64748B]">
+
+                            <div className="text-xs text-[#64748B] mt-1">
                               {opt.sub}
                             </div>
                           </div>
+
                           <div
                             className="text-sm"
                             style={{
-                              fontWeight: 700,
+                              fontWeight: 800,
                               color:
                                 opt.price === "FREE" ? "#10B981" : "#0EA5E9",
                             }}
@@ -1118,18 +1278,21 @@ export function EAurixCheckout() {
                     </div>
                   </div>
 
-                  <div>
+                  {/* NOTE */}
+
+                  <div className="bg-white border border-gray-100 rounded-3xl p-5 shadow-sm">
                     <label
-                      className="block text-xs text-[#64748B] mb-1.5"
+                      className="block text-xs text-[#64748B] mb-2"
                       style={{ fontWeight: 600 }}
                     >
-                      Delivery Note (optional)
+                      Delivery Instructions (Optional)
                     </label>
+
                     <textarea
-                      rows={2}
+                      rows={3}
                       value={form.deliveryNote}
                       onChange={(e) => update("deliveryNote", e.target.value)}
-                      placeholder="Leave at front door, etc."
+                      placeholder="Example: Call before delivery, leave near gate, landmark details etc."
                       className={inp + " resize-none"}
                     />
                   </div>
