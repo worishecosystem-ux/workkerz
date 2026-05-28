@@ -733,8 +733,67 @@ export function EAurixCheckout() {
     cardCVV: "",
     deliveryNote: "",
     deliveryOption: "standard",
+    latitude: "",
+    longitude: "",
+    deliverySlot: "09:00 AM - 12:00 PM",
   });
 
+  /* =========================================
+   FETCH CURRENT LOCATION
+========================================= */
+
+  const fetchCurrentLocation = () => {
+    if (!navigator.geolocation) {
+      alert("Geolocation is not supported on this device.");
+      return;
+    }
+
+    navigator.geolocation.getCurrentPosition(
+      async (position) => {
+        const lat = position.coords.latitude;
+        const lng = position.coords.longitude;
+
+        try {
+          const response = await fetch(
+            `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}`,
+          );
+
+          const data = await response.json();
+
+          const address = data.address || {};
+
+          setForm((prev) => ({
+            ...prev,
+
+            latitude: lat.toString(),
+            longitude: lng.toString(),
+
+            address: data.display_name || "",
+
+            city: address.city || address.town || address.village || "",
+
+            zip: address.postcode || "",
+          }));
+        } catch (error) {
+          console.log(error);
+
+          alert("Unable to fetch address.");
+        }
+      },
+
+      (error) => {
+        console.log(error);
+
+        alert("Location permission denied.");
+      },
+
+      {
+        enableHighAccuracy: true,
+        timeout: 10000,
+        maximumAge: 0,
+      },
+    );
+  };
   const delivery =
     form.deliveryOption === "express" ? 24.99 : cartTotal > 100 ? 0 : 12.99;
   const tax = parseFloat((cartTotal * 0.08).toFixed(2));
