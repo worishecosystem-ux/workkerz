@@ -19,8 +19,9 @@ import {
 } from "lucide-react";
 
 import {
-  productCategories,
+  getProducts,
   type Product,
+  productCategories,
 } from "@/app/data/products";
 
 import { usePlatform } from "@/app/components/context/PlatformContext";
@@ -31,241 +32,50 @@ import ShopLive from "@/app/components/ShopLive";
 
 import { useRouter } from "next/navigation";
 
-import { useMemo, useState } from "react";
+import { useMemo, useState, useEffect } from "react";
 
 /* ===================================================== */
 
-function ProductCard({
-  product,
-}: {
-  product: Product;
-}) {
-  const { addToCart } =
-    usePlatform();
+function ProductCard({ product }: { product: Product }) {
+  const { shops } = useAdmin();
 
-  const badgeMap: Record<
-    string,
-    {
-      label: string;
-      color: string;
-    }
-  > = {
-    popular: {
-      label: "Popular",
-      color:
-        "bg-orange-500",
-    },
+  const shop = shops.find((s) => s.id === product.shop_id);
 
-    sale: {
-      label: "Sale",
-      color:
-        "bg-rose-500",
-    },
+  const isOffline = shop?.status !== "online";
 
-    new: {
-      label: "New",
-      color:
-        "bg-sky-500",
-    },
-
-    pro: {
-      label: "Pro",
-      color:
-        "bg-violet-500",
-    },
-  };
-
-  const badge =
-    product.badge
-      ? badgeMap[
-          product.badge
-        ]
-      : null;
-
-  const imageSrc =
-    product.image &&
-    product.image !==
-      "undefined"
-      ? product.image
-      : "/placeholder.png";
-
-      
+  const isOutOfStock = product.is_active === false;
 
   return (
     <Link
-      href={`/eaurix/product/${product.id}`}
-      className="bg-white rounded-2xl border border-gray-100 overflow-hidden hover:shadow-lg hover:border-sky-100 transition-all duration-200 group flex flex-col"
+      href={isOffline || isOutOfStock ? "#" : `/eaurix/product/${product.id}`}
+      className="block bg-white rounded-2xl border border-slate-200 shadow-sm hover:shadow-lg transition-all duration-300 overflow-hidden"
     >
-      {/* IMAGE */}
+      <div className="relative p-2">
+        <div className="h-28 w-full rounded-xl overflow-hidden bg-slate-100">
+          <img
+            src={product.image || "/placeholder.png"}
+            alt={product.name}
+            className="w-full h-full object-cover"
+          />
+        </div>
 
-
-      <div
-        className="relative h-52 overflow-hidden bg-[#F8FAFC]"
-        style={{
-          background: `linear-gradient(135deg, ${product.color} 0%, ${product.color}90 100%)`,
-        }}
-      >
-        <img
-          src={imageSrc}
-          alt={product.name}
-          loading="lazy"
-          onError={(
-            e,
-          ) => {
-            (
-              e.target as HTMLImageElement
-            ).src =
-              "/placeholder.png";
-          }}
-          className="w-full h-full object-contain p-4 group-hover:scale-105 transition-transform duration-300"
-        />
-
-        {/* BADGE */}
-
-        {badge && (
-          <div
-            className={`absolute top-3 left-3 ${badge.color} text-white text-[10px] px-2 py-1 rounded-full`}
-            style={{
-              fontWeight: 700,
-            }}
-          >
-            {badge.label}
-          </div>
-        )}
-
-        {/* DISCOUNT */}
-
-        {product.originalPrice && (
-          <div
-            className="absolute top-3 right-3 bg-rose-500 text-white text-[10px] px-2 py-1 rounded-full"
-            style={{
-              fontWeight: 700,
-            }}
-          >
-            -
-            {Math.round(
-              (1 -
-                product.price /
-                  product.originalPrice) *
-                100,
-            )}
-            %
+        {(isOffline || isOutOfStock) && (
+          <div className="absolute inset-0 bg-black/50 flex items-center justify-center">
+            <span className="bg-red-500 text-white px-2 py-1 rounded-full text-[10px] font-semibold">
+              {isOffline ? "Offline" : "Out of Stock"}
+            </span>
           </div>
         )}
       </div>
 
-      {/* CONTENT */}
-
-      <div className="p-4 flex flex-col flex-1">
-        {/* BRAND */}
-
-        <div
-          className="text-[10px] text-[#0EA5E9] uppercase mb-1"
-          style={{
-            fontWeight: 700,
-            letterSpacing:
-              "0.05em",
-          }}
-        >
-          {product.brand}
-        </div>
-
-        {/* NAME */}
-
-        <div
-          className="text-[#0F172A] text-sm line-clamp-2 mb-2 flex-1"
-          style={{
-            fontWeight: 700,
-          }}
-        >
+      <div className="px-3 pb-1">
+        <h3 className="text-sm font-semibold text-slate-800 line-clamp-2 h-6">
           {product.name}
-        </div>
+        </h3>
 
-        {/* RATING */}
-
-        <div className="flex items-center gap-1 mb-3">
-          <Star className="w-3 h-3 text-amber-400 fill-amber-400" />
-
-          <span className="text-xs text-[#64748B]">
-            {
-              product.rating
-            }{" "}
-            (
-            {
-              product.reviewCount
-            }
-            )
-          </span>
-        </div>
-
-        {/* PRICE */}
-
-        <div className="flex items-center justify-between">
-          <div>
-            <div
-              className="text-[#0F172A]"
-              style={{
-                fontWeight: 800,
-                fontSize:
-                  "1.05rem",
-              }}
-            >
-              ₹
-              {product.price}
-            </div>
-
-            <div className="text-[#94A3B8] text-xs">
-              {product.unit}
-            </div>
-
-            {product.originalPrice && (
-              <div className="text-xs text-[#94A3B8] line-through">
-                ₹
-                {
-                  product.originalPrice
-                }
-              </div>
-            )}
-          </div>
-
-          {/* CART */}
-
-          <button
-            onClick={(
-              e,
-            ) => {
-              e.preventDefault();
-
-              addToCart({
-                productId:
-                  product.id,
-
-                name:
-                  product.name,
-
-                brand:
-                  product.brand,
-
-                price:
-                  product.price,
-
-                qty: 1,
-
-                icon:
-                  imageSrc,
-
-                color:
-                  product.color,
-
-                unit:
-                  product.unit,
-              });
-            }}
-            className="w-10 h-10 rounded-xl bg-[#0EA5E9] hover:bg-[#0284C7] flex items-center justify-center transition-colors"
-          >
-            <ShoppingCart className="w-4 h-4 text-white" />
-          </button>
-        </div>
+        <button className="w-full h-9 rounded-lg bg-[#0F172A] text-white text-sm font-medium">
+          View Store
+        </button>
       </div>
     </Link>
   );
@@ -274,97 +84,92 @@ function ProductCard({
 /* ===================================================== */
 
 export function EAurixHome() {
-  const {
-    products = [],
-    shops = [],
-  } = useAdmin();
+  const { shops = [] } = useAdmin();
 
-  const {
-    platform,
-    setPlatform,
-  } = usePlatform();
+  const [selectedCategory, setSelectedCategory] = useState("all");
 
-  const [
-    mobileOpen,
-    setMobileOpen,
-  ] = useState(false);
+  const [mobileOpen, setMobileOpen] = useState(false);
 
-  const router =
-    useRouter();
+  const [products, setProducts] = useState<Product[]>([]);
+
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    async function loadProducts() {
+      try {
+        const data = await getProducts();
+
+        setProducts(data);
+      } catch (error) {
+        console.log(error);
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    loadProducts();
+  }, []);
+
+  const router = useRouter();
 
   /* =====================================================
      ONLINE SHOP IDS
   ===================================================== */
 
-  const onlineShopIds =
-    useMemo(() => {
-      return shops
-        .filter(
-          (shop) =>
-            shop.status ===
-            "online",
-        )
-        .map(
-          (shop) =>
-            shop.id,
-        );
-    }, [shops]);
+  const onlineShopIds = useMemo(() => {
+    return shops
+      .filter((shop) => shop.status === "online")
+      .map((shop) => shop.id);
+  }, [shops]);
 
   /* =====================================================
      VISIBLE PRODUCTS
   ===================================================== */
 
-  const visibleProducts =
-    useMemo(() => {
-      return products.filter(
-        (product) =>
-          !!product.shop_id &&
-          onlineShopIds.includes(
-            product.shop_id,
-          ),
-      );
-    }, [
-      products,
-      onlineShopIds,
-    ]);
+  const visibleProducts = useMemo(() => {
+    return products.filter(
+      (product) => !!product.shop_id && onlineShopIds.includes(product.shop_id),
+    );
+  }, [products, onlineShopIds]);
 
   /* =====================================================
      FEATURED PRODUCTS
   ===================================================== */
 
-  const featured =
-    visibleProducts.filter(
-      (p) =>
-        p.badge ===
-          "popular" ||
-        p.badge ===
-          "pro",
-    );
+  const featured = visibleProducts.filter(
+    (p) => p.badge === "popular" || p.badge === "pro",
+  );
 
   /* ===================================================== */
 
-  const handleToggle = (
-    p:
-      | "workkerz"
-      | "eaurix",
-  ) => {
-    setPlatform(p);
+  const spotlightProducts = useMemo(() => {
+    const categoryMap = new Map();
 
-    if (
-      p ===
-      "eaurix"
-    ) {
-      router.push(
-        "/eaurix",
-      );
-    } else {
-      router.push("/");
+    visibleProducts.forEach((product) => {
+      if (!categoryMap.has(product.category)) {
+        categoryMap.set(product.category, product);
+      }
+    });
+
+    let result = Array.from(categoryMap.values());
+
+    // Minimum 4 products
+    if (result.length > 0) {
+      while (result.length < 4) {
+        result = [...result, ...result];
+      }
     }
 
-    setMobileOpen(
-      false,
+    return result.slice(0, 4);
+  }, [visibleProducts]);
+
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        Loading...
+      </div>
     );
-  };
+  }
 
   /* ===================================================== */
 
@@ -384,8 +189,7 @@ export function EAurixHome() {
           style={{
             backgroundImage:
               "linear-gradient(rgba(14,165,233,0.4) 1px, transparent 1px), linear-gradient(90deg, rgba(14,165,233,0.4) 1px, transparent 1px)",
-            backgroundSize:
-              "40px 40px",
+            backgroundSize: "40px 40px",
           }}
         />
 
@@ -400,15 +204,11 @@ export function EAurixHome() {
             <Zap className="w-3.5 h-3.5 text-yellow-400" />
 
             <span className="text-sky-200 text-xs font-semibold">
-              E-aurix under
-              processing,
-              coming
-              soon!
+              E-aurix under processing, coming soon!
             </span>
 
             <span className="text-sky-200 text-xs font-semibold">
-              Workkerz-integrated
-              marketplace
+              Workkerz-integrated marketplace
             </span>
           </div>
 
@@ -417,284 +217,203 @@ export function EAurixHome() {
           <h1
             className="text-white mb-4"
             style={{
-              fontSize:
-                "clamp(2rem, 5vw, 3rem)",
+              fontSize: "clamp(2rem, 5vw, 3rem)",
 
               fontWeight: 900,
 
               lineHeight: 1.1,
             }}
           >
-            Everything
-            your workers
-            need,
-            <span className="text-[#38BDF8]">
-              {" "}
-              delivered.
-            </span>
+            Everything your workers need,
+            <span className="text-[#38BDF8]"> delivered.</span>
           </h1>
 
           <p className="text-sky-200 mb-8 max-w-xl mx-auto text-[1.05rem]">
-            Order tools,
-            materials and
-            safety
-            supplies.
+            Order tools, materials and safety supplies.
           </p>
-        </div>
-      </div>
-
-      {/* CATEGORY */}
-
-      <div className="max-w-7xl mx-auto px-6 py-12">
-        <div className="flex items-center justify-between mb-6">
-          <div>
-            <h2 className="text-[#0F172A] text-[1.3rem] font-extrabold">
-              Shop by
-              Category
-            </h2>
-
-            <p className="text-[#64748B] text-sm">
-              Everything
-              organized by
-              trade type
-            </p>
-          </div>
-
-          <Link
-            href="/eaurix/shop"
-            className="flex items-center gap-1 text-[#0EA5E9] text-sm"
-          >
-            View all
-
-            <ArrowRight className="w-4 h-4" />
-          </Link>
-        </div>
-
-        {/* CATEGORY GRID */}
-
-        <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-          {productCategories.map(
-            (cat) => (
-              <Link
-                key={cat.id}
-                href={`/eaurix/shop?category=${cat.id}`}
-                className="rounded-2xl overflow-hidden border border-gray-100 bg-white hover:shadow-lg transition-all"
-              >
-                <div
-                  className="h-full p-5 flex flex-col justify-between min-h-42.5"
-                  style={{
-                    background:
-                      cat.bgColor,
-                  }}
-                >
-                  {/* ICON */}
-
-                  <div
-                    className="w-14 h-14 rounded-2xl flex items-center justify-center"
-                    style={{
-                      background:
-                        cat.color,
-                    }}
-                  >
-                    {(() => {
-                      const icons =
-                        {
-                          cement:
-                            Hammer,
-
-                          sand:
-                            Package,
-
-                          tiles:
-                            Building2,
-
-                          plumbing:
-                            Wrench,
-
-                          paint:
-                            PaintBucket,
-
-                          tmt: Truck,
-                        };
-
-                      const Icon =
-                        icons[
-                          cat.id as keyof typeof icons
-                        ] ||
-                        Package;
-
-                      return (
-                        <Icon className="w-7 h-7 text-white" />
-                      );
-                    })()}
-                  </div>
-
-                  {/* CONTENT */}
-
-                  <div>
-                    <div className="text-[#0F172A] text-sm font-bold mb-1">
-                      {
-                        cat.label
-                      }
-                    </div>
-
-                    <div className="text-xs text-[#64748B] mb-2">
-                      {
-                        cat.description
-                      }
-                    </div>
-
-                    <div className="text-xs text-[#0EA5E9] font-semibold">
-                      {
-                        visibleProducts.filter(
-                          (
-                            p,
-                          ) =>
-                            p.category ===
-                            cat.id,
-                        )
-                          .length
-                      }{" "}
-                      Products
-                    </div>
-                  </div>
-                </div>
-              </Link>
-            ),
-          )}
         </div>
       </div>
 
       {/* FEATURED */}
 
-      <div className="max-w-7xl mx-auto px-6 pb-12">
-        <div className="flex items-center justify-between mb-6">
-          <div>
-            <h2 className="text-[#0F172A] text-[1.3rem] font-extrabold">
-              Featured
-              Products
-            </h2>
+      <div className="max-w-7xl mx-auto px-4 md:px-6 pb-12 mt-6">
+        <div className="bg-linear-to-r from-slate-500 to-sky-50 rounded-4xl p-5 md:p-8 border border-slate-200">
+          <h2 className="text-2xl md:text-4xl font-black text-[#111827] mb-5 md:mb-8">
+            Mukul, still looking for these?
+          </h2>
 
-            <p className="text-[#64748B] text-sm">
-              Top picks
-              across all
-              categories
-            </p>
+          <div className="overflow-hidden">
+            <div className="flex gap-4 marquee-track">
+              {[...visibleProducts, ...visibleProducts].map(
+                (product, index) => (
+                  <div
+                    key={`${product.id}-${index}`}
+                    className="w-42.5 sm:w-47.5 shrink-0"
+                  >
+                    <ProductCard product={product} />
+                  </div>
+                ),
+              )}
+            </div>
           </div>
+        </div>
+      </div>
+      <div className="max-w-7xl mx-auto px-4 md:px-8 py-10">
+        <div className="flex items-center justify-between mb-5">
+          <h2 className="text-2xl md:text-3xl font-black text-slate-900">
+            Brands in Spotlight
+          </h2>
 
           <Link
             href="/eaurix/shop"
-            className="flex items-center gap-1 text-[#0EA5E9] text-sm"
+            className="text-sky-600 text-sm font-semibold"
           >
-            See all
-
-            <ArrowRight className="w-4 h-4" />
+            View All
           </Link>
         </div>
 
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-          {featured
-            .slice(0, 8)
-            .map((p) => (
-              <ProductCard
-                key={p.id}
-                product={p}
-              />
-            ))}
+          {spotlightProducts.map((product) => (
+            <Link
+              key={product.id}
+              href={`/eaurix/product/${product.id}`}
+              className="bg-white rounded-3xl overflow-hidden border border-slate-200 shadow-sm hover:shadow-lg transition-all"
+            >
+              <div className="relative">
+                <img
+                  src={product.image}
+                  alt={product.name}
+                  className="w-full h-50 md:h-70 object-cover"
+                />
+
+                <span className="absolute top-2 right-2 bg-black/70 text-white text-[10px] px-2 py-1 rounded-full">
+                  {product.brand}
+                </span>
+
+                <div className="absolute bottom-0 left-0 right-0 bg-yellow-400 py-2">
+                  <p className="text-center text-sm font-black text-black">
+                    ₹{product.price}
+                  </p>
+                </div>
+              </div>
+
+              <div className="p-3">
+                <h3 className="text-sm font-bold text-slate-800 line-clamp-1">
+                  {product.brand}
+                </h3>
+
+                <p className="text-xs text-slate-500 line-clamp-2">
+                  {product.name}
+                </p>
+              </div>
+            </Link>
+          ))}
         </div>
       </div>
 
       {/* WHY */}
 
-      <div className="bg-white border-t border-gray-100">
-        <div className="max-w-5xl mx-auto px-6 py-12">
-          <h2 className="text-center text-[#0F172A] text-[1.3rem] font-extrabold mb-8">
-            Why Choose
-            E-Aurix?
-          </h2>
+      <div className="bg-gradient-to-b from-slate-50 to-white border-t border-slate-200">
+  <div className="max-w-6xl mx-auto px-4 py-8">
 
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
-            {[
-              {
-                icon: Truck,
+    <div className="text-center mb-6">
+      <h2 className="text-xl md:text-2xl font-black text-slate-900">
+        Why Choose E-Aurix?
+      </h2>
 
-                title:
-                  "Next-Day Delivery",
+      <p className="text-xs text-slate-500 mt-1">
+        Trusted marketplace for workers
+      </p>
+    </div>
 
-                desc: "Fast delivery for every order.",
+    <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
 
-                color:
-                  "#0EA5E9",
-              },
+      {[
+        {
+          icon: Truck,
+          title: "Fast Delivery",
+          desc: "Delivery across your city",
+          color: "#0EA5E9",
+          stat: "24h",
+        },
+        {
+          icon: Shield,
+          title: "Quality Assured",
+          desc: "Verified products only",
+          color: "#10B981",
+          stat: "100%",
+        },
+        {
+          icon: Tag,
+          title: "Trade Pricing",
+          desc: "Best market rates",
+          color: "#F97316",
+          stat: "₹₹",
+        },
+      ].map((f) => {
+        const Icon = f.icon;
 
-              {
-                icon: Shield,
+        return (
+          <div
+            key={f.title}
+            className="relative overflow-hidden bg-white rounded-3xl border border-slate-200 p-4 shadow-sm hover:shadow-lg transition-all"
+          >
+            {/* Graphic Circle */}
+            <div
+              className="absolute -top-8 -right-8 w-24 h-24 rounded-full opacity-10"
+              style={{
+                backgroundColor: f.color,
+              }}
+            />
 
-                title:
-                  "Trade-Grade Quality",
+            <div className="flex items-start justify-between mb-3">
 
-                desc: "Certified quality materials.",
+              <div
+                className="w-11 h-11 rounded-2xl flex items-center justify-center"
+                style={{
+                  backgroundColor: `${f.color}15`,
+                }}
+              >
+                <Icon
+                  className="w-5 h-5"
+                  style={{ color: f.color }}
+                />
+              </div>
 
-                color:
-                  "#10B981",
-              },
+              <span
+                className="text-lg font-black"
+                style={{ color: f.color }}
+              >
+                {f.stat}
+              </span>
 
-              {
-                icon: Tag,
+            </div>
 
-                title:
-                  "Trade Pricing",
+            <h3 className="text-sm font-black text-slate-900">
+              {f.title}
+            </h3>
 
-                desc: "Best prices for workers.",
+            <p className="text-xs text-slate-500 mt-1">
+              {f.desc}
+            </p>
 
-                color:
-                  "#F97316",
-              },
-            ].map(
-              (f) => {
-                const Icon =
-                  f.icon;
+            {/* Progress Graphic */}
+            <div className="mt-4 h-1.5 bg-slate-100 rounded-full overflow-hidden">
+              <div
+                className="h-full rounded-full"
+                style={{
+                  width: "85%",
+                  backgroundColor: f.color,
+                }}
+              />
+            </div>
 
-                return (
-                  <div
-                    key={
-                      f.title
-                    }
-                    className="text-center p-6 rounded-2xl bg-[#F8FAFC] border border-gray-100"
-                  >
-                    <div
-                      className="w-12 h-12 rounded-2xl flex items-center justify-center mx-auto mb-4"
-                      style={{
-                        backgroundColor: `${f.color}15`,
-                      }}
-                    >
-                      <Icon
-                        className="w-6 h-6"
-                        style={{
-                          color:
-                            f.color,
-                        }}
-                      />
-                    </div>
-
-                    <div className="text-[#0F172A] font-bold mb-2">
-                      {
-                        f.title
-                      }
-                    </div>
-
-                    <p className="text-[#64748B] text-sm">
-                      {
-                        f.desc
-                      }
-                    </p>
-                  </div>
-                );
-              },
-            )}
           </div>
-        </div>
-      </div>
+        );
+      })}
+    </div>
+  </div>
+</div>
     </div>
   );
 }
