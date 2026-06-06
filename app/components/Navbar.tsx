@@ -24,11 +24,12 @@ export function Navbar() {
   const isEaurix = platform === "eaurix";
 
   const workkezLinks = [
-    { label: "Find Workers", href: "/browse" },
-    { label: "How It Works", href: "/#how-it-works" },
-    { label: "For Workers", href: "#" },
-    { label: "Pricing", href: "#" },
-  ];
+  { label: "Book Workers", href: "/browse" },
+  { label: "Buy Material", href: "/eaurix/shop" },
+  { label: "Quick Service", href: "/quick-services" },
+  { label: "Become Worker", href: "/become-worker" },
+  { label: "Become Seller", href: "/become-seller" },
+];
 
   const eaurixLinks = [
     { label: "Shop All", href: "/eaurix/shop" },
@@ -206,48 +207,48 @@ export function Navbar() {
         {/* MOBILE RIGHT SECTION */}
         <div className="flex items-center gap-2 md:hidden">
           {/* MOBILE TOGGLE OUTSIDE */}
-         {/* MOBILE PLATFORM TOGGLE */}
-<div className="hidden md:hidden sm:flex items-center bg-[#F8FAFC] border border-gray-200 rounded-full p-1 shadow-sm">
-  {/* WORKKERZ */}
-  <button
-    onClick={() => handleToggle("workkerz")}
-    className={`h-10 px-4 rounded-full flex items-center gap-2 transition-all duration-300 ${
-      !isEaurix
-        ? "bg-[#0F172A] text-white shadow-md"
-        : "text-[#64748B]"
-    }`}
-  >
-    <img
-      src="/workkerzapp.png"
-      alt="Workkerz"
-      className="w-5 h-5 rounded-full object-cover"
-    />
+          {/* MOBILE PLATFORM TOGGLE */}
+          <div className="hidden md:hidden sm:flex items-center bg-[#F8FAFC] border border-gray-200 rounded-full p-1 shadow-sm">
+            {/* WORKKERZ */}
+            <button
+              onClick={() => handleToggle("workkerz")}
+              className={`h-10 px-4 rounded-full flex items-center gap-2 transition-all duration-300 ${
+                !isEaurix
+                  ? "bg-[#0F172A] text-white shadow-md"
+                  : "text-[#64748B]"
+              }`}
+            >
+              <img
+                src="/workkerzapp.png"
+                alt="Workkerz"
+                className="w-5 h-5 rounded-full object-cover"
+              />
 
-    <span className="text-[12px] font-bold whitespace-nowrap">
-      Workkerz
-    </span>
-  </button>
+              <span className="text-[12px] font-bold whitespace-nowrap">
+                Workkerz
+              </span>
+            </button>
 
-  {/* E-AURIX */}
-  <button
-    onClick={() => handleToggle("eaurix")}
-    className={`h-10 px-4 rounded-full flex items-center gap-2 transition-all duration-300 ${
-      isEaurix
-        ? "bg-[#0EA5E9] text-white shadow-md"
-        : "text-[#64748B]"
-    }`}
-  >
-    <img
-      src="/aurixapp.png"
-      alt="E-Aurix"
-      className="w-5 h-5 rounded-full object-cover"
-    />
+            {/* E-AURIX */}
+            <button
+              onClick={() => handleToggle("eaurix")}
+              className={`h-10 px-4 rounded-full flex items-center gap-2 transition-all duration-300 ${
+                isEaurix
+                  ? "bg-[#0EA5E9] text-white shadow-md"
+                  : "text-[#64748B]"
+              }`}
+            >
+              <img
+                src="/aurixapp.png"
+                alt="E-Aurix"
+                className="w-5 h-5 rounded-full object-cover"
+              />
 
-    <span className="text-[12px] font-bold whitespace-nowrap">
-      E-Aurix
-    </span>
-  </button>
-</div>
+              <span className="text-[12px] font-bold whitespace-nowrap">
+                E-Aurix
+              </span>
+            </button>
+          </div>
 
           {/* CART */}
           {isEaurix && (

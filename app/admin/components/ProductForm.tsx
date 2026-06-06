@@ -547,10 +547,10 @@ const [rotation, setRotation] = useState(0);
   return (
     <>
       {showCropper && (
-  <div className="fixed inset-0 z-[9999] bg-black/80 flex items-center justify-center">
+  <div className="fixed inset-0 z-9999 bg-black/80 flex items-center justify-center">
     <div className="bg-white rounded-3xl w-[95vw] max-w-3xl overflow-hidden">
 
-      <div className="h-[500px] bg-gray-100 flex items-center justify-center overflow-hidden">
+      <div className="h-125 bg-gray-100 flex items-center justify-center overflow-hidden">
 
         <img
           src={selectedImage}

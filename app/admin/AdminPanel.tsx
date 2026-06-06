@@ -5,6 +5,7 @@ import OrdersTab from "@/app/admin/components/OrdersTab";
 import AdminSidebar from "./components/AdminSidebar";
 import { toast } from "sonner";
 import ShopsTab from "./components/ShopsTab";
+import WorkerExcelImport from "./components/WorkerExcelImport";
 
 import {
   LayoutDashboard,
@@ -799,225 +800,231 @@ function WorkerForm({
       </div>
 
       {/* BODY */}
-      <div className="flex-1 overflow-y-auto p-5 space-y-5">
-        {/* ERROR */}
-        {error && (
-          <div className="flex items-center gap-2 p-3 bg-rose-50 border border-rose-200 rounded-2xl text-sm text-rose-600">
-            <AlertTriangle className="w-4 h-4 shrink-0" />
-            {error}
-          </div>
-        )}
+      <div className="flex-1 overflow-y-auto bg-[#F8FAFC]">
+        <div className="max-w-5xl mx-auto p-6 space-y-6">
+          {/* Excel Import */}
+          <div className="bg-white rounded-3xl border border-gray-100 shadow-sm p-6">
+            <div className="flex items-center gap-3 mb-5">
+              <div className="w-12 h-12 rounded-2xl bg-orange-50 flex items-center justify-center">
+                <Upload className="w-5 h-5 text-[#FF5C39]" />
+              </div>
 
-        {/* PHOTO */}
-        <Field label="Profile Photo">
-          <div className="flex gap-4 items-start">
-            <div className="w-18 h-18 rounded-2xl overflow-hidden border border-gray-200 bg-gray-100 shrink-0">
-              {form.photo ? (
-                <img
-                  src={form.photo}
-                  alt=""
-                  className="w-full h-full object-cover"
-                />
-              ) : (
-                <div className="w-full h-full flex items-center justify-center">
-                  <Users className="w-7 h-7 text-gray-300" />
-                </div>
-              )}
+              <div>
+                <h3 className="font-bold text-lg text-[#0F172A]">
+                  Import Worker
+                </h3>
+
+                <p className="text-sm text-[#64748B]">
+                  Select worker directly from onboarding Excel
+                </p>
+              </div>
             </div>
 
-            <div className="flex-1 space-y-2">
-              <input
-                value={form.photo}
-                onChange={(e) => u("photo", e.target.value)}
-                placeholder="Paste image URL..."
-                className={inp + " w-full"}
-              />
+            <WorkerExcelImport
+              onWorkerSelect={(worker: any) => {
+                setForm((prev) => ({
+                  ...prev,
+                  name: worker["Full Name"] || "",
+                  phone: worker["Mobile Number"]?.toString() || "",
+                  photo: worker["Profile Photo"] || "",
+                  location:
+                    worker["Full Address (Optional)"] ||
+                    worker["Current City / Area"] ||
+                    "",
+                  specialty: worker["Aap kis type ka kaam karte hain?"] || "",
+                }));
+              }}
+            />
+          </div>
 
-              <label className="flex items-center justify-center gap-2 px-4 py-2.5 border border-gray-200 rounded-xl cursor-pointer hover:bg-gray-50 text-sm text-[#475569]">
-                <Upload className="w-4 h-4" />
-                Upload Image
+          {/* Profile */}
+          <div className="bg-white rounded-3xl border border-gray-100 shadow-sm p-6">
+            <h3 className="font-bold text-[#0F172A] mb-5">Worker Profile</h3>
+
+            <div className="flex items-center gap-6">
+              <div className="w-28 h-28 rounded-3xl overflow-hidden border-4 border-white shadow-lg">
+                {form.photo ? (
+                  <img
+                    src={form.photo}
+                    className="w-full h-full object-cover"
+                  />
+                ) : (
+                  <div className="w-full h-full bg-gray-100 flex items-center justify-center">
+                    <Users className="w-10 h-10 text-gray-400" />
+                  </div>
+                )}
+              </div>
+
+              <div className="flex-1">
                 <input
-                  type="file"
-                  accept="image/*"
-                  className="hidden"
-                  onChange={async (e) => {
-                    const file = e.target.files?.[0];
-
-                    if (!file) return;
-
-                    try {
-                      const compressed = await compressImage(file);
-
-                      u("photo", compressed);
-                    } catch {
-                      toast.error("Image compression failed");
-                    }
-                  }}
+                  value={form.photo}
+                  onChange={(e) => u("photo", e.target.value)}
+                  placeholder="Paste image URL"
+                  className={inp}
                 />
-              </label>
+              </div>
             </div>
           </div>
-        </Field>
 
-        {/* NAME + PHONE */}
-        <div className="grid grid-cols-2 gap-4">
-          <Field label="Full Name" required>
-            <input
-              value={form.name}
-              onChange={(e) => u("name", e.target.value)}
-              placeholder="Ramesh Kumar"
-              className={inp}
-            />
-          </Field>
+          {/* Personal Details */}
+          <div className="bg-white rounded-3xl border border-gray-100 shadow-sm p-6">
+            <h3 className="font-bold text-[#0F172A] mb-5">
+              Personal Information
+            </h3>
 
-          <Field label="Mobile Number" required>
-            <input
-              type="tel"
-              value={form.phone}
-              onChange={(e) =>
-                u("phone", e.target.value.replace(/\D/g, "").slice(0, 10))
-              }
-              placeholder="9876543210"
-              className={inp}
-            />
-          </Field>
-        </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+              <Field label="Full Name" required>
+                <input
+                  value={form.name}
+                  onChange={(e) => u("name", e.target.value)}
+                  className={inp}
+                />
+              </Field>
 
-        {/* CATEGORY */}
-        <div className="grid grid-cols-2 gap-4">
-          <Field label="Category" required>
-            <select
-              value={form.category}
-              onChange={(e) => {
-                u("category", e.target.value);
-                u("subcategory", "");
-                u("specialty", "");
-                u("services", []);
-              }}
-              className={inp}
-            >
-              <option value="">Select Category</option>
+              <Field label="Mobile Number" required>
+                <input
+                  value={form.phone}
+                  onChange={(e) =>
+                    u("phone", e.target.value.replace(/\D/g, ""))
+                  }
+                  className={inp}
+                />
+              </Field>
 
-              {WORKER_CATEGORIES.map((cat) => (
-                <option key={cat.name} value={cat.name}>
-                  {cat.name}
-                </option>
-              ))}
-            </select>
-          </Field>
-
-          <Field label="Sub Category" required>
-            <select
-              value={form.subcategory}
-              onChange={(e) => {
-                u("subcategory", e.target.value);
-                u("services", []);
-              }}
-              className={inp}
-              disabled={!form.category}
-            >
-              <option value="">Select Sub Category</option>
-
-              {selectedCategory?.subcategories?.map((sub) => (
-                <option key={sub} value={sub}>
-                  {sub}
-                </option>
-              ))}
-            </select>
-          </Field>
-        </div>
-
-        {/* SPECIALTY */}
-        <Field label="Specialty / Role" required>
-          <input
-            value={form.specialty}
-            onChange={(e) => u("specialty", e.target.value)}
-            className={inp}
-          />
-        </Field>
-
-        {/* SERVICES */}
-        <Field label="Services Offered" required>
-          <div className="grid grid-cols-2 gap-2">
-            {selectedServices.map((service) => {
-              const active = form.services?.includes(service);
-
-              return (
-                <button
-                  type="button"
-                  key={service}
-                  onClick={() => {
-                    if (active) {
-                      u(
-                        "services",
-                        form.services.filter((s) => s !== service),
-                      );
-                    } else {
-                      u("services", [...(form.services || []), service]);
-                    }
-                  }}
-                  className={`px-3 py-2.5 rounded-xl border text-sm ${
-                    active
-                      ? "bg-[#FF5C39] border-[#FF5C39] text-white"
-                      : "border-gray-200 hover:border-[#FF5C39]"
-                  }`}
-                >
-                  {service}
-                </button>
-              );
-            })}
+              <Field label="Location" required>
+                <input
+                  value={form.location}
+                  onChange={(e) => u("location", e.target.value)}
+                  className={inp}
+                />
+              </Field>
+            </div>
           </div>
-        </Field>
 
-        {/* LOCATION */}
-        <Field label="Location" required>
-          <input
-            value={form.location}
-            onChange={(e) => u("location", e.target.value)}
-            placeholder="Bhopal, MP"
-            className={inp}
-          />
-        </Field>
+          {/* Work Information */}
+          <div className="bg-white rounded-3xl border border-gray-100 shadow-sm p-6">
+            <h3 className="font-bold text-[#0F172A] mb-5">Work Information</h3>
 
-        {/* RATE */}
-        <div className="grid grid-cols-3 gap-4">
-          <Field label="Hourly Rate (₹)" required>
-            <input
-              type="number"
-              value={form.hourlyRate}
-              onChange={(e) => u("hourlyRate", +e.target.value)}
-              className={inp}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+              <Field label="Category">
+                <select
+                  value={form.category}
+                  onChange={(e) => u("category", e.target.value)}
+                  className={inp}
+                >
+                  <option>Select Category</option>
+
+                  {WORKER_CATEGORIES.map((cat) => (
+                    <option key={cat.name} value={cat.name}>
+                      {cat.name}
+                    </option>
+                  ))}
+                </select>
+              </Field>
+
+              <Field label="Sub Category">
+                <select
+                  value={form.subcategory}
+                  onChange={(e) => u("subcategory", e.target.value)}
+                  className={inp}
+                >
+                  <option>Select Sub Category</option>
+                </select>
+              </Field>
+
+              <Field label="Specialty">
+                <input
+                  value={form.specialty}
+                  onChange={(e) => u("specialty", e.target.value)}
+                  className={inp}
+                />
+              </Field>
+            </div>
+          </div>
+
+          {/* Services */}
+          <div className="bg-white rounded-3xl border border-gray-100 shadow-sm p-6">
+            <h3 className="font-bold text-[#0F172A] mb-5">Services Offered</h3>
+
+            <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+              {selectedServices.map((service) => {
+                const active = form.services.includes(service);
+
+                return (
+                  <button
+                    key={service}
+                    type="button"
+                    onClick={() => {
+                      if (active) {
+                        u(
+                          "services",
+                          form.services.filter((s) => s !== service),
+                        );
+                      } else {
+                        u("services", [...form.services, service]);
+                      }
+                    }}
+                    className={`p-4 rounded-2xl border text-sm font-semibold transition-all ${
+                      active
+                        ? "bg-[#FF5C39] text-white border-[#FF5C39] shadow-lg"
+                        : "bg-white border-gray-200 hover:border-[#FF5C39]"
+                    }`}
+                  >
+                    {service}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* Earnings */}
+          <div className="bg-white rounded-3xl border border-gray-100 shadow-sm p-6">
+            <h3 className="font-bold text-[#0F172A] mb-5">
+              Earnings & Experience
+            </h3>
+
+            <div className="grid grid-cols-3 gap-5">
+              <Field label="Hourly Rate">
+                <input
+                  type="number"
+                  value={form.hourlyRate}
+                  onChange={(e) => u("hourlyRate", +e.target.value)}
+                  className={inp}
+                />
+              </Field>
+
+              <Field label="Experience">
+                <input
+                  type="number"
+                  value={form.yearsExperience}
+                  onChange={(e) => u("yearsExperience", +e.target.value)}
+                  className={inp}
+                />
+              </Field>
+
+              <Field label="Jobs Completed">
+                <input
+                  type="number"
+                  value={form.completedJobs}
+                  onChange={(e) => u("completedJobs", +e.target.value)}
+                  className={inp}
+                />
+              </Field>
+            </div>
+          </div>
+
+          {/* Bio */}
+          <div className="bg-white rounded-3xl border border-gray-100 shadow-sm p-6">
+            <h3 className="font-bold text-[#0F172A] mb-5">About Worker</h3>
+
+            <textarea
+              rows={5}
+              value={form.bio}
+              onChange={(e) => u("bio", e.target.value)}
+              className={inp + " resize-none"}
             />
-          </Field>
-
-          <Field label="Experience">
-            <input
-              type="number"
-              value={form.yearsExperience}
-              onChange={(e) => u("yearsExperience", +e.target.value)}
-              className={inp}
-            />
-          </Field>
-
-          <Field label="Jobs Completed">
-            <input
-              type="number"
-              value={form.completedJobs}
-              onChange={(e) => u("completedJobs", +e.target.value)}
-              className={inp}
-            />
-          </Field>
+          </div>
         </div>
-
-        {/* BIO */}
-        <Field label="Bio">
-          <textarea
-            rows={4}
-            value={form.bio}
-            onChange={(e) => u("bio", e.target.value)}
-            className={inp + " resize-none"}
-          />
-        </Field>
       </div>
 
       {/* FOOTER */}
@@ -1069,14 +1076,11 @@ function DashboardTab({ onGo }: { onGo: (tab: Tab) => void }) {
   };
 
   console.log(
-  "OUT OF STOCK PRODUCTS",
-  products.filter((p) => {
-    return (
-      p.is_active !== false &&
-      Number(p.stock ?? 0) <= 0
-    );
-  })
-);
+    "OUT OF STOCK PRODUCTS",
+    products.filter((p) => {
+      return p.is_active !== false && Number(p.stock ?? 0) <= 0;
+    }),
+  );
 
   const statCards = [
     {
