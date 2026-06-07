@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { supabase } from "@/lib/supabase";
-
+import { useRouter } from "next/navigation";
 type Worker = {
   id: string;
 
@@ -31,7 +31,7 @@ export default function LiveNewsStrip() {
   const [workers, setWorkers] = useState<Worker[]>([]);
 
   const [bookings, setBookings] = useState<Booking[]>([]);
-
+  const router = useRouter();
   // FETCH
   useEffect(() => {
     fetchData();
@@ -76,10 +76,9 @@ export default function LiveNewsStrip() {
   // FETCH DATA
   const fetchData = async () => {
     // WORKERS TABLE
-    const { data: workersData, error: workersError } =
-      await supabase
-        .from("workers")
-        .select(`
+    const { data: workersData, error: workersError } = await supabase.from(
+      "workers",
+    ).select(`
           id,
           name,
           category,
@@ -95,10 +94,9 @@ export default function LiveNewsStrip() {
     }
 
     // BOOKINGS TABLE
-    const { data: bookingsData, error: bookingsError } =
-      await supabase
-        .from("bookings")
-        .select(`
+    const { data: bookingsData, error: bookingsError } = await supabase.from(
+      "bookings",
+    ).select(`
           worker_id,
           booking_status
         `);
@@ -136,15 +134,17 @@ export default function LiveNewsStrip() {
       completed_jobs: completedMap[worker.id] || 0,
     }));
 
-    return merged
-      // ONLY SHOW WORKERS WITH MORE THAN 1 COMPLETED JOB
-      .filter((worker) => worker.completed_jobs > 1)
+    return (
+      merged
+        // ONLY SHOW WORKERS WITH MORE THAN 1 COMPLETED JOB
+        .filter((worker) => worker.completed_jobs > 1)
 
-      // MOST COMPLETED JOBS FIRST
-      .sort((a, b) => b.completed_jobs - a.completed_jobs)
+        // MOST COMPLETED JOBS FIRST
+        .sort((a, b) => b.completed_jobs - a.completed_jobs)
 
-      // TOP 10
-      .slice(0, 10);
+        // TOP 10
+        .slice(0, 10)
+    );
   }, [workers, bookings]);
 
   // LOOP
@@ -153,12 +153,12 @@ export default function LiveNewsStrip() {
   return (
     <section className="bg-[#1E293B] py-4 overflow-hidden border-y border-amber-200">
       {/* TOP BAR */}
-      <div className="flex items-center mb-3 px-6">
-        <span className="bg-red-500 text-white text-xs px-3 py-1 rounded-full font-semibold animate-pulse">
-          🔴 LIVE TRACKING
+      <div className="flex items-center mb-2 px-3 md:px-6">
+        <span className="bg-red-500 text-white text-[9px] md:text-xs px-2 py-0.5 rounded-full font-semibold animate-pulse">
+          🔴 LIVE
         </span>
 
-        <p className="ml-4 text-gray-300 text-sm">
+        <p className="ml-2 md:ml-4 text-[9px] md:text-sm text-gray-300">
           Top Workers • Most Completed Jobs
         </p>
       </div>
@@ -169,61 +169,41 @@ export default function LiveNewsStrip() {
           {cards.map((worker, i) => (
             <div
               key={i}
-              className="mx-4 min-w-92.5 bg-white rounded-3xl shadow-lg p-4 flex items-center gap-4"
+              className="mx-2 min-w-60 bg-white border border-slate-100 rounded-xl px-3 py-2 flex items-center gap-2 shadow-sm"
             >
-              {/* IMAGE */}
-              <img
-                src={worker.photo}
-                alt={worker.name}
-                className="w-18 h-18 rounded-2xl object-cover border border-gray-100"
-              />
-
-              {/* CONTENT */}
-              <div className="flex-1">
-                {/* TOP */}
+              <div className="w-12 h-12 rounded-xl border border-slate-200 bg-white p-1 flex items-center justify-center">
+                <img
+                  src={worker.photo}
+                  alt={worker.name}
+                  className="max-w-full max-h-full object-contain"
+                />
+              </div>
+              <div className="flex-1 min-w-0">
                 <div className="flex items-center justify-between">
-                  <h3 className="font-black text-slate-800 text-lg">
+                  <h3 className="text-xs font-bold text-slate-800 truncate">
                     {worker.name}
                   </h3>
 
-                  <span className="text-[10px] bg-orange-100 text-orange-600 px-3 py-1 rounded-full font-bold">
-                    Trending
-                  </span>
-                </div>
-
-                {/* CATEGORY */}
-                <div className="mt-2 flex items-center flex-wrap gap-2">
-                  <div className="flex items-center gap-2 bg-[#FFF8E7] px-3 py-1 rounded-full border border-[#FFE7A3]">
-                    <div className="w-2 h-2 rounded-full bg-[#EAB308]" />
-
-                    <span className="text-[11px] font-bold text-[#CA8A04]">
-                      {worker.category}
-                    </span>
-                  </div>
-
-                  <span className="text-gray-400 font-bold">
-                    •
-                  </span>
-
-                  <span className="text-[12px] text-[#475569] font-semibold">
-                    {worker.subcategory}
-                  </span>
-                </div>
-
-                {/* SPECIALTY */}
-                <div className="text-sm text-gray-500 mt-2">
-                  {worker.specialty}
-                </div>
-
-                {/* COMPLETED JOBS */}
-                <div className="mt-3 flex items-center justify-between">
-                  <span className="text-green-600 font-bold text-sm">
-                    📈 +{worker.completed_jobs} Works Completed
-                  </span>
-
-                  <span className="text-xs font-bold text-amber-500">
+                  <span className="text-[10px] font-bold text-amber-500">
                     ⭐ {worker.rating}
                   </span>
+                </div>
+
+                <p className="text-[10px] text-slate-500 truncate">
+                  {worker.category}
+                </p>
+
+                <div className="flex items-center justify-between mt-1">
+                  <span className="text-[10px] text-green-600 font-semibold">
+                    {worker.completed_jobs}+ works completed
+                  </span>
+
+                  <button
+                    onClick={() => router.push(`/workers/${worker.id}`)}
+                    className="text-[9px] px-2 py-0.5 bg-[#FF5C39] text-white rounded-full font-bold"
+                  >
+                    Book Now
+                  </button>
                 </div>
               </div>
             </div>

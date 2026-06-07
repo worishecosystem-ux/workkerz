@@ -10,8 +10,12 @@ import {
   Briefcase,
   Bell,
   ShoppingCart,
-  Sparkles,
+  Heart,
   Zap,
+  Calendar,
+  LogIn,
+  CreditCard,
+  Package,
 } from "lucide-react";
 import { usePlatform } from "./context/PlatformContext";
 
@@ -24,19 +28,49 @@ export function Navbar() {
   const isEaurix = platform === "eaurix";
 
   const workkezLinks = [
-  { label: "Book Workers", href: "/browse" },
-  { label: "Buy Material", href: "/eaurix/shop" },
-  { label: "Quick Service", href: "/quick-services" },
-  { label: "Become Worker", href: "/become-worker" },
-  { label: "Become Seller", href: "/become-seller" },
-];
+    {
+      label: "Favorites",
+      href: "/favorites",
+      icon: Heart,
+    },
+    {
+      label: "Quick Service",
+      href: "/quick-services",
+      icon: Zap,
+    },
+    {
+      label: "Bookings",
+      href: "/bookings",
+      icon: Calendar,
+    },
+    {
+      label: "Sign In",
+      href: "/login",
+      icon: LogIn,
+    },
+  ];
 
   const eaurixLinks = [
-    { label: "Shop All", href: "/eaurix/shop" },
-    { label: "Masonry", href: "/eaurix/shop?category=masonry" },
-    { label: "Plumbing", href: "/eaurix/shop?category=plumbing" },
-    { label: "Electrical", href: "/eaurix/shop?category=electrical" },
-    { label: "Tools", href: "/eaurix/shop?category=tools" },
+    {
+      label: "Add to Cart",
+      href: "/eaurix/cart",
+      icon: ShoppingCart,
+    },
+    {
+      label: "Buy Now",
+      href: "/eaurix/shop",
+      icon: CreditCard,
+    },
+    {
+      label: "Orders",
+      href: "/eaurix/orders",
+      icon: Package,
+    },
+    {
+      label: "Sign In",
+      href: "/login",
+      icon: LogIn,
+    },
   ];
 
   const navLinks = isEaurix ? eaurixLinks : workkezLinks;
@@ -56,7 +90,7 @@ export function Navbar() {
         borderColor: isEaurix ? "rgba(14,165,233,0.2)" : "#F1F5F9",
       }}
     >
-      <div className="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between gap-4">
+      <div className="max-w-360 mx-auto px-6 h-20 flex items-center justify-between">
         {/* Logo */}
         <Link href="/" className="flex items-center gap-2 shrink-0">
           <div className="w-28 h-8 sm:w-36 sm:h-10 md:w-44 md:h-12 overflow-hidden">
@@ -67,8 +101,7 @@ export function Navbar() {
             />
           </div>
         </Link>
-
-        {/* Platform Toggle — centered */}
+        {/* Platform Toggle — centered */}{" "}
         <div
           className="hidden md:flex items-center p-1 rounded-xl border"
           style={{
@@ -76,7 +109,8 @@ export function Navbar() {
             borderColor: isEaurix ? "rgba(14,165,233,0.25)" : "#E2E8F0",
           }}
         >
-          {/* Workkerz */}
+          {" "}
+          {/* Workkerz */}{" "}
           <button
             onClick={() => handleToggle("workkerz")}
             className="flex items-center gap-2 px-4 py-1.5 rounded-lg text-sm transition-all duration-200"
@@ -87,15 +121,15 @@ export function Navbar() {
               boxShadow: !isEaurix ? "0 2px 8px rgba(255,92,57,0.35)" : "none",
             }}
           >
+            {" "}
             <img
               src="/workkerzapp.png"
               alt="Workkerz"
               className="w-6 h-6 rounded-full object-cover"
-            />
-            Workkerz
-          </button>
-
-          {/* E-Aurix */}
+            />{" "}
+            Workkerz{" "}
+          </button>{" "}
+          {/* E-Aurix */}{" "}
           <button
             onClick={() => handleToggle("eaurix")}
             className="flex items-center gap-2 px-4 py-1.5 rounded-lg text-sm transition-all duration-200"
@@ -106,107 +140,51 @@ export function Navbar() {
               boxShadow: isEaurix ? "0 2px 8px rgba(14,165,233,0.4)" : "none",
             }}
           >
+            {" "}
             <img
               src="/aurixapp.png"
               alt="E-Aurix"
               className="w-6 h-6 rounded-full object-cover"
-            />
-            E-Aurix
-          </button>
+            />{" "}
+            E-Aurix{" "}
+          </button>{" "}
         </div>
-
         {/* Desktop Nav */}
-        <nav className="hidden lg:flex items-center gap-0.5">
-          {navLinks.map((link) => (
-            <Link
-              key={link.label}
-              href={link.href}
-              className="px-3 py-2 rounded-lg text-sm transition-colors"
-              style={{
-                color: isEaurix
-                  ? pathname === link.href
-                    ? "#38BDF8"
-                    : "#94A3B8"
-                  : pathname === link.href
-                    ? "#FF5C39"
-                    : "#475569",
-                backgroundColor:
-                  pathname === link.href
-                    ? isEaurix
-                      ? "rgba(14,165,233,0.1)"
-                      : "#FFF5F3"
-                    : "transparent",
-                fontWeight: pathname === link.href ? 600 : 400,
-              }}
-            >
-              {link.label}
-            </Link>
-          ))}
+        <nav className="hidden lg:flex items-center justify-center gap-2 min-w-162.5">
+          {navLinks.map((link) => {
+            const Icon = link.icon;
+            const isActive = pathname === link.href;
+
+            return (
+              <Link
+                key={link.label}
+                href={link.href}
+                className={`
+          group flex items-center gap-2
+          px-4 py-2.5 rounded-xl
+          text-sm font-semibold
+          transition-all duration-300
+          ${
+            isActive
+              ? isEaurix
+                ? "bg-sky-50 text-sky-600 shadow-sm"
+                : "bg-orange-50 text-[#FF5C39] shadow-sm"
+              : "text-slate-600 hover:bg-slate-100 hover:text-slate-900"
+          }
+        `}
+              >
+                <Icon
+                  className={`w-4 h-4 transition-transform duration-300 ${
+                    isActive ? "scale-110" : "group-hover:scale-110"
+                  }`}
+                />
+
+                <span>{link.label}</span>
+              </Link>
+            );
+          })}
         </nav>
-
-        {/* Right Actions */}
-        <div className="hidden md:flex items-center gap-3 shrink-0">
-          {isEaurix ? (
-            <>
-              <Link
-                href="/eaurix/cart"
-                className="relative w-9 h-9 rounded-full flex items-center justify-center transition-colors"
-                style={{
-                  color: "#94A3B8",
-                  backgroundColor: "rgba(14,165,233,0.1)",
-                }}
-              >
-                <ShoppingCart className="w-4 h-4" />
-                {cartCount > 0 && (
-                  <span
-                    className="absolute -top-0.5 -right-0.5 w-4 h-4 text-white rounded-full flex items-center justify-center text-[10px]"
-                    style={{ backgroundColor: "#0EA5E9", fontWeight: 800 }}
-                  >
-                    {cartCount > 9 ? "9+" : cartCount}
-                  </span>
-                )}
-              </Link>
-              <button
-                className="text-sm px-4 py-2 rounded-lg transition-colors"
-                style={{ color: "#94A3B8", fontWeight: 500 }}
-              >
-                Sign In
-              </button>
-              <Link
-                href="/eaurix/shop"
-                className="text-sm text-white px-5 py-2 rounded-lg transition-colors shadow-lg shadow-sky-900/30"
-                style={{ fontWeight: 600, backgroundColor: "#0EA5E9" }}
-              >
-                Shop Now
-              </Link>
-            </>
-          ) : (
-            <>
-              <button className="w-9 h-9 rounded-full flex items-center justify-center text-gray-500 hover:bg-gray-100 transition-colors relative">
-                <Bell className="w-4 h-4" />
-                <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-[#FF5C39] rounded-full" />
-              </button>
-              <Link
-                href="/login"
-                className="text-sm text-[#475569] hover:text-[#0F172A] px-4 py-2 rounded-lg hover:bg-gray-50 transition-colors"
-              >
-                Sign In
-              </Link>
-              <Link
-                href="/browse"
-                className="text-sm text-white bg-[#FF5C39] hover:bg-[#e54e2e] px-5 py-2 rounded-lg transition-colors"
-                style={{ fontWeight: 600 }}
-              >
-                Get Started
-              </Link>
-            </>
-          )}
-        </div>
-
-        {/* Mobile hamburger + cart */}
-        {/* MOBILE RIGHT SECTION */}
         <div className="flex items-center gap-2 md:hidden">
-          {/* MOBILE TOGGLE OUTSIDE */}
           {/* MOBILE PLATFORM TOGGLE */}
           <div className="hidden md:hidden sm:flex items-center bg-[#F8FAFC] border border-gray-200 rounded-full p-1 shadow-sm">
             {/* WORKKERZ */}

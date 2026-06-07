@@ -313,7 +313,7 @@ export function EAurixHome() {
 
       {/* WHY */}
 
-      <div className="bg-gradient-to-b from-slate-50 to-white border-t border-slate-200">
+      <div className="bg-linear-to-b from-slate-50 to-white border-t border-slate-200">
   <div className="max-w-6xl mx-auto px-4 py-8">
 
     <div className="text-center mb-6">

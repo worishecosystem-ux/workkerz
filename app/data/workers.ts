@@ -93,13 +93,6 @@ export const serviceCategories = [
     bgColor: "#ECFEFF",
   },
 
-  {
-    id: "Computer Operator",
-    label: "Computer Operator",
-    description: "IT & office computer professionals",
-    color: "#8B5CF6",
-    bgColor: "#F3E8FF",
-  },
 
   {
     id: "Office Worker",
@@ -134,20 +127,14 @@ export const serviceCategories = [
   },
 
   {
-    id: "Home Contractor",
+    id: "Contractor",
     label: "Home Contractor",
     description: "Repair & contractor services",
     color: "#F59E0B",
     bgColor: "#FEF3C7",
   },
 
-  {
-    id: "Construction",
-    label: "Construction",
-    description: "Building & construction workers",
-    color: "#D97706",
-    bgColor: "#FFEDD5",
-  },
+ 
 
   {
     id: "Factory",
@@ -157,21 +144,7 @@ export const serviceCategories = [
     bgColor: "#F1F5F9",
   },
 
-  {
-    id: "Roads",
-    label: "Roads",
-    description: "Road construction workers",
-    color: "#CA8A04",
-    bgColor: "#FEF9C3",
-  },
 
-  {
-    id: "Delivery",
-    label: "Delivery",
-    description: "Delivery & courier workers",
-    color: "#14B8A6",
-    bgColor: "#CCFBF1",
-  },
 
   {
     id: "Security",
@@ -181,13 +154,7 @@ export const serviceCategories = [
     bgColor: "#E2E8F0",
   },
 
-  {
-    id: "Healthcare",
-    label: "Healthcare",
-    description: "Healthcare & patient care workers",
-    color: "#0EA5E9",
-    bgColor: "#E0F2FE",
-  },
+ 
 
   {
     id: "Event Services",

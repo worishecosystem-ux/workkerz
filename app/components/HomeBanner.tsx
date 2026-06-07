@@ -25,8 +25,8 @@ export default function HomeBanner() {
   return (
     <section className="w-full bg-linear-to-br from-[#0F172A] to-[#1E293B] text-white py-14">
       {/* MOBILE TOGGLE BUTTON */}
-      <div className="flex md:hidden justify-center px-4 mb-6">
-        <div className="flex items-center bg-white/10 backdrop-blur-xl border border-white/10 rounded-full p-1 shadow-xl mt-5">
+      <div className="flex md:hidden justify-center px-4 mb-2">
+        <div className="flex items-center bg-white/10 backdrop-blur-xl border border-white/10 rounded-full p-1 shadow-xl mt-10">
           {/* WORKKERZ */}
           <button
             onClick={() => handleToggle("workkerz")}
@@ -88,26 +88,20 @@ export default function HomeBanner() {
       </div>
 
       {/* Highlight */}
-      <div className="mt-8 flex justify-center">
-        <div className="relative overflow-hidden rounded-2xl px-6 py-4 bg-linear-to-r from-yellow-400 via-amber-300 to-orange-400 shadow-xl">
-          <div className="absolute inset-0 opacity-20 bg-white blur-2xl"></div>
+      <div className="mt-3 flex justify-center">
+        <div className="rounded-2xl border border-slate-200 bg-white px-4 py-2 shadow-sm">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className="w-9 h-9 rounded-xl bg-slate-100 flex items-center justify-center">
+                📱
+              </div>
 
-          <div className="relative flex items-center gap-3">
-            <span className="text-xl">🚀</span>
-
-            <div className="text-left">
-              <p className="text-black font-bold text-sm sm:text-base tracking-wide">
-                Mobile Apps Coming Soon
-              </p>
-
-              <p className="text-black/70 text-xs sm:text-sm">
-                Android & iOS launch in progress
-              </p>
+              <div>
+                <h3 className="text-sm font-semibold text-slate-900">
+                  Mobile Apps Coming Soon
+                </h3>
+              </div>
             </div>
-
-            <span className="ml-2 bg-black text-yellow-300 px-3 py-1 rounded-full text-xs font-semibold animate-pulse">
-              NEW
-            </span>
           </div>
         </div>
       </div>

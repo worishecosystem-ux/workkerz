@@ -1,12 +1,127 @@
 import nodemailer from "nodemailer";
+import { PDFDocument, StandardFonts, rgb } from "pdf-lib";
+import axios from "axios";
+
+async function generateInvoice(body: any) {
+  const pdfDoc = await PDFDocument.create();
+
+  const page = pdfDoc.addPage([600, 800]);
+
+  const font = await pdfDoc.embedFont(StandardFonts.Helvetica);
+
+  // Worker Image
+  try {
+    const imageUrl = body?.worker?.photo;
+
+    if (imageUrl && typeof imageUrl === "string") {
+      const response = await axios.get(imageUrl, {
+        responseType: "arraybuffer",
+      });
+
+      const imageBytes = response.data;
+
+      const contentType = response.headers["content-type"]?.toString() || "";
+
+      let image;
+
+      if (
+        imageUrl.toLowerCase().endsWith(".png") ||
+        contentType.includes("png")
+      ) {
+        image = await pdfDoc.embedPng(imageBytes);
+      } else {
+        image = await pdfDoc.embedJpg(imageBytes);
+      }
+
+      page.drawImage(image, {
+        x: 50,
+        y: 620,
+        width: 90,
+        height: 90,
+      });
+    }
+  } catch (error) {
+    console.log("Worker image load failed:", error);
+  }
+
+  page.drawText("WORKKERZ BOOKING INVOICE", {
+    x: 50,
+    y: 740,
+    size: 20,
+    font,
+  });
+
+  page.drawText(`Worker: ${body?.worker?.name || "-"}`, {
+    x: 160,
+    y: 680,
+    size: 16,
+    font,
+  });
+
+  page.drawText(`Specialty: ${body?.worker?.specialty || "-"}`, {
+    x: 160,
+    y: 655,
+    size: 12,
+    font,
+  });
+
+  page.drawText(`Service: ${body?.form?.serviceType || "-"}`, {
+    x: 50,
+    y: 560,
+    size: 14,
+    font,
+  });
+
+  page.drawText(`Customer: ${body?.form?.name || "-"}`, {
+    x: 50,
+    y: 530,
+    size: 14,
+    font,
+  });
+
+  page.drawText(`Phone: ${body?.form?.phone || "-"}`, {
+    x: 50,
+    y: 500,
+    size: 14,
+    font,
+  });
+
+  page.drawText(`Booking ID: ${body?.bookingId || "-"}`, {
+    x: 50,
+    y: 470,
+    size: 14,
+    font,
+  });
+
+  page.drawText(`Date: ${body?.form?.date || "-"}`, {
+    x: 50,
+    y: 440,
+    size: 14,
+    font,
+  });
+
+  page.drawText(`Time: ${body?.form?.time || "-"}`, {
+    x: 250,
+    y: 440,
+    size: 14,
+    font,
+  });
+
+  page.drawText(`Total: INR ${body?.grandTotal || 0}`, {
+    x: 50,
+    y: 390,
+    size: 18,
+    font,
+  });
+
+  const pdfBytes = await pdfDoc.save();
+
+  return Buffer.from(pdfBytes);
+}
 
 export async function POST(req: Request) {
   try {
-    console.log("API HIT");
-
     const body = await req.json();
-
-    console.log("BODY =>", body);
 
     // VALIDATE EMAIL
     const customerEmail = body?.form?.email;
@@ -23,23 +138,16 @@ export async function POST(req: Request) {
       );
     }
 
-    console.log("EMAIL_USER =>", process.env.EMAIL_USER);
-
-    console.log(
-      "EMAIL_PASS =>",
-      process.env.EMAIL_PASS ? "FOUND" : "MISSING",
-    );
-
     // FALLBACK IMAGE
     const workerImage =
-      body.worker?.photo &&
-      body.worker.photo.startsWith("http")
+      body.worker?.photo && body.worker.photo.startsWith("http")
         ? body.worker.photo
         : `https://ui-avatars.com/api/?name=${encodeURIComponent(
             body.worker?.name || "Worker",
           )}&background=0F172A&color=ffffff&size=200`;
 
     // TRANSPORTER
+    const pdfBuffer = await generateInvoice(body);
     const transporter = nodemailer.createTransport({
       host: "smtp.gmail.com",
 
@@ -61,6 +169,13 @@ export async function POST(req: Request) {
       to: customerEmail,
 
       subject: `Booking Request Submitted - ${body.bookingId}`,
+
+      attachments: [
+        {
+          filename: `Workkerz-Invoice-${body.bookingId}.pdf`,
+          content: pdfBuffer,
+        },
+      ],
 
       html: `
         <div
@@ -273,8 +388,6 @@ export async function POST(req: Request) {
       `,
     });
 
-    console.log("CUSTOMER EMAIL SENT");
-
     // ADMIN EMAIL
     await transporter.sendMail({
       from: process.env.EMAIL_USER,
@@ -282,6 +395,13 @@ export async function POST(req: Request) {
       to: "mouryaashu73417@gmail.com",
 
       subject: `🟢 New Booking - ${body.bookingId}`,
+
+      attachments: [
+        {
+          filename: `Workkerz-Invoice-${body.bookingId}.pdf`,
+          content: pdfBuffer,
+        },
+      ],
 
       html: `
         <div
@@ -326,8 +446,6 @@ export async function POST(req: Request) {
         </div>
       `,
     });
-
-    console.log("ADMIN EMAIL SENT");
 
     return Response.json({
       success: true,

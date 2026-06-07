@@ -4,106 +4,20 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import HomeBanner from "../components/HomeBanner";
 import {
-  Search,
-  MapPin,
-  ChevronRight,
   Star,
-  Shield,
-  Clock,
   CheckCircle,
+  Shield,
   ArrowRight,
   Users,
-  Briefcase,
-  TrendingUp,
-  Hammer,
-  Droplets,
-  Zap,
-  Car,
-  Quote,
   Store,
 } from "lucide-react";
+import { FeaturedWorkerSmallCard } from "../components/FeaturedWorkerSmallCard";
 
-
+import { serviceCategories } from "@/app/data/workers";
 import { useAdmin } from "../components/context/AdminContext";
-import { WorkerCard } from "../components/WorkerCard";
-
-const stats = [
-  { value: "12,000+", label: "Verified Workers", icon: Users },
-  { value: "98%", label: "Satisfaction Rate", icon: TrendingUp },
-  { value: "50,000+", label: "Jobs Completed", icon: Briefcase },
-  { value: "24/7", label: "Support Available", icon: Clock },
-];
-
-const howItWorks = [
-  {
-    step: "01",
-    title: "Describe Your Job",
-    description:
-      "Tell us what type of work you need done. Choose a service category and provide details about your project.",
-    icon: Search,
-    color: "#FF5C39",
-  },
-  {
-    step: "02",
-    title: "Match with Experts",
-    description:
-      "Browse through our verified professionals. Filter by ratings, availability, location, and hourly rate.",
-    icon: Users,
-    color: "#3B82F6",
-  },
-  {
-    step: "03",
-    title: "Book & Get It Done",
-    description:
-      "Schedule your preferred time, make a secure payment, and your worker shows up ready to get the job done.",
-    icon: CheckCircle,
-    color: "#10B981",
-  },
-];
-
-const testimonials = [
-  {
-    id: 1,
-    name: "Rachel Thompson",
-    role: "Homeowner, Brooklyn",
-    photo:
-      "https://images.unsplash.com/photo-1762522921456-cdfe882d36c3?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&w=100",
-    rating: 5,
-    comment:
-      "Workkerz saved the day when my pipes burst at midnight. Found a plumber in under 20 minutes who fixed everything. The platform is incredibly easy to use!",
-  },
-  {
-    id: 2,
-    name: "Carlos Mendez",
-    role: "Restaurant Owner, Manhattan",
-    photo:
-      "https://images.unsplash.com/photo-1630670401138-9a5c91abad18?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&w=100",
-    rating: 5,
-    comment:
-      "We use Workkerz regularly for electrical maintenance. The workers are always professional, certified, and the pricing is transparent. Highly recommended.",
-  },
-  {
-    id: 3,
-    name: "Jennifer Liu",
-    role: "Property Manager, Queens",
-    photo:
-      "https://images.unsplash.com/photo-1752070182361-9fa562ed7f97?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&w=100",
-    rating: 5,
-    comment:
-      "Managing multiple properties means I need reliable workers fast. Workkerz has been a game-changer — quality workers, great pricing, and amazing support.",
-  },
-];
-
-const categoryIcons: Record<string, React.ElementType> = {
-  construction: Hammer,
-  plumbing: Droplets,
-  electrical: Zap,
-  driving: Car,
-};
 
 export default function Home() {
   const [searchQuery, setSearchQuery] = useState("");
-  const [searchLocation, setSearchLocation] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("");
   const router = useRouter();
   const { workers } = useAdmin();
@@ -115,127 +29,122 @@ export default function Home() {
   };
 
   const featuredWorkers = (workers || [])
-    .filter((w) => w.available)
-    .slice(0, 4);
+    .filter((worker) => worker.available)
+    .slice(0, 12);
+
+  const categoryImages: Record<string, string> = {
+    Labour: "/categories/1L.png",
+    Driver: "/categories/1d.png",
+    Mechanic: "/categories/1m.webp",
+    Washer: "/categories/1w.png",
+    "Computer Operator": "/categories/1c.webp",
+    "Office Worker": "/categories/1c.webp",
+    "Home Services": "/categories/1h.png",
+    "Salon & Beauty": "/categories/1sa.png",
+    Restaurant: "/categories/1r.webp",
+    Contractor: "/categories/1c.jpg",
+    Factory: "/categories/image copy.png",
+    Security: "/categories/1sec.jpg",
+    "Event Services": "/categories/1e.avif",
+  };
 
   return (
     <div className="min-h-screen bg-white">
       {/* Hero Section */}
       <HomeBanner />
+      <section className="py-6 bg-white">
+        <div className="max-w-7xl mx-auto px-4">
+          <div className="flex items-center justify-between mb-5">
+            <h2 className="text-lg md:text-2xl font-bold text-[#0F172A]">
+              All work Categories
+            </h2>
 
-      {/* How It Works */}
-      <section id="how-it-works" className="py-20 bg-white">
-         {/* Featured Workers */}
-      <section className="py-20 bg-[#F8FAFC]">
-        <div className="max-w-7xl mx-auto px-6">
-          <div className="flex items-end justify-between mb-10">
-            <div>
-              <span
-                className="text-[#FF5C39] text-sm uppercase tracking-widest"
-                style={{ fontWeight: 600 }}
-              >
-                Top Rated
-              </span>
-              <h2
-                className="text-[#0F172A] mt-2"
-                style={{
-                  fontSize: "2rem",
-                  fontWeight: 700,
-                  letterSpacing: "-0.02em",
-                }}
-              >
-                Featured Professionals
-              </h2>
-              <p className="text-[#64748B] mt-2">
-                Hand-picked top-rated workers available now
-              </p>
-            </div>
             <Link
               href="/browse"
-              className="hidden md:flex items-center gap-2 text-[#FF5C39] text-sm hover:gap-3 transition-all"
-              style={{ fontWeight: 600 }}
+              className="text-[#FF5C39] text-sm font-semibold"
             >
-              View All <ArrowRight className="w-4 h-4" />
+              View All
             </Link>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-            {featuredWorkers.map((worker) => (
-              <WorkerCard key={worker.id} worker={worker} />
+          <div className="grid grid-cols-4 md:grid-cols-6 lg:grid-cols-8 gap-x-4 gap-y-6">
+            {serviceCategories.map((category) => (
+              <Link
+                key={category.id}
+                href={`/browse?category=${category.id}`}
+                className="flex flex-col items-center group"
+              >
+                <div className="w-20 h-20 md:w-24 md:h-24 rounded-[28px] bg-[#EAF1FF] overflow-hidden flex items-center justify-center transition-all duration-300 group-hover:scale-105">
+                  <img
+                    src={categoryImages[category.id]}
+                    alt={category.label}
+                    className="w-full h-full object-contain p-2"
+                  />
+                </div>
+
+                <span className="mt-2 text-[11px] md:text-sm text-center font-medium text-slate-700 line-clamp-1">
+                  {category.label}
+                </span>
+              </Link>
             ))}
           </div>
         </div>
       </section>
 
-        <div className="max-w-7xl mx-auto px-6">
-          {/* Header */}
-          <div className="text-center mb-16">
-            <span className="text-[#FF5C39] text-xs uppercase tracking-widest font-semibold">
-              Simple Process
-            </span>
+      <section className="py-5">
+        <div className="max-w-7xl mx-auto px-4">
+          <div className="bg-gray-200/60 backdrop-blur-xl border border-white/80 rounded-[20px] shadow-[0_8px_32px_rgba(15,23,42,0.08)] overflow-hidden">
+            {/* Header */}
+            <div className="flex items-center justify-between px-6 py-5 border-b border-slate-100">
+              <div>
+                <span className="inline-flex items-center gap-2 bg-[#FFF5F3] text-[#FF5C39] px-3 py-1 rounded-full text-xs font-bold">
+                  ⭐ FEATURED WORKERS
+                </span>
 
-            <h2 className="text-[#0F172A] mt-3 text-3xl sm:text-[2.2rem] font-bold tracking-tight">
-              How Workkerz Works
-            </h2>
+                <h2 className="mt-3 text-2xl md:text-4xl font-black text-[#0F172A]">
+                  Top Rated Professionals
+                </h2>
 
-            <p className="text-[#64748B] mt-4 max-w-md mx-auto text-sm sm:text-base leading-relaxed">
-              Get your job done in three simple steps. No hassle, no hidden
-              fees.
-            </p>
-          </div>
+                <p className="mt-1 text-sm text-slate-500">
+                  Verified workers trusted by thousands
+                </p>
+              </div>
 
-          {/* Steps */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-10 relative">
-            {/* Connector line */}
-            <div className="hidden md:block absolute top-14 left-1/3 right-1/3 h-0.5 bg-linear-to-r from-transparent via-gray-200 to-transparent z-0" />
+              <Link
+                href="/browse"
+                className="hidden md:flex items-center gap-2 px-5 h-11 rounded-2xl bg-[#0F172A] text-white font-semibold"
+              >
+                Explore All
+                <ArrowRight className="w-4 h-4" />
+              </Link>
+            </div>
 
-            {howItWorks.map((step, i) => {
-              const Icon = step.icon;
+            {/* Workers */}
+            <div className="p-6">
+              <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4">
+                {featuredWorkers.map((worker) => (
+                  <FeaturedWorkerSmallCard key={worker.id} worker={worker} />
+                ))}
+              </div>
+            </div>
 
-              return (
-                <div key={step.step} className="relative text-center group">
-                  {/* Icon Box */}
-                  <div className="relative inline-block mb-6">
-                    <div
-                      className="w-20 h-20 rounded-2xl flex items-center justify-center mx-auto shadow-md group-hover:shadow-xl group-hover:-translate-y-1 transition-all duration-300"
-                      style={{ backgroundColor: step.color }}
-                    >
-                      <Icon className="w-9 h-9 text-white" />
-                    </div>
+            {/* Footer */}
+            <div className="bg-slate-50 border-t border-slate-100 px-6 py-4 flex items-center justify-between">
+              <p className="text-sm text-blue-500">
+                Skilled workers available across India
+              </p>
 
-                    {/* Step Number */}
-                    <span className="absolute -top-2 -right-2 w-7 h-7 rounded-full bg-[#0F172A] text-white flex items-center justify-center border-2 border-white text-[11px] font-bold shadow">
-                      {i + 1}
-                    </span>
-                  </div>
-
-                  {/* Title */}
-                  <h3 className="text-[#0F172A] mb-2 text-base sm:text-lg font-semibold">
-                    {step.title}
-                  </h3>
-
-                  {/* Description */}
-                  <p className="text-[#64748B] text-sm leading-relaxed max-w-xs mx-auto">
-                    {step.description}
-                  </p>
-                </div>
-              );
-            })}
-          </div>
-
-          {/* CTA */}
-          <div className="text-center mt-14">
-            <Link
-              href="/browse"
-              className="inline-flex items-center gap-2 bg-[#FF5C39] hover:bg-[#e54e2e] text-white px-8 py-3.5 rounded-xl text-sm font-semibold transition-all shadow-md hover:shadow-lg"
-            >
-              Find a Worker Now
-              <ArrowRight className="w-4 h-4" />
-            </Link>
+              <Link
+                href="/browse"
+                className="md:hidden inline-flex items-center whitespace-nowrap gap-1 px-3 py-2 rounded-2xl bg-[#1aa2e6]/10 border border-[#1aa2e6]/20 text-[#1aa2e6] text-xs font-bold"
+              >
+                View All <ArrowRight className="w-3.5 h-3.5 shrink-0" />
+              </Link>
+            </div>
           </div>
         </div>
       </section>
-     
+
       {/* Trust Badges */}
       <section className="py-16 bg-white">
         <div className="max-w-7xl mx-auto px-6">
@@ -297,148 +206,62 @@ export default function Home() {
       </section>
 
       {/* Testimonials */}
-      <section className="py-20 bg-[#F8FAFC]">
-        <div className="max-w-7xl mx-auto px-6">
-          <div className="text-center mb-12">
-            <span
-              className="text-[#FF5C39] text-sm uppercase tracking-widest"
-              style={{ fontWeight: 600 }}
-            >
-              Testimonials
-            </span>
-            <h2
-              className="text-[#0F172A] mt-2"
-              style={{
-                fontSize: "2rem",
-                fontWeight: 700,
-                letterSpacing: "-0.02em",
-              }}
-            >
-              What Our Customers Say
-            </h2>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            {testimonials.map((t) => (
-              <div
-                key={t.id}
-                className="bg-white rounded-2xl p-6 border border-gray-100 shadow-sm"
-              >
-                <Quote className="w-8 h-8 text-[#FF5C39]/20 mb-4" />
-                <p className="text-[#334155] text-sm leading-relaxed mb-5">
-                  {t.comment}
-                </p>
-                <div className="flex items-center gap-0.5 mb-4">
-                  {Array.from({ length: t.rating }).map((_, i) => (
-                    <Star
-                      key={i}
-                      className="w-4 h-4 text-amber-400 fill-amber-400"
-                    />
-                  ))}
-                </div>
-                <div className="flex items-center gap-3">
-                  <img
-                    src={t.photo}
-                    alt={t.name}
-                    className="w-10 h-10 rounded-full object-cover"
-                  />
-                  <div>
-                    <div
-                      className="text-[#0F172A] text-sm"
-                      style={{ fontWeight: 600 }}
-                    >
-                      {t.name}
-                    </div>
-                    <div className="text-[#94A3B8] text-xs">{t.role}</div>
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
 
       {/* CTA Banner */}
-      <section className="py-24 bg-[#0F172A]">
+      <section className="py-5 bg-[#0F172A]">
         <div className="max-w-7xl mx-auto px-6">
           {/* Header */}
-          <div className="text-center mb-14">
-            <h2 className="text-white text-3xl sm:text-4xl font-bold mb-4">
+          <div className="text-center">
+            <h2 className="text-white text-3xl sm:text-4xl font-bold mb-2">
               Ready to Get Started?
             </h2>
 
-            <p className="text-gray-400 max-w-xl mx-auto text-sm sm:text-base">
+            <p className="text-gray-400 max-w-xl mx-auto text-sm sm:text-base mb-8">
               Whether you're looking for work, hiring skilled workers, or
               selling materials — Workkerz helps you grow faster.
             </p>
-          </div>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mt-2">
+              {[
+                {
+                  title: "Book a Worker",
+                  href: "/browse",
+                  icon: ArrowRight,
+                  iconColor: "text-[#FF5C39]",
+                },
+                {
+                  title: "Become a Worker",
+                  href: "https://forms.gle/ncSadKLHkuM3iqRRA",
+                  icon: Users,
+                  iconColor: "text-emerald-400",
+                },
+                {
+                  title: "Become a Seller",
+                  href: "https://forms.gle/3uBc51yk2mbe8gCdA",
+                  icon: Store,
+                  iconColor: "text-sky-400",
+                },
+              ].map((item) => {
+                const Icon = item.icon;
 
-          {/* Cards */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            {/* Customer */}
-            <div className="bg-white/5 backdrop-blur border border-white/10 rounded-2xl p-6 text-center hover:shadow-xl hover:-translate-y-1 transition-all">
-              <div className="w-14 h-14 mx-auto mb-4 rounded-xl bg-[#FF5C39]/10 flex items-center justify-center">
-                <ArrowRight className="w-6 h-6 text-[#FF5C39]" />
-              </div>
+                return (
+                  <Link
+                    key={item.title}
+                    href={item.href}
+                    target={item.href.startsWith("http") ? "_blank" : "_self"}
+                    className="group flex items-center gap-3 p-3 rounded-2xl bg-white/5 backdrop-blur border border-white/10 hover:border-white/20 transition-all"
+                  >
+                    <div className="w-10 h-10 rounded-xl bg-white/10 flex items-center justify-center shrink-0">
+                      <Icon className={`w-5 h-5 ${item.iconColor}`} />
+                    </div>
 
-              <h3 className="text-white text-lg font-semibold mb-2">
-                Book a Worker
-              </h3>
+                    <span className="flex-1 text-white text-sm font-semibold">
+                      {item.title}
+                    </span>
 
-              <p className="text-gray-400 text-sm mb-5">
-                Find skilled workers instantly for your daily or monthly needs.
-              </p>
-
-              <Link
-                href="/browse"
-                className="inline-flex items-center justify-center gap-2 border border-[#FF5C39] hover:bg-[#b57163]/50 text-white px-6 py-3 rounded-xl text-sm font-semibold w-full"
-              >
-                Get Started
-              </Link>
-            </div>
-
-            {/* Worker */}
-            <div className="bg-white/5 backdrop-blur border border-white/10 rounded-2xl p-6 text-center hover:shadow-xl hover:-translate-y-1 transition-all">
-              <div className="w-14 h-14 mx-auto mb-4 rounded-xl bg-emerald-500/10 flex items-center justify-center">
-                <Users className="w-6 h-6 text-emerald-400" />
-              </div>
-
-              <h3 className="text-white text-lg font-semibold mb-2">
-                Become a Worker
-              </h3>
-
-              <p className="text-gray-400 text-sm mb-5">
-                Get daily job opportunities and grow your income with Workkerz.
-              </p>
-
-              <Link
-                href="https://forms.gle/ncSadKLHkuM3iqRRA"
-                className="inline-flex items-center justify-center gap-2 border border-emerald-400 text-emerald-400 hover:bg-emerald-400/10 px-6 py-3 rounded-xl text-sm font-semibold w-full"
-              >
-                Join as Worker
-              </Link>
-            </div>
-
-            {/* Seller */}
-            <div className="bg-white/5 backdrop-blur border border-white/10 rounded-2xl p-6 text-center hover:shadow-xl hover:-translate-y-1 transition-all">
-              <div className="w-14 h-14 mx-auto mb-4 rounded-xl bg-sky-500/10 flex items-center justify-center">
-                <Store className="w-6 h-6 text-sky-400" />
-              </div>
-
-              <h3 className="text-white text-lg font-semibold mb-2">
-                Become a Seller
-              </h3>
-
-              <p className="text-gray-400 text-sm mb-5">
-                Sell construction materials & tools directly to customers.
-              </p>
-
-              <Link
-                href="https://forms.gle/3uBc51yk2mbe8gCdA"
-                className="inline-flex items-center justify-center gap-2 border border-sky-400 text-sky-400 hover:bg-sky-400/10 px-6 py-3 rounded-xl text-sm font-semibold w-full"
-              >
-                Start Selling
-              </Link>
+                    <ArrowRight className="w-4 h-4 text-gray-400 group-hover:text-white" />
+                  </Link>
+                );
+              })}
             </div>
           </div>
         </div>
