@@ -186,11 +186,9 @@ export function WorkerCard({ worker }: WorkerCardProps) {
           {/* Price */}
           <div>
             <div className="flex items-end gap-1">
-              <span className="text-[20px] leading-none font-extrabold text-[#0F172A]">
-                ₹{worker.hourlyRate}
+              <span className="font-bold text-[#FF5C39] text-sm">
+                From ₹{worker.startingPrice}
               </span>
-
-              <span className="text-sm text-[#94A3B8] mb-1">/hr</span>
             </div>
 
             <div className="mt-2 flex items-center gap-1">
