@@ -19,7 +19,7 @@ export function FeaturedWorkerSmallCard({ worker }: { worker: Worker }) {
               <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
             </div>
           )}
-           <span className="absolute bottom-1 right-1 bg-black/80 text-white px-2 py-1 rounded-full text-[10px] font-light">
+          <span className="absolute bottom-1 right-1 bg-black/80 text-white px-2 py-1 rounded-full text-[10px] font-light">
             ⭐ {worker.rating}
           </span>
         </div>
@@ -29,7 +29,6 @@ export function FeaturedWorkerSmallCard({ worker }: { worker: Worker }) {
           <h3 className="font-bold text-sm text-slate-800 line-clamp-1">
             {worker.name}
           </h3>
-         
 
           <p className="text-xs text-slate-500 line-clamp-1">
             {worker.subcategory}
@@ -41,7 +40,7 @@ export function FeaturedWorkerSmallCard({ worker }: { worker: Worker }) {
             </span>
 
             <span className="font-bold text-[#FF5C39] text-sm">
-              ₹{worker.hourlyRate}/hr
+              From ₹{worker.startingPrice}
             </span>
           </div>
         </div>
