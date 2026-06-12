@@ -51,15 +51,13 @@ export default function WorkerProfilePage() {
 
   const [saved, setSaved] = useState(false);
 
-  const [activeTab, setActiveTab] = useState<
-    "about" | "reviews" | "portfolio"
-  >("about");
+  const [activeTab, setActiveTab] = useState<"about" | "reviews" | "portfolio">(
+    "about",
+  );
 
-  const [worker, setWorker] =
-    useState<Worker | null>(null);
+  const [worker, setWorker] = useState<Worker | null>(null);
 
-  const [loading, setLoading] =
-    useState(true);
+  const [loading, setLoading] = useState(true);
 
   const { reviews } = useAdmin();
 
@@ -69,9 +67,7 @@ export default function WorkerProfilePage() {
 
       setLoading(true);
 
-      const data = await getWorkerById(
-        String(id)
-      );
+      const data = await getWorkerById(String(id));
 
       setWorker(data);
 
@@ -81,21 +77,25 @@ export default function WorkerProfilePage() {
     loadWorker();
   }, [id]);
 
- if (loading) {
-  return (
-    <div className="min-h-screen flex items-center justify-center">
-      Loading...
-    </div>
-  );
-}
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        Loading...
+      </div>
+    );
+  }
 
-console.log("CURRENT WORKER =>", worker);
+  console.log("CURRENT WORKER =>", worker);
 
   if (!worker) {
     return <div>Worker not found</div>;
   }
 
-  const cat = categoryColors[worker.category];
+  const cat = categoryColors[worker.category] || {
+    color: "#FF5C39",
+    bg: "#FFF7ED",
+    label: worker.category,
+  };
   const workerReviews = reviews.filter((r) => r.workerId === worker.id);
 
   // Portfolio items (placeholder)
@@ -144,7 +144,7 @@ console.log("CURRENT WORKER =>", worker);
                     <img
                       src={worker.photo}
                       alt={worker.name}
-                      className="w-24 h-2 rounded-2xl border-4 border-white object-cover shadow-lg"
+                      className="w-24 h-24 rounded-2xl border-4 border-white object-cover shadow-lg"
                     />
                     {worker.available && (
                       <span className="absolute bottom-1 right-1 w-4 h-4 bg-emerald-400 rounded-full border-2 border-white"></span>
@@ -509,14 +509,25 @@ console.log("CURRENT WORKER =>", worker);
             <div className="sticky top-24 space-y-4">
               {/* Booking Card */}
               <div className="bg-white rounded-2xl border border-gray-100 p-6 shadow-sm">
-                <div className="flex items-baseline gap-1 mb-1">
-                  <span
-                    className="text-[#0F172A]"
-                    style={{ fontSize: "1.8rem", fontWeight: 800 }}
+                <div className="mb-3">
+                  <div
+                    className="text-[#FF5C39]"
+                    style={{
+                      fontSize: "2rem",
+                      fontWeight: 900,
+                    }}
                   >
-                    ${worker.hourlyRate}
-                  </span>
-                  <span className="text-[#94A3B8]">/hour</span>
+                    ₹{worker.startingPrice}
+                  </div>
+
+                  <div className="text-sm text-[#94A3B8]">
+                    {worker.pricingType === "daily" && "Per Day"}
+                    {worker.pricingType === "monthly" && "Per Month"}
+                    {worker.pricingType === "per_job" && "Per Job"}
+                    {worker.pricingType === "per_service" && "Per Service"}
+                    {worker.pricingType === "visit_charge" && "Visit Charge"}
+                    {worker.pricingType === "custom" && "Custom Quote"}
+                  </div>
                 </div>
                 <div className="flex items-center gap-1 mb-5">
                   <Star className="w-3.5 h-3.5 text-amber-400 fill-amber-400" />

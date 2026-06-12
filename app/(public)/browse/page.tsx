@@ -15,7 +15,7 @@ import {
   Star,
   ChevronLeft,
   ChevronRight,
-  Shield
+  Shield,
 } from "lucide-react";
 import { serviceCategories, type ServiceCategory } from "@/app/data/workers";
 import { useAdmin } from "@/app/components/context/AdminContext";
@@ -59,8 +59,8 @@ const categoryIcons: Record<string, React.ElementType> = {
 
 const sortOptions = [
   { value: "rating", label: "Highest Rated" },
-  { value: "price_asc", label: "Price: Low to High" },
-  { value: "price_desc", label: "Price: High to Low" },
+  { value: "price_asc", label: "Starting Price: Low to High" },
+  { value: "price_desc", label: "Starting Price: High to Low" },
   { value: "reviews", label: "Most Reviewed" },
 ];
 
@@ -73,7 +73,7 @@ function BrowseContent() {
   );
   const [sortBy, setSortBy] = useState("rating");
   const [availableOnly, setAvailableOnly] = useState(false);
-  const [maxRate, setMaxRate] = useState(500);
+  const [maxPrice, setMaxPrice] = useState(5000);
   const [showFilters, setShowFilters] = useState(false);
   const [sortOpen, setSortOpen] = useState(false);
 
@@ -113,7 +113,7 @@ function BrowseContent() {
     .filter((w) => {
       if (activeCategory && w.category !== activeCategory) return false;
       if (availableOnly && !w.available) return false;
-      if (w.hourlyRate > maxRate) return false;
+      if (w.startingPrice > maxPrice) return false;
       if (
         query &&
         !w.name.toLowerCase().includes(query.toLowerCase()) &&
@@ -125,8 +125,9 @@ function BrowseContent() {
     })
     .sort((a, b) => {
       if (sortBy === "rating") return b.rating - a.rating;
-      if (sortBy === "price_asc") return a.hourlyRate - b.hourlyRate;
-      if (sortBy === "price_desc") return b.hourlyRate - a.hourlyRate;
+      if (sortBy === "price_asc") return a.startingPrice - b.startingPrice;
+
+      if (sortBy === "price_desc") return b.startingPrice - a.startingPrice;
       if (sortBy === "reviews") return b.reviewCount - a.reviewCount;
       return 0;
     });
@@ -362,7 +363,7 @@ function BrowseContent() {
                         className="text-sm text-[#0F172A]"
                         style={{ fontWeight: 700 }}
                       >
-                        Hourly Budget
+                        Starting Price
                       </h4>
 
                       <p className="mt-1 text-xs text-[#64748B]">
@@ -371,26 +372,27 @@ function BrowseContent() {
                     </div>
 
                     <div className="rounded-xl bg-[#FFF1EC] px-3 py-2 text-[#FF5C39]">
-                      <span className="text-lg" style={{ fontWeight: 800 }}>
-                        ₹{maxRate}
-                      </span>
-                      <span className="text-xs">/hr</span>
+                      <div className="text-lg font-extrabold">₹{maxPrice}</div>
+
+                      <div className="text-[10px] uppercase tracking-wide">
+                        Max Price
+                      </div>
                     </div>
                   </div>
 
                   <div className="rounded-2xl border border-gray-100 bg-[#FAFAFA] p-5">
                     <input
                       type="range"
-                      min={30}
-                      max={500}
-                      value={maxRate}
-                      onChange={(e) => setMaxRate(Number(e.target.value))}
-                      className="h-2 w-full cursor-pointer appearance-none rounded-full bg-gray-200 accent-[#FF5C39]"
+                      min={100}
+                      max={10000}
+                      step={100}
+                      value={maxPrice}
+                      onChange={(e) => setMaxPrice(Number(e.target.value))}
                     />
 
                     <div className="mt-3 flex justify-between text-xs text-[#94A3B8]">
-                      <span>₹30</span>
-                      <span>₹500</span>
+                      <span>₹100</span>
+                      <span>₹10,000+</span>
                     </div>
                   </div>
                 </div>
@@ -474,7 +476,7 @@ function BrowseContent() {
                   <button
                     onClick={() => {
                       setAvailableOnly(false);
-                      setMaxRate(150);
+                      setMaxPrice(5000);
                       setActiveCategory("");
                       setQuery("");
                     }}
@@ -573,7 +575,7 @@ function BrowseContent() {
                     setActiveCategory("");
                     setQuery("");
                     setAvailableOnly(false);
-                    setMaxRate(150);
+                    setMaxPrice(150);
                   }}
                   className="mt-4 text-sm text-[#FF5C39] underline"
                 >

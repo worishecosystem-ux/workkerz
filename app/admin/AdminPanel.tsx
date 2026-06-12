@@ -255,11 +255,21 @@ const emptyWorker = (): Omit<Worker, "id"> => ({
 
   services: [],
 
+  pricingType: "custom",
+
+  startingPrice: 0,
+
+  halfDayPrice: 0,
+
+  fullDayPrice: 0,
+
+  monthlyPrice: 0,
+
+  visitCharge: 0,
+
   rating: 4.8,
 
   reviewCount: 0,
-
-  hourlyRate: 55,
 
   location: "",
 
@@ -627,6 +637,9 @@ function WorkerForm({
     (c) => c.name === form.category,
   );
 
+  console.log("form.category =", form.category);
+  console.log("selectedCategory =", selectedCategory);
+
   const selectedServices = SERVICES_BY_SUBCATEGORY[form.subcategory] || [];
 
   useEffect(() => {
@@ -634,6 +647,58 @@ function WorkerForm({
       u("specialty", form.subcategory);
     }
   }, [form.subcategory]);
+
+  useEffect(() => {
+    switch (form.category) {
+      case "Labour":
+        u("pricingType", "daily");
+        break;
+
+      case "Driver":
+        u("pricingType", "daily");
+        break;
+
+      case "Mechanic":
+        u("pricingType", "visit_charge");
+        break;
+
+      case "Washer":
+        u("pricingType", "per_service");
+        break;
+
+      case "Restaurant":
+        u("pricingType", "daily");
+        break;
+
+      case "Security":
+        u("pricingType", "monthly");
+        break;
+
+      case "Home Services":
+        u("pricingType", "per_job");
+        break;
+
+      case "Salon & Beauty":
+        u("pricingType", "per_service");
+        break;
+
+      case "Office Worker":
+        u("pricingType", "monthly");
+        break;
+
+      case "Factory":
+        u("pricingType", "daily");
+        break;
+
+      case "Event Services":
+        u("pricingType", "per_job");
+        break;
+
+      default:
+        u("pricingType", "custom");
+        break;
+    }
+  }, [form.category]);
 
   const validate = () => {
     if (!form.name.trim()) return "Name is required";
@@ -650,7 +715,7 @@ function WorkerForm({
 
     if (!form.location.trim()) return "Location is required";
 
-    if (form.hourlyRate <= 0) return "Hourly rate must be greater than 0";
+    if (form.startingPrice <= 0) return "Starting price is required";
 
     if (!form.services?.length) return "Select at least one service";
 
@@ -669,23 +734,23 @@ function WorkerForm({
         img.src = event.target?.result as string;
 
         img.onload = () => {
-          const MAX_WIDTH = 500;
-          const MAX_HEIGHT = 500;
+          const canvas = document.createElement("canvas");
+
+          const MAX_WIDTH = 600;
+          const MAX_HEIGHT = 600;
 
           let width = img.width;
           let height = img.height;
 
           if (width > MAX_WIDTH) {
-            height *= MAX_WIDTH / width;
+            height = height * (MAX_WIDTH / width);
             width = MAX_WIDTH;
           }
 
           if (height > MAX_HEIGHT) {
-            width *= MAX_HEIGHT / height;
+            width = width * (MAX_HEIGHT / height);
             height = MAX_HEIGHT;
           }
-
-          const canvas = document.createElement("canvas");
 
           canvas.width = width;
           canvas.height = height;
@@ -693,22 +758,46 @@ function WorkerForm({
           const ctx = canvas.getContext("2d");
 
           if (!ctx) {
-            reject("Canvas error");
+            reject("Canvas Error");
             return;
           }
 
           ctx.drawImage(img, 0, 0, width, height);
 
-          const compressedBase64 = canvas.toDataURL("image/webp", 0.4);
-
-          resolve(compressedBase64);
+          resolve(canvas.toDataURL("image/webp", 0.7));
         };
-
-        img.onerror = reject;
       };
-
-      reader.onerror = reject;
     });
+  };
+
+  const uploadWorkerPhoto = async (file: File) => {
+    const compressed = await compressImage(file);
+
+    const blob = await fetch(compressed).then((r) => r.blob());
+
+    const workerName =
+      form.name?.trim().replace(/[^a-zA-Z0-9]/g, "-") || "worker";
+
+    const category =
+      form.category?.trim().replace(/[^a-zA-Z0-9]/g, "-") || "uncategorized";
+
+    const subcategory =
+      form.subcategory?.trim().replace(/[^a-zA-Z0-9]/g, "-") || "general";
+
+    const filePath = `${category}/${subcategory}/${workerName}/profile.webp`;
+
+    const { error } = await supabase.storage
+      .from("workers")
+      .upload(filePath, blob, {
+        contentType: "image/webp",
+        upsert: true,
+      });
+
+    if (error) throw error;
+
+    const { data } = supabase.storage.from("workers").getPublicUrl(filePath);
+
+    return data.publicUrl;
   };
 
   const handleSave = async () => {
@@ -735,7 +824,14 @@ function WorkerForm({
         services: form.services,
         rating: form.rating,
         review_count: form.reviewCount,
-        hourly_rate: form.hourlyRate,
+        pricing_type: form.pricingType,
+        starting_price: form.startingPrice,
+
+        half_day_price: form.halfDayPrice,
+        full_day_price: form.fullDayPrice,
+
+        monthly_price: form.monthlyPrice,
+        visit_charge: form.visitCharge,
         location: form.location,
         available: form.available,
         years_experience: form.yearsExperience,
@@ -822,11 +918,33 @@ function WorkerForm({
 
             <WorkerExcelImport
               onWorkerSelect={(worker: any) => {
+                const photoUrl = worker["Profile Photo"] || "";
+
+                let photo = photoUrl;
+
+                // Google Drive open?id= format
+                if (photoUrl.includes("open?id=")) {
+                  const fileId = photoUrl.split("id=")[1]?.split("&")[0] || "";
+
+                  photo = `https://drive.google.com/thumbnail?id=${fileId}&sz=w1000`;
+                }
+
+                // Google Drive file/d/ format
+                else if (photoUrl.includes("/file/d/")) {
+                  const fileId =
+                    photoUrl.split("/file/d/")[1]?.split("/")[0] || "";
+
+                  photo = `https://drive.google.com/thumbnail?id=${fileId}&sz=w1000`;
+                }
+
+                console.log("Original URL:", photoUrl);
+                console.log("Final URL:", photo);
+
                 setForm((prev) => ({
                   ...prev,
                   name: worker["Full Name"] || "",
                   phone: worker["Mobile Number"]?.toString() || "",
-                  photo: worker["Profile Photo"] || "",
+                  photo: photo,
                   location:
                     worker["Full Address (Optional)"] ||
                     worker["Current City / Area"] ||
@@ -846,6 +964,7 @@ function WorkerForm({
                 {form.photo ? (
                   <img
                     src={form.photo}
+                    alt="Worker"
                     className="w-full h-full object-cover"
                   />
                 ) : (
@@ -855,13 +974,56 @@ function WorkerForm({
                 )}
               </div>
 
-              <div className="flex-1">
+              <div className="flex-1 space-y-3">
+                {/* URL Input */}
                 <input
                   value={form.photo}
                   onChange={(e) => u("photo", e.target.value)}
                   placeholder="Paste image URL"
                   className={inp}
                 />
+
+                {/* Upload Button */}
+                <label className="inline-flex items-center gap-2 px-4 py-3 rounded-2xl bg-[#FF5C39] text-white cursor-pointer hover:bg-[#e54e2e] transition-all">
+                  <Upload className="w-4 h-4" />
+                  Upload Worker Photo
+                  <input
+                    type="file"
+                    accept="image/*"
+                    className="hidden"
+                    onChange={async (e) => {
+                      const file = e.target.files?.[0];
+
+                      if (!file) return;
+
+                      if (!form.category) {
+                        alert("Select category first");
+                        return;
+                      }
+
+                      if (!form.subcategory) {
+                        alert("Select sub category first");
+                        return;
+                      }
+
+                      if (!form.name) {
+                        alert("Enter worker name first");
+                        return;
+                      }
+
+                      try {
+                        const photoUrl = await uploadWorkerPhoto(file);
+
+                        console.log("Uploaded URL:", photoUrl);
+
+                        u("photo", photoUrl);
+                      } catch (err) {
+                        console.error(err);
+                        alert("Image upload failed");
+                      }
+                    }}
+                  />
+                </label>
               </div>
             </div>
           </div>
@@ -927,8 +1089,15 @@ function WorkerForm({
                   value={form.subcategory}
                   onChange={(e) => u("subcategory", e.target.value)}
                   className={inp}
+                  disabled={!form.category}
                 >
-                  <option>Select Sub Category</option>
+                  <option value="">Select Sub Category</option>
+
+                  {selectedCategory?.subcategories?.map((sub) => (
+                    <option key={sub} value={sub}>
+                      {sub}
+                    </option>
+                  ))}
                 </select>
               </Field>
 
@@ -980,15 +1149,67 @@ function WorkerForm({
           {/* Earnings */}
           <div className="bg-white rounded-3xl border border-gray-100 shadow-sm p-6">
             <h3 className="font-bold text-[#0F172A] mb-5">
-              Earnings & Experience
+              Pricing & Experience
             </h3>
 
-            <div className="grid grid-cols-3 gap-5">
-              <Field label="Hourly Rate">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+              <Field label="Pricing Type">
+                <select
+                  value={form.pricingType}
+                  onChange={(e) => u("pricingType", e.target.value)}
+                  className={inp}
+                >
+                  <option value="">Select Pricing</option>
+                  <option value="per_job">Per Work</option>
+                  <option value="daily">Daily</option>
+                  <option value="monthly">Monthly</option>
+                  <option value="per_service">Per Service</option>
+                  <option value="visit_charge">Visit Charge</option>
+                  <option value="custom">Custom Quote</option>
+                </select>
+              </Field>
+
+              <Field label="Starting Price">
                 <input
                   type="number"
-                  value={form.hourlyRate}
-                  onChange={(e) => u("hourlyRate", +e.target.value)}
+                  value={form.startingPrice}
+                  onChange={(e) => u("startingPrice", Number(e.target.value))}
+                  className={inp}
+                />
+              </Field>
+
+              <Field label="Half Day Price">
+                <input
+                  type="number"
+                  value={form.halfDayPrice}
+                  onChange={(e) => u("halfDayPrice", Number(e.target.value))}
+                  className={inp}
+                />
+              </Field>
+
+              <Field label="Full Day Price">
+                <input
+                  type="number"
+                  value={form.fullDayPrice}
+                  onChange={(e) => u("fullDayPrice", Number(e.target.value))}
+                  className={inp}
+                />
+              </Field>
+
+              <Field label="Monthly Price">
+                <input
+                  type="number"
+                  value={form.monthlyPrice}
+                  onChange={(e) => u("monthlyPrice", Number(e.target.value))}
+                  className={inp}
+                />
+              </Field>
+
+              <Field label="Visit Charge">
+                <input
+                  type="number"
+                  value={form.visitCharge}
+                  onChange={(e) => u("visitCharge", Number(e.target.value))}
                   className={inp}
                 />
               </Field>
@@ -997,7 +1218,7 @@ function WorkerForm({
                 <input
                   type="number"
                   value={form.yearsExperience}
-                  onChange={(e) => u("yearsExperience", +e.target.value)}
+                  onChange={(e) => u("yearsExperience", Number(e.target.value))}
                   className={inp}
                 />
               </Field>
@@ -1006,7 +1227,7 @@ function WorkerForm({
                 <input
                   type="number"
                   value={form.completedJobs}
-                  onChange={(e) => u("completedJobs", +e.target.value)}
+                  onChange={(e) => u("completedJobs", Number(e.target.value))}
                   className={inp}
                 />
               </Field>
@@ -1737,6 +1958,29 @@ function WorkersTab() {
       setSuccessMsg("");
     }, 3000);
   };
+  const handleToggleWorkerStatus = async (
+    workerId: string,
+    currentStatus: boolean,
+  ) => {
+    try {
+      await updateWorker(workerId, {
+        available: !currentStatus,
+      });
+
+      setSuccessMsg(
+        !currentStatus
+          ? "Worker Activated Successfully"
+          : "Worker Deactivated Successfully",
+      );
+
+      setTimeout(() => {
+        setSuccessMsg("");
+      }, 3000);
+    } catch (error) {
+      console.error(error);
+      setSuccessMsg("Failed to update worker status");
+    }
+  };
 
   return (
     <div className="p-8 h-full overflow-y-auto bg-[#F8FAFC]">
@@ -1918,13 +2162,20 @@ function WorkersTab() {
                       {/* PRICE */}
                       <div className="text-right shrink-0">
                         <div
-                          className="text-[#0F172A]"
+                          className="text-[#0F172A] text-xl"
                           style={{ fontWeight: 900 }}
                         >
-                          ₹{w.hourlyRate}
+                          ₹{w.startingPrice}
                         </div>
 
-                        <div className="text-[10px] text-[#94A3B8]">/hr</div>
+                        <div className="text-xs text-[#64748B]">
+                          {w.pricingType === "daily" && "Per Day"}
+                          {w.pricingType === "monthly" && "Per Month"}
+                          {w.pricingType === "per_job" && "Per Job"}
+                          {w.pricingType === "per_service" && "Per Service"}
+                          {w.pricingType === "visit_charge" && "Visit Charge"}
+                          {w.pricingType === "custom" && "Custom Quote"}
+                        </div>
                       </div>
                     </button>
                   );
@@ -1969,6 +2220,7 @@ function WorkersTab() {
                     <img
                       src={w.photo}
                       alt={w.name}
+                      onError={() => console.log("IMAGE FAILED", w.photo)}
                       className="w-24 h-24 rounded-3xl object-cover border border-gray-100"
                     />
 
@@ -2010,16 +2262,18 @@ function WorkersTab() {
 
                         <div className="text-right">
                           <div
-                            className="text-[#0F172A]"
+                            className="text-[#FF5C39]"
                             style={{
                               fontWeight: 900,
                               fontSize: "1.7rem",
                             }}
                           >
-                            ₹{w.hourlyRate}
+                            ₹{w.startingPrice}
                           </div>
 
-                          <div className="text-xs text-[#94A3B8]">per hour</div>
+                          <div className="text-xs text-[#94A3B8]">
+                            Starting Price
+                          </div>
                         </div>
                       </div>
 
@@ -2231,11 +2485,13 @@ function WorkersTab() {
                     className="w-14 h-14 rounded-2xl object-cover"
                   />
 
-                  <div
-                    className={`absolute -bottom-1 -right-1 w-4 h-4 rounded-full border-2 border-white ${
-                      w.available ? "bg-emerald-400" : "bg-gray-300"
-                    }`}
-                  />
+                  <div className="absolute -bottom-1 -right-1 flex items-center justify-center">
+                    <div
+                      className={`w-4 h-4 rounded-full border-2 border-white shadow-md ${
+                        w.available ? "bg-emerald-500" : "bg-red-500"
+                      }`}
+                    />
+                  </div>
                 </div>
 
                 <div className="flex-1 min-w-0">
@@ -2249,6 +2505,18 @@ function WorkersTab() {
                   </h3>
 
                   <p className="text-xs text-[#64748B] mt-0.5">{w.specialty}</p>
+
+                  <div className="mt-2">
+                    <span
+                      className={`px-2 py-1 rounded-full text-[10px] font-bold ${
+                        w.available
+                          ? "bg-emerald-100 text-emerald-700"
+                          : "bg-rose-100 text-rose-700"
+                      }`}
+                    >
+                      {w.available ? "Active" : "Inactive"}
+                    </span>
+                  </div>
 
                   {/* SINGLE BADGE */}
                   <div className="flex items-center gap-2 mt-3">
@@ -2296,10 +2564,17 @@ function WorkersTab() {
                       fontWeight: 900,
                     }}
                   >
-                    ₹{w.hourlyRate}
+                    ₹{w.startingPrice}
                   </div>
 
-                  <div className="text-xs text-[#94A3B8]">/hr</div>
+                  <div className="text-xs text-[#94A3B8]">
+                    {w.pricingType === "daily" && "/day"}
+                    {w.pricingType === "monthly" && "/month"}
+                    {w.pricingType === "per_job" && "/job"}
+                    {w.pricingType === "per_service" && "/service"}
+                    {w.pricingType === "visit_charge" && "visit"}
+                    {w.pricingType === "custom" && "quote"}
+                  </div>
                 </div>
               </div>
 
@@ -2328,6 +2603,20 @@ function WorkersTab() {
                 >
                   <Pencil className="w-4 h-4" />
                   Edit
+                </button>
+
+                <button
+                  onClick={() => handleToggleWorkerStatus(w.id, w.available)}
+                  className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm border ${
+                    w.available
+                      ? "border-amber-200 text-amber-600 hover:bg-amber-50"
+                      : "border-emerald-200 text-emerald-600 hover:bg-emerald-50"
+                  }`}
+                  style={{
+                    fontWeight: 700,
+                  }}
+                >
+                  {w.available ? "Deactivate" : "Activate"}
                 </button>
 
                 {deleteConfirm === w.id ? (

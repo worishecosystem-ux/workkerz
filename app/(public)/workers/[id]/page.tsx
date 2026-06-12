@@ -723,14 +723,25 @@ export default function WorkerProfile() {
             <div className="sticky top-24 space-y-4">
               {/* Booking Card */}
               <div className="bg-white rounded-2xl border border-gray-100 p-6 shadow-sm">
-                <div className="flex items-baseline gap-1 mb-1">
-                  <span
-                    className="text-[#0F172A]"
-                    style={{ fontSize: "1.8rem", fontWeight: 800 }}
+                <div className="mb-4">
+                  <div
+                    className="text-[#FF5C39]"
+                    style={{
+                      fontSize: "2rem",
+                      fontWeight: 900,
+                    }}
                   >
-                    ₹{worker.hourlyRate}
-                  </span>
-                  <span className="text-[#94A3B8]">/hour</span>
+                    ₹{worker.startingPrice}
+                  </div>
+
+                  <div className="text-sm text-[#64748B]">
+                    {worker.pricingType === "daily" && "Per Day"}
+                    {worker.pricingType === "monthly" && "Per Month"}
+                    {worker.pricingType === "per_job" && "Per Job"}
+                    {worker.pricingType === "per_service" && "Per Service"}
+                    {worker.pricingType === "visit_charge" && "Visit Charge"}
+                    {worker.pricingType === "custom" && "Custom Quote"}
+                  </div>
                 </div>
                 <div className="flex items-center gap-1 mb-5">
                   <Star className="w-3.5 h-3.5 text-amber-400 fill-amber-400" />
@@ -784,6 +795,42 @@ export default function WorkerProfile() {
                     >
                       {worker.yearsExperience} years
                     </span>
+                  </div>
+                </div>
+
+                <div className="mb-5 p-4 bg-[#FFF7F4] rounded-xl border border-orange-100">
+                  <h4 className="font-semibold text-[#0F172A] mb-3">
+                    Pricing Details
+                  </h4>
+
+                  <div className="space-y-2 text-sm">
+                    {worker.halfDayPrice > 0 && (
+                      <div className="flex justify-between">
+                        <span>Half Day</span>
+                        <span>₹{worker.halfDayPrice}</span>
+                      </div>
+                    )}
+
+                    {worker.fullDayPrice > 0 && (
+                      <div className="flex justify-between">
+                        <span>Full Day</span>
+                        <span>₹{worker.fullDayPrice}</span>
+                      </div>
+                    )}
+
+                    {worker.monthlyPrice > 0 && (
+                      <div className="flex justify-between">
+                        <span>Monthly</span>
+                        <span>₹{worker.monthlyPrice}</span>
+                      </div>
+                    )}
+
+                    {worker.visitCharge > 0 && (
+                      <div className="flex justify-between">
+                        <span>Visit Charge</span>
+                        <span>₹{worker.visitCharge}</span>
+                      </div>
+                    )}
                   </div>
                 </div>
 

@@ -115,6 +115,18 @@ export default function Confirmation() {
           grandTotal,
         } = state;
 
+        console.log("=== BOOKING DEBUG ===");
+
+        console.log("Worker Photo:", worker?.photo);
+
+        console.log("Total Cost:", totalCost);
+
+        console.log("Service Fee:", serviceFee);
+
+        console.log("Materials Cost:", materialsCost);
+
+        console.log("Grand Total:", grandTotal);
+
         const bookingData = {
           booking_id: bookingId.current,
 
@@ -170,7 +182,17 @@ export default function Confirmation() {
         };
 
         // SAVE BOOKING
-        const { error } = await supabase.from("bookings").insert([bookingData]);
+       const { data, error } = await supabase
+  .from("bookings")
+  .insert([bookingData])
+  .select()
+  .single();
+
+console.log("SAVED DATA:", data);
+
+console.log("DB GRAND TOTAL:", data?.grand_total);
+
+console.log("DB WORKER PHOTO:", data?.worker_photo);
 
         if (error) {
           console.log(error);

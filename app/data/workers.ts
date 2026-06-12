@@ -13,25 +13,36 @@ export interface Worker {
   phone: string;
 
   category: string;
-
   subcategory: string;
-
   specialty: string;
 
   services: string[];
 
+  pricingType:
+    | "per_job"
+    | "daily"
+    | "monthly"
+    | "per_service"
+    | "visit_charge"
+    | "custom";
+
+  startingPrice: number;
+
+  halfDayPrice: number;
+  fullDayPrice: number;
+
+  monthlyPrice: number;
+
+  visitCharge: number;
+
   rating: number;
-
   reviewCount: number;
-
-  hourlyRate: number;
 
   location: string;
 
   available: boolean;
 
   yearsExperience: number;
-
   completedJobs: number;
 
   bio: string;
@@ -93,7 +104,6 @@ export const serviceCategories = [
     bgColor: "#ECFEFF",
   },
 
-
   {
     id: "Office Worker",
     label: "Office Worker",
@@ -134,8 +144,6 @@ export const serviceCategories = [
     bgColor: "#FEF3C7",
   },
 
- 
-
   {
     id: "Factory",
     label: "Factory",
@@ -144,8 +152,6 @@ export const serviceCategories = [
     bgColor: "#F1F5F9",
   },
 
-
-
   {
     id: "Security",
     label: "Security",
@@ -153,8 +159,6 @@ export const serviceCategories = [
     color: "#334155",
     bgColor: "#E2E8F0",
   },
-
- 
 
   {
     id: "Event Services",
@@ -173,22 +177,29 @@ const mapWorker = (w: any): Worker => ({
   id: String(w.id),
 
   name: w.name ?? "",
-
   phone: w.phone ?? "",
 
   category: w.category ?? "",
-
   subcategory: w.subcategory ?? "",
-
   specialty: w.specialty ?? "",
 
   services: Array.isArray(w.services) ? w.services : [],
 
+  pricingType: w.pricing_type ?? "custom",
+
+  startingPrice: Number(w.starting_price ?? 0),
+
+  halfDayPrice: Number(w.half_day_price ?? 0),
+
+  fullDayPrice: Number(w.full_day_price ?? 0),
+
+  monthlyPrice: Number(w.monthly_price ?? 0),
+
+  visitCharge: Number(w.visit_charge ?? 0),
+
   rating: Number(w.rating ?? 0),
 
   reviewCount: Number(w.review_count ?? 0),
-
-  hourlyRate: Number(w.hourly_rate ?? 0),
 
   location: w.location ?? "",
 
@@ -206,9 +217,7 @@ const mapWorker = (w: any): Worker => ({
 
   responseTime: w.response_time ?? "Within 1 hour",
 
-  certifications: Array.isArray(w.certifications)
-    ? w.certifications
-    : [],
+  certifications: Array.isArray(w.certifications) ? w.certifications : [],
 });
 
 /* =========================
@@ -218,36 +227,52 @@ const mapWorker = (w: any): Worker => ({
 export async function getWorkers(): Promise<Worker[]> {
   const { data, error } = await supabase
     .from("workers")
-    .select(
-      `
+    .select(`
       id,
       name,
       phone,
+
       category,
       subcategory,
       specialty,
+
       services,
+
+      pricing_type,
+      starting_price,
+      half_day_price,
+      full_day_price,
+      monthly_price,
+      visit_charge,
+
       rating,
       review_count,
-      hourly_rate,
+
       location,
       available,
+
       years_experience,
       completed_jobs,
+
       bio,
       skills,
+
       photo,
+
       response_time,
       certifications,
+
       created_at
-    `,
-    )
+    `)
     .order("created_at", {
       ascending: false,
     });
 
   if (error) {
-    console.log("SUPABASE ERROR =>", JSON.stringify(error, null, 2));
+    console.log(
+      "SUPABASE ERROR =>",
+      JSON.stringify(error, null, 2),
+    );
 
     return [];
   }
@@ -277,23 +302,32 @@ export async function getWorkerById(id: string): Promise<Worker | null> {
     }
 
     return {
-      id: data.id,
+      id: String(data.id),
 
       name: data.name || "",
       phone: data.phone || "",
 
       category: data.category || "",
-
       subcategory: data.subcategory || "",
-
       specialty: data.specialty || "",
+
       services: Array.isArray(data.services) ? data.services : [],
+
+      pricingType: data.pricing_type || "custom",
+
+      startingPrice: Number(data.starting_price || 0),
+
+      halfDayPrice: Number(data.half_day_price || 0),
+
+      fullDayPrice: Number(data.full_day_price || 0),
+
+      monthlyPrice: Number(data.monthly_price || 0),
+
+      visitCharge: Number(data.visit_charge || 0),
 
       rating: Number(data.rating || 0),
 
       reviewCount: Number(data.review_count || 0),
-
-      hourlyRate: Number(data.hourly_rate || 0),
 
       location: data.location || "",
 
