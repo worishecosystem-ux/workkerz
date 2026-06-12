@@ -9,11 +9,7 @@ import {
   useMemo,
 } from "react";
 
-import {
-  getWorkers,
-  type Worker,
-  type Review,
-} from "@/app/data/workers";
+import { getWorkers, type Worker, type Review } from "@/app/data/workers";
 
 import {
   getProducts,
@@ -23,10 +19,7 @@ import {
   type Product,
 } from "@/app/data/products";
 
-import {
-  getShops,
-  type Shop,
-} from "@/app/data/shops";
+import { getShops, type Shop } from "@/app/data/shops";
 
 import { supabase } from "@/lib/supabase";
 
@@ -37,18 +30,11 @@ interface AdminContextType {
 
   workers: Worker[];
 
-  addWorker: (
-    w: Omit<Worker, "id">,
-  ) => Promise<any>;
+  addWorker: (w: Omit<Worker, "id">) => Promise<any>;
 
-  updateWorker: (
-    id: string,
-    w: Partial<Worker>,
-  ) => Promise<void>;
+  updateWorker: (id: string, w: Partial<Worker>) => Promise<void>;
 
-  deleteWorker: (
-    id: string,
-  ) => Promise<void>;
+  deleteWorker: (id: string) => Promise<void>;
 
   /* PRODUCTS */
 
@@ -56,18 +42,11 @@ interface AdminContextType {
 
   visibleProducts: Product[];
 
-  addProduct: (
-    p: Omit<Product, "id">,
-  ) => Promise<boolean>;
+  addProduct: (p: Omit<Product, "id">) => Promise<boolean>;
 
-  updateProduct: (
-    id: string,
-    p: Partial<Product>,
-  ) => Promise<boolean>;
+  updateProduct: (id: string, p: Partial<Product>) => Promise<boolean>;
 
-  deleteProduct: (
-    id: string,
-  ) => Promise<boolean>;
+  deleteProduct: (id: string) => Promise<boolean>;
 
   /* SHOPS */
 
@@ -87,24 +66,15 @@ interface AdminContextType {
 
   /* HELPERS */
 
-  getWorkerById: (
-    id: string,
-  ) => Worker | undefined;
+  getWorkerById: (id: string) => Worker | undefined;
 
-  getProductById: (
-    id: string,
-  ) => Product | undefined;
+  getProductById: (id: string) => Product | undefined;
 
-  getProductsByCategory: (
-    cat: string,
-  ) => Product[];
+  getProductsByCategory: (cat: string) => Product[];
 
   getFeaturedProducts: () => Product[];
 
-  getRelatedProducts: (
-    product: Product,
-    count?: number,
-  ) => Product[];
+  getRelatedProducts: (product: Product, count?: number) => Product[];
 
   /* STATS */
 
@@ -131,33 +101,22 @@ interface AdminContextType {
 
 /* ===================================================== */
 
-const AdminContext =
-  createContext<AdminContextType | null>(
-    null,
-  );
+const AdminContext = createContext<AdminContextType | null>(null);
 
 /* ===================================================== */
 
-export function AdminProvider({
-  children,
-}: {
-  children: ReactNode;
-}) {
+export function AdminProvider({ children }: { children: ReactNode }) {
   /* ===================================================== */
   /* STATES */
   /* ===================================================== */
 
-  const [workers, setWorkers] =
-    useState<Worker[]>([]);
+  const [workers, setWorkers] = useState<Worker[]>([]);
 
-  const [products, setProducts] =
-    useState<Product[]>([]);
+  const [products, setProducts] = useState<Product[]>([]);
 
-  const [shops, setShops] =
-    useState<Shop[]>([]);
+  const [shops, setShops] = useState<Shop[]>([]);
 
-  const [orders, setOrders] =
-    useState<any[]>([]);
+  const [orders, setOrders] = useState<any[]>([]);
 
   /* ===================================================== */
   /* LOAD DATA */
@@ -177,544 +136,338 @@ export function AdminProvider({
   /* LOAD WORKERS */
   /* ===================================================== */
 
-  const loadWorkers =
-    async () => {
-      const data =
-        await getWorkers();
+  const loadWorkers = async () => {
+    const data = await getWorkers();
 
-      setWorkers(
-        data || [],
-      );
-    };
+    setWorkers(data || []);
+  };
 
   /* ===================================================== */
   /* LOAD PRODUCTS */
   /* ===================================================== */
 
-  const loadProducts =
-    async () => {
-      try {
-        const data =
-          await getProducts(
-            undefined,
-            true,
-          );
+  const loadProducts = async () => {
+    try {
+      const data = await getProducts(undefined, true);
 
-        setProducts(
-          data || [],
-        );
-      } catch (
-        error
-      ) {
-        console.log(
-          error,
-        );
+      setProducts(data || []);
+    } catch (error) {
+      console.log(error);
 
-        setProducts([]);
-      }
-    };
+      setProducts([]);
+    }
+  };
 
   /* ===================================================== */
   /* LOAD SHOPS */
   /* ===================================================== */
 
-  const loadShops =
-    async () => {
-      try {
-        const data =
-          await getShops();
+  const loadShops = async () => {
+    try {
+      const data = await getShops();
 
-        setShops(
-          data || [],
-        );
-      } catch (
-        error
-      ) {
-        console.log(
-          error,
-        );
+      setShops(data || []);
+    } catch (error) {
+      console.log(error);
 
-        setShops([]);
-      }
-    };
+      setShops([]);
+    }
+  };
 
   /* ===================================================== */
   /* LOAD ORDERS */
   /* ===================================================== */
 
-  const loadOrders =
-    async () => {
-      try {
-        const {
-          data,
-          error,
-        } =
-          await supabase
-            .from(
-              "orders",
-            )
-            .select("*");
+  const loadOrders = async () => {
+    try {
+      const { data, error } = await supabase.from("orders").select("*");
 
-        if (error) {
-          console.log(
-            error,
-          );
+      if (error) {
+        console.log(error);
 
-          return;
-        }
-
-        setOrders(
-          data || [],
-        );
-      } catch (
-        error
-      ) {
-        console.log(
-          error,
-        );
-
-        setOrders([]);
+        return;
       }
-    };
+
+      setOrders(data || []);
+    } catch (error) {
+      console.log(error);
+
+      setOrders([]);
+    }
+  };
 
   /* ===================================================== */
   /* ONLINE SHOPS */
   /* ===================================================== */
 
-  const onlineShops =
-    shops.filter(
-      (shop) =>
-        shop.status ===
-        "online",
-    );
+  const onlineShops = shops.filter((shop) => shop.status === "online");
 
-  const offlineShops =
-    shops.filter(
-      (shop) =>
-        shop.status !==
-        "online",
-    );
+  const offlineShops = shops.filter((shop) => shop.status !== "online");
 
-  const onlineShopIds =
-    onlineShops.map(
-      (shop) =>
-        shop.id,
-    );
+  const onlineShopIds = onlineShops.map((shop) => shop.id);
 
   /* ===================================================== */
   /* VISIBLE PRODUCTS */
   /* ===================================================== */
 
-  const visibleProducts =
-    products.filter(
-      (product) =>
-        product.shop_id &&
-        onlineShopIds.includes(
-          product.shop_id,
-        ),
-    );
+  const visibleProducts = products.filter(
+    (product) => product.shop_id && onlineShopIds.includes(product.shop_id),
+  );
 
   /* ===================================================== */
   /* WORKER CRUD */
   /* ===================================================== */
 
-  const addWorker =
-    async (
-      worker: Omit<
-        Worker,
-        "id"
-      >,
-    ): Promise<any> => {
-      try {
-        const {
-          data,
-          error,
-        } =
-          await supabase
-            .from(
-              "workers",
-            )
-            .insert([
-              {
-                name:
-                  worker.name,
+  const addWorker = async (worker: Omit<Worker, "id">): Promise<any> => {
+    try {
+      const { data, error } = await supabase
+        .from("workers")
+        .insert([
+          {
+            name: worker.name,
 
-                category:
-                  worker.category,
+            category: worker.category,
 
-                specialty:
-                  worker.specialty,
+            specialty: worker.specialty,
 
-                rating:
-                  worker.rating,
+            rating: worker.rating,
 
-                review_count:
-                  worker.reviewCount,
+            review_count: worker.reviewCount,
 
-                hourly_rate:
-                  worker.hourlyRate,
+            pricing_type: worker.pricingType,
 
-                location:
-                  worker.location,
+            starting_price: worker.startingPrice,
 
-                available:
-                  worker.available,
+            half_day_price: worker.halfDayPrice,
 
-                years_experience:
-                  worker.yearsExperience,
+            full_day_price: worker.fullDayPrice,
 
-                completed_jobs:
-                  worker.completedJobs,
+            monthly_price: worker.monthlyPrice,
 
-                bio:
-                  worker.bio,
+            visit_charge: worker.visitCharge,
 
-                skills:
-                  worker.skills,
+            location: worker.location,
 
-                photo:
-                  worker.photo,
+            available: worker.available,
 
-                response_time:
-                  worker.responseTime,
+            years_experience: worker.yearsExperience,
 
-                certifications:
-                  worker.certifications,
-              },
-            ])
-            .select()
-            .single();
+            completed_jobs: worker.completedJobs,
 
-        if (error) {
-          console.log(
-            error,
-          );
+            bio: worker.bio,
 
-          return null;
-        }
+            skills: worker.skills,
 
-        await loadWorkers();
+            photo: worker.photo,
 
-        return data;
-      } catch (
-        error
-      ) {
-        console.log(
-          error,
-        );
+            response_time: worker.responseTime,
+
+            certifications: worker.certifications,
+          },
+        ])
+        .select()
+        .single();
+
+      if (error) {
+        console.log(error);
 
         return null;
       }
-    };
+
+      await loadWorkers();
+
+      return data;
+    } catch (error) {
+      console.log(error);
+
+      return null;
+    }
+  };
 
   /* ===================================================== */
 
-  const updateWorker =
-    async (
-      id: string,
-      data: Partial<Worker>,
-    ) => {
-      await supabase
-        .from(
-          "workers",
-        )
-        .update({
-          name:
-            data.name,
+  const updateWorker = async (id: string, data: Partial<Worker>) => {
+    await supabase
+      .from("workers")
+      .update({
+        name: data.name,
 
-          category:
-            data.category,
+        category: data.category,
 
-          specialty:
-            data.specialty,
+        specialty: data.specialty,
 
-          rating:
-            data.rating,
+        rating: data.rating,
 
-          review_count:
-            data.reviewCount,
+        review_count: data.reviewCount,
 
-          hourly_rate:
-            data.hourlyRate,
+        pricing_type: data.pricingType,
 
-          location:
-            data.location,
+        starting_price: data.startingPrice,
 
-          available:
-            data.available,
+        half_day_price: data.halfDayPrice,
 
-          years_experience:
-            data.yearsExperience,
+        full_day_price: data.fullDayPrice,
 
-          completed_jobs:
-            data.completedJobs,
+        monthly_price: data.monthlyPrice,
 
-          bio:
-            data.bio,
+        visit_charge: data.visitCharge,
+        location: data.location,
 
-          skills:
-            data.skills,
+        available: data.available,
 
-          photo:
-            data.photo,
+        years_experience: data.yearsExperience,
 
-          response_time:
-            data.responseTime,
+        completed_jobs: data.completedJobs,
 
-          certifications:
-            data.certifications,
-        })
-        .eq(
-          "id",
-          id,
-        );
+        bio: data.bio,
 
-      await loadWorkers();
-    };
+        skills: data.skills,
+
+        photo: data.photo,
+
+        response_time: data.responseTime,
+
+        certifications: data.certifications,
+      })
+      .eq("id", id);
+
+    await loadWorkers();
+  };
 
   /* ===================================================== */
 
-  const deleteWorker =
-    async (
-      id: string,
-    ) => {
-      await supabase
-        .from(
-          "workers",
-        )
-        .delete()
-        .eq(
-          "id",
-          id,
-        );
+  const deleteWorker = async (id: string) => {
+    await supabase.from("workers").delete().eq("id", id);
 
-      await loadWorkers();
-    };
+    await loadWorkers();
+  };
 
   /* ===================================================== */
   /* PRODUCT CRUD */
   /* ===================================================== */
 
-  const addProduct =
-    async (
-      product: Omit<
-        Product,
-        "id"
-      >,
-    ): Promise<boolean> => {
-      try {
-        await addProductDB(
-          product,
-        );
+  const addProduct = async (product: Omit<Product, "id">): Promise<boolean> => {
+    try {
+      await addProductDB(product);
 
-        await loadProducts();
+      await loadProducts();
 
-        return true;
-      } catch (
-        error
-      ) {
-        console.log(
-          error,
-        );
+      return true;
+    } catch (error) {
+      console.log(error);
 
-        return false;
-      }
-    };
+      return false;
+    }
+  };
 
   /* ===================================================== */
 
-  const updateProduct =
-    async (
-      id: string,
-      data: Partial<Product>,
-    ): Promise<boolean> => {
-      try {
-        await updateProductDB(
-          id,
-          data,
-        );
+  const updateProduct = async (
+    id: string,
+    data: Partial<Product>,
+  ): Promise<boolean> => {
+    try {
+      await updateProductDB(id, data);
 
-        await loadProducts();
+      await loadProducts();
 
-        return true;
-      } catch (
-        error
-      ) {
-        console.log(
-          error,
-        );
+      return true;
+    } catch (error) {
+      console.log(error);
 
-        return false;
-      }
-    };
+      return false;
+    }
+  };
 
   /* ===================================================== */
 
-  const deleteProduct =
-    async (
-      id: string,
-    ): Promise<boolean> => {
-      try {
-        await deleteProductDB(
-          id,
-        );
+  const deleteProduct = async (id: string): Promise<boolean> => {
+    try {
+      await deleteProductDB(id);
 
-        await loadProducts();
+      await loadProducts();
 
-        return true;
-      } catch (
-        error
-      ) {
-        console.log(
-          error,
-        );
+      return true;
+    } catch (error) {
+      console.log(error);
 
-        return false;
-      }
-    };
+      return false;
+    }
+  };
 
   /* ===================================================== */
   /* HELPERS */
   /* ===================================================== */
 
-  const getWorkerById = (
-    id: string,
-  ) => {
-    return workers.find(
-      (
-        worker,
-      ) =>
-        worker.id ===
-        id,
+  const getWorkerById = (id: string) => {
+    return workers.find((worker) => worker.id === id);
+  };
+
+  /* ===================================================== */
+
+  const getProductById = (id: string) => {
+    return visibleProducts.find((product) => product.id === id);
+  };
+
+  /* ===================================================== */
+
+  const getProductsByCategory = (cat: string) => {
+    return visibleProducts.filter((product) => product.category === cat);
+  };
+
+  /* ===================================================== */
+
+  const getFeaturedProducts = () => {
+    return visibleProducts.filter(
+      (product) =>
+        (product.badge === "popular" || product.badge === "pro") &&
+        product.stock > 0,
     );
   };
 
   /* ===================================================== */
 
-  const getProductById = (
-    id: string,
-  ) => {
-    return visibleProducts.find(
-      (
-        product,
-      ) =>
-        product.id ===
-        id,
-    );
+  const getRelatedProducts = (product: Product, count = 4) => {
+    return visibleProducts
+      .filter((p) => p.category === product.category && p.id !== product.id)
+      .slice(0, count);
   };
-
-  /* ===================================================== */
-
-  const getProductsByCategory =
-    (
-      cat: string,
-    ) => {
-      return visibleProducts.filter(
-        (
-          product,
-        ) =>
-          product.category ===
-          cat,
-      );
-    };
-
-  /* ===================================================== */
-
-  const getFeaturedProducts =
-    () => {
-      return visibleProducts.filter(
-        (
-          product,
-        ) =>
-          (
-            product.badge ===
-              "popular" ||
-            product.badge ===
-              "pro"
-          ) &&
-          product.stock >
-            0,
-      );
-    };
-
-  /* ===================================================== */
-
-  const getRelatedProducts =
-    (
-      product: Product,
-      count = 4,
-    ) => {
-      return visibleProducts
-        .filter(
-          (
-            p,
-          ) =>
-            p.category ===
-              product.category &&
-            p.id !==
-              product.id,
-        )
-        .slice(
-          0,
-          count,
-        );
-    };
 
   /* ===================================================== */
   /* STATS */
   /* ===================================================== */
 
-  const stats =
-    useMemo(
-      () => ({
-        totalWorkers:
-          workers.length,
+  const stats = useMemo(
+    () => ({
+      totalWorkers: workers.length,
 
-        totalProducts:
-          products.length,
+      totalProducts: products.length,
 
-        visibleProducts:
-          visibleProducts.length,
+      visibleProducts: visibleProducts.length,
 
-        totalShops:
-          shops.length,
+      totalShops: shops.length,
 
-        onlineShops:
-          onlineShops.length,
+      onlineShops: onlineShops.length,
 
-        offlineShops:
-          offlineShops.length,
+      offlineShops: offlineShops.length,
 
-        totalOrders:
-          orders.length,
+      totalOrders: orders.length,
 
-        availableWorkers:
-          workers.filter(
-            (
-              worker,
-            ) =>
-              worker.available,
-          ).length,
+      availableWorkers: workers.filter((worker) => worker.available).length,
 
-        outOfStock:
-          visibleProducts.filter(
-            (
-              product,
-            ) =>
-              product.stock <=
-              0,
-          ).length,
-      }),
-      [
-        workers,
-        products,
-        visibleProducts,
-        shops,
-        onlineShops,
-        offlineShops,
-        orders,
-      ],
-    );
+      outOfStock: visibleProducts.filter((product) => product.stock <= 0)
+        .length,
+    }),
+    [
+      workers,
+      products,
+      visibleProducts,
+      shops,
+      onlineShops,
+      offlineShops,
+      orders,
+    ],
+  );
 
   /* ===================================================== */
 
@@ -784,15 +537,10 @@ export function AdminProvider({
 /* ===================================================== */
 
 export function useAdmin() {
-  const ctx =
-    useContext(
-      AdminContext,
-    );
+  const ctx = useContext(AdminContext);
 
   if (!ctx) {
-    throw new Error(
-      "useAdmin must be used within AdminProvider",
-    );
+    throw new Error("useAdmin must be used within AdminProvider");
   }
 
   return ctx;
