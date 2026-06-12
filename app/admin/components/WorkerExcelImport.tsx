@@ -161,7 +161,7 @@ export default function WorkerExcelImport({
 
           {/* Scroll List */}
 
-          <div className="max-h-[420px] overflow-y-auto rounded-2xl border border-gray-100">
+          <div className="max-h-105 overflow-y-auto rounded-2xl border border-gray-100">
             {filteredWorkers.map((worker, index) => (
               <button
                 key={index}

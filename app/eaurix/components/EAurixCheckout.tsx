@@ -303,8 +303,8 @@ function WorkerAddonStep({
                         className="text-[#0F172A]"
                         style={{ fontWeight: 800 }}
                       >
-                        ${w.hourlyRate}
-                        <span className="text-xs text-[#94A3B8]">/hr</span>
+                        ₹{w.visitCharge || w.startingPrice}
+                        <span className="text-xs text-[#94A3B8]"> Quick</span>
                       </div>
                       <div
                         className="text-xs text-emerald-600 mt-0.5"
@@ -435,14 +435,15 @@ function WorkerAddonStep({
 
               {/* PRICE */}
               <div className="text-right shrink-0">
-                <div
-                  className="text-[#FF5C39] text-xl"
-                  style={{ fontWeight: 900 }}
-                >
-                  ₹{addon.worker.hourlyRate}
-                </div>
+                <div className="flex flex-col">
+                  <span className="text-[#FF5C39] text-xl font-black">
+                    ₹{addon.worker.visitCharge || addon.worker.startingPrice}
+                  </span>
 
-                <div className="text-xs text-[#94A3B8]">per hour</div>
+                  <span className="text-[11px] text-slate-500">
+                    Quick Service
+                  </span>
+                </div>
               </div>
             </div>
           </div>
@@ -649,8 +650,9 @@ function WorkerAddonStep({
               <div className="flex items-center justify-between mb-3">
                 <span className="text-white/70">Worker Charges</span>
 
-                <span style={{ fontWeight: 700 }}>
-                  ₹{addon.worker.hourlyRate} × {hours}
+                <span className="font-bold">
+                  ₹{addon.worker.visitCharge || addon.worker.startingPrice} ×{" "}
+                  {hours}
                 </span>
               </div>
 
@@ -660,18 +662,22 @@ function WorkerAddonStep({
                 <div>
                   <div className="text-white/60 text-xs">Total Worker Cost</div>
 
-                  <div className="text-[2rem]" style={{ fontWeight: 900 }}>
-                    ₹{(addon.worker.hourlyRate * hours).toFixed(2)}
+                  <div className="text-[2rem] font-black">
+                    ₹
+                    {(
+                      (addon.worker.visitCharge || addon.worker.startingPrice) *
+                      hours
+                    ).toFixed(2)}
                   </div>
                 </div>
 
                 <div
                   className="
-            px-4 py-2
-            rounded-2xl
-            bg-[#FF5C39]
-            text-sm
-          "
+        px-4 py-2
+        rounded-2xl
+        bg-[#FF5C39]
+        text-sm
+      "
                 >
                   {hours}h booking
                 </div>
@@ -794,16 +800,31 @@ export function EAurixCheckout() {
       },
     );
   };
-  const delivery =
-    form.deliveryOption === "express" ? 24.99 : cartTotal > 100 ? 0 : 12.99;
-  const tax = parseFloat((cartTotal * 0.08).toFixed(2));
-  const workerCost = workerAddon
-    ? parseFloat((workerAddon.worker.hourlyRate * workerAddon.hours).toFixed(2))
-    : 0;
-  const grandTotal = parseFloat(
-    (cartTotal + delivery + tax + workerCost).toFixed(2),
-  );
+const delivery =
+  form.deliveryOption === "express"
+    ? 99
+    : cartTotal > 1000
+      ? 0
+      : 40;
 
+const tax = parseFloat((cartTotal * 0.08).toFixed(2));
+
+const workerCost = workerAddon
+  ? (
+      (workerAddon.worker.visitCharge ||
+        workerAddon.worker.startingPrice) *
+      workerAddon.hours
+    )
+  : 0;
+
+const grandTotal = parseFloat(
+  (
+    cartTotal +
+    delivery +
+    tax +
+    workerCost
+  ).toFixed(2)
+);
   const update = (field: string, val: string) =>
     setForm((f) => ({ ...f, [field]: val }));
 
@@ -824,35 +845,44 @@ export function EAurixCheckout() {
     return true; // step 3 (worker) and step 4 (review) are always valid
   };
 
-  const handleConfirm = () => {
-    const orderData = {
-      form,
-      cart,
-      cartTotal,
-      delivery,
-      tax,
-      grandTotal,
-      workerAddon: workerAddon
-        ? {
-            workerName: workerAddon.worker.name,
-            workerPhoto: workerAddon.worker.photo,
-            workerSpecialty: workerAddon.worker.specialty,
-            workerRate: workerAddon.worker.hourlyRate,
-            hours: workerAddon.hours,
-            cost: workerCost,
-          }
-        : null,
-    };
+ const handleConfirm = () => {
+  const orderData = {
+    form,
+    cart,
+    cartTotal,
+    delivery,
+    tax,
+    grandTotal,
 
-    // Save first
-    sessionStorage.setItem("eaurix-order", JSON.stringify(orderData));
+    workerAddon: workerAddon
+      ? {
+          workerName: workerAddon.worker.name,
 
-    // Small delay ensures storage is ready
-    setTimeout(() => {
-      clearCart();
-      router.push("/eaurix/confirmed");
-    }, 100);
+          workerPhoto: workerAddon.worker.photo,
+
+          workerSpecialty: workerAddon.worker.specialty,
+
+          workerRate:
+            workerAddon.worker.visitCharge ||
+            workerAddon.worker.startingPrice,
+
+          hours: workerAddon.hours,
+
+          cost: workerCost,
+        }
+      : null,
   };
+
+  sessionStorage.setItem(
+    "eaurix-order",
+    JSON.stringify(orderData)
+  );
+
+  setTimeout(() => {
+    clearCart();
+    router.push("/eaurix/confirmed");
+  }, 100);
+};
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
