@@ -1,6 +1,7 @@
 import nodemailer from "nodemailer";
 import { supabase } from "@/lib/supabase";
-import puppeteer from "puppeteer";
+import puppeteer from "puppeteer-core";
+import chromium from "@sparticuz/chromium";
 
 export async function POST(req: Request) {
   const logoUrl = "https://workkerz.com/workkerzapp.png";
@@ -603,11 +604,11 @@ export async function POST(req: Request) {
     `;
 
     // PDF
-    const browser = await puppeteer.launch({
-      headless: true,
-
-      args: ["--no-sandbox", "--disable-setuid-sandbox"],
-    });
+  const browser = await puppeteer.launch({
+  args: chromium.args,
+  executablePath: await chromium.executablePath(),
+  headless: true as any,
+});
 
     const page = await browser.newPage();
 
@@ -1245,12 +1246,14 @@ export async function POST(req: Request) {
     return Response.json({
       success: true,
     });
-  } catch (error) {
-    console.log(error);
+  } catch (error: any) {
+    console.error("EMAIL API ERROR:", error);
 
     return Response.json(
       {
         success: false,
+        message: error?.message || "Unknown Error",
+        error,
       },
       {
         status: 500,
