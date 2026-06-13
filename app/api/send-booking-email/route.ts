@@ -1,6 +1,6 @@
 import nodemailer from "nodemailer";
 import { supabase } from "@/lib/supabase";
-import { chromium } from "playwright";
+import puppeteer from "puppeteer";
 
 export async function POST(req: Request) {
   const logoUrl = "https://workkerz.com/workkerzapp.png";
@@ -628,33 +628,36 @@ export async function POST(req: Request) {
       </html>
     `;
 
-    const browser = await chromium.launch({
+    const browser = await puppeteer.launch({
+      headless: true,
       executablePath:
         "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome",
-      headless: true,
     });
 
-    const page = await browser.newPage({
-      viewport: {
-        width: 1200,
-        height: 1800,
-      },
+    const page = await browser.newPage();
+
+    await page.setViewport({
+      width: 1200,
+      height: 1600,
+      deviceScaleFactor: 2,
     });
 
     await page.setContent(html, {
-      waitUntil: "networkidle",
+      waitUntil: "domcontentloaded",
     });
 
-    const pdfBuffer = await page.pdf({
-      format: "A4",
-      printBackground: true,
-      margin: {
-        top: "10mm",
-        right: "10mm",
-        bottom: "4mm",
-        left: "10mm",
-      },
-    });
+    const pdfBuffer = Buffer.from(
+      await page.pdf({
+        format: "A4",
+        printBackground: true,
+        margin: {
+          top: "10px",
+          right: "10px",
+          bottom: "10px",
+          left: "10px",
+        },
+      }),
+    );
 
     await browser.close();
 
@@ -948,7 +951,8 @@ export async function POST(req: Request) {
       attachments: [
         {
           filename: `${booking.booking_id}.pdf`,
-          content: Buffer.from(pdfBuffer),
+          content: pdfBuffer,
+          contentType: "application/pdf",
         },
       ],
     });
@@ -1243,7 +1247,8 @@ export async function POST(req: Request) {
       attachments: [
         {
           filename: `${booking.booking_id}.pdf`,
-          content: Buffer.from(pdfBuffer),
+          content: pdfBuffer,
+          contentType: "application/pdf",
         },
       ],
     });
