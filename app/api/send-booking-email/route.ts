@@ -629,9 +629,13 @@ export async function POST(req: Request) {
     `;
 
     const browser = await puppeteer.launch({
+      executablePath: "/usr/bin/google-chrome",
       headless: true,
-      executablePath:
-        "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome",
+      args: [
+        "--no-sandbox",
+        "--disable-setuid-sandbox",
+        "--disable-dev-shm-usage",
+      ],
     });
 
     const page = await browser.newPage();
