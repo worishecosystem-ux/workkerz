@@ -1,7 +1,6 @@
 import nodemailer from "nodemailer";
 import { supabase } from "@/lib/supabase";
-import puppeteer from "puppeteer-core";
-import chromium from "@sparticuz/chromium";
+import { chromium } from "playwright";
 
 export async function POST(req: Request) {
   const logoUrl = "https://workkerz.com/workkerzapp.png";
@@ -37,7 +36,7 @@ export async function POST(req: Request) {
     }
 
     // VALIDATE EMAIL
-    const customerEmail = body?.form?.email;
+    const customerEmail = body?.form?.email || booking.customer_email;
 
     if (!customerEmail || customerEmail.trim() === "") {
       return Response.json(
@@ -50,21 +49,61 @@ export async function POST(req: Request) {
         },
       );
     }
-    // FALLBACK IMAGE
+
     let workerImage = `https://ui-avatars.com/api/?name=${encodeURIComponent(
       booking.worker_name || "Worker",
     )}&background=0F172A&color=ffffff&size=200`;
 
-    if (booking.worker_photo) {
-      if (booking.worker_photo.startsWith("http")) {
-        workerImage = booking.worker_photo;
+    const { data: workerData } = await supabase
+      .from("workers")
+      .select("photo")
+      .eq("id", booking.worker_id)
+      .single();
+
+    if (workerData?.photo) {
+      if (
+        workerData.photo.startsWith("http") ||
+        workerData.photo.startsWith("data:image")
+      ) {
+        workerImage = workerData.photo;
       } else {
         const { data } = supabase.storage
           .from("workers")
-          .getPublicUrl(booking.worker_photo);
+          .getPublicUrl(workerData.photo);
 
         workerImage = data.publicUrl;
       }
+    }
+
+    const bookingTypeMap: Record<string, string> = {
+      quick_service: "⚡ Quick Service",
+      half_day: "🌤️ Half Day",
+      full_day: "☀️ Full Day",
+      monthly: "📅 Monthly Package",
+    };
+
+    const bookingTypeLabel =
+      bookingTypeMap[booking.booking_type || ""] || "Custom Service";
+
+    let packagePrice = booking.total_cost;
+
+    switch (booking.booking_type) {
+      case "quick_service":
+        packagePrice =
+          booking.visit_charge || booking.starting_price || booking.total_cost;
+        break;
+
+      case "half_day":
+        packagePrice = booking.half_day_price || booking.total_cost;
+        break;
+
+      case "full_day":
+        packagePrice = booking.full_day_price || booking.total_cost;
+        break;
+
+      case "monthly":
+        packagePrice = booking.monthly_price || booking.total_cost;
+        break;
     }
 
     // HTML
@@ -190,7 +229,7 @@ export async function POST(req: Request) {
                       ⭐ ${booking.worker_rating}
                       &nbsp;&nbsp;&nbsp;
                       <span style="color:#CBD5E1">
-                        ${booking.worker_completedJobs}+ Works
+                       ${booking.worker_completedJobs || 0}+ Works
                       </span>
                     </div>
 
@@ -330,14 +369,15 @@ export async function POST(req: Request) {
                       </div>
 
                       <div
-                        style="
-                          color:#64748B;
-                          margin-top:4px;
-                          font-size:11px;
-                        "
-                      >
-                        ${booking.duration}
-                      </div>
+  style="
+    color:#FF5C39;
+    margin-top:6px;
+    font-size:11px;
+    font-weight:700;
+  "
+>
+  ${bookingTypeLabel}
+</div>
 
                     </div>
 
@@ -573,22 +613,7 @@ export async function POST(req: Request) {
 
                     </td>
 
-                    <td align="right">
-
-                      <div
-                        style="
-                          background:#FF5C39;
-                          padding:10px 15px;
-                          border-radius:16px;
-                          display:inline-block;
-                          font-size:12px;
-                          font-weight:700;
-                        "
-                      >
-                        ${booking.booking_duration}hr Work
-                      </div>
-
-                    </td>
+                   
 
                   </tr>
                 </table>
@@ -603,55 +628,35 @@ export async function POST(req: Request) {
       </html>
     `;
 
-    // PDF
-  const browser = await puppeteer.launch({
-  args: chromium.args,
-  executablePath: await chromium.executablePath(),
-  headless: true as any,
-});
+    const browser = await chromium.launch({
+      executablePath:
+        "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome",
+      headless: true,
+    });
 
-    const page = await browser.newPage();
-
-    await page.setViewport({
-      width: 1200,
-      height: 1600,
-      deviceScaleFactor: 2,
+    const page = await browser.newPage({
+      viewport: {
+        width: 1200,
+        height: 1800,
+      },
     });
 
     await page.setContent(html, {
-      waitUntil: "load",
-    });
-
-    // WAIT FOR ALL IMAGES TO LOAD
-    await page.evaluate(async () => {
-      const images = Array.from(document.images);
-
-      await Promise.all(
-        images.map((img) => {
-          if (img.complete) {
-            return Promise.resolve();
-          }
-
-          return new Promise((resolve) => {
-            img.onload = resolve;
-            img.onerror = resolve;
-          });
-        }),
-      );
+      waitUntil: "networkidle",
     });
 
     const pdfBuffer = await page.pdf({
       format: "A4",
-
       printBackground: true,
-
       margin: {
-        top: "10px",
-        bottom: "10px",
-        left: "10px",
-        right: "10px",
+        top: "10mm",
+        right: "10mm",
+        bottom: "4mm",
+        left: "10mm",
       },
     });
+
+    await browser.close();
 
     // MAIL
     const transporter = nodemailer.createTransport({

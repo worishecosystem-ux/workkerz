@@ -37,7 +37,21 @@ export default function Confirmation() {
 
   const [state, setState] = useState<{
     form: Record<string, any>;
-    worker: any;
+    worker: {
+      id: string;
+      name: string;
+      photo: string;
+      specialty: string;
+      rating: number;
+
+      pricingType: string;
+
+      startingPrice: number;
+      visitCharge: number;
+      halfDayPrice: number;
+      fullDayPrice: number;
+      monthlyPrice: number;
+    };
     totalCost: number;
     serviceFee: number;
     materialsCost?: number;
@@ -115,18 +129,6 @@ export default function Confirmation() {
           grandTotal,
         } = state;
 
-        console.log("=== BOOKING DEBUG ===");
-
-        console.log("Worker Photo:", worker?.photo);
-
-        console.log("Total Cost:", totalCost);
-
-        console.log("Service Fee:", serviceFee);
-
-        console.log("Materials Cost:", materialsCost);
-
-        console.log("Grand Total:", grandTotal);
-
         const bookingData = {
           booking_id: bookingId.current,
 
@@ -169,6 +171,17 @@ export default function Confirmation() {
           state: form?.state || "",
 
           pincode: form?.pincode || "",
+          pricing_type: worker?.pricingType || "",
+
+          starting_price: Number(worker?.startingPrice) || 0,
+
+          visit_charge: Number(worker?.visitCharge) || 0,
+
+          half_day_price: Number(worker?.halfDayPrice) || 0,
+
+          full_day_price: Number(worker?.fullDayPrice) || 0,
+
+          monthly_price: Number(worker?.monthlyPrice) || 0,
 
           selected_materials: form?.selectedMaterials || {},
 
@@ -182,17 +195,17 @@ export default function Confirmation() {
         };
 
         // SAVE BOOKING
-       const { data, error } = await supabase
-  .from("bookings")
-  .insert([bookingData])
-  .select()
-  .single();
+        const { data, error } = await supabase
+          .from("bookings")
+          .insert([bookingData])
+          .select()
+          .single();
 
-console.log("SAVED DATA:", data);
+        console.log("SAVED DATA:", data);
 
-console.log("DB GRAND TOTAL:", data?.grand_total);
+        console.log("DB GRAND TOTAL:", data?.grand_total);
 
-console.log("DB WORKER PHOTO:", data?.worker_photo);
+        console.log("DB WORKER PHOTO:", data?.worker_photo);
 
         if (error) {
           console.log(error);
@@ -286,9 +299,69 @@ console.log("DB WORKER PHOTO:", data?.worker_photo);
     confirmedAt,
   } = state;
 
+  const getWorkerPricing = () => {
+    switch (worker?.pricingType) {
+      case "visit_charge":
+        return {
+          label: "Visit Charge",
+          amount: worker.visitCharge || 0,
+        };
+
+      case "daily":
+        return {
+          label: "Full Day",
+          amount: worker.fullDayPrice || 0,
+        };
+
+      case "monthly":
+        return {
+          label: "Monthly",
+          amount: worker.monthlyPrice || 0,
+        };
+
+      case "per_service":
+        return {
+          label: "Service Charge",
+          amount: worker.startingPrice || 0,
+        };
+
+      case "per_job":
+        return {
+          label: "Job Charge",
+          amount: worker.startingPrice || 0,
+        };
+
+      default:
+        return {
+          label: "Starting Price",
+          amount: worker.startingPrice || 0,
+        };
+    }
+  };
+
+  const pricing = getWorkerPricing();
+
   const grandTotal =
     Number(totalCost) + Number(serviceFee) + Number(materialsCost);
 
+  const getBookingTypeLabel = () => {
+    switch (form?.bookingType) {
+      case "quick_service":
+        return "⚡ Quick Service";
+
+      case "half_day":
+        return "🌤️ Half Day";
+
+      case "full_day":
+        return "☀️ Full Day";
+
+      case "monthly":
+        return "📅 Monthly";
+
+      default:
+        return "⚡ Quick Service";
+    }
+  };
   const formatDate = (dateStr: string) => {
     if (!dateStr) return "—";
 
@@ -562,7 +635,10 @@ console.log("DB WORKER PHOTO:", data?.worker_photo);
             {/* PRICE */}
             <div className="mt-5 bg-[#0F172A] rounded-3xl p-6 text-white">
               <div className="space-y-3">
-                <PriceRow label="Worker Charges" value={`₹${totalCost}`} />
+                <PriceRow
+                  label={pricing.label}
+                  value={`₹${Number(totalCost).toLocaleString("en-IN")}`}
+                />
 
                 <PriceRow label="Platform Fee" value={`₹${serviceFee}`} />
 
@@ -582,9 +658,14 @@ console.log("DB WORKER PHOTO:", data?.worker_photo);
                   </div>
                 </div>
 
-                <div className="bg-[#FF5C39] px-4 py-2 rounded-2xl text-sm font-semibold">
-                  {form.duration}
-                  hr Work
+                <div className="bg-linear-to-r from-[#FF5C39] to-[#ff7a5c] px-5 py-3 rounded-2xl shadow-lg">
+                  <div className="text-[10px] text-white/80 uppercase tracking-wider">
+                    Selected Package
+                  </div>
+
+                  <div className="text-sm font-black text-white mt-1">
+                    {getBookingTypeLabel()}
+                  </div>
                 </div>
               </div>
             </div>
