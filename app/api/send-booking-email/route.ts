@@ -75,36 +75,36 @@ export async function POST(req: Request) {
       }
     }
 
-    const bookingTypeMap: Record<string, string> = {
-      quick_service: "⚡ Quick Service",
-      half_day: "🌤️ Half Day",
-      full_day: "☀️ Full Day",
-      monthly: "📅 Monthly Package",
-    };
+   const bookingTypeRaw =
+  booking.booking_type ||
+  booking.pricing_type ||
+  "";
 
-    const bookingTypeLabel =
-      bookingTypeMap[booking.booking_type || ""] || "Custom Service";
+const bookingType = bookingTypeRaw
+  .trim()
+  .toLowerCase();
 
-    let packagePrice = booking.total_cost;
+const bookingTypeMap: Record<string, string> = {
+  quick_service: "⚡ Quick Service",
+  quickservice: "⚡ Quick Service",
+  "quick service": "⚡ Quick Service",
 
-    switch (booking.booking_type) {
-      case "quick_service":
-        packagePrice =
-          booking.visit_charge || booking.starting_price || booking.total_cost;
-        break;
+  half_day: "🌤️ Half Day",
+  "half day": "🌤️ Half Day",
 
-      case "half_day":
-        packagePrice = booking.half_day_price || booking.total_cost;
-        break;
+  full_day: "☀️ Full Day",
+  "full day": "☀️ Full Day",
 
-      case "full_day":
-        packagePrice = booking.full_day_price || booking.total_cost;
-        break;
+  monthly: "📅 Monthly Package",
+  "monthly package": "📅 Monthly Package",
+};
 
-      case "monthly":
-        packagePrice = booking.monthly_price || booking.total_cost;
-        break;
-    }
+const bookingTypeLabel =
+  bookingTypeMap[bookingType] ||
+  bookingTypeRaw ||
+  "Custom Service";
+
+  
 
     // HTML
     const html = `
@@ -368,15 +368,12 @@ export async function POST(req: Request) {
                         ${booking.booking_time || "-"}
                       </div>
 
-                      <div
-  style="
-    color:#FF5C39;
-    margin-top:6px;
-    font-size:11px;
-    font-weight:700;
-  "
->
-  ${bookingTypeLabel}
+                      <div style="color:red">
+  booking_type = ${booking.booking_type}
+</div>
+
+<div style="color:blue">
+  pricing_type = ${booking.pricing_type}
 </div>
 
                     </div>
@@ -521,7 +518,7 @@ export async function POST(req: Request) {
                         font-weight:700;
                       "
                     >
-                      ₹${booking.total_cost}
+                      <span>&#8377;</span>${booking.total_cost}
                     </td>
                   </tr>
 
@@ -544,7 +541,7 @@ export async function POST(req: Request) {
                         font-weight:700;
                       "
                     >
-                     ₹${booking.service_fee}
+                     <span>&#8377;</span>${booking.service_fee}
                     </td>
                   </tr>
 
@@ -570,7 +567,7 @@ export async function POST(req: Request) {
                           font-weight:700;
                         "
                       >
-                       ₹${booking.materials_cost}
+                       <span>&#8377;</span>${booking.materials_cost}
                       </td>
                     </tr>
                   `
@@ -608,7 +605,7 @@ export async function POST(req: Request) {
                           font-weight:900;
                         "
                       >
-                       ₹${booking.grand_total}
+                       <span>&#8377;</span>${booking.grand_total}
                       </div>
 
                     </td>
