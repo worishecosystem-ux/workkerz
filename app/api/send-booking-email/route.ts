@@ -75,36 +75,28 @@ export async function POST(req: Request) {
       }
     }
 
-   const bookingTypeRaw =
-  booking.booking_type ||
-  booking.pricing_type ||
-  "";
+    const bookingTypeRaw = booking.booking_type || booking.pricing_type || "";
 
-const bookingType = bookingTypeRaw
-  .trim()
-  .toLowerCase();
+    const getBookingTypeLabel = (bookingType?: string) => {
+      switch (bookingType) {
+        case "quick_service":
+          return "⚡ Quick Service";
 
-const bookingTypeMap: Record<string, string> = {
-  quick_service: "⚡ Quick Service",
-  quickservice: "⚡ Quick Service",
-  "quick service": "⚡ Quick Service",
+        case "half_day":
+          return "🌤️ Half Day";
 
-  half_day: "🌤️ Half Day",
-  "half day": "🌤️ Half Day",
+        case "full_day":
+          return "☀️ Full Day";
 
-  full_day: "☀️ Full Day",
-  "full day": "☀️ Full Day",
+        case "monthly":
+          return "📅 Monthly";
 
-  monthly: "📅 Monthly Package",
-  "monthly package": "📅 Monthly Package",
-};
+        default:
+          return "⚡ Quick Service";
+      }
+    };
 
-const bookingTypeLabel =
-  bookingTypeMap[bookingType] ||
-  bookingTypeRaw ||
-  "Custom Service";
-
-  
+    const bookingTypeLabel = getBookingTypeLabel(booking.booking_type);
 
     // HTML
     const html = `
@@ -113,7 +105,10 @@ const bookingTypeLabel =
       <html>
         <head>
           <meta charset="UTF-8"/>
-
+<link
+  href="https://fonts.googleapis.com/css2?family=Noto+Sans:wght@400;500;600;700;800&display=swap"
+  rel="stylesheet"
+/>
           <script src="https://cdn.tailwindcss.com"></script>
 
           <style>
@@ -125,7 +120,7 @@ const bookingTypeLabel =
               margin:0;
               padding:18px;
               background:#EEF2F7;
-              font-family:Arial,sans-serif;
+              font-family:Arial,sans-serif,Noto Sans,DejaVu Sans,Arial,
             }
 
             .card{
@@ -368,12 +363,15 @@ const bookingTypeLabel =
                         ${booking.booking_time || "-"}
                       </div>
 
-                      <div style="color:red">
-  booking_type = ${booking.booking_type}
-</div>
-
-<div style="color:blue">
-  pricing_type = ${booking.pricing_type}
+                     <div
+  style="
+    color:#FF5C39;
+    margin-top:6px;
+    font-size:11px;
+    font-weight:700;
+  "
+>
+  ${bookingTypeLabel}
 </div>
 
                     </div>
@@ -518,7 +516,7 @@ const bookingTypeLabel =
                         font-weight:700;
                       "
                     >
-                      <span>&#8377;</span>${booking.total_cost}
+                      ₹${booking.total_cost}
                     </td>
                   </tr>
 
@@ -541,11 +539,11 @@ const bookingTypeLabel =
                         font-weight:700;
                       "
                     >
-                     <span>&#8377;</span>${booking.service_fee}
+                     ₹${booking.service_fee}
                     </td>
                   </tr>
 
-                  ${
+                  ₹${
                     booking.materials_cost > 0
                       ? `
                     <tr>
@@ -567,7 +565,7 @@ const bookingTypeLabel =
                           font-weight:700;
                         "
                       >
-                       <span>&#8377;</span>${booking.materials_cost}
+                       ₹${booking.materials_cost}
                       </td>
                     </tr>
                   `
@@ -605,7 +603,7 @@ const bookingTypeLabel =
                           font-weight:900;
                         "
                       >
-                       <span>&#8377;</span>${booking.grand_total}
+                       ₹${booking.grand_total}
                       </div>
 
                     </td>
