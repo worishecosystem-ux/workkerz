@@ -176,8 +176,6 @@ export default function Confirmation() {
 
           booking_time: form?.time || "",
 
-          duration: Number(form?.duration) || 1,
-
           customer_name: form?.name || "",
 
           customer_phone: form?.phone || "",

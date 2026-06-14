@@ -7,11 +7,14 @@ import { Navbar } from "./Navbar";
 import Footer from "./Footer";
 import { usePlatform } from "./context/PlatformContext";
 
-export function LayoutWrapper({ children }: { children: React.ReactNode }) {
+export function LayoutWrapper({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
   const pathname = usePathname();
   const { setPlatform } = usePlatform();
 
-  // ✅ Auto-sync platform with URL (same as your React Router logic)
   useEffect(() => {
     if (pathname.startsWith("/eaurix")) {
       setPlatform("eaurix");
@@ -20,11 +23,20 @@ export function LayoutWrapper({ children }: { children: React.ReactNode }) {
     }
   }, [pathname, setPlatform]);
 
+  // Pages where Navbar/Footer should be hidden
+  const hideLayout =
+    pathname.startsWith("/dashboard") ||
+    pathname.startsWith("/login") ||
+    pathname.startsWith("/bookings") ||
+    pathname.startsWith("/favorites");
+
   return (
     <div className="min-h-screen flex flex-col">
-      <Navbar />
+      {!hideLayout && <Navbar />}
+
       <main className="flex-1">{children}</main>
-      <Footer />
+
+      {!hideLayout && <Footer />}
     </div>
   );
 }
