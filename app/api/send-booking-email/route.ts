@@ -98,41 +98,32 @@ export async function POST(req: Request) {
 
     const packageLabel = getBookingTypeLabel(booking.booking_type);
 
-let packagePrice = booking.total_cost || 0;
+    let packagePrice = booking.total_cost || 0;
 
-switch (booking.booking_type) {
-  case "quick_service":
-    packagePrice =
-      booking.visit_charge ||
-      booking.starting_price ||
-      booking.total_cost ||
-      0;
-    break;
+    switch (booking.booking_type) {
+      case "quick_service":
+        packagePrice =
+          booking.visit_charge ||
+          booking.starting_price ||
+          booking.total_cost ||
+          0;
+        break;
 
-  case "half_day":
-    packagePrice =
-      booking.half_day_price ||
-      booking.total_cost ||
-      0;
-    break;
+      case "half_day":
+        packagePrice = booking.half_day_price || booking.total_cost || 0;
+        break;
 
-  case "full_day":
-    packagePrice =
-      booking.full_day_price ||
-      booking.total_cost ||
-      0;
-    break;
+      case "full_day":
+        packagePrice = booking.full_day_price || booking.total_cost || 0;
+        break;
 
-  case "monthly":
-    packagePrice =
-      booking.monthly_price ||
-      booking.total_cost ||
-      0;
-    break;
+      case "monthly":
+        packagePrice = booking.monthly_price || booking.total_cost || 0;
+        break;
 
-  default:
-    packagePrice = booking.total_cost || 0;
-}
+      default:
+        packagePrice = booking.total_cost || 0;
+    }
 
     // HTML
     const html = `
@@ -641,14 +632,14 @@ switch (booking.booking_type) {
             background:#FF6B4A;
             color:white;
             border-radius:18px;
-            padding:16px 20px;
+            padding:12px 20px;
             display:inline-block;
             text-align:center;
           "
         >
           <div
             style="
-              font-size:10px;
+              font-size:12px;
               letter-spacing:.8px;
               font-weight:700;
               opacity:.9;
@@ -660,8 +651,8 @@ switch (booking.booking_type) {
 
           <div
             style="
-              font-size:22px;
-              font-weight:900;
+              font-size:16px;
+              font-weight:400;
             "
           >
             ${packageLabel}
@@ -676,63 +667,20 @@ switch (booking.booking_type) {
 
 </div>
 
-                <div
-                  style="
-                    height:1px;
-                    background:rgba(255,255,255,.1);
-                    margin:14px 0;
-                  "
-                ></div>
-
-                <table width="100%">
-                  <tr>
-
-                    <td>
-
-                      <div
-                        style="
-                          color:rgba(255,255,255,.6);
-                          font-size:11px;
-                        "
-                      >
-                        Grand Total
-                      </div>
-
-                      <div
-                        style="
-                          margin-top:2px;
-                          font-size:34px;
-                          font-weight:900;
-                        "
-                      >
-                       ₹${booking.grand_total}
-                      </div>
-
-                    </td>
-
-                   
-
-                  </tr>
-                </table>
-
-              </div>
-
-            </div>
-
           </div>
 
         </body>
       </html>
     `;
 
+    const isProduction = process.env.NODE_ENV === "production";
+
     const browser = await puppeteer.launch({
-      executablePath: "/usr/bin/google-chrome",
+      executablePath: isProduction
+        ? "/usr/bin/google-chrome"
+        : "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome",
       headless: true,
-      args: [
-        "--no-sandbox",
-        "--disable-setuid-sandbox",
-        "--disable-dev-shm-usage",
-      ],
+      args: ["--no-sandbox", "--disable-setuid-sandbox"],
     });
 
     const page = await browser.newPage();
