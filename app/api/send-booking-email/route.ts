@@ -75,8 +75,6 @@ export async function POST(req: Request) {
       }
     }
 
-    const bookingTypeRaw = booking.booking_type || booking.pricing_type || "";
-
     const getBookingTypeLabel = (bookingType?: string) => {
       switch (bookingType) {
         case "quick_service":
@@ -97,6 +95,44 @@ export async function POST(req: Request) {
     };
 
     const bookingTypeLabel = getBookingTypeLabel(booking.booking_type);
+
+    const packageLabel = getBookingTypeLabel(booking.booking_type);
+
+let packagePrice = booking.total_cost || 0;
+
+switch (booking.booking_type) {
+  case "quick_service":
+    packagePrice =
+      booking.visit_charge ||
+      booking.starting_price ||
+      booking.total_cost ||
+      0;
+    break;
+
+  case "half_day":
+    packagePrice =
+      booking.half_day_price ||
+      booking.total_cost ||
+      0;
+    break;
+
+  case "full_day":
+    packagePrice =
+      booking.full_day_price ||
+      booking.total_cost ||
+      0;
+    break;
+
+  case "monthly":
+    packagePrice =
+      booking.monthly_price ||
+      booking.total_cost ||
+      0;
+    break;
+
+  default:
+    packagePrice = booking.total_cost || 0;
+}
 
     // HTML
     const html = `
@@ -364,16 +400,6 @@ export async function POST(req: Request) {
                       </div>
 
                      <div
-  style="
-    color:#FF5C39;
-    margin-top:6px;
-    font-size:11px;
-    font-weight:700;
-  "
->
-  ${bookingTypeLabel}
-</div>
-
                     </div>
 
                   </td>
@@ -475,8 +501,7 @@ export async function POST(req: Request) {
                       font-size:12px;
                       line-height:1.8;
                       font-weight:600;
-                    "
-                  >
+                    "                  >
                     ${booking.notes}
                   </div>
 
@@ -486,93 +511,170 @@ export async function POST(req: Request) {
               }
 
               <!-- PRICE -->
-              <div
-                style="
-                  background:#020617;
-                  border-radius:24px;
-                  padding:10px;
-                  color:white;
-                "
-              >
+            <div
+  style="
+    background:#020617;
+    border-radius:24px;
+    padding:24px;
+    color:white;
+  "
+>
 
-                <table width="100%">
+  <table width="100%">
+    <tr>
+      <td
+        style="
+          color:rgba(255,255,255,.75);
+          padding-bottom:14px;
+          font-size:14px;
+        "
+      >
+        ${packageLabel.replace(/^[^\s]+\s/, "")}
+      </td>
 
-                  <tr>
-                    <td
-                      style="
-                        color:rgba(255,255,255,.7);
-                        padding-bottom:14px;
-                        font-size:13px;
-                      "
-                    >
-                      Worker Charges
-                    </td>
+      <td
+        align="right"
+        style="
+          font-size:14px;
+          font-weight:800;
+          padding-bottom:14px;
+        "
+      >
+        ₹${Number(packagePrice || 0).toLocaleString("en-IN")}
+      </td>
+    </tr>
 
-                    <td
-                      align="right"
-                      style="
-                        padding-bottom:18px;
-                        font-size:13px;
-                        font-weight:700;
-                      "
-                    >
-                      ₹${booking.total_cost}
-                    </td>
-                  </tr>
+    <tr>
+      <td
+        style="
+          color:rgba(255,255,255,.75);
+          padding-bottom:14px;
+          font-size:14px;
+        "
+      >
+        Platform Fee
+      </td>
 
-                  <tr>
-                    <td
-                      style="
-                        color:rgba(255,255,255,.7);
-                        padding-bottom:14px;
-                        font-size:13px;
-                      "
-                    >
-                      Platform Fee
-                    </td>
+      <td
+        align="right"
+        style="
+          font-size:14px;
+          font-weight:800;
+          padding-bottom:14px;
+        "
+      >
+        ₹${Number(booking.service_fee || 0).toLocaleString("en-IN")}
+      </td>
+    </tr>
 
-                    <td
-                      align="right"
-                      style="
-                        padding-bottom:14px;
-                        font-size:13px;
-                        font-weight:700;
-                      "
-                    >
-                     ₹${booking.service_fee}
-                    </td>
-                  </tr>
+    ${
+      booking.materials_cost > 0
+        ? `
+      <tr>
+        <td
+          style="
+            color:rgba(255,255,255,.75);
+            padding-bottom:14px;
+            font-size:14px;
+          "
+        >
+          Materials
+        </td>
 
-                  ₹${
-                    booking.materials_cost > 0
-                      ? `
-                    <tr>
-                      <td
-                        style="
-                          color:rgba(255,255,255,.7);
-                          padding-bottom:10px;
-                          font-size:13px;
-                        "
-                      >
-                        Materials
-                      </td>
+        <td
+          align="right"
+          style="
+            font-size:14px;
+            font-weight:800;
+            padding-bottom:14px;
+          "
+        >
+          ₹${Number(booking.materials_cost || 0).toLocaleString("en-IN")}
+        </td>
+      </tr>
+    `
+        : ""
+    }
 
-                      <td
-                        align="right"
-                        style="
-                          padding-bottom:14px;
-                          font-size:13px;
-                          font-weight:700;
-                        "
-                      >
-                       ₹${booking.materials_cost}
-                      </td>
-                    </tr>
-                  `
-                      : ""
-                  }
+  </table>
 
-                </table>
+  <div
+    style="
+      height:1px;
+      background:rgba(255,255,255,.15);
+      margin:18px 0;
+    "
+  ></div>
+
+  <table width="100%">
+    <tr>
+
+      <td valign="bottom">
+
+        <div
+          style="
+            color:rgba(255,255,255,.65);
+            font-size:13px;
+            margin-bottom:6px;
+          "
+        >
+          Grand Total
+        </div>
+
+        <div
+          style="
+            font-size:56px;
+            line-height:1;
+            font-weight:900;
+            color:white;
+          "
+        >
+          ₹${Number(booking.grand_total || 0).toLocaleString("en-IN")}
+        </div>
+
+      </td>
+
+      <td align="right" valign="bottom">
+
+        <div
+          style="
+            background:#FF6B4A;
+            color:white;
+            border-radius:18px;
+            padding:16px 20px;
+            display:inline-block;
+            text-align:center;
+          "
+        >
+          <div
+            style="
+              font-size:10px;
+              letter-spacing:.8px;
+              font-weight:700;
+              opacity:.9;
+              margin-bottom:6px;
+            "
+          >
+            SELECTED PACKAGE
+          </div>
+
+          <div
+            style="
+              font-size:22px;
+              font-weight:900;
+            "
+          >
+            ${packageLabel}
+          </div>
+
+        </div>
+
+      </td>
+
+    </tr>
+  </table>
+
+</div>
 
                 <div
                   style="
