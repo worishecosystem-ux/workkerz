@@ -8,7 +8,7 @@ export default function LoginPage() {
     const { error } = await supabase.auth.signInWithOAuth({
       provider: "google",
       options: {
-        redirectTo: `${window.location.origin}/dashboard`,
+        redirectTo: `${window.location.origin}/auth/callback`,
       },
     });
 
@@ -34,13 +34,11 @@ export default function LoginPage() {
               </div>
             </div>
 
-            <h1 className="text-3xl font-bold text-slate-900">
-              Welcome Back
-            </h1>
+            <h1 className="text-3xl font-bold text-slate-900">Welcome Back</h1>
 
             <p className="text-slate-500 mt-3 leading-relaxed">
-              Sign in to access bookings, workers,
-              projects and your Workkerz dashboard.
+              Sign in to access bookings, workers, projects and your Workkerz
+              dashboard.
             </p>
           </div>
 
@@ -49,9 +47,7 @@ export default function LoginPage() {
             <div className="grid grid-cols-3 gap-3">
               <div className="bg-slate-50 rounded-2xl p-3 text-center">
                 <Briefcase className="w-5 h-5 mx-auto text-orange-500 mb-2" />
-                <p className="text-xs font-medium text-slate-600">
-                  Jobs
-                </p>
+                <p className="text-xs font-medium text-slate-600">Jobs</p>
               </div>
 
               <div className="bg-slate-50 rounded-2xl p-3 text-center">
@@ -69,9 +65,7 @@ export default function LoginPage() {
                   />
                 </svg>
 
-                <p className="text-xs font-medium text-slate-600">
-                  Booking
-                </p>
+                <p className="text-xs font-medium text-slate-600">Booking</p>
               </div>
 
               <div className="bg-slate-50 rounded-2xl p-3 text-center">
@@ -89,9 +83,7 @@ export default function LoginPage() {
                   />
                 </svg>
 
-                <p className="text-xs font-medium text-slate-600">
-                  Workers
-                </p>
+                <p className="text-xs font-medium text-slate-600">Workers</p>
               </div>
             </div>
           </div>
@@ -107,24 +99,19 @@ export default function LoginPage() {
                 alt="Google"
                 className="w-5 h-5"
               />
-
               Continue with Google
-
               <ArrowRight className="w-4 h-4" />
             </button>
 
             <p className="text-center text-xs text-slate-400 mt-5">
-              By continuing, you agree to our Terms &
-              Privacy Policy.
+              By continuing, you agree to our Terms & Privacy Policy.
             </p>
           </div>
         </div>
 
         {/* Footer */}
         <div className="text-center mt-6">
-          <p className="text-sm text-slate-500">
-            Powered by Workkerz
-          </p>
+          <p className="text-sm text-slate-500">Powered by Workkerz</p>
         </div>
       </div>
     </div>

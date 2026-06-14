@@ -197,6 +197,19 @@ export default function WorkerProfile() {
     setReviews(data || []);
   };
 
+  const handleBookNow = async () => {
+    const {
+      data: { session },
+    } = await supabase.auth.getSession();
+
+    if (!session) {
+      router.push(`/login?redirect=${encodeURIComponent(`/book/${workerId}`)}`);
+      return;
+    }
+
+    router.push(`/book/${workerId}`);
+  };
+
   /* LOADING */
 
   if (loading) {
@@ -834,18 +847,19 @@ export default function WorkerProfile() {
                   </div>
                 </div>
 
-                <Link
-                  href={`/book/${worker.id}`}
-                  className={`block w-full text-center text-white py-3.5 rounded-xl text-sm transition-colors mb-3 ${
+                <button
+                  onClick={handleBookNow}
+                  disabled={!worker.available}
+                  className={`w-full text-center text-white py-3.5 rounded-xl text-sm transition-colors mb-3 ${
                     worker.available
                       ? "bg-[#FF5C39] hover:bg-[#e54e2e]"
-                      : "bg-gray-300 cursor-not-allowed pointer-events-none"
+                      : "bg-gray-300 cursor-not-allowed"
                   }`}
                   style={{ fontWeight: 600 }}
                 >
                   <Calendar className="w-4 h-4 inline mr-2" />
                   {worker.available ? "Book Now" : "Currently Unavailable"}
-                </Link>
+                </button>
 
                 <button className="w-full flex items-center justify-center gap-2 border border-gray-200 text-[#475569] hover:bg-gray-50 py-3 rounded-xl text-sm transition-colors">
                   <MessageCircle className="w-4 h-4" />
