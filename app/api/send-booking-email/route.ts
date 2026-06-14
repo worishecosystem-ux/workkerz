@@ -94,36 +94,10 @@ export async function POST(req: Request) {
       }
     };
 
-    const bookingTypeLabel = getBookingTypeLabel(booking.booking_type);
-
+   
     const packageLabel = getBookingTypeLabel(booking.booking_type);
 
-    let packagePrice = booking.total_cost || 0;
-
-    switch (booking.booking_type) {
-      case "quick_service":
-        packagePrice =
-          booking.visit_charge ||
-          booking.starting_price ||
-          booking.total_cost ||
-          0;
-        break;
-
-      case "half_day":
-        packagePrice = booking.half_day_price || booking.total_cost || 0;
-        break;
-
-      case "full_day":
-        packagePrice = booking.full_day_price || booking.total_cost || 0;
-        break;
-
-      case "monthly":
-        packagePrice = booking.monthly_price || booking.total_cost || 0;
-        break;
-
-      default:
-        packagePrice = booking.total_cost || 0;
-    }
+   const packagePrice = Number(booking.package_price || 0);
 
     // HTML
     const html = `

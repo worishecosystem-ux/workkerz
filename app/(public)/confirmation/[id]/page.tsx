@@ -129,6 +129,30 @@ export default function Confirmation() {
           grandTotal,
         } = state;
 
+        let packagePrice = 0;
+
+        switch (form?.bookingType) {
+          case "quick_service":
+            packagePrice =
+              Number(worker?.visitCharge) || Number(worker?.startingPrice) || 0;
+            break;
+
+          case "half_day":
+            packagePrice = Number(worker?.halfDayPrice) || 0;
+            break;
+
+          case "full_day":
+            packagePrice = Number(worker?.fullDayPrice) || 0;
+            break;
+
+          case "monthly":
+            packagePrice = Number(worker?.monthlyPrice) || 0;
+            break;
+
+          default:
+            packagePrice = Number(totalCost) || 0;
+        }
+
         const bookingData = {
           booking_id: bookingId.current,
 
@@ -171,17 +195,9 @@ export default function Confirmation() {
           state: form?.state || "",
 
           pincode: form?.pincode || "",
-          pricing_type: worker?.pricingType || "",
+          booking_type: form?.bookingType || "quick_service",
 
-          starting_price: Number(worker?.startingPrice) || 0,
-
-          visit_charge: Number(worker?.visitCharge) || 0,
-
-          half_day_price: Number(worker?.halfDayPrice) || 0,
-
-          full_day_price: Number(worker?.fullDayPrice) || 0,
-
-          monthly_price: Number(worker?.monthlyPrice) || 0,
+          package_price: packagePrice,
 
           selected_materials: form?.selectedMaterials || {},
 
@@ -339,7 +355,6 @@ export default function Confirmation() {
     }
   };
 
-  const pricing = getWorkerPricing();
 
   const grandTotal =
     Number(totalCost) + Number(serviceFee) + Number(materialsCost);
@@ -636,7 +651,7 @@ export default function Confirmation() {
             <div className="mt-5 bg-[#0F172A] rounded-3xl p-6 text-white">
               <div className="space-y-3">
                 <PriceRow
-                  label={pricing.label}
+                  label={getBookingTypeLabel()}
                   value={`₹${Number(totalCost).toLocaleString("en-IN")}`}
                 />
 
@@ -658,7 +673,7 @@ export default function Confirmation() {
                   </div>
                 </div>
 
-                <div className="bg-linear-to-r from-[#FF5C39] to-[#ff7a5c] px-5 py-3 rounded-2xl shadow-lg">
+                <div className="bg-linear-to-r from-[#FF5C39] to-[#ff7a5c] px-5 py-2 rounded-2xl shadow-lg">
                   <div className="text-[10px] text-white/80 uppercase tracking-wider">
                     Selected Package
                   </div>
