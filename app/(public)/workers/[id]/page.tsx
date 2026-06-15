@@ -158,6 +158,7 @@ export default function WorkerProfile() {
   const [loading, setLoading] = useState(true);
 
   const [reviews, setReviews] = useState<any[]>([]);
+  const [favoriteLoading, setFavoriteLoading] = useState(false);
 
   /* LOADING */
 
@@ -185,6 +186,67 @@ export default function WorkerProfile() {
       console.log(error);
     } finally {
       setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    if (id) {
+      loadWorker();
+      loadReviews();
+      checkFavorite();
+    }
+  }, [id]);
+
+  const checkFavorite = async () => {
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+
+    if (!user) return;
+
+    const { data } = await supabase
+      .from("favorites")
+      .select("id")
+      .eq("customer_id", user.id)
+      .eq("worker_id", workerId)
+      .maybeSingle();
+
+    setSaved(!!data);
+  };
+
+  const toggleFavorite = async () => {
+    try {
+      setFavoriteLoading(true);
+
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+
+      if (!user) {
+        router.push("/login");
+        return;
+      }
+
+      if (saved) {
+        await supabase
+          .from("favorites")
+          .delete()
+          .eq("customer_id", user.id)
+          .eq("worker_id", workerId);
+
+        setSaved(false);
+      } else {
+        await supabase.from("favorites").insert({
+          customer_id: user.id,
+          worker_id: workerId,
+        });
+
+        setSaved(true);
+      }
+    } catch (error) {
+      console.log(error);
+    } finally {
+      setFavoriteLoading(false);
     }
   };
 
@@ -404,15 +466,18 @@ export default function WorkerProfile() {
                       </div>
                       <div className="flex items-center gap-2">
                         <button
-                          onClick={() => setSaved(!saved)}
-                          className={`w-9 h-9 rounded-full border flex items-center justify-center transition-colors ${
+                          onClick={toggleFavorite}
+                          disabled={favoriteLoading}
+                          className={`w-9 h-9 rounded-full border flex items-center justify-center transition-all ${
                             saved
-                              ? "bg-red-50 border-red-200 text-red-400"
+                              ? "bg-red-50 border-red-200 text-red-500"
                               : "border-gray-200 text-gray-400 hover:border-gray-300"
                           }`}
                         >
                           <Heart
-                            className={`w-4 h-4 ${saved ? "fill-red-400" : ""}`}
+                            className={`w-4 h-4 ${
+                              saved ? "fill-red-500 text-red-500" : ""
+                            }`}
                           />
                         </button>
                         <button className="w-9 h-9 rounded-full border border-gray-200 text-gray-400 hover:border-gray-300 flex items-center justify-center transition-colors">
