@@ -5,16 +5,18 @@ import { Briefcase, ArrowRight } from "lucide-react";
 
 export default function LoginPage() {
   const signInWithGoogle = async () => {
-    const { error } = await supabase.auth.signInWithOAuth({
+    console.log("ORIGIN:", window.location.origin);
+
+    const { data, error } = await supabase.auth.signInWithOAuth({
       provider: "google",
       options: {
-        redirectTo: `${window.location.origin}/auth/callback`,
+        redirectTo: "https://workkerz.com/auth/callback",
       },
     });
 
-    if (error) {
-      console.error(error);
-    }
+    console.log(data);
+
+    if (error) console.error(error);
   };
 
   return (
