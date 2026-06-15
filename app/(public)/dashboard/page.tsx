@@ -297,7 +297,7 @@ export default function DashboardPage() {
             <span className="text-xs text-slate-500">Fast Access</span>
           </div>
 
-          <div className="grid grid-cols-4 gap-3 md:grid-cols-4">
+          <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
             <QuickAction href="/browse" title="Book Worker" icon="👷" />
 
             <QuickAction href="/my-bookings" title="Bookings" icon="📋" />
