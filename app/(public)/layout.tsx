@@ -4,6 +4,8 @@ import { LayoutWrapper } from "../components/LayoutWrapper";
 
 export const metadata: Metadata = {
   metadataBase: new URL("https://workkerz.com"),
+  manifest: "/manifest.json",
+
 
   title: "Workkerz | Book Workers, Buy Materials & Quick Services",
 
@@ -53,6 +55,8 @@ export const metadata: Metadata = {
       "Hire verified workers, buy materials, request quick services, become a worker or seller with Workkerz.",
   },
 };
+
+
 
 export default function PublicLayout({
   children,
