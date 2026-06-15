@@ -93,7 +93,10 @@ export default function LoginPage() {
           {/* Google Button */}
           <div className="px-8 pb-8">
             <button
-              onClick={signInWithGoogle}
+              onClick={() => {
+                alert("Button Clicked");
+                signInWithGoogle();
+              }}
               className="w-full h-14 rounded-2xl border border-slate-200 bg-white hover:bg-slate-50 transition-all flex items-center justify-center gap-3 font-semibold text-slate-700 shadow-sm hover:shadow-md"
             >
               <img
