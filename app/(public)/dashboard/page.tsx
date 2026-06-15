@@ -218,7 +218,7 @@ export default function DashboardPage() {
 
   return (
     <div className="min-h-screen bg-slate-50">
-      <main className="max-w-7xl mx-auto px-4 md:px-6 py-8">
+      <main className="max-w-7xl mx-auto px-3 md:px-6 py-4 md:py-8">
         <div className="mb-6">
           <Link
             href="/"
@@ -230,27 +230,29 @@ export default function DashboardPage() {
         </div>
         {/* HEADER */}
 
-        <div className="bg-linear-to-r from-[#FF5C39] to-orange-500 rounded-3xl p-8 text-white mb-8">
-          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-6">
-            <div className="flex items-center gap-5">
+        <div className="bg-linear-to-r from-[#FF5C39] to-orange-500 rounded-3xl p-4 md:p-8 text-white mb-6">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+            <div className="flex items-center gap-3 min-w-0">
               <img
                 src={user.user_metadata?.avatar_url}
                 alt=""
-                className="w-24 h-24 rounded-full border-4 border-white object-cover"
+                className="w-16 h-16 md:w-24 md:h-24 rounded-full border-2 border-white object-cover shrink-0"
               />
 
-              <div>
-                <h1 className="text-3xl font-bold">
-                  Welcome, {user.user_metadata?.full_name}
+              <div className="min-w-0 flex-1">
+                <h1 className="text-xl md:text-3xl font-bold truncate">
+                  {user.user_metadata?.full_name}
                 </h1>
 
-                <p className="opacity-90 mt-1">{user.email}</p>
+                <p className="text-xs md:text-sm opacity-90 truncate">
+                  {user.email}
+                </p>
               </div>
             </div>
 
             <button
               onClick={handleLogout}
-              className="bg-white/20 backdrop-blur text-white px-3 py-2 rounded-lg flex items-center gap-2 text-sm font-medium hover:bg-white/30 transition"
+              className="w-full sm:w-auto bg-white/20 backdrop-blur px-4 py-3 rounded-xl flex items-center justify-center gap-2"
             >
               <LogOut size={16} />
               Logout
@@ -295,7 +297,7 @@ export default function DashboardPage() {
             <span className="text-xs text-slate-500">Fast Access</span>
           </div>
 
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+          <div className="grid grid-cols-4 gap-3 md:grid-cols-4">
             <QuickAction href="/browse" title="Book Worker" icon="👷" />
 
             <QuickAction href="/my-bookings" title="Bookings" icon="📋" />
@@ -311,7 +313,7 @@ export default function DashboardPage() {
         <div className="grid lg:grid-cols-2 gap-6">
           {/* RECENT BOOKINGS */}
 
-          <div className="bg-white rounded-3xl p-6 shadow-sm">
+          <div className="bg-white rounded-2xl p-4 md:p-6 shadow-sm border border-slate-100">
             <h2 className="text-xl font-bold mb-5">Recent Bookings</h2>
 
             <div className="space-y-4">
@@ -374,7 +376,7 @@ export default function DashboardPage() {
 
           {/* FAVORITE WORKERS */}
 
-          <div className="bg-white rounded-3xl p-6 shadow-sm">
+          <div className="bg-white rounded-2xl p-4 md:p-6 shadow-sm border border-slate-100">
             <h2 className="text-xl font-bold mb-5">Favorite Workers</h2>
 
             <div className="space-y-4">
@@ -442,13 +444,20 @@ export default function DashboardPage() {
 
 function StatCard({ title, value, icon }: any) {
   return (
-    <div className="bg-white rounded-3xl p-5 shadow-sm">
-      <div className="flex justify-between items-center">
-        {icon}
-        <span className="text-3xl font-bold">{value}</span>
+    <div className="bg-white rounded-2xl p-4 shadow-sm border border-slate-100">
+      <div className="flex items-center justify-between">
+        <div className="text-slate-500">
+          {icon}
+        </div>
+
+        <span className="text-2xl font-bold text-slate-900">
+          {value}
+        </span>
       </div>
 
-      <p className="mt-4 text-slate-500">{title}</p>
+      <p className="mt-3 text-sm text-slate-500">
+        {title}
+      </p>
     </div>
   );
 }
