@@ -36,8 +36,6 @@ type Booking = {
 
   booking_time: string;
 
-  duration: number;
-
   customer_name: string;
 
   customer_phone: string;
@@ -103,7 +101,6 @@ export default function OrdersTab() {
     service_type,
     booking_date,
     booking_time,
-    duration,
     customer_name,
     customer_phone,
     city,
@@ -728,7 +725,7 @@ export default function OrdersTab() {
       {/* MODAL */}
       {selectedOrder && (
         <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-md flex items-center justify-center p-2 sm:p-5">
-          <div className="w-full max-w-6xl bg-[#F8FAFC] rounded-4xl overflow-hidden max-h-[95vh] overflow-y-auto shadow-2xl border border-white/50 [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
+          <div className="w-full max-w-6xl bg-[#F8FAFC] rounded-4xl overflow-hidden max-h-[95vh] overflow-y-auto shadow-2xl border border-white/50 scrollbar-none [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
             {/* HEADER */}
             <div className="sticky top-0 z-10 bg-white/90 backdrop-blur-xl border-b border-gray-100 px-4 sm:px-6 py-5 flex items-center justify-between">
               <div>
@@ -832,11 +829,6 @@ export default function OrdersTab() {
                           minute: "2-digit",
                           hour12: true,
                         })}
-                      />
-
-                      <InfoRow
-                        label="Duration"
-                        value={`${selectedOrder.duration} Hours`}
                       />
 
                       <InfoRow
