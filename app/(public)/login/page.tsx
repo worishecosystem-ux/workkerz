@@ -5,15 +5,16 @@ import { Briefcase, ArrowRight } from "lucide-react";
 
 export default function LoginPage() {
   const signInWithGoogle = async () => {
-    alert(window.location.origin);
-    return;
-
-    await supabase.auth.signInWithOAuth({
+    const { error } = await supabase.auth.signInWithOAuth({
       provider: "google",
       options: {
-        redirectTo: "https://workkerz.com/auth/callback",
+        redirectTo: `${window.location.origin}/auth/callback`,
       },
     });
+
+    if (error) {
+      console.error(error);
+    }
   };
 
   return (
@@ -90,10 +91,7 @@ export default function LoginPage() {
           {/* Google Button */}
           <div className="px-8 pb-8">
             <button
-              onClick={() => {
-                alert("Button Clicked");
-                signInWithGoogle();
-              }}
+              onClick={signInWithGoogle}
               className="w-full h-14 rounded-2xl border border-slate-200 bg-white hover:bg-slate-50 transition-all flex items-center justify-center gap-3 font-semibold text-slate-700 shadow-sm hover:shadow-md"
             >
               <img
