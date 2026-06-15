@@ -12,10 +12,12 @@ export async function GET(request: Request) {
       process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
     );
 
-    await supabase.auth.exchangeCodeForSession(code);
+    try {
+      await supabase.auth.exchangeCodeForSession(code);
+    } catch (error) {
+      console.error("OAuth Exchange Error:", error);
+    }
   }
 
-  return NextResponse.redirect(
-    `${requestUrl.origin}/dashboard`
-  );
+  return NextResponse.redirect("https://workkerz.com/dashboard");
 }
