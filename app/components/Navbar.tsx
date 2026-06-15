@@ -252,6 +252,25 @@ export function Navbar() {
             </button>
           </div>
 
+          {user ? (
+            <Link
+              href="/dashboard"
+              className="w-9 h-9 rounded-full overflow-hidden border border-slate-200"
+            >
+              <img
+                src={user.user_metadata?.avatar_url || "/default-avatar.png"}
+                alt="Profile"
+                className="w-full h-full object-cover"
+              />
+            </Link>
+          ) : (
+            <Link
+              href="/login"
+              className="w-9 h-9 rounded-full bg-slate-100 flex items-center justify-center"
+            >
+              <LogIn className="w-4 h-4" />
+            </Link>
+          )}
           {/* CART */}
           {isEaurix && (
             <Link
