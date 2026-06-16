@@ -315,6 +315,24 @@ export default function BookingPage() {
               ]
             : [{ label: "Standard Service", value: "service" }];
 
+  useEffect(() => {
+    const loadUser = async () => {
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+
+      if (!user) return;
+
+      setForm((prev) => ({
+        ...prev,
+        email: user.email || "",
+        name: prev.name || user.user_metadata?.full_name || "",
+      }));
+    };
+
+    loadUser();
+  }, []);
+
   // AUTO SAVE FORM
   useEffect(() => {
     localStorage.setItem(
@@ -1305,26 +1323,16 @@ export default function BookingPage() {
                     <input
                       type="email"
                       value={form.email}
-                      onChange={(e) =>
-                        setForm({
-                          ...form,
-                          email: e.target.value,
-                        })
-                      }
-                      placeholder="example@gmail.com"
+                      readOnly
                       className="
-            w-full h-14
-            rounded-2xl
-            border border-gray-200
-            bg-[#F8FAFC]
-            pl-11 pr-4
-            text-sm text-[#0F172A]
-            placeholder:text-[#94A3B8]
-            outline-none
-            focus:border-[#FF5C39]
-            focus:bg-white
-            transition-all
-          "
+    w-full h-14
+    rounded-2xl
+    border border-gray-200
+    bg-slate-100
+    pl-11 pr-4
+    text-sm text-[#0F172A]
+    outline-none
+  "
                     />
                   </div>
                 </div>

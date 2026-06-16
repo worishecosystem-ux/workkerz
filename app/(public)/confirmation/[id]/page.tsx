@@ -153,6 +153,10 @@ export default function Confirmation() {
             packagePrice = Number(totalCost) || 0;
         }
 
+        const {
+          data: { user },
+        } = await supabase.auth.getUser();
+
         const bookingData = {
           booking_id: bookingId.current,
 
@@ -352,7 +356,6 @@ export default function Confirmation() {
         };
     }
   };
-
 
   const grandTotal =
     Number(totalCost) + Number(serviceFee) + Number(materialsCost);
