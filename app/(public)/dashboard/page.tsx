@@ -300,7 +300,7 @@ export default function DashboardPage() {
           <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
             <QuickAction href="/browse" title="Book Worker" icon="👷" />
 
-            <QuickAction href="/my-bookings" title="Bookings" icon="📋" />
+            <QuickAction href="/bookings" title="Bookings" icon="📋" />
 
             <QuickAction href="/favorites" title="Favorites" icon="❤️" />
 
