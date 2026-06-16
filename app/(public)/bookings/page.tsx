@@ -39,21 +39,31 @@ export default function MyBookingsPage() {
   }, []);
 
   async function loadBookings() {
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
 
-    if (!user) return;
+  console.log("AUTH USER:", user);
 
-    const { data } = await supabase
-      .from("bookings")
-      .select("*")
-      .eq("customer_email", user.email)
-      .order("created_at", { ascending: false });
-
-    setBookings(data || []);
-    setLoading(false);
+  if (!user) {
+    console.log("NO USER FOUND");
+    return;
   }
+
+  const { data, error } = await supabase
+    .from("bookings")
+    .select("*")
+    .eq("customer_email", user.email)
+    .order("created_at", { ascending: false });
+
+  console.log("USER EMAIL:", user.email);
+  console.log("BOOKINGS FOUND:", data?.length);
+  console.log("BOOKINGS:", data);
+  console.log("ERROR:", error);
+
+  setBookings(data || []);
+  setLoading(false);
+}
 
   const filteredBookings = useMemo(() => {
     return bookings.filter((booking) => {
