@@ -40,3 +40,25 @@ firebase-admin.json
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# IDE
+.vscode/
+.idea/
+android/.idea/
+
+# Backup
+android_backup/
+
+# Android build
+android/.gradle/
+android/app/build/
+android/build/
+
+# Next.js
+.next/
+
+# Node
+node_modules/
+
+# Firebase (only if repo is public)
+android/app/google-services.json

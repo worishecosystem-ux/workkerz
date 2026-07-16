@@ -4,7 +4,6 @@ import { PlatformProvider } from "./components/context/PlatformContext";
 import { AdminProvider } from "./components/context/AdminContext";
 import { Toaster } from "sonner";
 import BackButtonHandler from "./components/BackButtonHandler";
-import PushNotificationProvider from "./components/PushNotificationProvider";
 export const metadata: Metadata = {
   title: "Workkerz",
   description: "Workkerz Platform",
@@ -38,7 +37,7 @@ export default function RootLayout({
       <body className="min-h-dvh overflow-x-hidden bg-white antialiased">
         <PlatformProvider>
           <AdminProvider>
-            <PushNotificationProvider />
+           
             <BackButtonHandler />
             {children}
           </AdminProvider>
