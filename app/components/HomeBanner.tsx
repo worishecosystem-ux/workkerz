@@ -7,6 +7,7 @@ import { Capacitor } from "@capacitor/core";
 import { useEffect, useState } from "react";
 import WorkCategories from "./WorkCategories";
 import AddressCard from "@/app/components/address/AddressCard";
+import { Suspense } from "react";
 
 export default function HomeBanner() {
   const { platform, setPlatform } = usePlatform();
@@ -40,7 +41,7 @@ export default function HomeBanner() {
         <>
           {/* MOBILE APP */}
           {isApp ? (
-           <div className="flex w-full flex-wrap items-center justify-center gap-2 px-3 sm:px-4 mt-12 sm:mt-10 lg:mt-10 mb-2">
+            <div className="flex w-full flex-wrap items-center justify-center gap-2 px-3 sm:px-4 mt-12 sm:mt-10 lg:mt-10 mb-2">
               <button
                 onClick={() => handleToggle("workkerz")}
                 className={`flex items-center gap-2 px-10 h-12 rounded-xl border transition-all duration-300 ${
@@ -136,7 +137,9 @@ export default function HomeBanner() {
       </div>
       {!isEaurix && (
         <div className="px-5 sm:px-6 lg:px-8 py-1">
-          <WorkCategories />
+          <Suspense fallback={null}>
+            <WorkCategories />
+          </Suspense>
         </div>
       )}
       {/* Highlight */}
