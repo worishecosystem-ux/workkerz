@@ -1,7 +1,6 @@
 "use client";
 
 import Link from "next/link";
-import { useSearchParams } from "next/navigation";
 import { serviceCategories } from "@/app/data/workers";
 
 const categoryImages: Record<string, string> = {
@@ -22,8 +21,7 @@ const categoryImages: Record<string, string> = {
 };
 
 export default function WorkCategories() {
-   const searchParams = useSearchParams();
-  const activeCategory = searchParams.get("category") ?? "";
+  const activeCategory = "";
 
 
   return (
