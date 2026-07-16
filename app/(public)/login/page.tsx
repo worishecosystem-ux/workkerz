@@ -6,51 +6,62 @@ import { useRouter } from "next/navigation";
 import { GoogleSignIn } from "@capawesome/capacitor-google-sign-in";
 import { Capacitor } from "@capacitor/core";
 
-const WEB_CLIENT_ID = process.env.NEXT_PUBLIC_GOOGLE_WEB_CLIENT_ID!;
+const WEB_CLIENT_ID =
+  process.env.NEXT_PUBLIC_GOOGLE_WEB_CLIENT_ID!;
 
 export default function LoginPage() {
-  console.log("Platform:", Capacitor.getPlatform());
-  console.log("Is Native:", Capacitor.isNativePlatform());
+  const router = useRouter();
+
   const signInWithGoogle = async () => {
-  alert("1. Button clicked");
+    try {
+      // Native Android App
+      if (Capacitor.isNativePlatform()) {
+        await GoogleSignIn.initialize({
+          clientId: WEB_CLIENT_ID,
+        });
 
-  try {
-    alert(
-      `Platform: ${Capacitor.getPlatform()} | Native: ${Capacitor.isNativePlatform()}`
-    );
+        const result = await GoogleSignIn.signIn();
 
-    if (Capacitor.isNativePlatform()) {
-      alert("2. Native App");
+        if (!result.idToken) {
+          throw new Error("Google ID Token not received.");
+        }
 
-      // 👇 YAHAN ADD KARO
-      alert(`WEB_CLIENT_ID = ${WEB_CLIENT_ID}`);
+        const { error } = await supabase.auth.signInWithIdToken({
+          provider: "google",
+          token: result.idToken,
+        });
 
-      alert("3. Initializing Google Sign-In");
+        if (error) throw error;
 
-      await GoogleSignIn.initialize({
-        clientId: WEB_CLIENT_ID,
+        router.replace("/");
+        return;
+      }
+
+      // Website
+      const { error } = await supabase.auth.signInWithOAuth({
+        provider: "google",
+        options: {
+          redirectTo: `${window.location.origin}/auth/callback`,
+        },
       });
 
-      alert("4. Google initialized");
+      if (error) throw error;
+    } catch (err: any) {
+      console.error("Google Sign-In Error:", err);
 
-      const result = await GoogleSignIn.signIn();
-
-      // ...
+      alert(
+        err?.message ||
+          "Unable to sign in. Please try again."
+      );
     }
-
-    // ...
-  } catch (e: any) {
-    console.error(e);
-    alert(e?.message || JSON.stringify(e));
-  }
-};
-  const router = useRouter();
+  };
 
   return (
     <div className="min-h-screen bg-linear-to-br from-orange-50 via-white to-slate-100 flex items-center justify-center px-4">
       <div className="w-full max-w-md">
         {/* Card */}
         <div className="bg-white rounded-3xl shadow-xl border border-slate-100 overflow-hidden">
+          {/* Back */}
           <div className="p-6 pb-0">
             <button
               onClick={() => router.push("/")}
@@ -60,7 +71,8 @@ export default function LoginPage() {
               <span className="text-sm font-medium">Back</span>
             </button>
           </div>
-          {/* Top Section */}
+
+          {/* Header */}
           <div className="p-8 text-center">
             <div className="flex justify-center mb-5">
               <div className="w-20 h-20 rounded-3xl bg-orange-100 flex items-center justify-center">
@@ -72,11 +84,13 @@ export default function LoginPage() {
               </div>
             </div>
 
-            <h1 className="text-3xl font-bold text-slate-900">Welcome Back</h1>
+            <h1 className="text-3xl font-bold text-slate-900">
+              Welcome Back
+            </h1>
 
             <p className="text-slate-500 mt-3 leading-relaxed">
-              Sign in to access bookings, workers, projects and your Workkerz
-              dashboard.
+              Sign in to access bookings, workers,
+              projects and your Workkerz dashboard.
             </p>
           </div>
 
@@ -85,7 +99,9 @@ export default function LoginPage() {
             <div className="grid grid-cols-3 gap-3">
               <div className="bg-slate-50 rounded-2xl p-3 text-center">
                 <Briefcase className="w-5 h-5 mx-auto text-orange-500 mb-2" />
-                <p className="text-xs font-medium text-slate-600">Jobs</p>
+                <p className="text-xs font-medium text-slate-600">
+                  Jobs
+                </p>
               </div>
 
               <div className="bg-slate-50 rounded-2xl p-3 text-center">
@@ -103,7 +119,9 @@ export default function LoginPage() {
                   />
                 </svg>
 
-                <p className="text-xs font-medium text-slate-600">Booking</p>
+                <p className="text-xs font-medium text-slate-600">
+                  Booking
+                </p>
               </div>
 
               <div className="bg-slate-50 rounded-2xl p-3 text-center">
@@ -117,16 +135,18 @@ export default function LoginPage() {
                     strokeLinecap="round"
                     strokeLinejoin="round"
                     strokeWidth={2}
-                    d="M12 8c-2.2 0-4 1.8-4 4s1.8 4 4 4 4-1.8 4-4-1.8-4-4-4z"
+                    d="M12 8c-2.2 0-4 1.8-4 4s1.8 4 4 4 4-1.8 4-4-4-4-4-4z"
                   />
                 </svg>
 
-                <p className="text-xs font-medium text-slate-600">Workers</p>
+                <p className="text-xs font-medium text-slate-600">
+                  Workers
+                </p>
               </div>
             </div>
           </div>
 
-          {/* Google Button */}
+          {/* Google Login */}
           <div className="px-8 pb-8">
             <button
               onClick={signInWithGoogle}
@@ -137,19 +157,24 @@ export default function LoginPage() {
                 alt="Google"
                 className="w-5 h-5"
               />
+
               Continue with Google
+
               <ArrowRight className="w-4 h-4" />
             </button>
 
             <p className="text-center text-xs text-slate-400 mt-5">
-              By continuing, you agree to our Terms & Privacy Policy.
+              By continuing, you agree to our Terms &
+              Privacy Policy.
             </p>
           </div>
         </div>
 
         {/* Footer */}
         <div className="text-center mt-6">
-          <p className="text-sm text-slate-500">Powered by Workkerz</p>
+          <p className="text-sm text-slate-500">
+            Powered by Workkerz
+          </p>
         </div>
       </div>
     </div>
