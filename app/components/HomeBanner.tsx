@@ -7,7 +7,7 @@ import { Capacitor } from "@capacitor/core";
 import { useEffect, useState } from "react";
 import WorkCategories from "./WorkCategories";
 import AddressCard from "@/app/components/address/AddressCard";
-import { Suspense } from "react";
+
 
 export default function HomeBanner() {
   const { platform, setPlatform } = usePlatform();
@@ -137,9 +137,9 @@ export default function HomeBanner() {
       </div>
       {!isEaurix && (
         <div className="px-5 sm:px-6 lg:px-8 py-1">
-          <Suspense fallback={null}>
+          
             <WorkCategories />
-          </Suspense>
+    
         </div>
       )}
       {/* Highlight */}

@@ -22,8 +22,9 @@ const categoryImages: Record<string, string> = {
 };
 
 export default function WorkCategories() {
-  const searchParams = useSearchParams();
-  const activeCategory = searchParams.get("category");
+   const searchParams = useSearchParams();
+  const activeCategory = searchParams.get("category") ?? "";
+
 
   return (
     <section>
