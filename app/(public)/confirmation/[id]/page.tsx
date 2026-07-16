@@ -5,9 +5,8 @@ import { useEffect, useRef, useState } from "react";
 
 import {
   CheckCircle,
-  Clock,
+  ChevronRight,
   MapPin,
-  Star,
   MessageCircle,
   Home,
   BadgeCheck,
@@ -32,7 +31,7 @@ export default function Confirmation() {
   const [bookingStatus, setBookingStatus] = useState<
     "pending" | "confirmed" | "rejected" | "cancelled"
   >("pending");
-
+  const [customerAddress, setCustomerAddress] = useState<any>(null);
   const [saving, setSaving] = useState(true);
 
   const [state, setState] = useState<{
@@ -43,7 +42,7 @@ export default function Confirmation() {
       photo: string;
       specialty: string;
       rating: number;
-
+      addressId?: string;
       pricingType: string;
 
       startingPrice: number;
@@ -52,6 +51,7 @@ export default function Confirmation() {
       fullDayPrice: number;
       monthlyPrice: number;
     };
+    addressId?: string; // ✅ YAHAN
     totalCost: number;
     serviceFee: number;
     materialsCost?: number;
@@ -123,6 +123,7 @@ export default function Confirmation() {
         const {
           form,
           worker,
+          addressId,
           totalCost,
           serviceFee,
           materialsCost = 0,
@@ -184,19 +185,9 @@ export default function Confirmation() {
 
           customer_phone: form?.phone || "",
 
-          customer_email: form?.email || "",
-
+          customer_email: user?.email || form?.email || "",
+          address_id: addressId || null,
           notes: form?.notes || "",
-
-          address: form?.address || "",
-
-          city: form?.city || "",
-
-          district: form?.district || "",
-
-          state: form?.state || "",
-
-          pincode: form?.pincode || "",
           booking_type: form?.bookingType || "quick_service",
 
           package_price: packagePrice,
@@ -279,6 +270,34 @@ export default function Confirmation() {
 
     saveBooking();
   }, [state]);
+
+  useEffect(() => {
+    const loadAddress = async () => {
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+
+      if (!user?.email) return;
+
+      const { data, error } = await supabase
+        .from("customer_addresses")
+        .select("*")
+        .eq("customer_email", user.email)
+        .order("is_default", { ascending: false })
+        .order("created_at", { ascending: false })
+        .limit(1)
+        .maybeSingle();
+
+      if (error) {
+        console.log("Address fetch error:", error);
+        return;
+      }
+
+      setCustomerAddress(data);
+    };
+
+    loadAddress();
+  }, []);
 
   useEffect(() => {
     if (!state) return;
@@ -471,237 +490,217 @@ export default function Confirmation() {
     return lines.flat().filter(Boolean).join("\n");
   };
 
-  const shareWhatsApp = () => {
-    if (!whatsappNum.trim()) return;
-
-    const cleanNumber = whatsappNum.replace(/\D/g, "");
-
-    const message = encodeURIComponent(buildWhatsAppMessage());
-
-    window.open(`https://wa.me/${cleanNumber}?text=${message}`, "_blank");
-
-    setWaSent(true);
-
-    setTimeout(() => {
-      setWaSent(false);
-    }, 3000);
-  };
-
   return (
-    <div className="min-h-screen bg-[#F8FAFC] pt-24 pb-16">
-      <div className="max-w-3xl mx-auto px-4">
-        <div className="bg-white rounded-4xl border border-gray-100 overflow-hidden shadow-[0_20px_80px_rgba(15,23,42,0.08)]">
-          {/* HEADER */}
-          <div className="relative overflow-hidden bg-linear-to-r from-[#0F172A] via-[#172033] to-[#1E293B] px-5 py-4">
-            {/* BG EFFECT */}
-            <div className="absolute inset-0 overflow-hidden">
-              <div className="absolute -top-16 -left-16 w-44 h-44 bg-[#FF5C39]/10 blur-3xl rounded-full" />
+    <div className="max-w-4xl mx-auto px-4 pb-28">
+      <div className="space-y-2">
+        {/* HEADER */}
+        <div className="sticky top-0 z-20 mt-12 overflow-hidden rounded-2xl border border-emerald-100 bg-white shadow-sm">
+          {/* Top Accent */}
+          <div className="h-1 bg-linear-to-r from-emerald-500 via-green-500 to-lime-400" />
 
-              <div className="absolute bottom-0 right-0 w-52 h-52 bg-[#0EA5E9]/10 blur-3xl rounded-full" />
-            </div>
-
-            {/* CONTENT */}
-            <div className="relative z-10 flex items-center justify-between gap-4 flex-wrap">
-              {/* LEFT */}
-              <div className="flex items-center gap-4">
-                {/* ICON */}
-                <div
-                  className={`w-14 h-14 rounded-2xl flex items-center justify-center border shrink-0 ${
-                    bookingStatus === "pending"
-                      ? "bg-yellow-100 border-yellow-200"
-                      : bookingStatus === "confirmed"
-                        ? "bg-emerald-100 border-emerald-200"
-                        : bookingStatus === "rejected"
-                          ? "bg-red-100 border-red-200"
-                          : "bg-gray-200 border-gray-300"
-                  }`}
-                >
-                  {bookingStatus === "pending" && (
-                    <Clock className="w-6 h-6 text-yellow-600" />
-                  )}
-
-                  {bookingStatus === "confirmed" && (
-                    <CheckCircle className="w-6 h-6 text-emerald-600" />
-                  )}
-
-                  {bookingStatus === "rejected" && (
-                    <span className="text-xl">❌</span>
-                  )}
-
-                  {bookingStatus === "cancelled" && (
-                    <span className="text-xl">🚫</span>
-                  )}
-                </div>
-
-                {/* TEXT */}
-                <div>
-                  <h1 className="text-lg font-black text-white leading-none">
-                    {bookingStatus === "pending" && "Booking Pending"}
-
-                    {bookingStatus === "confirmed" && "Booking Confirmed"}
-
-                    {bookingStatus === "rejected" && "Booking Rejected"}
-
-                    {bookingStatus === "cancelled" && "Booking Cancelled"}
-                  </h1>
-
-                  <p className="text-[11px] text-white/60 mt-1">
-                    {bookingStatus === "pending" &&
-                      "Waiting for admin approval"}
-
-                    {bookingStatus === "confirmed" &&
-                      "Booking confirmed successfully"}
-
-                    {bookingStatus === "rejected" && "Booking request rejected"}
-
-                    {bookingStatus === "cancelled" && "Booking cancelled"}
-                  </p>
-                </div>
+          <div className="p-4">
+            <div className="flex items-center gap-3">
+              <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-emerald-50">
+                <CheckCircle className="h-6 w-6 text-emerald-600" />
               </div>
 
-              {/* RIGHT */}
-              <div className="flex items-center gap-2 flex-wrap">
-                {/* BOOKING ID */}
-                <div className="px-4 py-2 rounded-xl bg-white/10 border border-white/10 backdrop-blur-xl flex items-center gap-2">
-                  <span className="text-[10px] uppercase tracking-wide text-white/50">
-                    Booking ID -
-                  </span>
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-2">
+                  <h1 className="text-[15px] font-bold text-slate-900">
+                    Booking
+                  </h1>
 
-                  <span className="text-xs font-bold text-white">
-                    {bookingId.current}
+                  <span className="rounded-full bg-emerald-100 px-2 py-0.5 text-[10px] font-semibold text-emerald-700">
+                    SUCCESSFULLY
+                  </span>
+                </div>
+
+                <p className="mt-0.5 text-[12px] text-slate-500">
+                  Your request has been submitted successfully.
+                </p>
+              </div>
+            </div>
+
+            <div className="mt-2 flex items-center justify-between rounded-xl border border-slate-100 bg-slate-50 px-3 py-2">
+              <div>
+                <p className="text-[10px] uppercase tracking-wide text-slate-400">
+                  Booking ID
+                </p>
+
+                <p className="font-mono text-[13px] font-bold text-slate-900">
+                  {bookingId.current}
+                </p>
+              </div>
+
+              <div className="rounded-full bg-white px-3 py-1 text-[11px] font-medium text-emerald-600 shadow-sm">
+                Saved
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* BODY */}
+        <div className="space-y-2">
+          {/* WORKER */}
+          <div className="rounded-2xl border border-emerald-100 bg-linear-to-r from-white to-emerald-50 p-3 shadow-sm">
+            <div className="flex gap-3">
+              <div className="relative">
+                <img
+                  src={worker.photo}
+                  className="h-16 w-16 rounded-2xl object-fill ring-2 ring-emerald-100"
+                />
+
+                <span className="absolute bottom-2 -right-1 h-4 w-4 rounded-full border-2 border-white bg-green-500"></span>
+              </div>
+
+              <div className="flex-1 min-w-0">
+                <div className="flex items-start justify-between gap-2">
+                  <div className="min-w-0">
+                    <h2 className="truncate text-[15px] font-bold text-gray-900">
+                      {worker.name}
+                    </h2>
+
+                    <p className="mt-0.5 truncate text-xs text-gray-500">
+                      {worker.specialty}
+                    </p>
+                  </div>
+
+                  <div className="bg-green-600 text-white px-2 py-0.5 rounded text-[11px] font-medium flex items-center gap-1">
+                    {" "}
+                    ⭐ {worker.rating}{" "}
+                  </div>
+                </div>
+
+                <div className="mt-3 flex items-center justify-between">
+                  <div className="inline-flex items-center gap-1 rounded-full bg-green-100 px-2.5 py-1 text-[11px] font-semibold text-green-700">
+                    <span className="h-2 w-2 rounded-full bg-green-500"></span>
+                    Ready to Work
+                  </div>
+
+                  <span className="inline-flex items-center gap-1 rounded-full bg-blue-100 px-2.5 py-1 text-[11px] font-semibold text-blue-700">
+                    <BadgeCheck className="h-3.5 w-3.5" />
+                    Verified
                   </span>
                 </div>
               </div>
             </div>
           </div>
 
-          {/* BODY */}
-          <div className="p-6">
-            {/* WORKER */}
-            <div className="border border-gray-100 rounded-3xl p-5">
-              <div className="flex gap-4">
-                <img
-                  src={worker.photo}
-                  alt={worker.name}
-                  className="w-25 h-28 rounded-3xl object-cover"
-                />
+          {/* SUMMARY */}
+          <div className="mt-2 rounded-2xl border border-slate-100 bg-white p-3 shadow-sm">
+            <div className="mb-2 flex items-center justify-between">
+              <h3 className="text-xs font-semibold text-slate-900">
+                Booking Details
+              </h3>
 
-                <div className="flex-1">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <h2 className="font-black text-xl text-[#0F172A]">
-                        {worker.name}
-                      </h2>
-
-                      <p className="text-sm text-[#64748B] mt-1">
-                        {worker.specialty}
-                      </p>
-                    </div>
-
-                    <div className="flex items-center gap-1">
-                      <Star className="w-4 h-4 text-yellow-400 fill-yellow-400" />
-
-                      <span className="font-bold">{worker.rating}</span>
-                    </div>
-                  </div>
-
-                  <div className="mt-4 text-sm text-emerald-600 font-semibold">
-                    Worker Ready For Booking
-                  </div>
-                </div>
-              </div>
+              <span
+                className={`rounded-full px-2 py-0.5 text-[10px] font-semibold ${
+                  bookingStatus === "confirmed"
+                    ? "bg-emerald-100 text-emerald-700"
+                    : bookingStatus === "pending"
+                      ? "bg-amber-100 text-amber-700"
+                      : bookingStatus === "rejected"
+                        ? "bg-red-100 text-red-700"
+                        : "bg-slate-100 text-slate-700"
+                }`}
+              >
+                {bookingStatus === "confirmed"
+                  ? "CONFIRMED"
+                  : bookingStatus === "pending"
+                    ? "PENDING"
+                    : bookingStatus === "rejected"
+                      ? "REJECTED"
+                      : "CANCELLED"}
+              </span>
             </div>
 
-            {/* SUMMARY */}
-            <div className="mt-5 border border-gray-100 rounded-3xl p-5">
-              <div className="text-xl font-black text-[#0F172A] mb-5">
-                Booking Summary
-              </div>
+            <div className="space-y-1.5">
+              <MiniRow label="Service" value={form.serviceType} />
+              <MiniRow label="Date" value={formatDate(form.date)} />
+              <MiniRow label="Time" value={form.time} />
+              <MiniRow label="Customer" value={form.name} />
+              <MiniRow label="Phone" value={form.phone} />
 
-              <div className="space-y-4">
-                <Detail label="Service" value={form.serviceType} />
+              <MiniRow label="Description" value={form.description || "—"} />
 
-                <Detail label="Description" value={form.description} />
+              <MiniRow label="Notes" value={form.notes || "—"} />
 
-                <Detail label="Date" value={formatDate(form.date)} />
+              <div className="flex items-start gap-2 rounded-xl bg-slate-50 px-2.5 py-2">
+                <MapPin className="mt-0.5 h-3.5 w-3.5 text-emerald-600 shrink-0" />
 
-                <Detail label="Time" value={form.time} />
-
-                <Detail
-                  label="Location"
-                  value={[
-                    form.address,
-                    form.city,
-                    form.district,
-                    form.state,
-                    form.pincode,
+                <p className="text-[11px] leading-4 text-slate-600">
+                  {[
+                    customerAddress?.house_no,
+                    customerAddress?.address,
+                    customerAddress?.landmark,
+                    customerAddress?.city,
+                    customerAddress?.district,
+                    customerAddress?.state,
+                    customerAddress?.pincode,
                   ]
                     .filter(Boolean)
                     .join(", ")}
-                />
-
-                <Detail label="Customer" value={form.name} />
-
-                <Detail label="Phone" value={form.phone} />
-
-                <Detail label="Email" value={form.email} />
+                </p>
               </div>
             </div>
+          </div>
 
-            {/* PRICE */}
-            <div className="mt-5 bg-[#0F172A] rounded-3xl p-6 text-white">
-              <div className="space-y-3">
-                <PriceRow
-                  label={getBookingTypeLabel()}
-                  value={`₹${Number(totalCost).toLocaleString("en-IN")}`}
-                />
+          {/* PRICE */}
+          <div className="mt-2 rounded-2xl bg-[#072566] p-3.5 text-white shadow-xl">
+            <div className="">
+              <PriceRow
+                label="Worker Fee"
+                value={`₹${Number(totalCost).toLocaleString("en-IN")}`}
+              />
 
-                <PriceRow label="Platform Fee" value={`₹${serviceFee}`} />
+              <PriceRow label="Platform Fee" value={`₹${serviceFee}`} />
 
-                {materialsCost > 0 && (
-                  <PriceRow label="Materials" value={`₹${materialsCost}`} />
-                )}
-              </div>
-
-              <div className="h-px bg-white/10 my-5" />
-
-              <div className="flex justify-between items-end">
-                <div>
-                  <div className="text-xs text-white/70">₹Grand Total</div>
-
-                  <div className="text-4xl font-black mt-1">
-                    ₹{Number(grandTotal || 0).toLocaleString("en-IN")}
-                  </div>
-                </div>
-
-                <div className="bg-linear-to-r from-[#FF5C39] to-[#ff7a5c] px-5 py-2 rounded-2xl shadow-lg">
-                  <div className="text-[10px] text-white/80 uppercase tracking-wider">
-                    Selected Package
-                  </div>
-
-                  <div className="text-sm font-black text-white mt-1">
-                    {getBookingTypeLabel()}
-                  </div>
-                </div>
-              </div>
+              {materialsCost > 0 && (
+                <PriceRow label="Materials" value={`₹${materialsCost}`} />
+              )}
             </div>
 
-            {/* SECURITY */}
-            <div className="mt-5 rounded-3xl bg-emerald-50 border border-emerald-100 p-5 flex gap-4">
-              <ShieldCheck className="w-6 h-6 text-emerald-600 shrink-0" />
+            <div className="my-3 h-px bg-white/10" />
 
-              <div>
-                <div className="font-bold text-emerald-700">
-                  Secure Booking Protection
-                </div>
+            <div className="flex items-center justify-between">
+              <div className="flex items-center justify-between gap-3">
+                <span className="text-[15px] font-medium text-white/60">
+                  Grand Total
+                </span>
 
-                <div className="text-sm text-emerald-600 mt-1">
-                  Payment protected by Workkerz.
-                </div>
+                <span className="text-[15px] font-bold text-white">
+                  ₹{Number(grandTotal || 0).toLocaleString("en-IN")}
+                </span>
+              </div>
+
+              <div className="rounded-lg bg-white/10 px-2.5 py-1.5 backdrop-blur-sm">
+                <p className="mt-0.5 text-[11px] font-semibold leading-none text-white">
+                  {getBookingTypeLabel()}
+                </p>
               </div>
             </div>
+          </div>
 
-            {/* WHATSAPP */}
+          {/* SECURITY */}
+          <div className="mt-2 rounded-2xl border border-emerald-200 bg-linear-to-r from-emerald-50 to-white px-3 py-2.5">
+            <div className="flex items-center gap-2">
+              <div className="flex h-8 w-8 items-center justify-center rounded-full bg-emerald-100">
+                <ShieldCheck className="h-4 w-4 text-emerald-600" />
+              </div>
+
+              <div className="leading-tight">
+                <p className="text-[12px] font-semibold text-gray-900">
+                  Workkerz Trust
+                </p>
+                <p className="text-[10px] text-gray-500">
+                  Safe payments • Verified workers • Booking support
+                </p>
+              </div>
+            </div>
+          </div>
+
+          {/* WHATSAPP */}
+          {!waSent && (
             <div className="mt-5 border border-gray-100 rounded-3xl p-5 bg-white shadow-sm">
               <div className="flex items-center justify-between gap-3">
                 <div className="flex items-center gap-3">
@@ -710,44 +709,37 @@ export default function Confirmation() {
                   </div>
 
                   <div>
-                    <div
-                      className="font-bold text-[#0F172A] text-sm"
-                      style={{ fontWeight: 800 }}
-                    >
-                      Booking Details sent to whatsapp
+                    <div className="font-bold text-[#0F172A] text-sm">
+                      Booking Details sent to WhatsApp
                     </div>
 
                     <div className="text-xs text-[#64748B] mt-0.5">
-                      Booking receipt sent to workkerz
+                      Booking receipt sent to Workkerz
                     </div>
                   </div>
                 </div>
-
-                {waSent && (
-                  <div className="px-3 py-1 rounded-full bg-emerald-50 border border-emerald-200 text-[11px] text-emerald-600 font-semibold whitespace-nowrap">
-                    ✓ WhatsApp request sent
-                  </div>
-                )}
               </div>
             </div>
+          )}
+        </div>
+      </div>
+      <div className="fixed bottom-0 inset-x-0 z-50 md:hidden">
+        <div className="border-t border-slate-200 bg-white/95 backdrop-blur-xl px-3 pt-4 pb-[calc(env(safe-area-inset-bottom)+10px)] shadow-[0_-8px_24px_rgba(15,23,42,0.08)]">
+          <div className="flex items-center gap-3">
+            <Link
+              href="/"
+              className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-slate-100 active:scale-95 transition"
+            >
+              <Home className="h-5 w-5 text-slate-700" />
+            </Link>
 
-            {/* ACTIONS */}
-            <div className="grid grid-cols-2 gap-3 mt-5">
-              <Link
-                href="/"
-                className="h-12 rounded-2xl border border-gray-200 flex items-center justify-center gap-2 text-sm"
-              >
-                <Home className="w-4 h-4" />
-                Home
-              </Link>
-
-              <Link
-                href="/browse"
-                className="h-12 rounded-2xl bg-[#FF5C39] text-white flex items-center justify-center text-sm font-semibold"
-              >
-                Book Another
-              </Link>
-            </div>
+            <Link
+              href="/browse"
+              className="flex flex-1 items-center justify-center gap-2 rounded-xl bg-linear-to-r from-cyan-500 to-emerald-500 px-4 py-3 text-sm font-semibold text-white shadow-lg shadow-cyan-500/20 active:scale-[0.98] transition"
+            >
+              <span>Book Another Worker</span>
+              <ChevronRight className="h-4 w-4" />
+            </Link>
           </div>
         </div>
       </div>
@@ -758,10 +750,12 @@ export default function Confirmation() {
 // DETAIL ROW
 function Detail({ label, value }: { label: string; value?: string }) {
   return (
-    <div className="flex justify-between gap-5 pb-4 border-b border-dashed border-gray-200">
-      <span className="text-sm text-[#64748B]">{label}</span>
+    <div className="flex items-start justify-between gap-4 px-4 py-2 border-b border-slate-100 last:border-b-0">
+      <span className="shrink-0 text-[13px] font-medium text-slate-500">
+        {label}
+      </span>
 
-      <span className="text-sm font-bold text-right text-[#0F172A] max-w-[60%] wrap-break-word">
+      <span className="max-w-[90%] text-right text-[14px] font-semibold text-slate-900 wrap-break-word leading-5">
         {value || "—"}
       </span>
     </div>
@@ -771,10 +765,24 @@ function Detail({ label, value }: { label: string; value?: string }) {
 // PRICE ROW
 function PriceRow({ label, value }: { label: string; value: string }) {
   return (
-    <div className="flex justify-between text-sm">
-      <span className="text-white/70">{label}</span>
+    <div className="flex items-center justify-between py-1">
+      <span className="text-[13px] leading-none text-white/65">{label}</span>
 
-      <span className="font-semibold">{value}</span>
+      <span className="text-[13px] leading-none font-semibold text-white">
+        {value}
+      </span>
+    </div>
+  );
+}
+
+function MiniRow({ label, value }: { label: string; value: React.ReactNode }) {
+  return (
+    <div className="flex items-center justify-between rounded-lg px-2 py-1.5">
+      <span className="text-[11px] text-slate-500">{label}</span>
+
+      <span className="max-w-[60%] truncate text-right text-[11px] font-semibold text-slate-900">
+        {value}
+      </span>
     </div>
   );
 }

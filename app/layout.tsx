@@ -1,9 +1,10 @@
 import "./globals.css";
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { PlatformProvider } from "./components/context/PlatformContext";
 import { AdminProvider } from "./components/context/AdminContext";
 import { Toaster } from "sonner";
-
+import BackButtonHandler from "./components/BackButtonHandler";
+import PushNotificationProvider from "./components/PushNotificationProvider";
 export const metadata: Metadata = {
   title: "Workkerz",
   description: "Workkerz Platform",
@@ -14,16 +15,33 @@ export const metadata: Metadata = {
   },
 };
 
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+  maximumScale: 1,
+  userScalable: false,
+  viewportFit: "cover",
+  themeColor: "#ffffff",
+};
+
 export default function RootLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en" data-scroll-behavior="smooth">
-      <body>
+    <html
+      lang="en"
+      suppressHydrationWarning
+      className="h-full"
+    >
+      <body className="min-h-dvh overflow-x-hidden bg-white antialiased">
         <PlatformProvider>
-          <AdminProvider>{children}</AdminProvider>
+          <AdminProvider>
+            <PushNotificationProvider />
+            <BackButtonHandler />
+            {children}
+          </AdminProvider>
         </PlatformProvider>
 
         <Toaster

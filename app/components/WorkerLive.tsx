@@ -151,14 +151,14 @@ export default function LiveNewsStrip() {
   const cards = [...topWorkers, ...topWorkers];
 
   return (
-    <section className="bg-[#1E293B] py-4 overflow-hidden border-y border-amber-200">
+    <section className="bg-linear-to-br from-emerald-100 via-green-50 to-white py-4 overflow-hidden border-y border-emerald-200 shadow-[inset_0_2px_0_rgba(255,255,255,0.8),0_10px_30px_rgba(16,185,129,0.18)]">
       {/* TOP BAR */}
       <div className="flex items-center mb-2 px-3 md:px-6">
         <span className="bg-red-500 text-white text-[9px] md:text-xs px-2 py-0.5 rounded-full font-semibold animate-pulse">
           🔴 LIVE
         </span>
 
-        <p className="ml-2 md:ml-4 text-[9px] md:text-sm text-gray-300">
+        <p className="ml-2 md:ml-4 text-[9px] md:text-sm text-gray-900 font-bold">
           Top Workers • Most Completed Jobs
         </p>
       </div>
@@ -169,7 +169,7 @@ export default function LiveNewsStrip() {
           {cards.map((worker, i) => (
             <div
               key={i}
-              className="mx-2 min-w-60 bg-white border border-slate-100 rounded-xl px-3 py-2 flex items-center gap-2 shadow-sm"
+             className="mx-2 min-w-60 bg-linear-to-br from-white/90 via-slate-100 to-slate-200 border border-white/70 rounded-xl px-3 py-2 flex items-center gap-2 shadow-[inset_0_2px_0_rgba(255,255,255,1),0_10px_25px_rgba(15,23,42,0.15)] backdrop-blur-2xl"
             >
               <div className="w-12 h-12 rounded-xl border border-slate-200 bg-white p-1 flex items-center justify-center">
                 <img

@@ -1,27 +1,70 @@
 "use client";
 
 import { supabase } from "@/lib/supabase";
-import { Briefcase, ArrowRight } from "lucide-react";
+import { Briefcase, ArrowRight, ArrowLeft } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { GoogleSignIn } from "@capawesome/capacitor-google-sign-in";
+import { Capacitor } from "@capacitor/core";
+
+const WEB_CLIENT_ID = process.env.NEXT_PUBLIC_GOOGLE_WEB_CLIENT_ID!;
 
 export default function LoginPage() {
+  console.log("Platform:", Capacitor.getPlatform());
+  console.log("Is Native:", Capacitor.isNativePlatform());
   const signInWithGoogle = async () => {
-    const { error } = await supabase.auth.signInWithOAuth({
-      provider: "google",
-      options: {
-        redirectTo: "https://workkerz.com/auth/callback",
-      },
-    });
+    try {
+      // Android App
+      if (Capacitor.isNativePlatform()) {
+        await GoogleSignIn.initialize({
+          clientId: WEB_CLIENT_ID,
+        });
 
-    if (error) {
-      console.error(error);
+        const result = await GoogleSignIn.signIn();
+
+        if (!result.idToken) {
+          throw new Error("No Google ID Token");
+        }
+
+        const { error } = await supabase.auth.signInWithIdToken({
+          provider: "google",
+          token: result.idToken,
+        });
+
+        if (error) throw error;
+
+        router.replace("/");
+        return;
+      }
+
+      // Website
+      const { error } = await supabase.auth.signInWithOAuth({
+        provider: "google",
+        options: {
+          redirectTo: `${window.location.origin}/auth/callback`,
+        },
+      });
+
+      if (error) throw error;
+    } catch (e) {
+      console.error(e);
     }
   };
+  const router = useRouter();
 
   return (
     <div className="min-h-screen bg-linear-to-br from-orange-50 via-white to-slate-100 flex items-center justify-center px-4">
       <div className="w-full max-w-md">
         {/* Card */}
         <div className="bg-white rounded-3xl shadow-xl border border-slate-100 overflow-hidden">
+          <div className="p-6 pb-0">
+            <button
+              onClick={() => router.push("/")}
+              className="flex items-center gap-2 text-slate-600 hover:text-slate-900 transition"
+            >
+              <ArrowLeft className="w-5 h-5" />
+              <span className="text-sm font-medium">Back</span>
+            </button>
+          </div>
           {/* Top Section */}
           <div className="p-8 text-center">
             <div className="flex justify-center mb-5">

@@ -79,7 +79,7 @@ export function Navbar() {
 
   return (
     <header
-      className="fixed top-0 left-0 right-0 z-50 border-b shadow-sm transition-colors duration-300"
+      className="fixed top-0 left-0 right-0 z-50 border-b shadow-sm transition-colors duration-300 mt-30"
       style={{
         backgroundColor: isEaurix ? "#ffffff" : "#ffffff",
         borderColor: isEaurix ? "rgba(14,165,233,0.2)" : "#F1F5F9",

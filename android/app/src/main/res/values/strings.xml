@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">Workkerz</string>
+    <string name="title_activity_main">Workkerz</string>
+    <string name="package_name">com.workkerz.app</string>
+    <string name="custom_url_scheme">com.workkerz.app</string>
+</resources>

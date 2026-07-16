@@ -44,15 +44,15 @@ type Booking = {
 
   notes: string;
 
-  address: string;
-
-  city: string;
-
-  district: string;
-
-  state: string;
-
-  pincode: string;
+  customer_addresses: {
+    house_no: string | null;
+    address: string | null;
+    landmark: string | null;
+    city: string | null;
+    district: string | null;
+    state: string | null;
+    pincode: string | null;
+  } | null;
 
   total_cost: number;
 
@@ -95,26 +95,41 @@ export default function OrdersTab() {
     id,
     booking_id,
     booking_status,
+    worker_id,
     worker_name,
+    worker_photo,
     worker_specialty,
     worker_rating,
     service_type,
+    description,
     booking_date,
     booking_time,
     customer_name,
     customer_phone,
-    city,
-    state,
+    customer_email,
+    notes,
     total_cost,
     service_fee,
     materials_cost,
+    package_price,
     grand_total,
-    created_at
+    booking_type,
+    work_status,
+    worker_available,
+    created_at,
+
+    customer_addresses (
+      house_no,
+      address,
+      landmark,
+      city,
+      district,
+      state,
+      pincode
+    )
   `,
         )
-        .order("created_at", {
-          ascending: false,
-        })
+        .order("created_at", { ascending: false })
         .limit(50);
 
       if (error) {
@@ -125,7 +140,12 @@ export default function OrdersTab() {
         return;
       }
 
-      setOrders((data || []) as Booking[]);
+      const formatted: Booking[] = (data ?? []).map((item: any) => ({
+  ...item,
+  customer_addresses: item.customer_addresses?.[0] ?? null,
+}));
+
+setOrders(formatted);
     } catch (err) {
       console.log("FETCH ERROR =>", err);
 
@@ -845,9 +865,13 @@ export default function OrdersTab() {
                     </div>
 
                     <div className="bg-[#F8FAFC] rounded-2xl p-4 border border-gray-100 text-sm text-[#475569] leading-7">
-                      {selectedOrder.address}, {selectedOrder.city},{" "}
-                      {selectedOrder.district}, {selectedOrder.state} -{" "}
-                      {selectedOrder.pincode}
+                      {selectedOrder.customer_addresses?.house_no},{" "}
+                      {selectedOrder.customer_addresses?.address},{" "}
+                      {selectedOrder.customer_addresses?.landmark},{" "}
+                      {selectedOrder.customer_addresses?.city},{" "}
+                      {selectedOrder.customer_addresses?.district},{" "}
+                      {selectedOrder.customer_addresses?.state}-
+                      {selectedOrder.customer_addresses?.pincode}
                     </div>
                   </div>
                 </div>

@@ -2,116 +2,79 @@
 import { useState, useEffect, useRef } from "react";
 import { Suspense } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
+import MobileFilterSheet from "@/app/components/MobileFilterSheet";
+import WorkCategories from "@/app/components/WorkCategories";
+import { FeaturedWorkerSmallCard } from "@/app/components/FeaturedWorkerSmallCard";
+import { useMobileNavbar } from "@/app/components/context/MobileNavbarContext";
+import { supabase } from "@/lib/supabase";
+
 import {
   Search,
   SlidersHorizontal,
   ChevronDown,
-  MapPin,
   X,
-  Hammer,
-  Droplets,
-  Zap,
-  Car,
   Star,
-  ChevronLeft,
-  ChevronRight,
-  Shield,
+  MapPin,
+  Pencil,
+  Home,
+  Building2,
 } from "lucide-react";
 import { serviceCategories, type ServiceCategory } from "@/app/data/workers";
 import { useAdmin } from "@/app/components/context/AdminContext";
 import { WorkerCard } from "@/app/components/WorkerCard";
 
-const categoryIcons: Record<string, React.ElementType> = {
-  Labour: Hammer,
-
-  Driver: Car,
-
-  Mechanic: Zap,
-
-  Washer: Droplets,
-
-  "Computer Operator": Zap,
-
-  "Office Worker": Hammer,
-
-  "Home Services": Droplets,
-
-  "Salon & Beauty": Star,
-
-  Restaurant: Star,
-
-  "Home Contractor": Hammer,
-
-  Construction: Hammer,
-
-  Factory: Zap,
-
-  Roads: Hammer,
-
-  Delivery: Car,
-
-  Security: Shield,
-
-  Healthcare: Star,
-
-  "Event Services": Star,
-};
-
+const smartSuggestions = [
+  { label: "Electrician", icon: "⚡" },
+  { label: "Plumber", icon: "🚰" },
+  { label: "Carpenter", icon: "🪚" },
+  { label: "Painter", icon: "🎨" },
+  { label: "Mason", icon: "🧱" },
+  { label: "Welder", icon: "🔥" },
+  { label: "Labour", icon: "👷" },
+  { label: "Cleaner", icon: "🧹" },
+];
 const sortOptions = [
   { value: "rating", label: "Highest Rated" },
   { value: "price_asc", label: "Starting Price: Low to High" },
   { value: "price_desc", label: "Starting Price: High to Low" },
   { value: "reviews", label: "Most Reviewed" },
 ];
+const getAddressIcon = (type?: string) => {
+  switch (type?.toLowerCase()) {
+    case "home":
+      return <Home className="w-4 h-4 text-orange-500" />;
+
+    case "office":
+      return <Building2 className="w-4 h-4 text-blue-500" />;
+
+    default:
+      return <MapPin className="w-4 h-4 text-gray-500" />;
+  }
+};
 
 function BrowseContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
   const [query, setQuery] = useState(searchParams.get("q") || "");
-  const [activeCategory, setActiveCategory] = useState<string>(
-    searchParams.get("category") || "",
-  );
+  const activeCategory =
+    searchParams.get("category") || serviceCategories[0]?.id;
   const [sortBy, setSortBy] = useState("rating");
   const [availableOnly, setAvailableOnly] = useState(false);
   const [maxPrice, setMaxPrice] = useState(5000);
   const [showFilters, setShowFilters] = useState(false);
   const [sortOpen, setSortOpen] = useState(false);
-
+  const [showSuggestions, setShowSuggestions] = useState(false);
   const { workers } = useAdmin();
-  const filterRef = useRef<HTMLDivElement | null>(null);
-
-  const categoryScrollRef = useRef<HTMLDivElement | null>(null);
-
-  const scrollCategories = (direction: "left" | "right") => {
-    if (!categoryScrollRef.current) return;
-
-    categoryScrollRef.current.scrollBy({
-      left: direction === "left" ? -250 : 250,
-      behavior: "smooth",
-    });
-  };
-  useEffect(() => {
-    const cat = searchParams.get("category");
-    if (cat) setActiveCategory(cat);
-  }, [searchParams]);
-
-  const handleCategoryChange = (cat: string) => {
-    setActiveCategory(cat);
-
-    const newParams = new URLSearchParams(searchParams.toString());
-
-    if (cat) {
-      newParams.set("category", cat);
-    } else {
-      newParams.delete("category");
-    }
-
-    router.push(`/browse?${newParams.toString()}`);
-  };
-
+  const { setShowMobileNavbar } = useMobileNavbar();
+  const [minExperience, setMinExperience] = useState(0);
   const filteredWorkers = (workers ?? [])
     .filter((w) => {
-      if (activeCategory && w.category !== activeCategory) return false;
+      if (
+        activeCategory &&
+        activeCategory !== serviceCategories[0]?.id &&
+        w.category !== activeCategory
+      )
+        return false;
       if (availableOnly && !w.available) return false;
       if (w.startingPrice > maxPrice) return false;
       if (
@@ -132,172 +95,195 @@ function BrowseContent() {
       return 0;
     });
 
+  const suggestions =
+    query.trim() === ""
+      ? []
+      : (workers ?? [])
+          .filter((worker) => {
+            const q = query.toLowerCase();
+
+            return (
+              worker.name.toLowerCase().includes(q) ||
+              worker.category.toLowerCase().includes(q) ||
+              worker.specialty.toLowerCase().includes(q) ||
+              worker.skills.some((s) => s.toLowerCase().includes(q))
+            );
+          })
+          .slice(0, 6);
   const currentSort = sortOptions.find((s) => s.value === sortBy);
 
   return (
     <div className="min-h-screen bg-[#F8FAFC]">
       {/* Page Header */}
-      <div className="bg-[#0F172A] pt-24 pb-10">
-        <div className="max-w-7xl mx-auto px-6">
-          <h1
-            className="text-white mb-2"
-            style={{
-              fontSize: "1.8rem",
-              fontWeight: 700,
-              letterSpacing: "-0.02em",
-            }}
-          >
-            Find Professionals
-          </h1>
-          <p className="text-gray-400 text-sm">
-            {filteredWorkers.length} workers available
-            {activeCategory ? ` in ${activeCategory}` : ""}
-          </p>
-
+     <div className="sticky top-0 z-50 bg-[#eaecef]/95 backdrop-blur-md border-b border-gray-200 pt-2 pb-4">
+        <div className="max-w-7xl mx-auto px-4 mt-10">
           {/* Search */}
-          <div className="mt-6 flex gap-3 max-w-2xl">
-            <div className="relative flex-1">
-              {/* SEARCH BAR */}
+          <div className="relative mnp w-full max-w-2xl">
+            {/* Search Bar */}
 
-              <div
-                className="
-      flex items-center gap-3
+            <div
+              className="
+      flex items-center
       h-14
       rounded-2xl
-      border border-white/15
-      bg-white/10
-      backdrop-blur-2xl
+      bg-white
+      border border-gray-200
       px-4
-      shadow-[0_8px_30px_rgba(0,0,0,0.15)]
-      transition-all duration-300
-      focus-within:border-[#0EA5E9]
-      focus-within:bg-white/15
-      focus-within:shadow-[0_0_0_4px_rgba(14,165,233,0.12)]
+      shadow-lg
+      transition-all
+      focus-within:border-sky-500
+      focus-within:ring-4
+      focus-within:ring-sky-100
     "
-              >
-                {/* ICON */}
+            >
+              <Search className="w-5 h-5 text-gray-400 mr-3" />
 
-                <div className="w-9 h-9 rounded-xl bg-white/10 flex items-center justify-center shrink-0">
-                  <Search className="w-4 h-4 text-[#94A3B8]" />
-                </div>
+              <input
+                type="text"
+                placeholder="Search workers, skills or specialty..."
+                value={query}
+                onFocus={() => {
+                  setShowMobileNavbar(false);
+                  setShowSuggestions(true);
+                }}
+                onBlur={() => {
+                  setShowMobileNavbar(true);
+                }}
+                onChange={(e) => {
+                  setQuery(e.target.value);
+                  setShowSuggestions(true);
+                }}
+                className="flex-1 outline-none text-gray-800 placeholder:text-gray-400"
+              />
 
-                {/* INPUT */}
-
-                <input
-                  type="text"
-                  placeholder="Search workers, skills, specialty..."
-                  value={query}
-                  onChange={(e) => setQuery(e.target.value)}
-                  className="
-        bg-transparent
-        w-full
-        outline-none
-        text-white
-        placeholder:text-[#94A3B8]
-        text-sm
-        font-medium
-      "
-                />
-
-                {/* CLEAR BUTTON */}
-
-                {query && (
+              {query && (
+                <button
+                  onClick={() => {
+                    setQuery("");
+                    setShowSuggestions(false);
+                    setShowMobileNavbar(true);
+                  }}
+                  className="p-2 rounded-lg hover:bg-gray-100"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              )}
+            </div>
+            {/* Smart Suggestions */}
+            {!query && (
+              <div className="mt-2 flex flex-wrap gap-1.5">
+                {smartSuggestions.map((item) => (
                   <button
-                    onClick={() => setQuery("")}
+                    key={item.label}
+                    onClick={() => {
+                      setQuery(item.label);
+                      setShowSuggestions(true);
+                    }}
                     className="
-          w-8 h-8
-          rounded-lg
-          bg-white/10
-          hover:bg-[#FF5C39]
-          flex items-center justify-center
+          group inline-flex items-center gap-1
+          h-7 px-2.5
+          rounded-full
+          bg-orange-50
+          border border-orange-200
+          text-[11px] font-medium text-orange-700
+          hover:bg-orange-500
+          hover:border-orange-500
+          hover:text-white
+          active:scale-95
           transition-all duration-200
-          shrink-0
         "
                   >
-                    <X className="w-4 h-4 text-white" />
+                    <span className="text-xs leading-none group-hover:scale-110 transition-transform">
+                      {item.icon}
+                    </span>
+
+                    <span className="leading-none whitespace-nowrap">
+                      {item.label}
+                    </span>
                   </button>
-                )}
+                ))}
               </div>
+            )}
+            {/* Dropdown */}
 
-              {/* SEARCH GLOW */}
+            {showSuggestions && suggestions.length > 0 && (
+              <div
+                className="
+        absolute top-16 left-0 right-0
+        bg-white
+        rounded-2xl
+        shadow-2xl
+        border
+        overflow-hidden
+        z-50
+      "
+              >
+                <div className="flex items-center justify-between px-5 py-2 border-b bg-gray-50">
+                  <span className="font-semibold text-gray-800">Workers</span>
 
-              <div className="absolute inset-0 rounded-2xl bg-[#0EA5E9]/5 blur-2xl -z-10" />
-            </div>
+                  <span className="text-sm text-gray-500">
+                    {suggestions.length} found
+                  </span>
+                </div>
+
+                <div className="max-h-70 overflow-y-auto">
+                  {suggestions.map((worker) => (
+                    <button
+                      key={worker.id}
+                      onClick={() => {
+                        router.push(`/workers/${worker.id}`);
+                        setShowSuggestions(false);
+                      }}
+                      className="
+        w-full
+        flex
+        items-center
+        gap-3
+        px-6
+        py-2
+        hover:bg-sky-50
+        active:bg-sky-100
+        transition
+        border-b
+        border-gray-100
+        last:border-0
+      "
+                    >
+                      {/* Worker Image */}
+                      <img
+                        src={worker.photo || "/worker-placeholder.png"}
+                        alt={worker.name}
+                        className="w-10 h-10 rounded-full object-contain-content shrink-0"
+                      />
+
+                      {/* Name + Specialty */}
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center justify-between gap-3 px-2">
+                          <h3 className="text-sm font-semibold text-lime-500 truncate">
+                            {worker.name}
+                          </h3>
+
+                          <p className="text-xs text-gray-500 whitespace-nowrap">
+                            {worker.specialty}
+                          </p>
+                        </div>
+                      </div>
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
           </div>
         </div>
       </div>
 
-      <div className="max-w-8xl mx-auto px-6 py-8">
-        {/* Category Tabs */}
-        <div className="relative mb-6">
-          {/* LEFT ARROW */}
-          <button
-            onClick={() => scrollCategories("left")}
-            className="absolute left-0 top-1/2 -translate-y-1/2 z-10 w-10 h-10 rounded-full bg-white border border-gray-200 shadow-md flex items-center justify-center text-[#64748B] hover:bg-[#FF5C39] hover:text-white hover:border-[#FF5C39] transition-all duration-200"
-          >
-            <ChevronLeft className="w-5 h-5" />
-          </button>
-
-          {/* RIGHT ARROW */}
-          <button
-            onClick={() => scrollCategories("right")}
-            className="absolute right-0 top-1/2 -translate-y-1/2 z-10 w-10 h-10 rounded-full bg-white border border-gray-200 shadow-md flex items-center justify-center text-[#64748B] hover:bg-[#FF5C39] hover:text-white hover:border-[#FF5C39] transition-all duration-200"
-          >
-            <ChevronRight className="w-5 h-5" />
-          </button>
-
-          {/* SCROLL AREA */}
-          <div
-            ref={categoryScrollRef}
-            className="flex items-center gap-2 overflow-x-auto overflow-y-hidden scrollbar-hide px-12 pb-2 scroll-smooth"
-          >
-            {/* ALL SERVICES */}
-            <button
-              onClick={() => handleCategoryChange("")}
-              className={`shrink-0 flex items-center gap-2 px-5 py-2.5 rounded-full text-sm transition-all border ${
-                activeCategory === ""
-                  ? "bg-[#0F172A] text-white border-transparent shadow-lg"
-                  : "bg-white text-[#475569] border-gray-200 hover:border-[#FF5C39] hover:bg-orange-50 hover:text-[#FF5C39]"
-              }`}
-              style={{ fontWeight: 600 }}
-            >
-              All Services
-            </button>
-
-            {/* CATEGORY BUTTONS */}
-            {serviceCategories.map((cat) => {
-              const Icon = categoryIcons[cat.id] || Hammer;
-
-              return (
-                <button
-                  key={cat.id}
-                  onClick={() => handleCategoryChange(cat.id)}
-                  className={`shrink-0 flex items-center gap-2 px-5 py-2.5 rounded-full text-sm transition-all border ${
-                    activeCategory === cat.id
-                      ? "text-white border-transparent shadow-lg scale-[1.02]"
-                      : "bg-white text-[#475569] border-gray-200 hover:border-[#FF5C39] hover:bg-orange-50 hover:text-[#FF5C39]"
-                  }`}
-                  style={{
-                    fontWeight: 600,
-
-                    backgroundColor:
-                      activeCategory === cat.id ? cat.color : undefined,
-                  }}
-                >
-                  <Icon className="w-4 h-4" />
-                  {cat.label}
-                </button>
-              );
-            })}
-          </div>
+      <div className="max-w-8xl mx-auto px-6 py-2">
+        <div className="mb-2">
+          <WorkCategories />
         </div>
         <div className="flex flex-col lg:flex-row gap-4">
           {/* Sidebar Filters */}
-          <aside
-            className={`xl:w-85 2xl:w-95 shrink-0 ${
-              showFilters ? "block" : "hidden xl:block"
-            }`}
-          >
+          <aside className="hidden xl:block xl:w-85 2xl:w-95 shrink-0">
             <div className="sticky top-24 overflow-hidden rounded-4xl border border-white/60 bg-white/90 shadow-[0_20px_80px_rgba(15,23,42,0.08)] backdrop-blur-xl">
               {/* Header */}
               <div className="border-b border-gray-100 bg-linear-to-r from-[#FF5C39] via-[#ff744f] to-[#ff8d70] p-6 text-white">
@@ -477,7 +463,7 @@ function BrowseContent() {
                     onClick={() => {
                       setAvailableOnly(false);
                       setMaxPrice(5000);
-                      setActiveCategory("");
+                      router.push("/browse");
                       setQuery("");
                     }}
                     className="flex w-full items-center justify-center gap-2 rounded-2xl border border-gray-200 bg-white py-3.5 text-sm text-[#475569] transition-all hover:border-[#FF5C39] hover:bg-[#FFF7F4] hover:text-[#FF5C39]"
@@ -489,44 +475,52 @@ function BrowseContent() {
               </div>
             </div>
           </aside>
+          <MobileFilterSheet
+            open={showFilters}
+            onClose={() => setShowFilters(false)}
+            availableOnly={availableOnly}
+            setAvailableOnly={setAvailableOnly}
+            maxPrice={maxPrice}
+            setMaxPrice={setMaxPrice}
+            minExperience={minExperience}
+            setMinExperience={setMinExperience}
+          />
 
           {/* Results */}
           <div className="flex-1">
             {/* Toolbar */}
-            <div className="flex items-center justify-between mb-5">
-              <div className="text-[#64748B] text-sm">
-                <span style={{ fontWeight: 600, color: "#0F172A" }}>
-                  {filteredWorkers.length}
-                </span>{" "}
-                workers found
+            <div className="flex items-center justify-between mb-1">
+              {/* Result Count */}
+              <div className="flex items-center gap-2">
+                <div className="h-9 px-3.5 rounded-full bg-linear-to-r from-slate-800 via-slate-700 to-slate-600 text-white text-xs font-bold flex items-center justify-center shadow-lg shadow-slate-400/30">
+                  {filteredWorkers.length} Workers
+                </div>
               </div>
-              <div className="flex items-center gap-3">
+
+              <div className="flex items-center gap-2">
+                {/* Filter */}
                 <button
                   onClick={() => setShowFilters(!showFilters)}
-                  className="lg:hidden flex items-center gap-2 text-sm text-[#475569] bg-white border border-gray-200 px-4 py-2 rounded-lg"
+                  className="lg:hidden h-8 px-3 rounded-full bg-white border border-orange-200 text-orange-600 text-xs font-medium flex items-center gap-1.5 shadow-sm active:scale-95 transition"
                 >
-                  <SlidersHorizontal className="w-4 h-4" />
-                  Filters
+                  <SlidersHorizontal className="w-3.5 h-3.5" />
+                  Filter
                 </button>
 
-                {/* Sort Dropdown */}
+                {/* Sort */}
                 <div className="relative">
                   <button
                     onClick={() => setSortOpen(!sortOpen)}
-                    className="flex items-center gap-2 text-sm text-[#475569] bg-white border border-gray-200 px-4 py-2 rounded-lg hover:border-gray-300 transition-colors"
+                    className="h-8 px-3 rounded-full bg-[#F8FAFC] border border-gray-200 text-xs font-medium text-gray-700 flex items-center gap-1.5 shadow-sm active:scale-95 transition"
                   >
-                    <span
-                      className="text-[#0F172A]"
-                      style={{ fontWeight: 500 }}
-                    >
-                      {currentSort?.label}
-                    </span>
+                    {currentSort?.label}
                     <ChevronDown
-                      className={`w-4 h-4 transition-transform ${sortOpen ? "rotate-180" : ""}`}
+                      className={`w-3.5 h-3.5 transition-transform ${sortOpen ? "rotate-180" : ""}`}
                     />
                   </button>
+
                   {sortOpen && (
-                    <div className="absolute right-0 top-full mt-2 w-48 bg-white border border-gray-100 rounded-xl shadow-lg z-10 py-1 overflow-hidden">
+                    <div className="absolute right-0 mt-2 w-44 bg-white rounded-2xl border border-gray-100 shadow-xl overflow-hidden z-20">
                       {sortOptions.map((opt) => (
                         <button
                           key={opt.value}
@@ -534,14 +528,11 @@ function BrowseContent() {
                             setSortBy(opt.value);
                             setSortOpen(false);
                           }}
-                          className={`w-full text-left px-4 py-2.5 text-sm hover:bg-gray-50 transition-colors ${
+                          className={`w-full px-4 py-3 text-left text-sm transition ${
                             sortBy === opt.value
-                              ? "text-[#FF5C39] bg-orange-50"
-                              : "text-[#475569]"
+                              ? "bg-orange-50 text-orange-600 font-semibold"
+                              : "text-gray-700 hover:bg-gray-50"
                           }`}
-                          style={{
-                            fontWeight: sortBy === opt.value ? 600 : 400,
-                          }}
                         >
                           {opt.label}
                         </button>
@@ -554,11 +545,21 @@ function BrowseContent() {
 
             {/* Worker Grid */}
             {filteredWorkers.length > 0 ? (
-              <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5">
-                {filteredWorkers.map((worker) => (
-                  <WorkerCard key={worker.id} worker={worker} />
-                ))}
-              </div>
+              <>
+                {/* Mobile App */}
+                <div className="grid grid-cols-2 gap-3 md:hidden">
+                  {filteredWorkers.map((worker) => (
+                    <FeaturedWorkerSmallCard key={worker.id} worker={worker} />
+                  ))}
+                </div>
+
+                {/* Website / Tablet / Desktop */}
+                <div className="hidden md:grid grid-cols-2 xl:grid-cols-3 gap-5">
+                  {filteredWorkers.map((worker) => (
+                    <WorkerCard key={worker.id} worker={worker} />
+                  ))}
+                </div>
+              </>
             ) : (
               <div className="text-center py-20 bg-white rounded-2xl border border-gray-100">
                 <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
@@ -572,10 +573,10 @@ function BrowseContent() {
                 </p>
                 <button
                   onClick={() => {
-                    setActiveCategory("");
-                    setQuery("");
                     setAvailableOnly(false);
-                    setMaxPrice(150);
+                    setMaxPrice(5000);
+                    setQuery("");
+                    router.push("/browse");
                   }}
                   className="mt-4 text-sm text-[#FF5C39] underline"
                 >

@@ -15,6 +15,6 @@ export async function GET(request: Request) {
   }
 
   return NextResponse.redirect(
-    "https://workkerz.com/dashboard"
+    new URL("/", request.url)
   );
 }

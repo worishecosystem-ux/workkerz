@@ -1,0 +1,183 @@
+"use client";
+
+import {
+  X,
+  Phone,
+  Mail,
+  MessageCircle,
+  HelpCircle,
+  Shield,
+  FileText,
+  AlertTriangle,
+  RotateCcw,
+  ChevronRight,
+  Info,
+  LucideIcon,
+} from "lucide-react";
+
+import { useRouter } from "next/navigation";
+
+export default function SupportSheet({
+  open,
+  onClose,
+}: {
+  open: boolean;
+  onClose: () => void;
+}) {
+  const router = useRouter();
+
+  if (!open) return null;
+
+  const callSupport = () => {
+    window.location.href = "tel:+917000543603";
+  };
+
+  const whatsappSupport = () => {
+    window.open(
+      "https://wa.me/917000543603?text=Hello%20Workkerz%20Support",
+      "_blank",
+    );
+  };
+
+  const emailSupport = () => {
+    window.location.href =
+      "mailto:support@workkerz.com?subject=Support Request";
+  };
+
+  const openFAQ = () => {
+    router.push("/faq");
+  };
+
+  const reportProblem = () => {
+    router.push("/report-problem");
+  };
+
+  const requestCallback = () => {
+    router.push("/request-callback");
+  };
+
+  const privacyPolicy = () => {
+    router.push("/privacy-policy");
+  };
+
+  const terms = () => {
+    router.push("/terms");
+  };
+
+  const appVersion = () => {
+    alert("Workkerz\nVersion 1.0.0");
+  };
+
+  return (
+    <>
+      <div
+        onClick={onClose}
+        className="fixed inset-0 z-50 bg-black/40 backdrop-blur-sm"
+      />
+
+      <div className="fixed bottom-0 left-0 right-0 z-50 rounded-t-3xl bg-white shadow-2xl">
+        <div className="mx-auto mt-2 h-1.5 w-12 rounded-full bg-slate-300" />
+
+        <div className="flex items-center justify-between p-5">
+          <div>
+            <h2 className="text-lg font-bold">Support Center</h2>
+            <p className="text-sm text-slate-500">We're here to help</p>
+          </div>
+
+          <button onClick={onClose} className="rounded-full bg-slate-100 p-2">
+            <X className="h-5 w-5" />
+          </button>
+        </div>
+
+        <div className="max-h-[70vh] space-y-2 overflow-y-auto px-5 pb-8">
+          <SupportItem
+            icon={Phone}
+            title="Call Support"
+            onClick={callSupport}
+          />
+
+          <SupportItem
+            icon={MessageCircle}
+            title="WhatsApp Support"
+            onClick={whatsappSupport}
+          />
+
+          <SupportItem
+            icon={Mail}
+            title="Email Support"
+            onClick={emailSupport}
+          />
+
+          <SupportItem
+            icon={HelpCircle}
+            title="Frequently Asked Questions"
+            onClick={openFAQ}
+          />
+
+          <SupportItem
+            icon={AlertTriangle}
+            title="Report a Problem"
+            onClick={reportProblem}
+          />
+
+          <SupportItem
+            icon={RotateCcw}
+            title="Request Callback"
+            onClick={requestCallback}
+          />
+
+          <SupportItem
+            icon={Shield}
+            title="Privacy Policy"
+            onClick={privacyPolicy}
+          />
+
+          <SupportItem
+            icon={FileText}
+            title="Terms & Conditions"
+            onClick={terms}
+          />
+
+          <SupportItem
+            icon={Info}
+            title="App Version 1.0.0"
+            onClick={appVersion}
+          />
+
+          <div className="mt-4 rounded-2xl bg-emerald-50 p-4">
+            <p className="font-medium text-sm text-emerald-700">Live Chat</p>
+
+            <p className="mt-1 text-xs text-emerald-600">Coming Soon</p>
+          </div>
+        </div>
+      </div>
+    </>
+  );
+}
+
+function SupportItem({
+  icon: Icon,
+  title,
+  onClick,
+}: {
+  icon: LucideIcon;
+  title: string;
+  onClick: () => void;
+}) {
+  return (
+    <button
+      onClick={onClick}
+      className="flex w-full items-center justify-between rounded-2xl border border-slate-100 bg-slate-50 px-4 py-3 transition active:scale-[0.98]"
+    >
+      <div className="flex items-center gap-3">
+        <div className="rounded-xl bg-white p-2">
+          <Icon className="h-5 w-5 text-emerald-600" />
+        </div>
+
+        <span className="text-sm font-medium">{title}</span>
+      </div>
+
+      <ChevronRight className="h-4 w-4 text-slate-400" />
+    </button>
+  );
+}

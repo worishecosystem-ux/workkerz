@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { PlatformProvider } from "../components/context/PlatformContext";
+import { MobileNavbarProvider } from "../components/context/MobileNavbarContext";
 import { LayoutWrapper } from "../components/LayoutWrapper";
 
 export const metadata: Metadata = {
@@ -56,8 +57,6 @@ export const metadata: Metadata = {
   },
 };
 
-
-
 export default function PublicLayout({
   children,
 }: {
@@ -65,9 +64,14 @@ export default function PublicLayout({
 }) {
   return (
     <PlatformProvider>
-      <LayoutWrapper>
-        {children}
-      </LayoutWrapper>
+      <MobileNavbarProvider>
+        <LayoutWrapper>
+          {children}
+        </LayoutWrapper>
+      </MobileNavbarProvider>
     </PlatformProvider>
   );
 }
+
+
+

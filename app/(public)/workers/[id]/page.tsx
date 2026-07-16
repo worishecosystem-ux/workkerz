@@ -2,129 +2,132 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
+import { Share } from "@capacitor/share";
 import {
   Star,
   MapPin,
   Clock,
   Shield,
   CheckCircle,
-  ChevronLeft,
-  Zap,
-  Calendar,
-  MessageCircle,
+  Clock3,
+  Briefcase,
+  CalendarDays,
   Share2,
   Heart,
   Award,
-  Briefcase,
   ThumbsUp,
+  BriefcaseBusiness,
+  Building2,
+  BadgeCheck,
+  Check,
+  BadgeIndianRupee,
 } from "lucide-react";
 
 import { getWorkerById, type Worker } from "@/app/data/workers";
 import { supabase } from "@/lib/supabase";
-
 const categoryColors: Record<
   string,
   { color: string; bg: string; label: string }
 > = {
   Labour: {
     color: "#F97316",
-    bg: "#FFF7ED",
+    bg: "#FFF5EB",
     label: "Labour",
   },
 
   Driver: {
-    color: "#10B981",
-    bg: "#ECFDF5",
+    color: "#16A34A",
+    bg: "#F0FDF4",
     label: "Driver",
   },
 
   Mechanic: {
-    color: "#3B82F6",
+    color: "#2563EB",
     bg: "#EFF6FF",
     label: "Mechanic",
   },
 
   Washer: {
-    color: "#06B6D4",
+    color: "#0891B2",
     bg: "#ECFEFF",
     label: "Washer",
   },
 
   "Computer Operator": {
-    color: "#8B5CF6",
-    bg: "#F3E8FF",
+    color: "#7C3AED",
+    bg: "#F5F3FF",
     label: "Computer Operator",
   },
 
   "Office Worker": {
-    color: "#EC4899",
-    bg: "#FCE7F3",
+    color: "#DB2777",
+    bg: "#FDF2F8",
     label: "Office Worker",
   },
 
   "Home Services": {
-    color: "#22C55E",
-    bg: "#DCFCE7",
+    color: "#059669",
+    bg: "#ECFDF5",
     label: "Home Services",
   },
 
   "Salon & Beauty": {
-    color: "#F43F5E",
-    bg: "#FFE4E6",
+    color: "#E11D48",
+    bg: "#FFF1F2",
     label: "Salon & Beauty",
   },
 
   Restaurant: {
-    color: "#EF4444",
-    bg: "#FEE2E2",
+    color: "#DC2626",
+    bg: "#FEF2F2",
     label: "Restaurant",
   },
 
   "Home Contractor": {
-    color: "#F59E0B",
-    bg: "#FEF3C7",
+    color: "#D97706",
+    bg: "#FFF7ED",
     label: "Home Contractor",
   },
 
   Construction: {
-    color: "#D97706",
-    bg: "#FFEDD5",
+    color: "#B45309",
+    bg: "#FFFBEB",
     label: "Construction",
   },
 
   Factory: {
     color: "#475569",
-    bg: "#F1F5F9",
+    bg: "#F8FAFC",
     label: "Factory",
   },
 
   Roads: {
-    color: "#CA8A04",
-    bg: "#FEF9C3",
+    color: "#A16207",
+    bg: "#FEFCE8",
     label: "Roads",
   },
 
   Delivery: {
-    color: "#14B8A6",
-    bg: "#CCFBF1",
+    color: "#0F766E",
+    bg: "#F0FDFA",
     label: "Delivery",
   },
 
   Security: {
-    color: "#334155",
-    bg: "#E2E8F0",
+    color: "#1E3A8A",
+    bg: "#EFF6FF",
     label: "Security",
   },
 
   Healthcare: {
-    color: "#0EA5E9",
-    bg: "#E0F2FE",
+    color: "#0284C7",
+    bg: "#F0F9FF",
     label: "Healthcare",
   },
 
   "Event Services": {
-    color: "#A855F7",
-    bg: "#F3E8FF",
+    color: "#9333EA",
+    bg: "#FAF5FF",
     label: "Event Services",
   },
 };
@@ -202,14 +205,22 @@ export default function WorkerProfile() {
       data: { user },
     } = await supabase.auth.getUser();
 
-    if (!user) return;
+    if (!user) {
+      setSaved(false);
+      return;
+    }
 
-    const { data } = await supabase
+    const { data, error } = await supabase
       .from("favorites")
       .select("id")
       .eq("customer_id", user.id)
       .eq("worker_id", workerId)
       .maybeSingle();
+
+    if (error) {
+      console.error(error);
+      return;
+    }
 
     setSaved(!!data);
   };
@@ -223,28 +234,46 @@ export default function WorkerProfile() {
       } = await supabase.auth.getUser();
 
       if (!user) {
-        router.push("/login");
+        router.push(`/login?redirect=/workers/${workerId}`);
         return;
       }
 
-      if (saved) {
-        await supabase
+      // Check in database first
+      const { data: existing, error: checkError } = await supabase
+        .from("favorites")
+        .select("id")
+        .eq("customer_id", user.id)
+        .eq("worker_id", workerId)
+        .maybeSingle();
+
+      if (checkError) throw checkError;
+
+      if (existing) {
+        // Remove favorite
+        const { error } = await supabase
           .from("favorites")
           .delete()
-          .eq("customer_id", user.id)
-          .eq("worker_id", workerId);
+          .eq("id", existing.id);
+
+        if (error) throw error;
 
         setSaved(false);
       } else {
-        await supabase.from("favorites").insert({
+        // Add favorite
+        const { error } = await supabase.from("favorites").insert({
           customer_id: user.id,
           worker_id: workerId,
         });
 
+        if (error) throw error;
+
         setSaved(true);
       }
+
+      // Refresh state from database
+      await checkFavorite();
     } catch (error) {
-      console.log(error);
+      console.error("Favorite Error:", error);
     } finally {
       setFavoriteLoading(false);
     }
@@ -272,6 +301,23 @@ export default function WorkerProfile() {
     router.push(`/book/${workerId}`);
   };
 
+  const handleShare = async () => {
+    if (!worker) return;
+
+    try {
+      await Share.share({
+        title: `${worker.name} | Workkerz`,
+        text: `Book ${worker.name} on Workkerz`,
+        url: window.location.href,
+        dialogTitle: "Share Worker",
+      });
+    } catch (error: any) {
+      // User cancelled sharing
+      if (error?.message?.toLowerCase().includes("cancel")) {
+        return;
+      }
+    }
+  };
   /* LOADING */
 
   if (loading) {
@@ -312,7 +358,7 @@ export default function WorkerProfile() {
             </h2>
 
             <p className="text-sm text-[#94A3B8] mt-1">
-              Preparing Workkerz dashboard...
+              Preparing Workkerz profile
             </p>
           </div>
 
@@ -370,221 +416,264 @@ export default function WorkerProfile() {
   ];
 
   return (
-    <div className="min-h-screen bg-[#F8FAFC]">
-      {/* Top bar */}
-      <div className="bg-[#0F172A] pt-16">
-        <div className="max-w-7xl mx-auto px-6 py-5 flex items-center gap-3">
-          <button
-            onClick={() => router.back()}
-            className="flex items-center gap-2 text-gray-400 hover:text-white transition-colors text-sm"
-          >
-            <ChevronLeft className="w-4 h-4" />
-            Back
-          </button>
-          <span className="text-gray-600">/</span>
-          <span className="text-gray-400 text-sm">Browse</span>
-          <span className="text-gray-600">/</span>
-          <span className="text-white text-sm">{worker.name}</span>
-        </div>
-      </div>
-
-      <div className="max-w-7xl mx-auto px-6 py-8">
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+    <div className="min-h-dvh w-full bg-white overflow-x-hidden">
+      <div className="w-screen max-w-none m-0 p-0 lg:max-w-7xl lg:mx-auto lg:px-6 lg:py-8">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-0 lg:gap-8">
           {/* Main Content */}
           <div className="lg:col-span-2 space-y-5">
             {/* Profile Card */}
-            <div className="bg-white rounded-2xl border border-gray-100 overflow-hidden">
+            <div className="bg-white overflow-hidden border-0 lg:border lg:border-gray-100 rounded-none lg:rounded-3xl">
               {/* Cover */}
               <div
-                className="h-28"
+                className="h-40 -mt-[env(safe-area-inset-top)]
+    pt-[env(safe-area-inset-top)]
+  "
                 style={{
                   background: `linear-gradient(135deg, ${cat.color}20, ${cat.color}40)`,
                 }}
               />
 
-              <div className="px-6 pb-6">
-                <div className="flex flex-col sm:flex-row sm:items-end gap-4 mt-2 mb-5">
-                  <div className="relative shrink-0 w-30 h-34">
-                    {worker.photo && worker.photo.trim() !== "" ? (
-                      <img
-                        src={worker.photo}
-                        alt={worker.name}
-                        className="w-full h-full rounded-2xl border-4 border-white object-cover shadow-lg"
-                        onError={(e) => {
-                          e.currentTarget.style.display = "none";
-                        }}
-                      />
-                    ) : (
-                      <div
-                        className="
-        w-full h-full
-        rounded-2xl
-        border-4 border-white
-        bg-[#F1F5F9]
-        shadow-lg
-        flex items-center justify-center
-      "
-                      >
-                        <div className="w-10 h-10 rounded-full bg-[#CBD5E1] flex items-center justify-center">
-                          <span className="text-white text-xl font-black">
-                            {worker.name?.charAt(0)}
-                          </span>
+              <div className="px-2 pb-2">
+                {/* Profile */}
+                <div className="-mt-12 relative z-10">
+                  <div className="flex items-start gap-6">
+                    {/* Profile */}
+                    <div className="relative shrink-0 px-5">
+                      {worker.photo?.trim() ? (
+                        <img
+                          src={worker.photo}
+                          alt={worker.name}
+                          className="h-20 w-20 rounded-2xl border-2 border-white bg-slate-100 object-cover-contain shadow-lg"
+                          onError={(e) => {
+                            e.currentTarget.style.display = "none";
+                          }}
+                        />
+                      ) : (
+                        <div className="flex h-20 w-20 items-center justify-center rounded-2xl border-2 border-white bg-slate-100 shadow-lg">
+                          <div className="flex h-10 w-10 items-center justify-center rounded-full bg-slate-300">
+                            <span className="text-lg font-bold text-white">
+                              {worker.name?.charAt(0)}
+                            </span>
+                          </div>
                         </div>
-                      </div>
-                    )}
+                      )}
 
-                    {worker.available && (
-                      <div className="absolute bottom-1 right-1 z-20 flex items-center justify-center">
-                        <span className="w-4 h-4 rounded-full bg-emerald-400 border-2 border-white shadow" />
+                      {worker.available && (
+                        <span className="absolute bottom-1 right-5 h-4 w-4 rounded-full border border-white bg-emerald-500" />
+                      )}
+                    </div>
+
+                    {/* Details */}
+                    <div className="min-w-0 flex-1 space-y-2">
+                      {/* Name */}
+                      <div className="flex items-center gap-1 flex-wrap ">
+                        <h1 className="truncate text-lg font-bold text-slate-900">
+                          {worker.name}
+                        </h1>
+
+                        <div className="relative w-5 h-5">
+                          <BadgeCheck className="absolute inset-0 h-5 w-5 fill-cyan-300 text-sky-500" />
+                          <Check className="absolute inset-0 m-auto h-3 w-3 text-white stroke-3" />
+                        </div>
                       </div>
-                    )}
-                  </div>
-                  <div className="flex-1 mt-2">
-                    <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-                      <div>
-                        <div className="flex items-center gap-2 flex-wrap">
-                          <h1
-                            className="text-[#0F172A]"
-                            style={{ fontSize: "1.4rem", fontWeight: 700 }}
-                          >
-                            {worker.name}
-                          </h1>
-                          <span
-                            className="text-xs px-2.5 py-1 rounded-full"
-                            style={{
-                              backgroundColor: cat.bg,
-                              color: cat.color,
-                              fontWeight: 600,
-                            }}
-                          >
-                            {cat.label}
+
+                      {/* Category + Specialty */}
+                      <div className="flex flex-wrap gap-6 mt-">
+                        <div
+                          className="inline-flex items-center gap-1 rounded-lg border px-2.5 py-1 text-[11px] font-semibold"
+                          style={{
+                            backgroundColor: cat.bg,
+                            borderColor: `${cat.color}25`,
+                            color: cat.color,
+                          }}
+                        >
+                          <BriefcaseBusiness className="h-3.5 w-3.5" />
+                          {cat.label}
+                        </div>
+
+                        <div className="inline-flex items-center gap-1 rounded-lg border border-slate-200 bg-white px-2.5 py-1 text-[11px] font-medium text-slate-600">
+                          <Building2 className="h-3.5 w-3.5 text-slate-400" />
+                          <span className="truncate max-w-32.5">
+                            {worker.specialty}
                           </span>
                         </div>
-                        <p className="text-[#64748B] text-sm mt-1">
-                          {worker.specialty}
-                        </p>
                       </div>
+
+                      {/* Rating */}
                       <div className="flex items-center gap-2">
-                        <button
-                          onClick={toggleFavorite}
-                          disabled={favoriteLoading}
-                          className={`w-9 h-9 rounded-full border flex items-center justify-center transition-all ${
-                            saved
-                              ? "bg-red-50 border-red-200 text-red-500"
-                              : "border-gray-200 text-gray-400 hover:border-gray-300"
-                          }`}
-                        >
-                          <Heart
-                            className={`w-4 h-4 ${
-                              saved ? "fill-red-500 text-red-500" : ""
-                            }`}
-                          />
-                        </button>
-                        <button className="w-9 h-9 rounded-full border border-gray-200 text-gray-400 hover:border-gray-300 flex items-center justify-center transition-colors">
-                          <Share2 className="w-4 h-4" />
-                        </button>
-                        <button className="flex items-center gap-2 border border-gray-200 text-[#475569] hover:border-gray-300 px-4 py-2 rounded-lg text-sm transition-colors">
-                          <MessageCircle className="w-4 h-4" />
-                          Message
-                        </button>
+                        <div className="flex items-center rounded-lg bg-amber-50 px-2 py-1">
+                          {[1, 2, 3, 4, 5].map((star) => (
+                            <Star
+                              key={star}
+                              className={`h-3.5 w-3.5 ${
+                                worker.rating >= star
+                                  ? "fill-amber-400 text-amber-400"
+                                  : "fill-slate-200 text-slate-200"
+                              }`}
+                            />
+                          ))}
+
+                          <span className="ml-1 text-xs font-semibold text-slate-900">
+                            {worker.rating.toFixed(1)}
+                          </span>
+                        </div>
+
+                        <span className="text-xs text-slate-500">
+                          ({worker.reviewCount})
+                        </span>
                       </div>
                     </div>
                   </div>
                 </div>
 
-                {/* Key Stats */}
-                <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-5">
-                  {[
-                    {
-                      label: "Rating",
-                      value: `${worker.rating}`,
-                      sub: `${worker.reviewCount} reviews`,
-                      icon: Star,
-                      color: "#F59E0B",
-                    },
-                    {
-                      label: "Jobs Done",
-                      value: `${worker.completedJobs}+`,
-                      sub: "Completed",
-                      icon: Briefcase,
-                      color: "#3B82F6",
-                    },
-                    {
-                      label: "Experience",
-                      value: `${worker.yearsExperience}yr`,
-                      sub: "In trade",
-                      icon: Award,
-                      color: "#10B981",
-                    },
-                    {
-                      label: "Response",
-                      value: worker.responseTime
-                        .split(" ")
-                        .slice(0, 2)
-                        .join(" "),
-                      sub: "Avg reply time",
-                      icon: Clock,
-                      color: "#8B5CF6",
-                    },
-                  ].map((stat) => {
-                    const Icon = stat.icon;
-                    return (
-                      <div
-                        key={stat.label}
-                        className="bg-[#F8FAFC] rounded-xl p-4 text-center"
-                      >
-                        <div
-                          className="w-8 h-8 rounded-lg flex items-center justify-center mx-auto mb-2"
-                          style={{ backgroundColor: `${stat.color}15` }}
-                        >
-                          <Icon
-                            className="w-4 h-4"
-                            style={{ color: stat.color }}
-                          />
-                        </div>
-                        <div
-                          className="text-[#0F172A]"
-                          style={{ fontWeight: 700, fontSize: "1.05rem" }}
-                        >
-                          {stat.value}
-                        </div>
-                        <div className="text-[#94A3B8] text-xs">{stat.sub}</div>
-                      </div>
-                    );
-                  })}
-                </div>
+                {/* Action Buttons */}
+                <div className="mt-5 mb-5 flex items-center gap-5 px-2">
+                  {/* Starting Price Card */}
+                  <div className="relative flex-1 overflow-hidden rounded-2xl bg-linear-to-r from-[#FF6B35] via-[#FF7A45] to-[#FF9A62] p-px shadow-md shadow-orange-300/20">
+                    <div className="flex items-center justify-between rounded-2xl bg-white px-3 py-2">
+                      {/* Left */}
+                      <div className="flex items-center gap-3 px-5">
+                        <BadgeIndianRupee className="h-6 w-6 text-emerald-600" />
 
-                {/* Location & Availability */}
-                <div className="flex flex-wrap gap-4 text-sm">
-                  <div className="flex items-center gap-1.5 text-[#64748B]">
-                    <MapPin className="w-4 h-4 text-[#FF5C39]" />
-                    {worker.location}
+                        <div className="flex items-center gap-3">
+                          <span className="text-[15px] font-semibold uppercase tracking-wide text-slate-500">
+                            Starting Price
+                          </span>
+
+                          <span className="h-4 w-px bg-slate-300" />
+
+                          <span className="bg-linear-to-r from-indigo-600 to-violet-600 bg-clip-text text-xl font-extrabold text-transparent">
+                            ₹{worker.startingPrice}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
                   </div>
-                  <div className="flex items-center gap-1.5">
-                    <div
-                      className={`w-2 h-2 rounded-full ${worker.available ? "bg-emerald-400" : "bg-gray-300"}`}
-                    />
-                    <span
-                      style={{
-                        fontWeight: 500,
-                        color: worker.available ? "#10B981" : "#94A3B8",
-                      }}
-                    >
-                      {worker.available
-                        ? "Available Now"
-                        : "Currently Unavailable"}
-                    </span>
-                  </div>
-                  <div className="flex items-center gap-1.5 text-[#64748B]">
-                    <Zap className="w-4 h-4 text-[#FF5C39]" />
-                    Responds {worker.responseTime.toLowerCase()}
+
+                  {/* Share */}
+                  <button
+                    onClick={handleShare}
+                    className="flex h-11 w-11 items-center justify-center rounded-xl border border-slate-200 bg-white shadow-sm transition-all duration-300 hover:border-[#FF6B35] hover:bg-orange-50 active:scale-95"
+                  >
+                    <Share2 className="h-5 w-5 text-slate-600" />
+                  </button>
+                </div>
+                {/* Booking Sidebar */}
+                <div className="lg:col-span-1">
+                  <div className="sticky top-24 space-y-4">
+                    {/* Stats */}
+                    <div className="grid grid-cols-2 gap-2 px-2">
+                      {[
+                        {
+                          label: "Rating",
+                          value: worker.rating,
+                          icon: Star,
+                          color: "#F59E0B",
+                        },
+                        {
+                          label: "Works",
+                          value: `${worker.completedJobs}+`,
+                          icon: Briefcase,
+                          color: "#3B82F6",
+                        },
+                        {
+                          label: "Experience",
+                          value: `${worker.yearsExperience}Y`,
+                          icon: Award,
+                          color: "#10B981",
+                        },
+                        {
+                          label: "",
+                          value: worker.location || "N/A",
+                          icon: MapPin,
+                          color: "#EF4444",
+                        },
+                      ].map((stat) => {
+                        const Icon = stat.icon;
+
+                        return (
+                          <div
+                            key={stat.label}
+                            className="h-14.5 bg-white border border-slate-100 rounded-2xl px-3 shadow-sm flex items-center"
+                          >
+                            <div className="flex items-center gap-2 w-full min-w-0">
+                              <div
+                                className="w-8 h-8 rounded-xl flex items-center justify-center shrink-0"
+                                style={{
+                                  backgroundColor: `${stat.color}15`,
+                                }}
+                              >
+                                <Icon
+                                  className="w-4 h-4"
+                                  style={{ color: stat.color }}
+                                />
+                              </div>
+
+                              <div className="flex-1 min-w-0">
+                                <p
+                                  className="text-sm font-semibold text-slate-900 truncate"
+                                  title={String(stat.value)}
+                                >
+                                  {stat.value}
+                                </p>
+
+                                <p className="text-[11px] text-slate-500">
+                                  {stat.label}
+                                </p>
+                              </div>
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                    {/* Trust badges */}
+                    <div className="bg-white rounded-2xl border border-gray-100 p-5">
+                      <h4
+                        className="text-[#0F172A] text-sm mb-4"
+                        style={{ fontWeight: 600 }}
+                      >
+                        Why Book with Confidence
+                      </h4>
+                      <div className="space-y-3">
+                        {[
+                          {
+                            icon: Shield,
+                            text: "Background checked & verified",
+                            color: "#3B82F6",
+                          },
+                          {
+                            icon: CheckCircle,
+                            text: "Satisfaction guarantee",
+                            color: "#10B981",
+                          },
+                          {
+                            icon: Clock,
+                            text: "Flexible scheduling options",
+                            color: "#8B5CF6",
+                          },
+                        ].map((badge) => {
+                          const Icon = badge.icon;
+                          return (
+                            <div
+                              key={badge.text}
+                              className="flex items-center gap-3 text-sm text-[#475569]"
+                            >
+                              <Icon
+                                className="w-4 h-4 shrink-0"
+                                style={{ color: badge.color }}
+                              />
+                              {badge.text}
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
                   </div>
                 </div>
               </div>
             </div>
-
             {/* Tabs */}
-            <div className="bg-white rounded-2xl border border-gray-100 overflow-hidden">
+            <div className="bg-white rounded-2xl border border-gray-100 overflow-hidden mb-20">
               <div className="flex border-b border-gray-100">
                 {(["about", "reviews", "portfolio"] as const).map((tab) => (
                   <button
@@ -795,186 +884,51 @@ export default function WorkerProfile() {
               </div>
             </div>
           </div>
-
-          {/* Booking Sidebar */}
-          <div className="lg:col-span-1">
-            <div className="sticky top-24 space-y-4">
-              {/* Booking Card */}
-              <div className="bg-white rounded-2xl border border-gray-100 p-6 shadow-sm">
-                <div className="mb-4">
-                  <div
-                    className="text-[#FF5C39]"
-                    style={{
-                      fontSize: "2rem",
-                      fontWeight: 900,
-                    }}
-                  >
-                    ₹{worker.startingPrice}
-                  </div>
-
-                  <div className="text-sm text-[#64748B]">
-                    {worker.pricingType === "daily" && "Per Day"}
-                    {worker.pricingType === "monthly" && "Per Month"}
-                    {worker.pricingType === "per_job" && "Per Job"}
-                    {worker.pricingType === "per_service" && "Per Service"}
-                    {worker.pricingType === "visit_charge" && "Visit Charge"}
-                    {worker.pricingType === "custom" && "Custom Quote"}
-                  </div>
-                </div>
-                <div className="flex items-center gap-1 mb-5">
-                  <Star className="w-3.5 h-3.5 text-amber-400 fill-amber-400" />
-                  <span
-                    className="text-[#0F172A] text-sm"
-                    style={{ fontWeight: 600 }}
-                  >
-                    {worker.rating}
-                  </span>
-                  <span className="text-[#94A3B8] text-sm">
-                    ({worker.reviewCount} reviews)
-                  </span>
-                </div>
-
-                {/* Quick info */}
-                <div className="space-y-3 mb-5 p-4 bg-[#F8FAFC] rounded-xl">
-                  <div className="flex items-center justify-between text-sm">
-                    <span className="text-[#64748B]">Availability</span>
-                    <span
-                      style={{
-                        color: worker.available ? "#10B981" : "#94A3B8",
-                        fontWeight: 600,
-                      }}
-                    >
-                      {worker.available ? "Available Now" : "Unavailable"}
-                    </span>
-                  </div>
-                  <div className="flex items-center justify-between text-sm">
-                    <span className="text-[#64748B]">Response time</span>
-                    <span
-                      className="text-[#0F172A]"
-                      style={{ fontWeight: 500 }}
-                    >
-                      {worker.responseTime}
-                    </span>
-                  </div>
-                  <div className="flex items-center justify-between text-sm">
-                    <span className="text-[#64748B]">Location</span>
-                    <span
-                      className="text-[#0F172A]"
-                      style={{ fontWeight: 500 }}
-                    >
-                      {worker.location}
-                    </span>
-                  </div>
-                  <div className="flex items-center justify-between text-sm">
-                    <span className="text-[#64748B]">Experience</span>
-                    <span
-                      className="text-[#0F172A]"
-                      style={{ fontWeight: 500 }}
-                    >
-                      {worker.yearsExperience} years
-                    </span>
-                  </div>
-                </div>
-
-                <div className="mb-5 p-4 bg-[#FFF7F4] rounded-xl border border-orange-100">
-                  <h4 className="font-semibold text-[#0F172A] mb-3">
-                    Pricing Details
-                  </h4>
-
-                  <div className="space-y-2 text-sm">
-                    {worker.halfDayPrice > 0 && (
-                      <div className="flex justify-between">
-                        <span>Half Day</span>
-                        <span>₹{worker.halfDayPrice}</span>
-                      </div>
-                    )}
-
-                    {worker.fullDayPrice > 0 && (
-                      <div className="flex justify-between">
-                        <span>Full Day</span>
-                        <span>₹{worker.fullDayPrice}</span>
-                      </div>
-                    )}
-
-                    {worker.monthlyPrice > 0 && (
-                      <div className="flex justify-between">
-                        <span>Monthly</span>
-                        <span>₹{worker.monthlyPrice}</span>
-                      </div>
-                    )}
-
-                    {worker.visitCharge > 0 && (
-                      <div className="flex justify-between">
-                        <span>Visit Charge</span>
-                        <span>₹{worker.visitCharge}</span>
-                      </div>
-                    )}
-                  </div>
-                </div>
-
-                <button
-                  onClick={handleBookNow}
-                  disabled={!worker.available}
-                  className={`w-full text-center text-white py-3.5 rounded-xl text-sm transition-colors mb-3 ${
-                    worker.available
-                      ? "bg-[#FF5C39] hover:bg-[#e54e2e]"
-                      : "bg-gray-300 cursor-not-allowed"
-                  }`}
-                  style={{ fontWeight: 600 }}
-                >
-                  <Calendar className="w-4 h-4 inline mr-2" />
-                  {worker.available ? "Book Now" : "Currently Unavailable"}
-                </button>
-
-                <button className="w-full flex items-center justify-center gap-2 border border-gray-200 text-[#475569] hover:bg-gray-50 py-3 rounded-xl text-sm transition-colors">
-                  <MessageCircle className="w-4 h-4" />
-                  Send Message
-                </button>
-              </div>
-
-              {/* Trust badges */}
-              <div className="bg-white rounded-2xl border border-gray-100 p-5">
-                <h4
-                  className="text-[#0F172A] text-sm mb-4"
-                  style={{ fontWeight: 600 }}
-                >
-                  Why Book with Confidence
-                </h4>
-                <div className="space-y-3">
-                  {[
-                    {
-                      icon: Shield,
-                      text: "Background checked & verified",
-                      color: "#3B82F6",
-                    },
-                    {
-                      icon: CheckCircle,
-                      text: "Satisfaction guarantee",
-                      color: "#10B981",
-                    },
-                    {
-                      icon: Clock,
-                      text: "Flexible scheduling options",
-                      color: "#8B5CF6",
-                    },
-                  ].map((badge) => {
-                    const Icon = badge.icon;
-                    return (
-                      <div
-                        key={badge.text}
-                        className="flex items-center gap-3 text-sm text-[#475569]"
-                      >
-                        <Icon
-                          className="w-4 h-4 shrink-0"
-                          style={{ color: badge.color }}
-                        />
-                        {badge.text}
-                      </div>
-                    );
-                  })}
-                </div>
-              </div>
+        </div>
+      </div>
+      {/* Mobile Bottom Action Bar */}
+      <div className="fixed bottom-0 inset-x-0 z-50 lg:hidden">
+        <div className="border-t border-slate-200/80 bg-white/95 backdrop-blur-xl px-4 pt-3 pb-[calc(env(safe-area-inset-bottom)+12px)] shadow-[0_-8px_30px_rgba(15,23,42,0.08)]">
+          <div className="flex items-center gap-3">
+            {/* Price */}
+            <div className="min-w-fit">
+              <p className="text-[11px] text-slate-500 leading-none">
+                Starting from
+              </p>
+              <h3 className="text-xl font-bold text-slate-900 mt-1">
+                ₹{worker.startingPrice}
+              </h3>
             </div>
+
+            {/* Favourite */}
+            <button
+              onClick={toggleFavorite}
+              disabled={favoriteLoading}
+              className={`h-12 w-12 rounded-2xl flex items-center justify-center transition-all ${
+                saved
+                  ? "bg-red-50 text-red-500 border border-red-100"
+                  : "bg-slate-100 text-slate-600 border border-slate-200"
+              }`}
+            >
+              <Heart
+                className={`w-5 h-5 transition-all ${
+                  saved ? "fill-red-500" : ""
+                }`}
+              />
+            </button>
+
+            {/* Book Button */}
+            <button
+              onClick={handleBookNow}
+              disabled={!worker.available}
+              className={`flex-1 h-12 rounded-2xl font-semibold text-sm transition-all ${
+                worker.available
+                  ? "bg-sky-500 active:scale-[0.98] text-white shadow-lg shadow-sky-200"
+                  : "bg-slate-200 text-slate-500"
+              }`}
+            >
+              {worker.available ? "Book Now" : "Unavailable"}
+            </button>
           </div>
         </div>
       </div>

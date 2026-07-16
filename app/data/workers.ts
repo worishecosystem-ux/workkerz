@@ -73,6 +73,13 @@ export interface Review {
 
 export const serviceCategories = [
   {
+    id: "all",
+    label: "Workers",
+    description: "Browse all workers",
+    color: "#0F172A",
+    bgColor: "#F8FAFC",
+  },
+  {
     id: "Labour",
     label: "Labour",
     description: "General & skilled labour workers",
@@ -227,7 +234,8 @@ const mapWorker = (w: any): Worker => ({
 export async function getWorkers(): Promise<Worker[]> {
   const { data, error } = await supabase
     .from("workers")
-    .select(`
+    .select(
+      `
       id,
       name,
       phone,
@@ -263,16 +271,14 @@ export async function getWorkers(): Promise<Worker[]> {
       certifications,
 
       created_at
-    `)
+    `,
+    )
     .order("created_at", {
       ascending: false,
     });
 
   if (error) {
-    console.log(
-      "SUPABASE ERROR =>",
-      JSON.stringify(error, null, 2),
-    );
+    console.log("SUPABASE ERROR =>", JSON.stringify(error, null, 2));
 
     return [];
   }

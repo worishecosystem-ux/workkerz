@@ -271,3 +271,11 @@ html {
     transform:translateX(-50%);
   }
 }
+
+.MuiPickersArrowSwitcher-root {
+  display: none !important;
+}
+
+.MuiTimeClock-arrowSwitcher {
+  display: none !important;
+}
