@@ -12,43 +12,68 @@ export default function LoginPage() {
   console.log("Platform:", Capacitor.getPlatform());
   console.log("Is Native:", Capacitor.isNativePlatform());
   const signInWithGoogle = async () => {
-    try {
-      // Android App
-      if (Capacitor.isNativePlatform()) {
-        await GoogleSignIn.initialize({
-          clientId: WEB_CLIENT_ID,
-        });
+  alert("1. Button clicked");
 
-        const result = await GoogleSignIn.signIn();
+  try {
+    alert(
+      `Platform: ${Capacitor.getPlatform()} | Native: ${Capacitor.isNativePlatform()}`
+    );
 
-        if (!result.idToken) {
-          throw new Error("No Google ID Token");
-        }
+    // Android App
+    if (Capacitor.isNativePlatform()) {
+      alert("2. Native App");
 
-        const { error } = await supabase.auth.signInWithIdToken({
-          provider: "google",
-          token: result.idToken,
-        });
+      alert("3. Initializing Google Sign-In");
 
-        if (error) throw error;
+      await GoogleSignIn.initialize({
+        clientId: WEB_CLIENT_ID,
+      });
 
-        router.replace("/");
-        return;
+      alert("4. Google initialized");
+
+      const result = await GoogleSignIn.signIn();
+
+      alert("5. Google Sign-In Success");
+
+      alert(JSON.stringify(result));
+
+      if (!result.idToken) {
+        throw new Error("No Google ID Token");
       }
 
-      // Website
-      const { error } = await supabase.auth.signInWithOAuth({
+      alert("6. Sending token to Supabase");
+
+      const { error } = await supabase.auth.signInWithIdToken({
         provider: "google",
-        options: {
-          redirectTo: `${window.location.origin}/auth/callback`,
-        },
+        token: result.idToken,
       });
 
       if (error) throw error;
-    } catch (e) {
-      console.error(e);
+
+      alert("7. Login Success");
+
+      router.replace("/");
+      return;
     }
-  };
+
+    alert("2. Website Login");
+
+    const { error } = await supabase.auth.signInWithOAuth({
+      provider: "google",
+      options: {
+        redirectTo: `${window.location.origin}/auth/callback`,
+      },
+    });
+
+    if (error) throw error;
+  } catch (e: any) {
+    console.error("Google Login Error:", e);
+
+    alert(
+      `ERROR:\n${e?.message || JSON.stringify(e, null, 2)}`
+    );
+  }
+};
   const router = useRouter();
 
   return (
