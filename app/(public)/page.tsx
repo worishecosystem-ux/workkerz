@@ -2,9 +2,15 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import HomeBanner from "../components/HomeBanner";
+import dynamic from "next/dynamic";
+
+const HomeBanner = dynamic(
+  () => import("../components/HomeBanner"),
+  {
+    ssr: false,
+  }
+);
 import SplashScreen from "@/app/components/SplashScreen";
-import { Suspense } from "react";
 import { ArrowRight } from "lucide-react";
 import { FeaturedWorkerSmallCard } from "../components/FeaturedWorkerSmallCard";
 
@@ -50,9 +56,7 @@ export default function Home() {
     <div className="min-h-screen bg-white">
       {/* Hero Section */}
 
-     <Suspense fallback={null}>
-      <HomeBanner />
-    </Suspense>
+     <HomeBanner />
 
       <WorkerLive />
 
