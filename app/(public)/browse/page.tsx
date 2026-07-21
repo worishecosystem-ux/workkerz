@@ -7,7 +7,8 @@ import WorkCategories from "@/app/components/WorkCategories";
 import { FeaturedWorkerSmallCard } from "@/app/components/FeaturedWorkerSmallCard";
 import { useMobileNavbar } from "@/app/components/context/MobileNavbarContext";
 import { supabase } from "@/lib/supabase";
-
+import BrowseSkeleton from "./component/BrowseSkeleton";
+import WorkerCardSkeleton from "@/app/components/WorkerCardSkeleton";
 import {
   Search,
   SlidersHorizontal,
@@ -64,7 +65,7 @@ function BrowseContent() {
   const [showFilters, setShowFilters] = useState(false);
   const [sortOpen, setSortOpen] = useState(false);
   const [showSuggestions, setShowSuggestions] = useState(false);
-  const { workers } = useAdmin();
+  const { workers, loading } = useAdmin();
   const { setShowMobileNavbar } = useMobileNavbar();
   const [minExperience, setMinExperience] = useState(0);
   const filteredWorkers = (workers ?? [])
@@ -115,7 +116,7 @@ function BrowseContent() {
   return (
     <div className="min-h-screen bg-[#F8FAFC]">
       {/* Page Header */}
-     <div className="sticky top-0 z-50 bg-[#eaecef]/95 backdrop-blur-md border-b border-gray-200 pt-2 pb-4">
+      <div className="fixed inset-x-0 top-0 z-999 border-b border-emerald-700 bg-linear-to-br from-emerald-950 via-emerald-800 to-green-600 pt-2 pb-4">
         <div className="max-w-7xl mx-auto px-4 mt-10">
           {/* Search */}
           <div className="relative mnp w-full max-w-2xl">
@@ -277,7 +278,7 @@ function BrowseContent() {
         </div>
       </div>
 
-      <div className="max-w-8xl mx-auto px-6 py-2">
+      <div className="px-4 pt-48 pb-2">
         <div className="mb-2">
           <WorkCategories />
         </div>
@@ -555,9 +556,13 @@ function BrowseContent() {
 
                 {/* Website / Tablet / Desktop */}
                 <div className="hidden md:grid grid-cols-2 xl:grid-cols-3 gap-5">
-                  {filteredWorkers.map((worker) => (
-                    <WorkerCard key={worker.id} worker={worker} />
-                  ))}
+                  {loading
+                    ? Array.from({ length: 9 }).map((_, i) => (
+                        <WorkerCardSkeleton key={i} />
+                      ))
+                    : filteredWorkers.map((worker) => (
+                        <WorkerCard key={worker.id} worker={worker} />
+                      ))}
                 </div>
               </>
             ) : (
@@ -590,10 +595,9 @@ function BrowseContent() {
     </div>
   );
 }
-
 export default function BrowsePage() {
   return (
-    <Suspense fallback={<div>Loading...</div>}>
+    <Suspense fallback={<BrowseSkeleton />}>
       <BrowseContent />
     </Suspense>
   );

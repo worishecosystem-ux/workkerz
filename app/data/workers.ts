@@ -145,7 +145,7 @@ export const serviceCategories = [
 
   {
     id: "Contractor",
-    label: "Home Contractor",
+    label: "Contractor",
     description: "Repair & contractor services",
     color: "#F59E0B",
     bgColor: "#FEF3C7",

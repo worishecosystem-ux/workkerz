@@ -15,9 +15,13 @@ const getAddressIcon = (type?: string) => {
 };
 interface AddressCardProps {
   onAddressChange?: (address: AddressItem | null) => void;
+  onOverlayChange?: (open: boolean) => void;
 }
 
-export default function AddressCard({ onAddressChange }: AddressCardProps) {
+export default function AddressCard({
+  onAddressChange,
+  onOverlayChange,
+}: AddressCardProps) {
   const [loading, setLoading] = useState(true);
   const [customerName, setCustomerName] = useState("");
   const [address, setAddress] = useState("");
@@ -30,6 +34,10 @@ export default function AddressCard({ onAddressChange }: AddressCardProps) {
   const [selectedAddress, setSelectedAddress] = useState<AddressItem | null>(
     null,
   );
+
+  useEffect(() => {
+    onOverlayChange?.(showSelector || showForm);
+  }, [showSelector, showForm, onOverlayChange]);
 
   useEffect(() => {
     loadUserAddress();

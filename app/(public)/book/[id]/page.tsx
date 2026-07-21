@@ -116,6 +116,16 @@ export default function BookingPage() {
     stepRef.current = step;
   }, [step]);
 
+  useEffect(() => {
+    requestAnimationFrame(() => {
+      window.scrollTo({
+        top: 0,
+        left: 0,
+        behavior: "auto",
+      });
+    });
+  }, [step]);
+
   // Har step par ek history entry banao
   useEffect(() => {
     if (step > 1) {
@@ -363,7 +373,14 @@ export default function BookingPage() {
 
   const handleNext = () => {
     if (step < 5) {
-      setStep(step + 1);
+      setStep((prev) => prev + 1);
+
+      requestAnimationFrame(() => {
+        window.scrollTo(0, 0);
+        document.documentElement.scrollTop = 0;
+        document.body.scrollTop = 0;
+      });
+
       return;
     }
 
@@ -372,8 +389,8 @@ export default function BookingPage() {
       JSON.stringify({
         form,
         worker,
-        selectedAddress, // ✅
-        addressId: selectedAddress?.id, // ✅
+        selectedAddress,
+        addressId: selectedAddress?.id,
         totalCost,
         serviceFee,
         grandTotal,
@@ -446,10 +463,8 @@ export default function BookingPage() {
   return (
     <div className="min-h-screen bg-white">
       {/* Header */}
-      <div className="fixed top-0 left-0 right-0 z-50 bg-sky-900">
+      <div className="fixed top-0 left-0 right-0 z-50 bg-linear-to-br from-emerald-950 via-emerald-800 to-green-600">
         <div className="relative mx-auto px-4 pt-safe pt-4 pb-5">
-          {/* Background Glow */}
-          <div className="absolute -top-37 -right-16 w-80 h-70 rounded-full bg-[#FF5C39]/20 blur-3xl" />
           {/* Cancel Button */}
           <button
             onClick={handleBack} // ya onCancel
@@ -483,7 +498,7 @@ export default function BookingPage() {
               <div className="flex-1 min-w-0 ">
                 <h2 className=" flex text-white text-[15px] font-bold truncate gap-9">
                   {worker.name}{" "}
-                  <span className="px-3 py-1 rounded-full bg-emerald-500/15 text-emerald-300 text-xs font-semibold">
+                  <span className="px-3 py-1 rounded-full bg-emerald-300/35 text-emerald-100 text-xs font-semibold">
                     ✓ Verified
                   </span>
                 </h2>
@@ -503,7 +518,7 @@ export default function BookingPage() {
         </div>
       </div>
       {/* Progress */}
-      <div className="fixed top-30 left-0 right-0 z-40 bg-white/95 backdrop-blur-xl border-b border-gray-100">
+      <div className="fixed top-30 left-0 right-0 z-40 bg-white/55 backdrop-blur-xl border-b border-gray-100">
         <div className="max-w-2xl mx-auto px-4 py-4">
           {/* Progress Bar */}
           <div className="relative h-1 rounded-full bg-slate-200 overflow-hidden mb-6">
@@ -568,7 +583,7 @@ export default function BookingPage() {
           </div>
         </div>
       </div>
-      <div className="max-w-2xl items-start px-4 sm:px-6 py-2 pb-2 md:pb-5 mt-62">
+      <div className="max-w-2xl mx-auto items-start px-4 sm:px-6 pt-65 pb-32">
         {/* Form */}
         <div className="">
           {/* STEP 1 */}
@@ -684,84 +699,85 @@ export default function BookingPage() {
               </div>
             </div>
           )}
+          {/* STEP 2 */}
+          {step === 2 && (
+            <BookingScheduleStep
+              form={form}
+              setForm={setForm}
+              bookedDates={bookedDates}
+              bookedSlots={bookedSlots}
+              timeSlots={timeSlots}
+              showCalendar={showCalendar}
+              setShowCalendar={setShowCalendar}
+              worker={worker}
+            />
+          )}
+
+          {/* STEP 3 */}
+          {step === 3 && (
+            <BookingCustomerInfoMobile form={form} setForm={setForm} />
+          )}
+
+          {/* STEP 4 */}
+          {step === 4 && (
+            <BookingReviewStep
+              worker={worker}
+              form={form}
+              address={selectedAddress}
+              totalCost={totalCost}
+              serviceFee={serviceFee}
+              grandTotal={grandTotal}
+              payableAmount={payableAmount}
+              paymentType={paymentType}
+              onProceed={() => setStep(5)}
+              onEdit={(step) => setStep(step)}
+            />
+          )}
+
+          {/* STEP 5 */}
+          {step === 5 && (
+            <BookingPaymentStep
+              form={form}
+              setForm={setForm}
+              paymentType={paymentType}
+              setPaymentType={setPaymentType}
+              payableAmount={payableAmount}
+              grandTotal={grandTotal}
+              inp={inp}
+            />
+          )}
         </div>
       </div>
-      <div className="px-4 sm:px-6">
-        {/* STEP 2 */}
-        {step === 2 && (
-          <BookingScheduleStep
-            form={form}
-            setForm={setForm}
-            bookedDates={bookedDates}
-            bookedSlots={bookedSlots}
-            timeSlots={timeSlots}
-            showCalendar={showCalendar}
-            setShowCalendar={setShowCalendar}
-            worker={worker}
-          />
-        )}
-
-        {/* STEP 3 */}
-        {step === 3 && (
-          <BookingCustomerInfoMobile form={form} setForm={setForm} />
-        )}
-
-        {/* STEP 4 */}
-        {step === 4 && (
-          <BookingReviewStep
-            worker={worker}
-            form={form}
-            address={selectedAddress}
-            totalCost={totalCost}
-            serviceFee={serviceFee}
-            grandTotal={grandTotal}
-            payableAmount={payableAmount}
-            paymentType={paymentType}
-            onProceed={() => setStep(5)}
-            onEdit={(step) => setStep(step)}
-          />
-        )}
-
-        {/* STEP 5 */}
-        {step === 5 && (
-          <BookingPaymentStep
-            form={form}
-            setForm={setForm}
-            paymentType={paymentType}
-            setPaymentType={setPaymentType}
-            payableAmount={payableAmount}
-            grandTotal={grandTotal}
-            inp={inp}
-          />
-        )}
-      </div>
-
       {/* Mobile Bottom Bar */}
-      {!keyboardOpen && step !== 4 && (
-        <div className="fixed bottom-0 inset-x-0 z-50 md:hidden border-t border-slate-200 bg-white/95 backdrop-blur-xl px-4 pt-3 pb-[calc(env(safe-area-inset-bottom)+12px)] shadow-[0_-8px_30px_rgba(15,23,42,0.08)]">
-          <button
-            onClick={handleNext}
-            disabled={!canProceed()}
-            className={`w-full h-13 rounded-2xl flex items-center justify-center gap-2 text-[15px] font-bold transition-all ${
-              canProceed()
-                ? "bg-linear-to-r from-[#59dbff] to-[#19e2ca] text-white shadow-lg shadow-[#FF5C39]/30 active:scale-[0.98]"
-                : "bg-slate-200 text-slate-500 cursor-not-allowed"
-            }`}
-          >
-            {step === 5 ? (
-              <>
-                Complete Booking
-                <CheckCircle className="w-5 h-5" />
-              </>
-            ) : (
-              <>
-                Continue
-                <ChevronRight className="w-5 h-5" />
-              </>
-            )}
-          </button>
-        </div>
-      )}
+      <div
+        className={`fixed bottom-0 inset-x-0 z-50 md:hidden border-t border-slate-200 bg-white/95 backdrop-blur-xl px-4 pt-3 pb-[calc(env(safe-area-inset-bottom)+12px)] shadow-[0_-8px_30px_rgba(15,23,42,0.08)] transition-all duration-300 ${
+          keyboardOpen || step === 4
+            ? "translate-y-full opacity-0 pointer-events-none"
+            : "translate-y-0 opacity-100"
+        }`}
+      >
+        <button
+          onClick={handleNext}
+          disabled={!canProceed()}
+          className={`w-full h-13 rounded-2xl flex items-center justify-center gap-2 text-[15px] font-bold transition-all ${
+            canProceed()
+              ? "bg-linear-to-r from-[#59dbff] to-[#19e2ca] text-white shadow-lg shadow-[#FF5C39]/30 active:scale-[0.98]"
+              : "bg-slate-200 text-slate-500 cursor-not-allowed"
+          }`}
+        >
+          {step === 5 ? (
+            <>
+              Complete Booking
+              <CheckCircle className="w-5 h-5" />
+            </>
+          ) : (
+            <>
+              Continue
+              <ChevronRight className="w-5 h-5" />
+            </>
+          )}
+        </button>
+      </div>
       <AddressSelectorModal
         open={showAddressModal}
         onClose={() => setShowAddressModal(false)}

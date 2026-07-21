@@ -1,6 +1,8 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
+import { useSearchParams } from "next/navigation";
 import { serviceCategories } from "@/app/data/workers";
 
 const categoryImages: Record<string, string> = {
@@ -21,18 +23,19 @@ const categoryImages: Record<string, string> = {
 };
 
 export default function WorkCategories() {
-  const activeCategory = "";
-
+  const searchParams = useSearchParams();
+  const activeCategory = searchParams.get("category") || "";
 
   return (
     <section>
       <div className="max-w-7xl">
-        <div className="flex items-center justify-between mt-2">
-          <h2 className="text-lg md:text-xl font-bold text-[#3a540c] mt-1">
+        <div className="mt-2 flex items-center justify-between">
+          <h2 className="mt-1 text-lg font-bold text-[#3a540c] md:text-xl">
             All Work Categories
           </h2>
         </div>
-        <div className="flex md:grid md:grid-cols-6 gap-4 overflow-x-auto md:overflow-visible scrollbar-hide pb-1 pt-2">
+
+        <div className="flex gap-4 overflow-x-auto pb-1 pt-2 scrollbar-hide md:grid md:grid-cols-6 md:overflow-visible">
           {serviceCategories.map((category) => {
             const isActive = activeCategory === category.id;
 
@@ -40,29 +43,39 @@ export default function WorkCategories() {
               <Link
                 key={category.id}
                 href={`/browse?category=${category.id}`}
-                className="shrink-0 flex flex-col items-center w-14"
+                className="shrink-0"
               >
-                <div
-                  className={`w-11 h-11 flex items-center justify-center overflow-hidden transition-all duration-200 ${
-                    isActive
-                      ? "rounded-xl bg-slate-200 border border-black shadow-sm"
-                      : ""
-                  }`}
-                >
-                  <img
-                    src={categoryImages[category.id]}
-                    alt={category.label}
-                    className="w-10 h-10 object-contain"
-                  />
-                </div>
+                <div className="flex w-18 flex-col items-center">
+                  <div
+                    className={`flex h-12 w-12 items-center justify-center rounded-2xl transition-all duration-200 ${
+                      isActive
+                        ? "bg-emerald-600 shadow-md ring-2 ring-emerald-100"
+                        : "bg-slate-100"
+                    }`}
+                  >
+                    <Image
+                      src={categoryImages[category.id] ?? "/categories/all.png"}
+                      alt={category.label}
+                      width={35}
+                      height={35}
+                      className={`object-contain transition-all ${
+                        isActive ? "scale-110 brightness-0 invert" : ""
+                      }`}
+                    />
+                  </div>
 
-                <span
-                  className={`mt-1 w-full text-[9px] font-medium text-center whitespace-nowrap overflow-hidden text-ellipsis ${
-                    isActive ? "text-green-600" : "text-slate-700"
-                  }`}
-                >
-                  {category.label}
-                </span>
+                  <span
+                    className={`mt-1 line-clamp-2 text-center text-[10px] font-bold leading-tight ${
+                      isActive ? "text-emerald-700" : "text-slate-700"
+                    }`}
+                  >
+                    {category.label}
+                  </span>
+
+                  {isActive && (
+                    <div className="mt-1 h-1 w-6 rounded-full bg-emerald-600" />
+                  )}
+                </div>
               </Link>
             );
           })}

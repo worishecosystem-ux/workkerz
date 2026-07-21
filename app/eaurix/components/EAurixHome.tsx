@@ -2,97 +2,69 @@
 
 import Link from "next/link";
 
-import {
-  ShoppingCart,
-  Shield,
-  Tag,
-  Star,
-  Zap,
-  ArrowRight,
-  Hammer,
-  PaintBucket,
-  Wrench,
-  Building2,
-  Truck,
-  Package,
-  ChevronRight,
-} from "lucide-react";
-
-import {
-  getProducts,
-  type Product,
-  productCategories,
-} from "@/app/data/products";
-
-import { usePlatform } from "@/app/components/context/PlatformContext";
-
+import { Eye, ArrowUpDown, ShoppingCart, ChevronDown } from "lucide-react";
+import FeaturedProducts from "./FeaturedProducts";
+import { getProducts, type Product } from "@/app/data/products";
+import CategoriesDrawer from "./shop/CategoriesDrawer";
 import { useAdmin } from "@/app/components/context/AdminContext";
 
 import ShopLive from "@/app/components/ShopLive";
+import CategoriesHeader from "./shop/CategoriesHeader";
 
-import { useRouter } from "next/navigation";
+import { useMemo, useState, useEffect, useRef } from "react";
 
-import { useMemo, useState, useEffect } from "react";
-
+import { usePlatform } from "@/app/components/context/PlatformContext";
 /* ===================================================== */
 
-function ProductCard({ product }: { product: Product }) {
-  const { shops } = useAdmin();
+/* ===================================================== */
+function ProductImage({
+  image,
+  name,
+}: {
+  image?: string;
+  name: string;
+}) {
+  const [error, setError] = useState(false);
 
-  const shop = shops.find((s) => s.id === product.shop_id);
-
-  const isOffline = shop?.status !== "online";
-
-  const isOutOfStock = product.is_active === false;
+  if (!image || error) {
+    return (
+      <div className="flex h-32 w-full items-center justify-center bg-slate-100 px-3 text-center md:h-64">
+        <span className="line-clamp-3 text-sm font-bold text-slate-700 md:text-lg">
+          {name}
+        </span>
+      </div>
+    );
+  }
 
   return (
-    <Link
-      href={isOffline || isOutOfStock ? "#" : `/eaurix/product/${product.id}`}
-      className="block bg-white rounded-2xl border border-slate-200 shadow-sm hover:shadow-lg transition-all duration-300 overflow-hidden"
-    >
-      <div className="relative p-2">
-        <div className="h-28 w-full rounded-xl overflow-hidden bg-slate-100">
-          <img
-            src={product.image || "/placeholder.png"}
-            alt={product.name}
-            className="w-full h-full object-cover"
-          />
-        </div>
-
-        {(isOffline || isOutOfStock) && (
-          <div className="absolute inset-0 bg-black/50 flex items-center justify-center">
-            <span className="bg-red-500 text-white px-2 py-1 rounded-full text-[10px] font-semibold">
-              {isOffline ? "Offline" : "Out of Stock"}
-            </span>
-          </div>
-        )}
-      </div>
-
-      <div className="px-3 pb-1">
-        <h3 className="text-sm font-semibold text-slate-800 line-clamp-2 h-6">
-          {product.name}
-        </h3>
-
-        <button className="w-full h-9 rounded-lg bg-[#0F172A] text-white text-sm font-medium">
-          View Store
-        </button>
-      </div>
-    </Link>
+    <img
+      src={image}
+      alt={name}
+      onError={() => setError(true)}
+      className="h-32 w-full object-cover transition-transform duration-300 group-hover:scale-105 md:h-64"
+    />
   );
 }
-
-/* ===================================================== */
-
 export function EAurixHome() {
   const { shops = [] } = useAdmin();
-
-  const [selectedCategory, setSelectedCategory] = useState("all");
-
-  const [mobileOpen, setMobileOpen] = useState(false);
-
+  const categoryRef = useRef<HTMLDivElement>(null);
+  const [imageError, setImageError] = useState(false);
+  const [activeCategory, setActiveCategory] = useState<string | null>(null);
+  const [sort, setSort] = useState("latest");
+  const { cart, addToCart } = usePlatform();
   const [products, setProducts] = useState<Product[]>([]);
-
+  const [sidebarOpen, setSidebarOpen] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [hideCart, setHideCart] = useState(false);
+  const PRODUCTS_PER_PAGE = 2;
+  const loadMoreRef = useRef<HTMLDivElement>(null);
+  const [page, setPage] = useState(1);
+  const [loadingMore, setLoadingMore] = useState(false);
+  const [search, setSearch] = useState("");
+  useEffect(() => {
+    setPage(1);
+    setLoadingMore(false);
+  }, [activeCategory, sort]);
 
   useEffect(() => {
     async function loadProducts() {
@@ -110,8 +82,6 @@ export function EAurixHome() {
     loadProducts();
   }, []);
 
-  const router = useRouter();
-
   /* =====================================================
      ONLINE SHOP IDS
   ===================================================== */
@@ -122,16 +92,75 @@ export function EAurixHome() {
       .map((shop) => shop.id);
   }, [shops]);
 
+  const filteredProducts = products.filter((p) => {
+    const q = search.trim().toLowerCase();
+
+    if (!q) return true;
+
+    return (
+      p.name.toLowerCase().includes(q) ||
+      p.brand.toLowerCase().includes(q) ||
+      p.category.toLowerCase().includes(q)
+    );
+  });
   /* =====================================================
      VISIBLE PRODUCTS
   ===================================================== */
-
   const visibleProducts = useMemo(() => {
-    return products.filter(
+    let list = products.filter(
       (product) => !!product.shop_id && onlineShopIds.includes(product.shop_id),
     );
-  }, [products, onlineShopIds]);
 
+    // Category Filter
+    if (activeCategory) {
+      list = list.filter((product) => product.category === activeCategory);
+    }
+
+    // Sorting
+    switch (sort) {
+      case "low":
+        list.sort((a, b) => a.price - b.price);
+        break;
+
+      case "high":
+        list.sort((a, b) => b.price - a.price);
+        break;
+
+      case "name":
+        list.sort((a, b) => a.name.localeCompare(b.name));
+        break;
+
+      default:
+        // Latest
+        break;
+    }
+
+    return list;
+  }, [products, onlineShopIds, activeCategory, sort]);
+  const [hideFeatured, setHideFeatured] = useState(false);
+
+  useEffect(() => {
+    const handleScroll = () => {
+      setHideFeatured(window.scrollY > 80);
+    };
+
+    handleScroll();
+
+    window.addEventListener("scroll", handleScroll, { passive: true });
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, []);
+  const [showHeader, setShowHeader] = useState(false);
+
+  useEffect(() => {
+    const handleScroll = () => {
+      setShowHeader(window.scrollY > 80);
+    };
+
+    handleScroll();
+    window.addEventListener("scroll", handleScroll, { passive: true });
+
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, []);
   /* =====================================================
      FEATURED PRODUCTS
   ===================================================== */
@@ -139,29 +168,50 @@ export function EAurixHome() {
   const featured = visibleProducts.filter(
     (p) => p.badge === "popular" || p.badge === "pro",
   );
-
+  const paginatedProducts = useMemo(() => {
+    return visibleProducts.slice(0, page * PRODUCTS_PER_PAGE);
+  }, [visibleProducts, page]);
   /* ===================================================== */
 
-  const spotlightProducts = useMemo(() => {
-    const categoryMap = new Map();
+  useEffect(() => {
+    const node = loadMoreRef.current;
 
-    visibleProducts.forEach((product) => {
-      if (!categoryMap.has(product.category)) {
-        categoryMap.set(product.category, product);
-      }
-    });
+    if (!node) return;
 
-    let result = Array.from(categoryMap.values());
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (
+          entry.isIntersecting &&
+          !loadingMore &&
+          paginatedProducts.length < visibleProducts.length
+        ) {
+          setLoadingMore(true);
 
-    // Minimum 4 products
-    if (result.length > 0) {
-      while (result.length < 4) {
-        result = [...result, ...result];
-      }
+          setTimeout(() => {
+            setPage((p) => p + 1);
+            setLoadingMore(false);
+          }, 400);
+        }
+      },
+      {
+        rootMargin: "150px",
+      },
+    );
+
+    observer.observe(node);
+
+    return () => observer.disconnect();
+  }, [loadingMore, paginatedProducts.length, visibleProducts.length]);
+
+  useEffect(() => {
+    if (loadingMore) {
+      const timer = setTimeout(() => {
+        setLoadingMore(false);
+      }, 300);
+
+      return () => clearTimeout(timer);
     }
-
-    return result.slice(0, 4);
-  }, [visibleProducts]);
+  }, [paginatedProducts.length, loadingMore]);
 
   if (loading) {
     return (
@@ -170,250 +220,239 @@ export function EAurixHome() {
       </div>
     );
   }
+  const sortLabels = {
+    latest: "Latest",
+    low: "Price : Low to High",
+    high: "Price : High to Low",
+    name: "Name A-Z",
+  };
+  const categories = [
+    {
+      id: null,
+      name: "All",
+      image: "https://cdn-icons-png.flaticon.com/512/3081/3081559.png",
+    },
+
+    {
+      id: "sand",
+      name: "Sand",
+      image: "/sand.webp",
+    },
+
+    {
+      id: "aggregate",
+      name: "Aggregate",
+      image: "/20-mm-aggregates.jpg",
+    },
+
+    {
+      id: "brick",
+      name: "Brick",
+      image: "/red-brick.jpeg",
+    },
+
+    {
+      id: "cement",
+      name: "Cement",
+      image: "/cements_.jpg",
+    },
+
+    {
+      id: "tmt",
+      name: "TMT",
+      image: "/captain-tmt-bars-500x500.webp",
+    },
+
+    {
+      id: "paint",
+      name: "Paint",
+      image: "/closeup-of-house-painting-renovation-4519567.webp",
+    },
+
+    {
+      id: "plumbing",
+      name: "Plumbing",
+      image: "/pipes-18242-1676036604740.webp",
+    },
+
+    {
+      id: "tiles",
+      name: "Tiles",
+      image: "/tiles.avif",
+    },
+
+    {
+      id: "electrical",
+      name: "Electrical",
+      image: "/electrical.avif",
+    },
+  ];
 
   /* ===================================================== */
 
   return (
-    <div className="min-h-screen bg-[#F0F9FF]">
-      {/* HERO */}
-
-      <div className="bg-linear-to-br from-[#0C1A2E] via-[#0F2744] to-[#0C3B5E] pt-24 pb-16 relative overflow-hidden">
-        <div className="mt-2 mb-5">
-          <ShopLive />
-        </div>
-
-        {/* GRID */}
-
-        <div
-          className="absolute inset-0 opacity-10"
-          style={{
-            backgroundImage:
-              "linear-gradient(rgba(14,165,233,0.4) 1px, transparent 1px), linear-gradient(90deg, rgba(14,165,233,0.4) 1px, transparent 1px)",
-            backgroundSize: "40px 40px",
-          }}
+    <div className=" bg-[#F0F9FF]">
+      {/* Floating Cart Button */}
+      <div
+        className={`overflow-hidden transition-all duration-300 ${hideFeatured
+          ? "max-h-0 opacity-0 -translate-y-4 pointer-events-none mb-0 pt-0"
+          : "max-h-75 opacity-100 translate-y-0 mb-1 pt-2"
+          }`}
+      >
+        <ShopLive />
+      </div>
+      <div
+        className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${showHeader
+          ? "translate-y-0 opacity-100"
+          : "-translate-y-full opacity-0 pointer-events-none"
+          }`}
+      >
+        <CategoriesHeader
+          loading={loading}
+          sort={sort}
+          setSort={setSort}
+          products={products}
+          search={search}
+          setSearch={setSearch}
+          sortLabels={sortLabels}
+          categories={categories}
+          activeCategory={activeCategory}
+          setActiveCategory={setActiveCategory}
+          categoryRef={categoryRef}
+          onOpenSidebar={() => setSidebarOpen(true)}
         />
+      </div>
 
-        <div className="absolute top-10 left-1/4 w-72 h-72 bg-sky-500/20 rounded-full blur-3xl" />
-
-        <div className="absolute bottom-0 right-1/4 w-56 h-56 bg-blue-600/20 rounded-full blur-3xl" />
-
-        <div className="relative max-w-5xl mx-auto px-6 text-center">
-          {/* BADGE */}
-
-          <div className="inline-flex items-center gap-2 bg-sky-500/20 border border-sky-400/30 rounded-full px-4 py-1.5 mb-6 backdrop-blur-sm">
-            <Zap className="w-3.5 h-3.5 text-yellow-400" />
-
-            <span className="text-sky-200 text-xs font-semibold">
-              E-aurix under processing, coming soon!
-            </span>
-
-            <span className="text-sky-200 text-xs font-semibold">
-              Workkerz-integrated marketplace
-            </span>
-          </div>
-
-          {/* TITLE */}
-
-          <h1
-            className="text-white mb-4"
-            style={{
-              fontSize: "clamp(2rem, 5vw, 3rem)",
-
-              fontWeight: 900,
-
-              lineHeight: 1.1,
-            }}
-          >
-            Everything your workers need,
-            <span className="text-[#38BDF8]"> delivered.</span>
+      <CategoriesDrawer
+        open={sidebarOpen}
+        onClose={() => setSidebarOpen(false)}
+        categories={categories}
+        activeCategory={activeCategory}
+        setActiveCategory={setActiveCategory}
+      />
+      <div
+        className={`overflow-hidden transition-all duration-300 ${hideFeatured
+          ? "max-h-0 opacity-0 -translate-y-4 pointer-events-none"
+          : "max-h-250 opacity-100 translate-y-0"
+          }`}
+      >
+        <FeaturedProducts products={visibleProducts}  />
+      </div>
+      <div className="px-4 md:px-8 pb-6 pt-30">
+        <div className="mb-5 flex items-center justify-between">
+          <h1 className="text-xl md:text-3xl font-black text-slate-900">
+            All Products
           </h1>
-
-          <p className="text-sky-200 mb-8 max-w-xl mx-auto text-[1.05rem]">
-            Order tools, materials and safety supplies.
-          </p>
         </div>
-      </div>
 
-      {/* FEATURED */}
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4">
+          {paginatedProducts.map((product) => {
+            const inCart = cart.some(
+              (item) => item.productId === product.id
+            );
 
-      <div className="max-w-7xl mx-auto px-4 md:px-6 pb-12 mt-6">
-        <div className="bg-linear-to-r from-slate-500 to-sky-50 rounded-4xl p-5 md:p-8 border border-slate-200">
-          <h2 className="text-2xl md:text-4xl font-black text-[#111827] mb-5 md:mb-8">
-            Mukul, still looking for these?
-          </h2>
+            return (
+              <div
+                key={product.id}
+                className="group overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm transition-all hover:shadow-md"
+              >
+                {/* Clickable Image */}
+                <Link href={`/eaurix/product/${product.id}`}>
+                  <div className="relative overflow-hidden">
+                    <div className="h-32 w-full overflow-hidden md:h-64">
+                      {product.image ? (
+                        <ProductImage
+                          image={product.image}
+                          name={product.name}
+                        />
+                      ) : (
+                        <div className="flex h-full w-full items-center justify-center bg-slate-100 px-3 text-center">
+                          <span className="line-clamp-3 text-sm font-bold text-slate-700 md:text-lg">
+                            {product.name}
+                          </span>
+                        </div>
+                      )}
+                    </div>
 
-          <div className="overflow-hidden">
-            <div className="flex gap-4 marquee-track">
-              {[...visibleProducts, ...visibleProducts].map(
-                (product, index) => (
-                  <div
-                    key={`${product.id}-${index}`}
-                    className="w-42.5 sm:w-47.5 shrink-0"
-                  >
-                    <ProductCard product={product} />
+                    <span className="absolute right-2 top-2 rounded-full bg-black/70 px-2 py-0.5 text-[9px] font-medium text-white md:text-[10px]">
+                      {product.brand}
+                    </span>
                   </div>
-                ),
-              )}
-            </div>
-          </div>
-        </div>
-      </div>
-      <div className="max-w-7xl mx-auto px-4 md:px-8 py-10">
-        <div className="flex items-center justify-between mb-5">
-          <h2 className="text-2xl md:text-3xl font-black text-slate-900">
-            Brands in Spotlight
-          </h2>
+                </Link>
 
-          <Link
-            href="/eaurix/shop"
-            className="text-sky-600 text-sm font-semibold"
-          >
-            View All
-          </Link>
-        </div>
+                <div className="p-2 md:p-3">
+                  {/* Clickable Name & Price */}
+                  <Link href={`/eaurix/product/${product.id}`}>
+                    <div className="flex items-start justify-between gap-2">
+                      <h3 className="line-clamp-2 flex-1 text-xs font-semibold text-slate-900 md:text-sm">
+                        {product.name}
+                      </h3>
 
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-          {spotlightProducts.map((product) => (
-            <Link
-              key={product.id}
-              href={`/eaurix/product/${product.id}`}
-              className="bg-white rounded-3xl overflow-hidden border border-slate-200 shadow-sm hover:shadow-lg transition-all"
-            >
-              <div className="relative">
-                <img
-                  src={product.image}
-                  alt={product.name}
-                  className="w-full h-50 md:h-70 object-cover"
-                />
+                      <span className="shrink-0 text-sm font-bold text-emerald-600 md:text-lg">
+                        ₹{product.price}
+                      </span>
+                    </div>
+                  </Link>
 
-                <span className="absolute top-2 right-2 bg-black/70 text-white text-[10px] px-2 py-1 rounded-full">
-                  {product.brand}
-                </span>
+                  {/* Actions */}
+                  <div className="mt-3 flex gap-2">
+                    {/* Add to Cart */}
+                    <button
+                      onClick={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
 
-                <div className="absolute bottom-0 left-0 right-0 bg-yellow-400 py-2">
-                  <p className="text-center text-sm font-black text-black">
-                    ₹{product.price}
-                  </p>
+                        if (!inCart) {
+                          addToCart({
+                            productId: product.id,
+                            name: product.name,
+                            brand: product.brand,
+                            price: product.price,
+                            qty: 1,
+                            icon: product.image || "",
+                            color: product.color ?? "#10b981",
+                            unit: product.unit ?? "pcs",
+                          });
+                        }
+                      }}
+                      className={`flex h-8 w-8 items-center justify-center rounded-xl transition-all active:scale-95 ${inCart
+                        ? "bg-black text-white"
+                        : "border border-slate-200 bg-white text-slate-700 hover:border-emerald-500 hover:text-emerald-600"
+                        }`}
+                    >
+                      <ShoppingCart
+                        size={16}
+                        className={inCart ? "fill-white" : ""}
+                      />
+                    </button>
+
+                    {/* View Button */}
+                    <Link
+                      href={`/eaurix/product/${product.id}`}
+                      className="flex h-8 flex-1 items-center justify-center gap-1 rounded-lg bg-emerald-500 px-2 text-[11px] font-semibold text-white transition-all hover:bg-emerald-600 active:scale-95"
+                    >
+                      <Eye size={13} />
+                      <span>View</span>
+                    </Link>
+                  </div>
                 </div>
               </div>
-
-              <div className="p-3">
-                <h3 className="text-sm font-bold text-slate-800 line-clamp-1">
-                  {product.brand}
-                </h3>
-
-                <p className="text-xs text-slate-500 line-clamp-2">
-                  {product.name}
-                </p>
-              </div>
-            </Link>
-          ))}
+            );
+          })}
         </div>
       </div>
-
-      {/* WHY */}
-
-      <div className="bg-linear-to-b from-slate-50 to-white border-t border-slate-200">
-  <div className="max-w-6xl mx-auto px-4 py-8">
-
-    <div className="text-center mb-6">
-      <h2 className="text-xl md:text-2xl font-black text-slate-900">
-        Why Choose E-Aurix?
-      </h2>
-
-      <p className="text-xs text-slate-500 mt-1">
-        Trusted marketplace for workers
-      </p>
-    </div>
-
-    <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-
-      {[
-        {
-          icon: Truck,
-          title: "Fast Delivery",
-          desc: "Delivery across your city",
-          color: "#0EA5E9",
-          stat: "24h",
-        },
-        {
-          icon: Shield,
-          title: "Quality Assured",
-          desc: "Verified products only",
-          color: "#10B981",
-          stat: "100%",
-        },
-        {
-          icon: Tag,
-          title: "Trade Pricing",
-          desc: "Best market rates",
-          color: "#F97316",
-          stat: "₹₹",
-        },
-      ].map((f) => {
-        const Icon = f.icon;
-
-        return (
-          <div
-            key={f.title}
-            className="relative overflow-hidden bg-white rounded-3xl border border-slate-200 p-4 shadow-sm hover:shadow-lg transition-all"
-          >
-            {/* Graphic Circle */}
-            <div
-              className="absolute -top-8 -right-8 w-24 h-24 rounded-full opacity-10"
-              style={{
-                backgroundColor: f.color,
-              }}
-            />
-
-            <div className="flex items-start justify-between mb-3">
-
-              <div
-                className="w-11 h-11 rounded-2xl flex items-center justify-center"
-                style={{
-                  backgroundColor: `${f.color}15`,
-                }}
-              >
-                <Icon
-                  className="w-5 h-5"
-                  style={{ color: f.color }}
-                />
-              </div>
-
-              <span
-                className="text-lg font-black"
-                style={{ color: f.color }}
-              >
-                {f.stat}
-              </span>
-
-            </div>
-
-            <h3 className="text-sm font-black text-slate-900">
-              {f.title}
-            </h3>
-
-            <p className="text-xs text-slate-500 mt-1">
-              {f.desc}
-            </p>
-
-            {/* Progress Graphic */}
-            <div className="mt-4 h-1.5 bg-slate-100 rounded-full overflow-hidden">
-              <div
-                className="h-full rounded-full"
-                style={{
-                  width: "85%",
-                  backgroundColor: f.color,
-                }}
-              />
-            </div>
-
+      {paginatedProducts.length < visibleProducts.length && (
+        <div
+          ref={loadMoreRef}
+          className="flex h-20 items-center justify-center"
+        >
+          <div className="flex gap-2">
+            <span className="h-2.5 w-2.5 rounded-full bg-emerald-500 animate-bounce [animation-delay:-0.3s]" />
+            <span className="h-2.5 w-2.5 rounded-full bg-emerald-500 animate-bounce [animation-delay:-0.15s]" />
+            <span className="h-2.5 w-2.5 rounded-full bg-emerald-500 animate-bounce" />
           </div>
-        );
-      })}
-    </div>
-  </div>
-</div>
+        </div>
+      )}
     </div>
   );
 }

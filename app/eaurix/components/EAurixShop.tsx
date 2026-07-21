@@ -13,7 +13,6 @@ import {
 } from "lucide-react";
 
 import {
-  productCategories,
   ProductCategory,
   type Product,
 } from "../../data/products";
@@ -356,7 +355,6 @@ export function EAurixShop() {
   const { products } = useAdmin();
   const { cart } = usePlatform();
   const [showSuggestions, setShowSuggestions] = useState(true);
-  const [cartOpen, setCartOpen] = useState(false);
 
   const [search, setSearch] = useState("");
   const [mobileMenu, setMobileMenu] = useState(false);

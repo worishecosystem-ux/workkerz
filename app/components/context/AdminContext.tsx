@@ -27,7 +27,7 @@ import { supabase } from "@/lib/supabase";
 
 interface AdminContextType {
   /* WORKERS */
-
+  loading: boolean;
   workers: Worker[];
 
   addWorker: (w: Omit<Worker, "id">) => Promise<any>;
@@ -58,7 +58,7 @@ interface AdminContextType {
 
   /* ORDERS */
 
-  orders: any[];
+  bookings: any[];
 
   /* REVIEWS */
 
@@ -80,21 +80,13 @@ interface AdminContextType {
 
   stats: {
     totalWorkers: number;
-
     totalProducts: number;
-
     visibleProducts: number;
-
     totalShops: number;
-
     onlineShops: number;
-
     offlineShops: number;
-
-    totalOrders: number;
-
+    totalBookings: number;
     availableWorkers: number;
-
     outOfStock: number;
   };
 }
@@ -102,7 +94,6 @@ interface AdminContextType {
 /* ===================================================== */
 
 const AdminContext = createContext<AdminContextType | null>(null);
-
 /* ===================================================== */
 
 export function AdminProvider({ children }: { children: ReactNode }) {
@@ -111,25 +102,31 @@ export function AdminProvider({ children }: { children: ReactNode }) {
   /* ===================================================== */
 
   const [workers, setWorkers] = useState<Worker[]>([]);
-
+  const [loading, setLoading] = useState(true);
   const [products, setProducts] = useState<Product[]>([]);
 
   const [shops, setShops] = useState<Shop[]>([]);
-
-  const [orders, setOrders] = useState<any[]>([]);
+  const [bookings, setBookings] = useState<any[]>([]);
 
   /* ===================================================== */
   /* LOAD DATA */
   /* ===================================================== */
 
   useEffect(() => {
-    loadWorkers();
+    const loadAll = async () => {
+      setLoading(true);
 
-    loadProducts();
+      await Promise.all([
+        loadWorkers(),
+        loadProducts(),
+        loadShops(),
+        loadBookings(),
+      ]);
 
-    loadShops();
+      setLoading(false);
+    };
 
-    loadOrders();
+    loadAll();
   }, []);
 
   /* ===================================================== */
@@ -178,21 +175,22 @@ export function AdminProvider({ children }: { children: ReactNode }) {
   /* LOAD ORDERS */
   /* ===================================================== */
 
-  const loadOrders = async () => {
+  const loadBookings = async () => {
     try {
-      const { data, error } = await supabase.from("orders").select("*");
+      const { data, error } = await supabase
+        .from("bookings")
+        .select("*")
+        .order("created_at", { ascending: false });
 
       if (error) {
         console.log(error);
-
         return;
       }
 
-      setOrders(data || []);
+      setBookings(data || []);
     } catch (error) {
       console.log(error);
-
-      setOrders([]);
+      setBookings([]);
     }
   };
 
@@ -451,7 +449,7 @@ export function AdminProvider({ children }: { children: ReactNode }) {
 
       offlineShops: offlineShops.length,
 
-      totalOrders: orders.length,
+      totalBookings: bookings.length,
 
       availableWorkers: workers.filter((worker) => worker.available).length,
 
@@ -465,7 +463,7 @@ export function AdminProvider({ children }: { children: ReactNode }) {
       shops,
       onlineShops,
       offlineShops,
-      orders,
+      bookings,
     ],
   );
 
@@ -474,6 +472,7 @@ export function AdminProvider({ children }: { children: ReactNode }) {
   return (
     <AdminContext.Provider
       value={{
+        loading,
         /* WORKERS */
 
         workers,
@@ -506,7 +505,7 @@ export function AdminProvider({ children }: { children: ReactNode }) {
 
         /* ORDERS */
 
-        orders,
+        bookings,
 
         /* REVIEWS */
 

@@ -35,6 +35,8 @@
     "axios": "^1.17.0",
     "canvas-confetti": "^1.9.4",
     "dayjs": "^1.11.21",
+    "embla-carousel-autoplay": "^8.6.0",
+    "embla-carousel-react": "^8.6.0",
     "firebase-admin": "^14.1.0",
     "framer-motion": "^12.42.2",
     "html2canvas": "^1.4.1",

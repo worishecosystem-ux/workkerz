@@ -15,64 +15,23 @@ const inp =
 
 /* ====================================================== */
 
-function fixDriveImage(url?: string) {
-  if (!url || url.trim() === "") {
-    return "";
-  }
+async function uploadLogo(file: File) {
+  const ext = file.name.split(".").pop();
 
-  const cleanUrl = url.trim();
+  const fileName = `${Date.now()}-${Math.random()
+    .toString(36)
+    .substring(2)}.${ext}`;
 
-  if (!cleanUrl.includes("drive.google.com")) {
-    return cleanUrl;
-  }
+  const { error } = await supabase.storage
+    .from("shop-logos")
+    .upload(fileName, file);
 
-  let fileId = "";
+  if (error) throw error;
 
-  const openMatch =
-    cleanUrl.match(/open\?id=([^&]+)/);
+  const { data } = supabase.storage.from("shop-logos").getPublicUrl(fileName);
 
-  if (openMatch?.[1]) {
-    fileId = openMatch[1];
-  }
-
-  if (!fileId) {
-    const fileMatch =
-      cleanUrl.match(
-        /\/file\/d\/([^/]+)/,
-      );
-
-    if (fileMatch?.[1]) {
-      fileId = fileMatch[1];
-    }
-  }
-
-  if (!fileId) {
-    const thumbMatch =
-      cleanUrl.match(
-        /thumbnail\?id=([^&]+)/,
-      );
-
-    if (thumbMatch?.[1]) {
-      fileId = thumbMatch[1];
-    }
-  }
-
-  if (!fileId) {
-    const genericMatch =
-      cleanUrl.match(/id=([^&]+)/);
-
-    if (genericMatch?.[1]) {
-      fileId = genericMatch[1];
-    }
-  }
-
-  if (!fileId) {
-    return cleanUrl;
-  }
-
-  return `https://drive.google.com/thumbnail?id=${fileId}&sz=w1000`;
+  return data.publicUrl;
 }
-
 /* ====================================================== */
 
 export default function ShopRegistrationForm({
@@ -83,17 +42,11 @@ export default function ShopRegistrationForm({
 
   onSuccess?: () => void;
 }) {
-  const [saving, setSaving] =
-    useState(false);
+  const [saving, setSaving] = useState(false);
 
-  const [
-    uploadingExcel,
-    setUploadingExcel,
-  ] = useState(false);
-
-  const [mode, setMode] = useState<
-    "manual" | "excel"
-  >("manual");
+  const [uploadingExcel, setUploadingExcel] = useState(false);
+  const [logoFile, setLogoFile] = useState<File | null>(null);
+  const [mode, setMode] = useState<"manual" | "excel">("manual");
 
   const [form, setForm] = useState({
     shop_name: "",
@@ -118,26 +71,13 @@ export default function ShopRegistrationForm({
   useEffect(() => {
     if (editingShop) {
       setForm({
-        shop_name:
-          editingShop.shop_name || "",
-
-        owner_name:
-          editingShop.owner_name || "",
-
-        phone:
-          editingShop.phone || "",
-
-        category:
-          editingShop.category || "",
-
-        city:
-          editingShop.city || "",
-
-        address:
-          editingShop.address || "",
-
-        logo:
-          editingShop.logo || "",
+        shop_name: editingShop.shop_name || "",
+        owner_name: editingShop.owner_name || "",
+        phone: editingShop.phone || "",
+        category: editingShop.category || "",
+        city: editingShop.city || "",
+        address: editingShop.address || "",
+        logo: editingShop.logo || "",
       });
     }
   }, [editingShop]);
@@ -147,6 +87,11 @@ export default function ShopRegistrationForm({
   /* ====================================================== */
 
   async function handleSave() {
+    let logoUrl = form.logo;
+
+    if (logoFile) {
+      logoUrl = await uploadLogo(logoFile);
+    }
     if (
       !form.shop_name.trim() ||
       !form.owner_name.trim() ||
@@ -165,51 +110,28 @@ export default function ShopRegistrationForm({
       /* ====================================================== */
 
       if (editingShop) {
-        const { error } =
-          await supabase
-            .from("shops")
-            .update({
-              shop_name:
-                form.shop_name,
-
-              owner_name:
-                form.owner_name,
-
-              phone:
-                form.phone,
-
-              category:
-                form.category,
-
-              city:
-                form.city,
-
-              address:
-                form.address,
-
-              logo:
-                fixDriveImage(
-                  form.logo,
-                ),
-            })
-            .eq(
-              "id",
-              editingShop.id,
-            );
+        const { error } = await supabase
+          .from("shops")
+          .update({
+            shop_name: form.shop_name,
+            owner_name: form.owner_name,
+            phone: form.phone,
+            category: form.category,
+            city: form.city,
+            address: form.address,
+            logo: logoUrl,
+          })
+          .eq("id", editingShop.id);
 
         if (error) {
           console.log(error);
 
-          alert(
-            "Failed to update shop",
-          );
+          alert("Failed to update shop");
 
           return;
         }
 
-        alert(
-          "Shop updated successfully",
-        );
+        alert("Shop updated successfully");
 
         onSuccess?.();
 
@@ -220,16 +142,12 @@ export default function ShopRegistrationForm({
       /* TOTAL SHOPS */
       /* ====================================================== */
 
-      const { count } =
-        await supabase
-          .from("shops")
-          .select("*", {
-            count: "exact",
-            head: true,
-          });
+      const { count } = await supabase.from("shops").select("*", {
+        count: "exact",
+        head: true,
+      });
 
-      const serialNo =
-        (count || 0) + 1;
+      const serialNo = (count || 0) + 1;
 
       /* ====================================================== */
       /* DATE */
@@ -237,20 +155,13 @@ export default function ShopRegistrationForm({
 
       const now = new Date();
 
-      const joinedDate =
-        now.toISOString();
+      const joinedDate = now.toISOString();
 
-      const year = String(
-        now.getFullYear(),
-      ).slice(-2);
+      const year = String(now.getFullYear()).slice(-2);
 
-      const month = String(
-        now.getMonth() + 1,
-      ).padStart(2, "0");
+      const month = String(now.getMonth() + 1).padStart(2, "0");
 
-      const day = String(
-        now.getDate(),
-      ).padStart(2, "0");
+      const day = String(now.getDate()).padStart(2, "0");
 
       const dateCode = `${year}${month}${day}`;
 
@@ -258,9 +169,7 @@ export default function ShopRegistrationForm({
       /* CITY CODE */
       /* ====================================================== */
 
-      const cityCode = (
-        form.city || "IND"
-      )
+      const cityCode = (form.city || "IND")
         .replace(/[^A-Za-z]/g, "")
         .toUpperCase()
         .slice(0, 3)
@@ -270,9 +179,7 @@ export default function ShopRegistrationForm({
       /* CATEGORY CODE */
       /* ====================================================== */
 
-      const categoryCode = (
-        form.category || "GEN"
-      )
+      const categoryCode = (form.category || "GEN")
         .replace(/[^A-Za-z]/g, "")
         .toUpperCase()
         .slice(0, 3)
@@ -290,37 +197,25 @@ export default function ShopRegistrationForm({
       /* SAVE */
       /* ====================================================== */
 
-      const { error } =
-        await supabase
-          .from("shops")
-          .insert([
-            {
-              ...form,
+      const { error } = await supabase.from("shops").insert([
+        {
+          ...form,
+          logo: logoUrl,
 
-              logo:
-                fixDriveImage(
-                  form.logo,
-                ),
+          shop_uid: shopUID,
 
-              shop_uid:
-                shopUID,
+          serial_no: serialNo,
 
-              serial_no:
-                serialNo,
+          joined_date: joinedDate,
 
-              joined_date:
-                joinedDate,
-
-              status: "online",
-            },
-          ]);
+          status: "online",
+        },
+      ]);
 
       if (error) {
         console.log(error);
 
-        alert(
-          "Failed to register shop",
-        );
+        alert("Failed to register shop");
 
         return;
       }
@@ -366,208 +261,114 @@ ${shopUID}`);
   /* EXCEL IMPORT */
   /* ====================================================== */
 
-  async function handleExcelUpload(
-    e: React.ChangeEvent<HTMLInputElement>,
-  ) {
+  async function handleExcelUpload(e: React.ChangeEvent<HTMLInputElement>) {
     try {
       setUploadingExcel(true);
 
-      const file =
-        e.target.files?.[0];
+      const file = e.target.files?.[0];
 
       if (!file) return;
 
-      const data =
-        await file.arrayBuffer();
+      const data = await file.arrayBuffer();
 
-      const workbook =
-        XLSX.read(data);
+      const workbook = XLSX.read(data);
 
-      const sheet =
-        workbook.Sheets[
-          workbook.SheetNames[0]
-        ];
+      const sheet = workbook.Sheets[workbook.SheetNames[0]];
 
-      const jsonData: any[] =
-        XLSX.utils.sheet_to_json(
-          sheet,
-        );
+      const jsonData: any[] = XLSX.utils.sheet_to_json(sheet);
 
-      if (
-        !jsonData ||
-        jsonData.length === 0
-      ) {
-        alert(
-          "Excel file is empty",
-        );
+      if (!jsonData || jsonData.length === 0) {
+        alert("Excel file is empty");
 
         return;
       }
 
-      const { count } =
-        await supabase
-          .from("shops")
-          .select("*", {
-            count: "exact",
-            head: true,
-          });
+      const { count } = await supabase.from("shops").select("*", {
+        count: "exact",
+        head: true,
+      });
 
-      let currentCount =
-        count || 0;
+      let currentCount = count || 0;
 
-      const formattedData =
-        jsonData.map(
-          (row, index) => {
-            currentCount += 1;
+      const formattedData = jsonData.map((row, index) => {
+        currentCount += 1;
 
-            const now =
-              new Date();
+        const now = new Date();
 
-            const year =
-              String(
-                now.getFullYear(),
-              ).slice(-2);
+        const year = String(now.getFullYear()).slice(-2);
 
-            const month =
-              String(
-                now.getMonth() + 1,
-              ).padStart(
-                2,
-                "0",
-              );
+        const month = String(now.getMonth() + 1).padStart(2, "0");
 
-            const day =
-              String(
-                now.getDate(),
-              ).padStart(
-                2,
-                "0",
-              );
+        const day = String(now.getDate()).padStart(2, "0");
 
-            const dateCode = `${year}${month}${day}`;
+        const dateCode = `${year}${month}${day}`;
 
-            const city =
-              row["City"] ||
-              "IND";
+        const city = row["City"] || "IND";
 
-            const cityCode =
-              city
-                .replace(
-                  /[^A-Za-z]/g,
-                  "",
-                )
-                .toUpperCase()
-                .slice(0, 3)
-                .padEnd(
-                  3,
-                  "X",
-                );
+        const cityCode = city
+          .replace(/[^A-Za-z]/g, "")
+          .toUpperCase()
+          .slice(0, 3)
+          .padEnd(3, "X");
 
-            const category =
-              row[
-                "What do you sell?"
-              ] || "GEN";
+        const category = row["What do you sell?"] || "GEN";
 
-            const categoryCode =
-              category
-                .replace(
-                  /[^A-Za-z]/g,
-                  "",
-                )
-                .toUpperCase()
-                .slice(0, 3)
-                .padEnd(
-                  3,
-                  "X",
-                );
+        const categoryCode = category
+          .replace(/[^A-Za-z]/g, "")
+          .toUpperCase()
+          .slice(0, 3)
+          .padEnd(3, "X");
 
-            const shopUID = `EA-${cityCode}-${categoryCode}-${dateCode}-${String(
-              currentCount,
-            ).padStart(4, "0")}`;
+        const shopUID = `EA-${cityCode}-${categoryCode}-${dateCode}-${String(
+          currentCount,
+        ).padStart(4, "0")}`;
 
-            return {
-              shop_name:
-                row[
-                  "Shop Name"
-                ] || "",
+        return {
+          shop_name: row["Shop Name"] || "",
 
-              owner_name:
-                row[
-                  "Shop Owner Name"
-                ] || "",
+          owner_name: row["Shop Owner Name"] || "",
 
-              phone: String(
-                row[
-                  "Mobile Number"
-                ] || "",
-              ),
+          phone: String(row["Mobile Number"] || ""),
 
-              category,
+          category,
 
-              city,
+          city,
 
-              address:
-                row[
-                  "Shop Address"
-                ] || "",
+          address: row["Shop Address"] || "",
 
-              logo:
-                fixDriveImage(
-                  row[
-                    "Upload Shop Photo"
-                  ] || "",
-                ),
+          logo: row["Upload Shop Photo"] || "",
 
-              status: "online",
+          status: "online",
 
-              serial_no:
-                currentCount,
+          serial_no: currentCount,
 
-              shop_uid:
-                shopUID,
+          shop_uid: shopUID,
 
-              joined_date:
-                now.toISOString(),
-            };
-          },
-        );
+          joined_date: now.toISOString(),
+        };
+      });
 
-      const validData =
-        formattedData.filter(
-          (shop) =>
-            shop.shop_name &&
-            shop.owner_name &&
-            shop.phone,
-        );
+      const validData = formattedData.filter(
+        (shop) => shop.shop_name && shop.owner_name && shop.phone,
+      );
 
-      if (
-        validData.length === 0
-      ) {
-        alert(
-          "No valid shop data found",
-        );
+      if (validData.length === 0) {
+        alert("No valid shop data found");
 
         return;
       }
 
-      const { error } =
-        await supabase
-          .from("shops")
-          .insert(validData);
+      const { error } = await supabase.from("shops").insert(validData);
 
       if (error) {
         console.log(error);
 
-        alert(
-          "Excel upload failed",
-        );
+        alert("Excel upload failed");
 
         return;
       }
 
-      alert(
-        `${validData.length} shops imported successfully`,
-      );
+      alert(`${validData.length} shops imported successfully`);
 
       onSuccess?.();
 
@@ -575,9 +376,7 @@ ${shopUID}`);
     } catch (err) {
       console.log(err);
 
-      alert(
-        "Failed to process Excel file",
-      );
+      alert("Failed to process Excel file");
     } finally {
       setUploadingExcel(false);
     }
@@ -592,9 +391,7 @@ ${shopUID}`);
 
         <div className="bg-white p-2 rounded-2xl border border-gray-200 grid grid-cols-2 gap-2 mb-8 shadow-sm">
           <button
-            onClick={() =>
-              setMode("manual")
-            }
+            onClick={() => setMode("manual")}
             className={`h-12 rounded-xl text-sm font-bold transition-all ${
               mode === "manual"
                 ? "bg-[#0EA5E9] text-white shadow-lg"
@@ -605,9 +402,7 @@ ${shopUID}`);
           </button>
 
           <button
-            onClick={() =>
-              setMode("excel")
-            }
+            onClick={() => setMode("excel")}
             className={`h-12 rounded-xl text-sm font-bold transition-all ${
               mode === "excel"
                 ? "bg-[#0EA5E9] text-white shadow-lg"
@@ -631,25 +426,19 @@ ${shopUID}`);
             </h3>
 
             <p className="text-gray-500 text-sm mt-2 mb-8">
-              Import shops using
-              .xlsx, .xls or .csv
-              file
+              Import shops using .xlsx, .xls or .csv file
             </p>
 
             <label className="inline-flex h-12 px-7 rounded-2xl bg-[#0EA5E9] hover:bg-[#0284C7] transition-all text-white items-center gap-3 cursor-pointer font-bold shadow-lg shadow-sky-200">
               <Upload className="w-5 h-5" />
 
-              {uploadingExcel
-                ? "Uploading..."
-                : "Choose Excel File"}
+              {uploadingExcel ? "Uploading..." : "Choose Excel File"}
 
               <input
                 type="file"
                 accept=".xlsx,.xls,.csv"
                 hidden
-                onChange={
-                  handleExcelUpload
-                }
+                onChange={handleExcelUpload}
               />
             </label>
           </div>
@@ -667,53 +456,70 @@ ${shopUID}`);
 
                 <div>
                   <h3 className="font-black text-lg text-[#0F172A]">
-                    {editingShop
-                      ? "Edit Shop"
-                      : "Shop Information"}
+                    {editingShop ? "Edit Shop" : "Shop Information"}
                   </h3>
 
                   <p className="text-sm text-gray-500">
-                    Basic details
-                    about the shop
+                    Basic details about the shop
                   </p>
                 </div>
               </div>
+              <div className="md:col-span-2">
+                <label className="text-sm font-semibold text-gray-700 mb-2 block">
+                  Shop Logo
+                </label>
 
+                {form.logo && (
+                  <img
+                    src={form.logo}
+                    className="w-28 h-28 rounded-xl object-cover border mb-3"
+                    alt="Logo"
+                  />
+                )}
+
+                <input
+                  type="file"
+                  accept="image/*"
+                  onChange={(e) => {
+                    const file = e.target.files?.[0];
+
+                    if (!file) return;
+
+                    setLogoFile(file);
+
+                    setForm({
+                      ...form,
+                      logo: URL.createObjectURL(file),
+                    });
+                  }}
+                  className="block w-full text-sm"
+                />
+              </div>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
                 {[
                   {
-                    label:
-                      "Shop Name",
+                    label: "Shop Name",
                     key: "shop_name",
                   },
 
                   {
-                    label:
-                      "Owner Name",
+                    label: "Owner Name",
                     key: "owner_name",
                   },
 
                   {
-                    label:
-                      "Phone Number",
+                    label: "Phone Number",
                     key: "phone",
                   },
 
                   {
-                    label:
-                      "Category",
+                    label: "Category",
                     key: "category",
                   },
 
                   {
                     label: "City",
                     key: "city",
-                  },
-
-                  {
-                    label:
-                      "Logo URL",
-                    key: "logo",
                   },
                 ].map((item) => (
                   <div key={item.key}>
@@ -722,25 +528,15 @@ ${shopUID}`);
                     </label>
 
                     <input
-                      value={
-                        form[
-                          item.key as keyof typeof form
-                        ]
-                      }
-                      onChange={(
-                        e,
-                      ) =>
+                      value={form[item.key as keyof typeof form]}
+                      onChange={(e) =>
                         setForm({
                           ...form,
 
-                          [item.key]:
-                            e.target
-                              .value,
+                          [item.key]: e.target.value,
                         })
                       }
-                      className={
-                        inp
-                      }
+                      className={inp}
                     />
                   </div>
                 ))}
@@ -758,9 +554,7 @@ ${shopUID}`);
                     setForm({
                       ...form,
 
-                      address:
-                        e.target
-                          .value,
+                      address: e.target.value,
                     })
                   }
                   className="w-full rounded-2xl border border-gray-200 bg-[#F8FAFC] px-4 py-4 text-sm outline-none resize-none focus:border-[#0EA5E9]"
@@ -769,12 +563,8 @@ ${shopUID}`);
 
               <div className="mt-8">
                 <button
-                  onClick={
-                    handleSave
-                  }
-                  disabled={
-                    saving
-                  }
+                  onClick={handleSave}
+                  disabled={saving}
                   className="w-full h-12 rounded-2xl bg-[#0EA5E9] hover:bg-[#0284C7] text-white font-bold transition-all shadow-lg disabled:opacity-50"
                 >
                   {saving
@@ -782,8 +572,8 @@ ${shopUID}`);
                       ? "Updating..."
                       : "Saving..."
                     : editingShop
-                    ? "Update Shop"
-                    : "Register Shop"}
+                      ? "Update Shop"
+                      : "Register Shop"}
                 </button>
               </div>
             </div>

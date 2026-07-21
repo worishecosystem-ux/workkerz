@@ -2,6 +2,7 @@ import { Star, MapPin, Clock, User, Zap } from "lucide-react";
 import Link from "next/link";
 import type { Worker } from "../data/workers";
 
+
 interface WorkerCardProps {
   worker: Worker;
 }

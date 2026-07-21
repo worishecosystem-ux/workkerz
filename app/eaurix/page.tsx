@@ -7,29 +7,7 @@ export const metadata: Metadata = {
   description:
     "Shop construction materials, hardware products, electrical supplies, plumbing materials, tools, cement, steel, paints, tiles and building products at E-Aurix.",
 
-  keywords: [
-    "E-Aurix",
-    "construction materials",
-    "building materials online",
-    "hardware products",
-    "electrical supplies",
-    "plumbing supplies",
-    "construction tools",
-    "cement",
-    "steel",
-    "TMT bars",
-    "tiles",
-    "sanitary products",
-    "paint supplies",
-    "masonry materials",
-    "building hardware",
-    "online hardware store",
-    "construction marketplace",
-    "contractor supplies",
-    "industrial tools",
-    "construction ecommerce India",
-  ],
-
+  
   openGraph: {
     title: "E-Aurix | Construction Materials Marketplace",
     description:

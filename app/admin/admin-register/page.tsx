@@ -116,7 +116,7 @@ export default function AdminRegister() {
 
   return (
     <div className="min-h-screen bg-[#F8FAFC] flex items-center justify-center p-5">
-      <div className="w-full max-w-md bg-white rounded-[32px] border border-gray-200 p-8 shadow-xl">
+      <div className="w-full max-w-md bg-white rounded-4xl border border-gray-200 p-8 shadow-xl">
         {/* TITLE */}
         <div className="text-center">
           <h1 className="text-3xl font-black text-[#0F172A]">

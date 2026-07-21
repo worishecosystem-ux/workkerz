@@ -10,11 +10,52 @@ import {
   ShieldCheck,
   Pencil,
   Loader2,
+  Trash2,
+  AlertTriangle,
 } from "lucide-react";
 
 export default function ProfilePage() {
   const [loading, setLoading] = useState(true);
+  const [deleting, setDeleting] = useState(false);
 
+  async function handleDeleteAccount() {
+    const ok = window.confirm(
+      "Are you sure? This will permanently delete your Workkerz account.",
+    );
+
+    if (!ok) return;
+
+    setDeleting(true);
+
+    try {
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
+
+      const res = await fetch("/api/delete-account", {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${session?.access_token}`,
+        },
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        alert(data.error || "Unable to delete account.");
+        setDeleting(false);
+        return;
+      }
+
+      await supabase.auth.signOut();
+
+      window.location.href = "/";
+    } catch {
+      alert("Something went wrong.");
+    }
+
+    setDeleting(false);
+  }
   const [profile, setProfile] = useState({
     full_name: "",
     email: "",
@@ -139,6 +180,24 @@ export default function ProfilePage() {
           <Pencil className="h-4 w-4" />
           Edit Profile
         </button>
+        <button
+          onClick={handleDeleteAccount}
+          disabled={deleting}
+          className="w-full h-12 rounded-xl border border-red-300 bg-red-50 text-red-600 font-semibold flex items-center justify-center gap-2 active:scale-[0.98]"
+        >
+          {deleting ? (
+            <Loader2 className="h-4 w-4 animate-spin" />
+          ) : (
+            <Trash2 className="h-4 w-4" />
+          )}
+
+          {deleting ? "Deleting..." : "Delete Account"}
+        </button>
+
+        <p className="text-xs text-center text-slate-500">
+          Deleting your account permanently removes your Workkerz account and
+          cannot be undone.
+        </p>
       </div>
     </main>
   );

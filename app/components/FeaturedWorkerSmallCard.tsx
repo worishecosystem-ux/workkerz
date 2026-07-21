@@ -45,10 +45,20 @@ export function FeaturedWorkerSmallCard({ worker }: { worker: Worker }) {
         setSaved(false);
       } else {
         // Add favourite
-        const { error } = await supabase.from("favorites").insert({
-          customer_id: user.id,
-          worker_id: worker.id,
-        });
+        const { error } = await supabase.from("favorites").upsert(
+          {
+            customer_id: user.id,
+            worker_id: worker.id,
+          },
+          {
+            onConflict: "customer_id,worker_id",
+            ignoreDuplicates: true,
+          },
+        );
+
+        if (error) throw error;
+
+        setSaved(true);
 
         if (error) throw error;
 

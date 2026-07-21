@@ -1273,7 +1273,7 @@ function WorkerForm({
 // DASHBOARD TAB
 // ═══════════════════════════════════════════════════════════════════════════════
 function DashboardTab({ onGo }: { onGo: (tab: Tab) => void }) {
-  const { workers = [], products = [], shops = [], orders = [] } = useAdmin();
+  const { workers = [], products = [], shops = [], bookings = [] } = useAdmin();
 
   /* =========================================
    REAL LIVE STATS
@@ -1293,7 +1293,7 @@ function DashboardTab({ onGo }: { onGo: (tab: Tab) => void }) {
 
     onlineShops: shops.filter((s) => s.status === "online").length,
 
-    totalOrders: orders.length,
+    totalOrders: bookings.length,
   };
 
   console.log(
@@ -1333,7 +1333,7 @@ function DashboardTab({ onGo }: { onGo: (tab: Tab) => void }) {
 
     {
       label: "Total Orders",
-      value: orders.length,
+      value: bookings.length,
       sub: "Customer orders",
       color: "#10B981",
       bg: "#ECFDF5",

@@ -11,8 +11,7 @@ import {
   ChevronRight,
 } from "lucide-react";
 import { supabase } from "@/lib/supabase";
-import { useRouter } from "next/navigation";
-
+import { useRouter, useSearchParams } from "next/navigation";
 interface Booking {
   id: string;
   booking_id: string;
@@ -40,9 +39,15 @@ export default function MyBookingsPage() {
   const [filter, setFilter] = useState("all");
   const [loading, setLoading] = useState(true);
   const router = useRouter();
-  const [tab, setTab] = useState<"bookings" | "orders">("bookings");
+  const searchParams = useSearchParams();
+
+  const initialTab =
+    searchParams.get("tab") === "orders" ? "orders" : "bookings";
+
+  const [tab, setTab] = useState<"bookings" | "orders">(initialTab);
   const searchRef = useRef<HTMLInputElement>(null);
   const [showSuggestions, setShowSuggestions] = useState(false);
+
   useEffect(() => {
     loadBookings();
   }, []);
@@ -92,17 +97,17 @@ export default function MyBookingsPage() {
     search.trim().length === 0
       ? []
       : bookings
-          .filter((b) => {
-            const q = search.toLowerCase();
+        .filter((b) => {
+          const q = search.toLowerCase();
 
-            return (
-              b.booking_id?.toLowerCase().includes(q) ||
-              b.worker_name?.toLowerCase().includes(q) ||
-              b.service_type?.toLowerCase().includes(q) ||
-              b.booking_status?.toLowerCase().includes(q)
-            );
-          })
-          .slice(0, 5);
+          return (
+            b.booking_id?.toLowerCase().includes(q) ||
+            b.worker_name?.toLowerCase().includes(q) ||
+            b.service_type?.toLowerCase().includes(q) ||
+            b.booking_status?.toLowerCase().includes(q)
+          );
+        })
+        .slice(0, 5);
 
   const statusColor = (status: string) => {
     switch (status) {
@@ -163,7 +168,7 @@ export default function MyBookingsPage() {
                 placeholder="Search booking, worker..."
                 className="h-10 w-full rounded-xl border border-white/10 bg-white/10 pl-10 pr-10 text-[13px] text-white placeholder:text-slate-400 outline-none transition focus:border-blue-400 focus:bg-white/15"
               />
-             {showSuggestions && search && suggestions.length > 0 && (
+              {showSuggestions && search && suggestions.length > 0 && (
                 <div className="absolute left-0 top-full z-9999 mt-2 w-full overflow-hidden rounded-2xl border border-white/10 bg-[#0f172a] shadow-2xl backdrop-blur-xl">
                   {suggestions.map((item) => (
                     <button
@@ -212,23 +217,27 @@ export default function MyBookingsPage() {
             <div className="mt-3 rounded-xl bg-white/10 p-1 backdrop-blur">
               <div className="grid grid-cols-2 gap-1">
                 <button
-                  onClick={() => router.push("/my-bookings")}
-                  className={`h-9 rounded-lg text-[13px] font-medium transition-all ${
-                    tab === "bookings"
-                      ? "bg-white text-emerald-700 shadow-sm"
-                      : "text-white hover:bg-white/10"
-                  }`}
+                  onClick={() => {
+                    setTab("bookings");
+                    router.push("/bookings?tab=bookings");
+                  }}
+                  className={`h-9 rounded-lg text-[13px] font-medium transition-all ${tab === "bookings"
+                    ? "bg-white text-emerald-700 shadow-sm"
+                    : "text-white hover:bg-white/10"
+                    }`}
                 >
                   Bookings
                 </button>
 
                 <button
-                  onClick={() => router.push("/my-orders")}
-                  className={`h-9 rounded-lg text-[13px] font-medium transition-all ${
-                    tab === "orders"
-                      ? "bg-white text-emerald-700 shadow-sm"
-                      : "text-white hover:bg-white/10"
-                  }`}
+                  onClick={() => {
+                    setTab("orders");
+                    router.push("/bookings?tab=orders");
+                  }}
+                  className={`h-9 rounded-lg text-[13px] font-medium transition-all ${tab === "orders"
+                    ? "bg-white text-emerald-700 shadow-sm"
+                    : "text-white hover:bg-white/10"
+                    }`}
                 >
                   Orders
                 </button>
@@ -318,15 +327,14 @@ export default function MyBookingsPage() {
                           </p>
 
                           <span
-                            className={`shrink-0 rounded-full px-2 py-0.5 text-[9px] font-semibold ${
-                              booking.booking_status === "confirmed"
-                                ? "bg-blue-100 text-blue-700"
-                                : booking.booking_status === "completed"
-                                  ? "bg-emerald-100 text-emerald-700"
-                                  : booking.booking_status === "rejected"
-                                    ? "bg-red-100 text-red-700"
-                                    : "bg-amber-100 text-amber-700"
-                            }`}
+                            className={`shrink-0 rounded-full px-2 py-0.5 text-[9px] font-semibold ${booking.booking_status === "confirmed"
+                              ? "bg-blue-100 text-blue-700"
+                              : booking.booking_status === "completed"
+                                ? "bg-emerald-100 text-emerald-700"
+                                : booking.booking_status === "rejected"
+                                  ? "bg-red-100 text-red-700"
+                                  : "bg-amber-100 text-amber-700"
+                              }`}
                           >
                             {booking.booking_status.toUpperCase()}
                           </span>

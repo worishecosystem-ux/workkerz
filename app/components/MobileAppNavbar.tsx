@@ -90,7 +90,7 @@ export default function MobileAppNavbar() {
     },
     {
       label: "Track Status",
-      href: "/bookings",
+      href: "/bookings?tab=bookings",
       icon: Calendar,
     },
     {
@@ -178,7 +178,7 @@ export default function MobileAppNavbar() {
                 <Icon className="w-6 h-6" />
               )}
 
-              <span className="text-[11px] font-medium">{tab.label}</span>
+              <span className="text-[11px] font-bold">{tab.label}</span>
             </Link>
           );
         })}

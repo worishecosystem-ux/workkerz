@@ -1,10 +1,7 @@
-// app/(public)/layout.tsx
-
 import type { Metadata } from "next";
-import { Navbar } from "../components/Navbar";
-import Footer from "../components/Footer";
 import { PlatformProvider } from "../components/context/PlatformContext";
-
+import MobileBottomBar from "./components/MobileBottomBar";
+import HomePlatformToggle from "./components/HomePlatformToggle";
 export const metadata: Metadata = {
   metadataBase: new URL("https://e-aurix.com"),
 
@@ -15,34 +12,6 @@ export const metadata: Metadata = {
 
   description:
     "E-Aurix is India's trusted marketplace for construction materials, hardware products, electrical supplies, plumbing items, tools, cement, steel, tiles, paints, and building solutions.",
-
-  keywords: [
-    "E-Aurix",
-    "construction materials",
-    "building materials",
-    "hardware store online",
-    "buy cement online",
-    "TMT steel",
-    "electrical supplies",
-    "plumbing materials",
-    "construction tools",
-    "industrial tools",
-    "tiles and sanitary",
-    "paint supplies",
-    "building products",
-    "construction marketplace",
-    "hardware marketplace India",
-    "construction equipment",
-    "masonry materials",
-    "civil construction materials",
-    "contractor supplies",
-    "construction products India",
-    "online hardware shop",
-    "construction supplier",
-    "building hardware",
-    "construction ecommerce",
-    "E Aurix India",
-  ],
 
   authors: [
     {
@@ -102,9 +71,13 @@ export default function PublicLayout({
 }) {
   return (
     <PlatformProvider>
-      <Navbar />
-      {children}
-      <Footer />
+      <main className="min-h-screen pb-20 md:pb-0">
+        {/* Platform Toggle */}
+        <HomePlatformToggle />
+        {children}
+      </main>
+
+      <MobileBottomBar />
     </PlatformProvider>
   );
 }

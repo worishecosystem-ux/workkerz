@@ -5,7 +5,6 @@ import { usePathname } from "next/navigation";
 import { Capacitor } from "@capacitor/core";
 import { App as CapacitorApp } from "@capacitor/app";
 import { useRouter } from "next/navigation";
-import { Navbar } from "./Navbar";
 import Footer from "./Footer";
 import MobileAppNavbar from "./MobileAppNavbar";
 import { usePlatform } from "./context/PlatformContext";
@@ -14,7 +13,7 @@ import { useMobileNavbar } from "./context/MobileNavbarContext";
 export function LayoutWrapper({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const router = useRouter();
-  const { setPlatform } = usePlatform();
+  const { platform, setPlatform } = usePlatform();
   const { showMobileNavbar } = useMobileNavbar();
 
   const [mounted, setMounted] = useState(false);
@@ -28,17 +27,14 @@ export function LayoutWrapper({ children }: { children: React.ReactNode }) {
     setMounted(true);
     setIsApp(Capacitor.isNativePlatform());
   }, []);
-  
+
   const hideLayout =
-   
-    pathname.startsWith("/login") ||
-    pathname.startsWith("/favorites");
+    pathname.startsWith("/login") || pathname.startsWith("/favorites");
 
   const hideMobileNavbar =
     pathname.startsWith("/workers/") ||
     pathname.startsWith("/book/") ||
     pathname.startsWith("/confirmation");
-    
 
   if (!mounted) {
     return (
@@ -51,7 +47,6 @@ export function LayoutWrapper({ children }: { children: React.ReactNode }) {
   return (
     <div className="min-h-dvh flex flex-col bg-white overflow-x-hidden">
       {/* Desktop Navbar */}
-      {!hideLayout && !isApp && <Navbar />}
 
       {/* Main Content */}
       <main

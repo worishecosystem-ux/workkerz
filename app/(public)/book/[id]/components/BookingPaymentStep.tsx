@@ -23,7 +23,12 @@ export default function BookingPaymentStep({
 }: BookingPaymentStepProps) {
   const [showQR, setShowQR] = useState(false);
   return (
-    <div className="space-y-6">
+    <div
+      className="space-y-6 pb-32"
+      style={{
+        paddingBottom: "calc(8rem + env(safe-area-inset-bottom))",
+      }}
+    >
       {/* HEADER */}
       <div>
         <h2

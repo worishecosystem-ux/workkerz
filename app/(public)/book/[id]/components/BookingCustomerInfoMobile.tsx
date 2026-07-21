@@ -32,7 +32,7 @@ export default function BookingCustomerInfoMobile({ form, setForm }: Props) {
     fetchCustomerName();
   }, [form.email, setForm]);
   return (
-    <div className="pb-1 space-y-2">
+   <div className="space-y-2 pb-32">
       {/* Header */}
 
       <div>
