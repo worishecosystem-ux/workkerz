@@ -11,7 +11,7 @@ import {
   ChevronRight,
 } from "lucide-react";
 import { supabase } from "@/lib/supabase";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useRouter } from "next/navigation";
 interface Booking {
   id: string;
   booking_id: string;
@@ -39,15 +39,9 @@ export default function MyBookingsPage() {
   const [filter, setFilter] = useState("all");
   const [loading, setLoading] = useState(true);
   const router = useRouter();
-  const searchParams = useSearchParams();
-
-  const initialTab =
-    searchParams.get("tab") === "orders" ? "orders" : "bookings";
-
-  const [tab, setTab] = useState<"bookings" | "orders">(initialTab);
   const searchRef = useRef<HTMLInputElement>(null);
   const [showSuggestions, setShowSuggestions] = useState(false);
-
+  const [tab, setTab] = useState<"bookings" | "orders">("bookings");
   useEffect(() => {
     loadBookings();
   }, []);
@@ -219,7 +213,7 @@ export default function MyBookingsPage() {
                 <button
                   onClick={() => {
                     setTab("bookings");
-                    router.push("/bookings?tab=bookings");
+                    router.replace("/bookings?tab=bookings");
                   }}
                   className={`h-9 rounded-lg text-[13px] font-medium transition-all ${tab === "bookings"
                     ? "bg-white text-emerald-700 shadow-sm"
@@ -232,7 +226,7 @@ export default function MyBookingsPage() {
                 <button
                   onClick={() => {
                     setTab("orders");
-                    router.push("/bookings?tab=orders");
+                    router.replace("/bookings?tab=orders");
                   }}
                   className={`h-9 rounded-lg text-[13px] font-medium transition-all ${tab === "orders"
                     ? "bg-white text-emerald-700 shadow-sm"
