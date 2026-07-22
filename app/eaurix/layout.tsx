@@ -78,7 +78,6 @@ export default function PublicLayout({
         </div>
         {children}
       </main>
-
       <MobileBottomBar />
     </PlatformProvider>
   );

@@ -110,89 +110,42 @@ export default function AddressCard({
 
   return (
     <>
-     <div className="bg-emerald-50 rounded-[12px] border border-amber-100 shadow-sm px-3 py-2.5 flex items-center justify-between">
-       <div className="w-0 flex-1 overflow-hidden">
-          {loading ? (
-            <div className="space-y-1">
-              <div className="h-2 w-52 rounded bg-gray-200 animate-pulse" />
-              <div className="h-2 w-36 rounded bg-gray-200 animate-pulse" />
-            </div>
-          ) : (
-            <p
-              className="flex items-center gap-1 text-[12px] truncate"
-              title={`${addressType} • ${customerName}, ${address}`}
-            >
-              <span className="text-orange-500 shrink-0">
-                {getAddressIcon(addressType)}
-              </span>
-              <span className="shrink-0 text-gray-400">•</span>
-
-              <span className="shrink-0 font-semibold text-gray-900">
-                {customerName || "Name"}
-              </span>
-
-              <span className="truncate text-gray-500">
-                {address ? `, ${address}` : ""}
-              </span>
-            </p>
-          )}
-        </div>
-
-        <button
-          onClick={() => setShowSelector(true)}
-          className="inline-flex items-center gap-1 h-3 px-3 rounded-lg text-emerald-700 hover:bg-emerald-100 transition-colors"
-        >
-          <ChevronDown className="w-6 h-6" />
-        </button>
-        <AddressSelectorModal
-          open={showSelector}
-          onClose={() => setShowSelector(false)}
-          onSelect={(item) => {
-            const fullAddress = [
-              item.house_no,
-              item.address,
-              item.landmark,
-              item.city,
-              item.district,
-              item.state,
-              item.pincode,
-            ]
-              .filter(Boolean)
-              .join(", ");
-
-            setCustomerName(item.customer_name || "");
-            setAddress(fullAddress);
-            setAddressType(item.address_type === "office" ? "office" : "home");
-            setSelectedAddress(item);
-            onAddressChange?.(item);
-            setShowSelector(false);
-          }}
-          onAdd={() => {
-            setEditingAddress(null);
-            setShowSelector(false);
-            setShowForm(true);
-          }}
-          onEdit={(item) => {
-            setEditingAddress(item);
-            setShowSelector(false);
-            setShowForm(true);
-          }}
-        />
-        <AddressFormModal
-          open={showForm}
-          editingAddress={editingAddress}
-          onBack={() => {
-            setShowForm(false);
-            setShowSelector(true);
-          }}
-          onClose={() => setShowForm(false)}
-          onSaved={() => {
-            setShowForm(false);
-            setShowSelector(true);
-            loadUserAddress();
-          }}
-        />
+     <div className="bg-emerald-50 rounded-[12px] border border-amber-100 shadow-sm px-3 py-2.5 flex items-center">
+  <div className="flex-1 min-w-0">
+    {loading ? (
+      <div className="space-y-1">
+        <div className="h-2 w-52 rounded bg-gray-200 animate-pulse" />
+        <div className="h-2 w-36 rounded bg-gray-200 animate-pulse" />
       </div>
+    ) : (
+      <div
+        className="flex items-center gap-1 min-w-0"
+        title={`${addressType} • ${customerName}, ${address}`}
+      >
+        <span className="shrink-0">
+          {getAddressIcon(addressType)}
+        </span>
+
+        <span className="shrink-0 text-gray-400">•</span>
+
+        <span className="shrink-0 font-semibold text-gray-900 text-[12px]">
+          {customerName || "Name"}
+        </span>
+
+        <span className="truncate text-[12px] text-gray-500">
+          {address ? `, ${address}` : ""}
+        </span>
+      </div>
+    )}
+  </div>
+
+  <button
+    onClick={() => setShowSelector(true)}
+    className="ml-2 flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-emerald-700 hover:bg-emerald-100"
+  >
+    <ChevronDown className="h-5 w-5" />
+  </button>
+</div>
     </>
   );
 }
