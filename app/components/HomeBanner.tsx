@@ -28,11 +28,26 @@ export default function HomeBanner() {
         }`}
     >
       {/* TOGGLE */}
-      <div className="fixed top-0 left-0 right-0 z-50 bg-linear-to-br from-[#fbfbfb] to-[#eff3f9]">
-        <PlatformToggle isApp={isApp} />
+      <div
+        className="
+    fixed
+    inset-x-0
+    top-0
+    z-50
+    flex
+    justify-center
+    bg-linear-to-br
+    from-[#fbfbfb]
+    to-[#eff3f9]
+    pt-6]
+  "
+      >
+        <div className="w-full max-w-screen-2xl">
+          <PlatformToggle isApp={isApp} />
+        </div>
       </div>
       {!isEaurix && (
-        <div className="px-5 sm:px-6 lg:px-8 pt-35">
+        <div className="px-5 sm:px-6 lg:px-8 pt-38">
           <WorkCategories />
         </div>
       )}
