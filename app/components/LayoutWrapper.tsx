@@ -32,23 +32,14 @@ export function LayoutWrapper({
     setMounted(true);
     setIsApp(native);
 
-    // Website par sirf Coming Soon aur Privacy Policy allow karo
-    if (
-      !native &&
-      pathname !== "/coming-soon" &&
-      pathname !== "/privacy-policy"
-    ) {
+    // Website par sirf Home ko Coming Soon par redirect karo
+    if (!native && pathname === "/") {
       router.replace("/coming-soon");
     }
   }, [pathname, router]);
 
-  // Redirect hone tak kuch render mat karo
-  if (
-    !mounted ||
-    (!isApp &&
-      pathname !== "/coming-soon" &&
-      pathname !== "/privacy-policy")
-  ) {
+  // Redirect hone tak blank render
+  if (!mounted || (!isApp && pathname === "/")) {
     return null;
   }
 
@@ -68,10 +59,10 @@ export function LayoutWrapper({
       </main>
 
       {/* Website Footer */}
-      {showLayout && !isApp && <Footer />}
+      {!isApp && showLayout && <Footer />}
 
       {/* Mobile App Navbar */}
-      {showLayout && isApp && showMobileNavbar && (
+      {isApp && showMobileNavbar && (
         <div className="fixed bottom-0 inset-x-0 z-50 pb-[env(safe-area-inset-bottom)]">
           <MobileAppNavbar />
         </div>
