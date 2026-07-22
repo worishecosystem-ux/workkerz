@@ -164,8 +164,7 @@ export default function AddressCard({
           </button>
         </div>
       </div>
-
-     <AddressSelectorModal
+<AddressSelectorModal
   open={showSelector}
   selected={selectedAddress}
   onClose={() => setShowSelector(false)}
@@ -192,7 +191,7 @@ export default function AddressCard({
     onAddressChange?.(item);
     setShowSelector(false);
   }}
-  onAddNew={() => {
+  onAdd={() => {
     setEditingAddress(null);
     setShowSelector(false);
     setShowForm(true);

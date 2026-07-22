@@ -38,12 +38,10 @@ interface Props {
   selected?: AddressItem | null;
 
   onClose: () => void;
-
   onSelect: (address: AddressItem) => void;
-
-  onAddNew: () => void;
-
   onEdit: (address: AddressItem) => void;
+
+  onAdd?: () => void;
 }
 
 export default function AddressSelectorModal({
@@ -51,7 +49,7 @@ export default function AddressSelectorModal({
   selected,
   onClose,
   onSelect,
-  onAddNew,
+  onAdd,
   onEdit,
 }: Props) {
   const [loading, setLoading] = useState(true);
@@ -263,7 +261,7 @@ export default function AddressSelectorModal({
 
           <div className="flex items-center gap-2">
             <button
-              onClick={onAddNew}
+               onClick={() => onAdd?.()}
               className="flex h-8 items-center gap-1.5 rounded-lg border border-dashed border-orange-300 bg-orange-50 px-3 text-xs font-medium text-orange-600 transition hover:bg-orange-100"
             >
               <Plus size={14} strokeWidth={2.5} />
