@@ -21,18 +21,22 @@ export default function PlatformToggle({ isApp }: Props) {
   if (isApp) {
     return (
       <>
-        <div className="flex w-full flex-wrap items-center justify-center gap-2 px-3 mt-12 mb-2">
+        <div className="flex w-full items-center justify-center gap-3 px-3 mt-12 mb-2">
           <button
             onClick={() => handleToggle("workkerz")}
-            className={`flex items-center gap-2 px-10 h-12 rounded-xl border transition-all duration-300 ${!isEaurix
+            className={`w-40 h-12 shrink-0 flex items-center justify-center gap-2 rounded-xl border transition-all duration-300 ${!isEaurix
                 ? "bg-[#FFF7ED] border-[#FF5C39] shadow-lg"
-                : "bg-white border-slate-700"
+                : "bg-white border-slate-300"
               }`}
           >
-            <img src="/workkerzapp.png" className="w-8 h-8" alt="Workkerz" />
+            <img
+              src="/workkerzapp.png"
+              className="w-8 h-8 shrink-0"
+              alt="Workkerz"
+            />
 
             <span
-              className={`text-sm font-bold ${!isEaurix ? "text-[#FF5C39]" : "text-slate-700"
+              className={`text-sm font-bold whitespace-nowrap ${!isEaurix ? "text-[#FF5C39]" : "text-slate-700"
                 }`}
             >
               Workkerz
@@ -41,22 +45,27 @@ export default function PlatformToggle({ isApp }: Props) {
 
           <button
             onClick={() => handleToggle("eaurix")}
-            className={`flex items-center gap-2 px-10 h-12 rounded-xl border transition-all duration-300 ${isEaurix
+            className={`w-40 h-12 shrink-0 flex items-center justify-center gap-2 rounded-xl border transition-all duration-300 ${isEaurix
                 ? "bg-[#F0F9FF] border-[#0EA5E9] shadow-lg"
-                : "bg-white border-slate-200"
+                : "bg-white border-slate-300"
               }`}
           >
-            <img src="/aurixapp.png" className="w-8 h-8" alt="E-Aurix" />
+            <img
+              src="/aurixapp.png"
+              className="w-8 h-8 shrink-0"
+              alt="E-Aurix"
+            />
 
             <span
-              className={`text-sm font-bold ${isEaurix ? "text-[#0EA5E9]" : "text-slate-700"
+              className={`text-sm font-bold whitespace-nowrap ${isEaurix ? "text-[#0EA5E9]" : "text-slate-700"
                 }`}
             >
               E-Aurix
             </span>
           </button>
         </div>
-        <div className="mx-auto w-full max-w-100 px-4 pb-2">
+
+        <div className="mx-auto w-full max-w-105 px-4 pb-2">
           <AddressCard onOverlayChange={setHideCart} />
         </div>
       </>

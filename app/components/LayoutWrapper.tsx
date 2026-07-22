@@ -38,19 +38,27 @@ export function LayoutWrapper({
     }
   }, [pathname, router]);
 
-  // Redirect hone tak blank render
+  // Redirect hone tak kuch render mat karo
   if (!mounted || (!isApp && pathname === "/")) {
     return null;
   }
 
-  const showLayout =
-    pathname === "/coming-soon" || pathname === "/privacy-policy";
+  // Website Footer sirf in pages par
+  const showWebsiteFooter =
+    pathname === "/coming-soon" ||
+    pathname === "/privacy-policy";
+
+  // Mobile Navbar sirf Home page par
+  const showHomeNavbar =
+    isApp &&
+    showMobileNavbar &&
+    pathname === "/";
 
   return (
     <div className="min-h-dvh flex flex-col bg-white overflow-x-hidden">
       <main
         className={`flex-1 overflow-x-hidden ${
-          isApp && showMobileNavbar
+          showHomeNavbar
             ? "pb-[calc(80px+env(safe-area-inset-bottom))]"
             : ""
         }`}
@@ -59,10 +67,10 @@ export function LayoutWrapper({
       </main>
 
       {/* Website Footer */}
-      {!isApp && showLayout && <Footer />}
+      {!isApp && showWebsiteFooter && <Footer />}
 
-      {/* Mobile App Navbar */}
-      {isApp && showMobileNavbar && (
+      {/* Mobile App Navbar (Only Home) */}
+      {showHomeNavbar && (
         <div className="fixed bottom-0 inset-x-0 z-50 pb-[env(safe-area-inset-bottom)]">
           <MobileAppNavbar />
         </div>

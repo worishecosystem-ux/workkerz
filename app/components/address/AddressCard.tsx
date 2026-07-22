@@ -5,6 +5,7 @@ import { MapPin, Home, Building2, ChevronDown } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import AddressSelectorModal, { type AddressItem } from "./AddressSelectorModal";
 import AddressFormModal from "./AddressFormModal";
+import { useMobileNavbar } from "../context/MobileNavbarContext";
 const getAddressIcon = (type?: string) => {
   switch (type?.toLowerCase()) {
     case "home":
@@ -28,12 +29,27 @@ export default function AddressCard({
   const [addressType, setAddressType] = useState<"home" | "office">("home");
   const [showSelector, setShowSelector] = useState(false);
   const [showForm, setShowForm] = useState(false);
+  const { setShowMobileNavbar } = useMobileNavbar();
   const [editingAddress, setEditingAddress] = useState<AddressItem | null>(
     null,
   );
   const [selectedAddress, setSelectedAddress] = useState<AddressItem | null>(
     null,
   );
+
+  useEffect(() => {
+  const show = !(showSelector || showForm);
+
+  setShowMobileNavbar(show);
+  onOverlayChange?.(!show);
+
+  return () => setShowMobileNavbar(true);
+}, [
+  showSelector,
+  showForm,
+  onOverlayChange,
+  setShowMobileNavbar,
+]);
 
   useEffect(() => {
     onOverlayChange?.(showSelector || showForm);
@@ -110,42 +126,102 @@ export default function AddressCard({
 
   return (
     <>
-     <div className="bg-emerald-50 rounded-[12px] border border-amber-100 shadow-sm px-3 py-2.5 flex items-center">
-  <div className="flex-1 min-w-0">
-    {loading ? (
-      <div className="space-y-1">
-        <div className="h-2 w-52 rounded bg-gray-200 animate-pulse" />
-        <div className="h-2 w-36 rounded bg-gray-200 animate-pulse" />
+      <div className="w-full">
+        <div className="flex h-10 items-center rounded-lg border border-amber-100 bg-emerald-50 px-2.5 shadow-sm">
+          <div className="flex-1 min-w-0">
+            {loading ? (
+              <div className="space-y-1">
+                <div className="h-2 w-28 rounded bg-gray-200 animate-pulse" />
+                <div className="h-2 w-20 rounded bg-gray-200 animate-pulse" />
+              </div>
+            ) : (
+              <div
+                className="flex items-center gap-1 min-w-0"
+                title={`${addressType} • ${customerName}, ${address}`}
+              >
+                <span className="shrink-0 scale-90">
+                  {getAddressIcon(addressType)}
+                </span>
+
+                <span className="text-gray-300 text-[10px] shrink-0">•</span>
+
+                <span className="shrink-0 text-[10px] font-semibold text-gray-900 max-w-17.5 truncate">
+                  {customerName || "Name"}
+                </span>
+
+                <span className="truncate text-[10px] text-gray-500">
+                  {address || "Add work location"}
+                </span>
+              </div>
+            )}
+          </div>
+
+          <button
+            onClick={() => setShowSelector(true)}
+            className="ml-1 flex h-6 w-6 shrink-0 items-center justify-center rounded-md active:bg-emerald-100"
+          >
+            <ChevronDown className="h-3.5 w-3.5 text-emerald-700" />
+          </button>
+        </div>
       </div>
-    ) : (
-      <div
-        className="flex items-center gap-1 min-w-0"
-        title={`${addressType} • ${customerName}, ${address}`}
-      >
-        <span className="shrink-0">
-          {getAddressIcon(addressType)}
-        </span>
 
-        <span className="shrink-0 text-gray-400">•</span>
+     <AddressSelectorModal
+  open={showSelector}
+  selected={selectedAddress}
+  onClose={() => setShowSelector(false)}
+  onSelect={(item) => {
+    const fullAddress = [
+      item.house_no,
+      item.address,
+      item.landmark,
+      item.city,
+      item.district,
+      item.state,
+      item.pincode,
+    ]
+      .filter(Boolean)
+      .join(", ");
 
-        <span className="shrink-0 font-semibold text-gray-900 text-[12px]">
-          {customerName || "Name"}
-        </span>
+    setSelectedAddress(item);
+    setCustomerName(item.customer_name || "");
+    setAddress(fullAddress);
+    setAddressType(
+      (item.address_type as "home" | "office") || "home"
+    );
 
-        <span className="truncate text-[12px] text-gray-500">
-          {address ? `, ${address}` : ""}
-        </span>
-      </div>
-    )}
-  </div>
+    onAddressChange?.(item);
+    setShowSelector(false);
+  }}
+  onAddNew={() => {
+    setEditingAddress(null);
+    setShowSelector(false);
+    setShowForm(true);
+  }}
+  onEdit={(item) => {
+    setEditingAddress(item);
+    setShowSelector(false);
+    setShowForm(true);
+  }}
+/>
 
-  <button
-    onClick={() => setShowSelector(true)}
-    className="ml-2 flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-emerald-700 hover:bg-emerald-100"
-  >
-    <ChevronDown className="h-5 w-5" />
-  </button>
-</div>
+      <AddressFormModal
+        open={showForm}
+        editingAddress={editingAddress}
+        onBack={() => {
+          setShowForm(false);
+          setEditingAddress(null);
+          setShowSelector(true);
+        }}
+        onClose={() => {
+          setShowForm(false);
+          setEditingAddress(null);
+        }}
+        onSaved={() => {
+          setShowForm(false);
+          setEditingAddress(null);
+          loadUserAddress();
+        }}
+      />
     </>
   );
 }
