@@ -7,8 +7,8 @@ const config: CapacitorConfig = {
   webDir: "public",
 
   server: {
-    url: "https://workkerz.com",
-    cleartext: false,
+    url: "http://172.29.22.14:3000",
+    cleartext: true,
   },
 
   android: {

@@ -250,10 +250,10 @@ export default function AddressSelectorModal({
 
   return (
     <div className="fixed inset-0 z-999 bg-black/50 flex items-end md:items-center justify-center">
-      <div className="bg-white w-full md:max-w-xl rounded-t-3xl md:rounded-3xl overflow-hidden">
+      <div className="bg-white w-full h-[70vh] md:max-w-xl md:h-[90vh] rounded-t-3xl md:rounded-3xl overflow-hidden flex flex-col">
         {/* Header */}
 
-        <div className="border-b px-4 py-3 flex items-center justify-between gap-3">
+        <div className="border-b px-4 py-6 flex items-center justify-between gap-3 pb-5">
           <p className="text-sm font-medium text-gray-700">
             Choose your work location
           </p>
@@ -278,7 +278,7 @@ export default function AddressSelectorModal({
 
         {/* Body */}
 
-        <div className="max-h-[70vh] overflow-y-auto p-4">
+        <div className="max-h-[70vh] overflow-y-auto p-4 pt-10">
           {loading && (
             <div className="flex flex-col items-center justify-center py-12">
               <div className="relative h-14 w-14">
@@ -352,8 +352,8 @@ export default function AddressSelectorModal({
                         onSelect(item);
                       }}
                       className={`flex h-6 w-6 items-center justify-center rounded-full border-2 transition ${selectedAddressId === item.id
-                          ? "border-green-600 bg-green-600"
-                          : "border-gray-300 bg-white"
+                        ? "border-green-600 bg-green-600"
+                        : "border-gray-300 bg-white"
                         }`}
                     >
                       {selectedAddressId === item.id && (

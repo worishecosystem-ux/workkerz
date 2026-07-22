@@ -60,7 +60,7 @@ const [hideCart, setHideCart] = useState(false);
             </span>
           </button>
         </div>
-        <div className="w-full max-w-100 px-5 rounded-xl">
+        <div className="w-full max-w-100 px-5 rounded-xl pb-2">
           <AddressCard 
             onOverlayChange={setHideCart}/>
         </div>

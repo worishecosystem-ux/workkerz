@@ -24,14 +24,15 @@ export default function HomeBanner() {
 
   return (
     <section
-      className={`w-full bg-linear-to-br from-[#fbfbfb] to-[#eff3f9] text-white ${
-        isApp ? "pt-1 pb-2" : "py-10"
-      }`}
+      className={`w-full bg-linear-to-br from-[#fbfbfb] to-[#eff3f9] text-white ${isApp ? "pt-1 pb-2" : "py-10"
+        }`}
     >
       {/* TOGGLE */}
-      <PlatformToggle isApp={isApp} />
+      <div className="fixed top-0 left-0 right-0 z-50 bg-linear-to-br from-[#fbfbfb] to-[#eff3f9]">
+        <PlatformToggle isApp={isApp} />
+      </div>
       {!isEaurix && (
-        <div className="px-5 sm:px-6 lg:px-8 py-1">
+        <div className="px-5 sm:px-6 lg:px-8 pt-35">
           <WorkCategories />
         </div>
       )}

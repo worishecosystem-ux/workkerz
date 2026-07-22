@@ -6,7 +6,7 @@ import {
   ChevronDown,
   Menu,
 } from "lucide-react";
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import ProductSearch from "./ProductSearch";
 interface Product {
   id: string;
@@ -52,43 +52,12 @@ export default function CategoriesHeader({
   search,
   setSearch,
 }: CategoriesHeaderProps) {
-  const [showHeader, setShowHeader] = useState(false);
 
-  useEffect(() => {
-    let lastScrollY = 0;
 
-    const handleScroll = () => {
-      const currentScrollY = window.scrollY;
 
-      // Top of page -> hide
-      if (currentScrollY < 80) {
-        setShowHeader(false);
-      }
-      // Scroll down -> hide
-      else if (currentScrollY > lastScrollY) {
-        setShowHeader(false);
-      }
-      // Scroll up -> show
-      else {
-        setShowHeader(true);
-      }
-
-      lastScrollY = currentScrollY;
-    };
-
-    window.addEventListener("scroll", handleScroll, { passive: true });
-
-    return () => window.removeEventListener("scroll", handleScroll);
-  }, []);
   if (loading) {
     return (
-      <div
-        className={`sticky top-0 z-40 border-b border-slate-200/70 bg-white/90 backdrop-blur-xl transition-all duration-300
-    ${showHeader
-            ? "translate-y-0"
-            : "-translate-y-full"
-          }`}
-      >
+      <div className="relative z-40 border-b border-slate-200/70 bg-white/90 backdrop-blur-xl">
         <div
           className="px-5 pt-2"
         >
@@ -119,60 +88,44 @@ export default function CategoriesHeader({
   }
 
   return (
-    <div
-      className={`sticky top-16 z-40 border-b border-slate-200/70 bg-linear-to-br from-emerald-950 via-emerald-800 to-green-600 backdrop-blur-xl transition-all duration-300 $showHeader
-  ? "translate-y-0"
-  : "-translate-y-full"
-        }`}
-    >
-      <div className="pt-13">
-        <div className="px-4">
-          <div className="flex items-center justify-between gap-3">
-            {/* Left */}
-            <div className="flex flex-1 items-center gap-3">
-              <button
-                onClick={onOpenSidebar}
-                className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-slate-900 text-white shadow-md transition active:scale-95 md:hidden"
-              >
-                <Menu className="h-5 w-5" />
-              </button>
+    <div className="sticky top-0 z-40 border-b border-slate-200">
+      {/* Header */}
+      <div className="flex items-center justify-between px-4 py-2">
+        <div className="flex items-center gap-3">
 
-              <div className="flex-1">
-                <h1 className="truncate text-lg font-bold text-slate-100">
-                  Categories
-                </h1>
-                <p className="truncate text-[11px] text-slate-200">
-                  Construction materials
-                </p>
-              </div>
-            </div>
-
-            {/* Right */}
-            <div className="relative w-36 shrink-0">
-              <ArrowUpDown className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-emerald-600" />
-
-              <select
-                value={sort}
-                onChange={(e) => setSort(e.target.value)}
-                className="h-10 w-full appearance-none rounded-xl bg-slate-900 pl-9 pr-10 text-xs font-medium text-slate-100 outline-none transition focus:border-emerald-500"
-              >
-                {Object.entries(sortLabels).map(([k, v]) => (
-                  <option key={k} value={k}>
-                    {v}
-                  </option>
-                ))}
-              </select>
-
-              <ChevronDown className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-500" />
-            </div>
+          <div>
+            <h2 className="text-base font-bold text-slate-900">
+              Categories
+            </h2>
+            <p className="text-xs text-slate-500">
+              {categories.length} Categories
+            </p>
           </div>
+        </div>
+
+        <div className="relative">
+          <ArrowUpDown className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-500" />
+
+          <select
+            value={sort}
+            onChange={(e) => setSort(e.target.value)}
+            className="h-10 appearance-none rounded-xl border border-slate-200 bg-white pl-9 pr-10 text-sm outline-none"
+          >
+            {Object.entries(sortLabels).map(([k, v]) => (
+              <option key={k} value={k}>
+                {v}
+              </option>
+            ))}
+          </select>
+
+          <ChevronDown className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-500" />
         </div>
       </div>
 
       {/* Categories */}
       <div
         ref={categoryRef}
-        className="hidden md:flex w-full gap-2 overflow-x-auto px-4 pt-2 pb-2 scrollbar-hide"
+        className="flex gap-2 overflow-x-auto px-3 pb-3 pt-5 scrollbar-hide"
       >
         {categories.map((cat) => {
           const active =
@@ -185,22 +138,34 @@ export default function CategoriesHeader({
               onClick={() => setActiveCategory(cat.id)}
               className="shrink-0"
             >
-              <div className="flex w-20 flex-col items-center gap-2 pt-1">
+              <div
+                className={`flex flex-col items-center transition-all duration-200 ${active ? "scale-105" : ""
+                  }`}
+              >
                 <div
-                  className={`flex h-10 w-10 items-center justify-center overflow-hidden rounded-full border transition-all duration-300 ${active
-                    ? "scale-105 border-emerald-500 bg-linear-to-br from-emerald-500 to-teal-500 shadow-lg shadow-emerald-300/50"
-                    : "border-slate-200 bg-white shadow-sm hover:border-emerald-300"
+                  className={`relative flex h-14 w-14 items-center justify-center rounded-2xl border transition-all ${active
+                      ? "bg-slate-900 border-slate-900 shadow-lg"
+                      : "bg-slate-50 border-slate-200"
                     }`}
                 >
-                  <img
-                    src={cat.image}
-                    alt={cat.name}
-                    className="h-8 w-8 object-contain"
-                  />
+                  <div
+                    className={`flex h-10 w-10 items-center justify-center rounded-xl ${active ? "bg-white" : "bg-white"
+                      }`}
+                  >
+                    <img
+                      src={cat.image}
+                      alt={cat.name}
+                      className="h-6 w-6 object-contain"
+                    />
+                  </div>
+
+                  {active && (
+                    <span className="absolute -top-1.5 -right-1.5 h-3 w-3 rounded-full bg-orange-500 ring-2 ring-white" />
+                  )}
                 </div>
 
                 <span
-                  className={`text-center text-[11px] font-bold leading-tight ${active ? "text-emerald-700" : "text-slate-700"
+                  className={`mt-2 max-w-16 truncate text-center text-[11px] font-semibold ${active ? "text-slate-400" : "text-slate-50"
                     }`}
                 >
                   {cat.name}
@@ -209,13 +174,6 @@ export default function CategoriesHeader({
             </button>
           );
         })}
-      </div>
-      <div className="px-4 pt-3 pb-3 lg:hidden">
-        <ProductSearch
-          products={products}
-          search={search}
-          setSearch={setSearch}
-        />
       </div>
     </div>
   );

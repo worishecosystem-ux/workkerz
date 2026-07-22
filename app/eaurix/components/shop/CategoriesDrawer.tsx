@@ -101,7 +101,7 @@ export default function CategoriesDrawer({
                   <div
                     className={`flex h-12 w-12 items-center justify-center rounded-xl transition ${
                       active
-                        ? "bg-gradient-to-br from-emerald-500 to-teal-500"
+                        ? "bg-linear-to-br from-emerald-500 to-teal-500"
                         : "bg-slate-100"
                     }`}
                   >

@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase";
-import { ArrowLeft } from "lucide-react";
+import { X } from "lucide-react";
 import { App } from "@capacitor/app";
 import type { AddressItem } from "./AddressSelectorModal";
 import { Capacitor } from "@capacitor/core";
@@ -39,7 +39,27 @@ export default function AddressFormModal({
     "home",
   );
   const [keyboardVisible, setKeyboardVisible] = useState(false);
+  useEffect(() => {
+    if (!Capacitor.isNativePlatform()) return;
 
+    let showListener: any;
+    let hideListener: any;
+
+    (async () => {
+      showListener = await Keyboard.addListener("keyboardDidShow", () => {
+        setKeyboardVisible(true);
+      });
+
+      hideListener = await Keyboard.addListener("keyboardDidHide", () => {
+        setKeyboardVisible(false);
+      });
+    })();
+
+    return () => {
+      showListener?.remove();
+      hideListener?.remove();
+    };
+  }, []);
 
   useEffect(() => {
     if (!open) return;
@@ -196,18 +216,13 @@ export default function AddressFormModal({
     >
       <div className="w-full max-w-md bg-white rounded-t-2xl shadow-xl overflow-hidden flex flex-col max-h-[90vh]">
         {/* Header */}
-        <div className="flex items-center gap-3 px-4 py-3 border-b">
+        <div className="relative flex items-center justify-center px-4 py-6 border-b">
           <button
-            onClick={onBack}
-            className="flex h-9 w-9 items-center justify-center rounded-full hover:bg-gray-100 transition"
+            onClick={onBack} // ya onClose
+            className="absolute right-4 flex h-12 w-12 items-center justify-center rounded-full transition"
           >
-            <ArrowLeft size={20} />
+            <X size={30} className="text-gray-500" />
           </button>
-          <div>
-            <h2 className="text-base font-semibold">
-              {editingAddress ? "Edit Address" : "Add Work Address"}
-            </h2>
-          </div>
         </div>
 
         {/* Body */}
@@ -227,11 +242,10 @@ export default function AddressFormModal({
                     key={item.value}
                     type="button"
                     onClick={() => setAddressType(item.value)}
-                    className={`flex h-10 items-center justify-center gap-1.5 rounded-lg text-sm font-medium transition-all duration-200 ${
-                      addressType === item.value
-                        ? "bg-white text-orange-600 shadow-sm ring-1 ring-orange-200"
-                        : "text-gray-600 hover:bg-white/70"
-                    }`}
+                    className={`flex h-10 items-center justify-center gap-1.5 rounded-lg text-sm font-medium transition-all duration-200 ${addressType === item.value
+                      ? "bg-white text-orange-600 shadow-sm ring-1 ring-orange-200"
+                      : "text-gray-600 hover:bg-white/70"
+                      }`}
                   >
                     <span className="text-base">{item.icon}</span>
                     <span>{item.label}</span>
@@ -246,10 +260,16 @@ export default function AddressFormModal({
             </label>
 
             <input
+              enterKeyHint="done"
+              onKeyDown={(e) => {
+                if (e.key === "Enter") {
+                  (e.target as HTMLInputElement).blur();
+                }
+              }}
               value={customerName}
               onChange={(e) => setCustomerName(e.target.value)}
               placeholder="Enter full name"
-              className="mt-1 h-10 w-full rounded-lg border px-3 text-sm focus:outline-none focus:ring-2 focus:ring-orange-500"
+              className="mt-1 h-10 w-full rounded-lg border px-3 text-sm focus:outline-none focus:ring-2 focus:ring-orange-500 text-black"
             />
           </div>
           {/* House */}
@@ -259,9 +279,15 @@ export default function AddressFormModal({
             </label>
 
             <input
+              enterKeyHint="done"
+              onKeyDown={(e) => {
+                if (e.key === "Enter") {
+                  (e.target as HTMLInputElement).blur();
+                }
+              }}
               value={houseNo}
               onChange={(e) => setHouseNo(e.target.value)}
-              className="mt-1 h-10 w-full rounded-lg border px-3 text-sm focus:outline-none focus:ring-2 focus:ring-orange-500"
+              className="mt-1 h-10 w-full rounded-lg border px-3 text-sm focus:outline-none focus:ring-2 focus:ring-orange-500 text-black"
             />
           </div>
 
@@ -272,10 +298,16 @@ export default function AddressFormModal({
             </label>
 
             <textarea
+              enterKeyHint="done"
+              onKeyDown={(e) => {
+                if (e.key === "Enter") {
+                  (e.target as HTMLInputElement).blur();
+                }
+              }}
               rows={2}
               value={address}
               onChange={(e) => setAddress(e.target.value)}
-              className="mt-1 w-full rounded-lg border p-3 text-sm resize-none focus:outline-none focus:ring-2 focus:ring-orange-500"
+              className="mt-1 w-full rounded-lg border p-3 text-sm resize-none focus:outline-none focus:ring-2 focus:ring-orange-500 text-black"
             />
           </div>
 
@@ -287,9 +319,15 @@ export default function AddressFormModal({
               </label>
 
               <input
+                enterKeyHint="done"
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") {
+                    (e.target as HTMLInputElement).blur();
+                  }
+                }}
                 value={landmark}
                 onChange={(e) => setLandmark(e.target.value)}
-                className="mt-1 h-10 w-full rounded-lg border px-3 text-sm"
+                className="mt-1 h-10 w-full rounded-lg border px-3 text-sm text-black"
               />
             </div>
 
@@ -299,6 +337,12 @@ export default function AddressFormModal({
               </label>
 
               <input
+                enterKeyHint="done"
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") {
+                    (e.target as HTMLInputElement).blur();
+                  }
+                }}
                 maxLength={6}
                 value={pincode}
                 onChange={(e) => {
@@ -307,7 +351,7 @@ export default function AddressFormModal({
 
                   if (pin.length === 6) fetchPincode(pin);
                 }}
-                className="mt-1 h-10 w-full rounded-lg border px-3 text-sm"
+                className="mt-1 h-10 w-full rounded-lg border px-3 text-sm text-black"
               />
             </div>
           </div>
@@ -319,7 +363,7 @@ export default function AddressFormModal({
               <input
                 readOnly
                 value={city}
-                className="mt-1 h-9 w-full rounded-lg border bg-gray-100 px-3 text-sm"
+                className="mt-1 h-9 w-full rounded-lg border bg-gray-100 px-3 text-sm text-black"
               />
             </div>
 
@@ -328,7 +372,7 @@ export default function AddressFormModal({
               <input
                 readOnly
                 value={district}
-                className="mt-1 h-9 w-full rounded-lg border bg-gray-100 px-3 text-sm"
+                className="mt-1 h-9 w-full rounded-lg border bg-gray-100 px-3 text-sm text-black"
               />
             </div>
 
@@ -337,7 +381,7 @@ export default function AddressFormModal({
               <input
                 readOnly
                 value={state}
-                className="mt-1 h-9 w-full rounded-lg border bg-gray-100 px-3 text-sm"
+                className="mt-1 h-9 w-full rounded-lg border bg-gray-100 px-3 text-sm text-black"
               />
             </div>
 
@@ -346,7 +390,7 @@ export default function AddressFormModal({
               <input
                 readOnly
                 value={country}
-                className="mt-1 h-9 w-full rounded-lg border bg-gray-100 px-3 text-sm"
+                className="mt-1 h-9 w-full rounded-lg border bg-gray-100 px-3 text-sm text-black"
               />
             </div>
           </div>
@@ -354,7 +398,7 @@ export default function AddressFormModal({
 
         {/* Footer */}
         {!keyboardVisible && (
-          <div className="sticky bottom-0 bg-white border-t p-3 flex gap-2">
+          <div className="border-t bg-white p-3 flex gap-2 shrink-0">
             <button
               onClick={saveAddress}
               disabled={saving}

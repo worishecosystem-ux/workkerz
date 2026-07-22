@@ -73,7 +73,9 @@ export default function PublicLayout({
     <PlatformProvider>
       <main className="min-h-screen pb-20 md:pb-0">
         {/* Platform Toggle */}
-        <HomePlatformToggle />
+        <div className="">
+          <HomePlatformToggle />
+        </div>
         {children}
       </main>
 
