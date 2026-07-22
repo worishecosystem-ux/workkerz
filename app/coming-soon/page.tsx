@@ -206,13 +206,22 @@ export default function ComingSoonPage() {
 
         {/* Footer */}
 
-        <footer className="mt-20 border-t border-slate-200 py-8 text-center text-slate-500">
-          <h3 className="text-xl font-bold text-slate-900">Workkerz</h3>
+       <footer className="mt-20 border-t border-slate-200 py-8 text-center text-slate-500">
+  <h3 className="text-xl font-bold text-slate-900">Workkerz</h3>
 
-          <p className="mt-2">Powered by Worish Ecosystem Pvt. Ltd.</p>
+  <p className="mt-2">Powered by Worish Ecosystem Pvt. Ltd.</p>
 
-          <p className="mt-1">© 2026 Workkerz. All Rights Reserved.</p>
-        </footer>
+  <div className="mt-4">
+    <Link
+      href="/privacy-policy"
+      className="text-sm font-medium text-green-600 hover:text-green-700 hover:underline"
+    >
+      Privacy Policy
+    </Link>
+  </div>
+
+  <p className="mt-4">© 2026 Workkerz. All Rights Reserved.</p>
+</footer>
       </div>
     </main>
   );

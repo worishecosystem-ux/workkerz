@@ -1,19 +1,22 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { Capacitor } from "@capacitor/core";
-import { App as CapacitorApp } from "@capacitor/app";
-import { useRouter } from "next/navigation";
 import Footer from "./Footer";
 import MobileAppNavbar from "./MobileAppNavbar";
 import { usePlatform } from "./context/PlatformContext";
 import { useMobileNavbar } from "./context/MobileNavbarContext";
 
-export function LayoutWrapper({ children }: { children: React.ReactNode }) {
+export function LayoutWrapper({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
   const pathname = usePathname();
   const router = useRouter();
-  const { platform, setPlatform } = usePlatform();
+
+  const { setPlatform } = usePlatform();
   const { showMobileNavbar } = useMobileNavbar();
 
   const [mounted, setMounted] = useState(false);
@@ -24,34 +27,39 @@ export function LayoutWrapper({ children }: { children: React.ReactNode }) {
   }, [pathname, setPlatform]);
 
   useEffect(() => {
+    const native = Capacitor.isNativePlatform();
+
     setMounted(true);
-    setIsApp(Capacitor.isNativePlatform());
-  }, []);
+    setIsApp(native);
 
-  const hideLayout =
-    pathname.startsWith("/login") || pathname.startsWith("/favorites");
+    // Website par sirf Coming Soon aur Privacy Policy allow karo
+    if (
+      !native &&
+      pathname !== "/coming-soon" &&
+      pathname !== "/privacy-policy"
+    ) {
+      router.replace("/coming-soon");
+    }
+  }, [pathname, router]);
 
-  const hideMobileNavbar =
-    pathname.startsWith("/workers/") ||
-    pathname.startsWith("/book/") ||
-    pathname.startsWith("/confirmation");
-
-  if (!mounted) {
-    return (
-      <div className="min-h-dvh flex flex-col bg-white overflow-x-hidden">
-        <main className="flex-1 overflow-x-hidden">{children}</main>
-      </div>
-    );
+  // Redirect hone tak kuch render mat karo
+  if (
+    !mounted ||
+    (!isApp &&
+      pathname !== "/coming-soon" &&
+      pathname !== "/privacy-policy")
+  ) {
+    return null;
   }
+
+  const showLayout =
+    pathname === "/coming-soon" || pathname === "/privacy-policy";
 
   return (
     <div className="min-h-dvh flex flex-col bg-white overflow-x-hidden">
-      {/* Desktop Navbar */}
-
-      {/* Main Content */}
       <main
         className={`flex-1 overflow-x-hidden ${
-          isApp && showMobileNavbar && !hideMobileNavbar
+          isApp && showMobileNavbar
             ? "pb-[calc(80px+env(safe-area-inset-bottom))]"
             : ""
         }`}
@@ -59,11 +67,11 @@ export function LayoutWrapper({ children }: { children: React.ReactNode }) {
         {children}
       </main>
 
-      {/* Desktop Footer */}
-      {!hideLayout && !isApp && <Footer />}
+      {/* Website Footer */}
+      {showLayout && !isApp && <Footer />}
 
-      {/* Mobile App Bottom Navbar */}
-      {!hideLayout && !hideMobileNavbar && isApp && showMobileNavbar && (
+      {/* Mobile App Navbar */}
+      {showLayout && isApp && showMobileNavbar && (
         <div className="fixed bottom-0 inset-x-0 z-50 pb-[env(safe-area-inset-bottom)]">
           <MobileAppNavbar />
         </div>
