@@ -12,6 +12,7 @@ export function middleware(req: NextRequest) {
     pathname.startsWith("/api") ||
     pathname.startsWith("/_next") ||
     pathname.startsWith("/coming-soon") ||
+    pathname.startsWith("/privacy-policy") || // ✅ Add this
     pathname.startsWith("/favicon") ||
     pathname.startsWith("/robots.txt") ||
     pathname.startsWith("/sitemap.xml") ||
@@ -20,10 +21,11 @@ export function middleware(req: NextRequest) {
     return NextResponse.next();
   }
 
-  // Browser users -> Coming Soon
+  // Browser users -> Only Home page
   if (
     process.env.NODE_ENV === "production" &&
-    !isApp
+    !isApp &&
+    pathname === "/" // ✅ Only redirect home
   ) {
     return NextResponse.rewrite(new URL("/coming-soon", req.url));
   }
