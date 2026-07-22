@@ -165,11 +165,14 @@ export default function LiveNewsStrip() {
 
       {/* SLIDER */}
       <div className="overflow-hidden">
+
         <div className="flex marquee whitespace-nowrap">
+
           {cards.map((worker, i) => (
             <div
               key={i}
-             className="mx-2 min-w-60 bg-linear-to-br from-white/90 via-slate-100 to-slate-200 border border-white/70 rounded-xl px-3 py-2 flex items-center gap-2 shadow-[inset_0_2px_0_rgba(255,255,255,1),0_10px_25px_rgba(15,23,42,0.15)] backdrop-blur-2xl"
+              onClick={() => router.push(`/workers/${worker.id}`)}
+              className="mx-2 min-w-60 cursor-pointer bg-linear-to-br from-white/90 via-slate-100 to-slate-200 border border-white/70 rounded-xl px-3 py-2 flex items-center gap-2 shadow-[inset_0_2px_0_rgba(255,255,255,1),0_10px_25px_rgba(15,23,42,0.15)] backdrop-blur-2xl"
             >
               <div className="w-12 h-12 rounded-xl border border-slate-200 bg-white p-1 flex items-center justify-center">
                 <img

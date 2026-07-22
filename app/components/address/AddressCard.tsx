@@ -110,8 +110,8 @@ export default function AddressCard({
 
   return (
     <>
-      <div className="bg-emerald-50  rounded-[12px] border border-e-amber-100  shadow-sm px-3 py-2.5 flex items-center ">
-        <div className="flex-1 min-w-0">
+     <div className="bg-emerald-50 rounded-[12px] border border-amber-100 shadow-sm px-3 py-2.5 flex items-center justify-between">
+       <div className="w-0 flex-1 overflow-hidden">
           {loading ? (
             <div className="space-y-1">
               <div className="h-2 w-52 rounded bg-gray-200 animate-pulse" />
