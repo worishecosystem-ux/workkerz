@@ -40,27 +40,27 @@ export default function ComingSoonPage() {
 
           <div className="mt-10 flex flex-wrap justify-center gap-4">
 
-           <button
-  disabled
-  className="inline-flex items-center gap-3 rounded-2xl bg-slate-900 px-6 py-3 text-white shadow-lg opacity-80 cursor-not-allowed"
->
-  <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-white/10">
-    <Play className="h-6 w-6 fill-current" />
-  </div>
+            <button
+              disabled
+              className="inline-flex items-center gap-3 rounded-2xl bg-slate-900 px-6 py-3 text-white shadow-lg opacity-80 cursor-not-allowed"
+            >
+              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-white/10">
+                <Play className="h-6 w-6 fill-current" />
+              </div>
 
-  <div className="flex flex-col items-start leading-none">
-    <span className="text-xs text-slate-300">
-      Coming Soon on
-    </span>
-    <span className="text-base font-semibold">
-      Google Play
-    </span>
-  </div>
+              <div className="flex flex-col items-start leading-none">
+                <span className="text-xs text-slate-300">
+                  Coming Soon on
+                </span>
+                <span className="text-base font-semibold">
+                  Google Play
+                </span>
+              </div>
 
-  <span className="rounded-full bg-yellow-400/20 px-2.5 py-1 text-xs font-semibold text-yellow-300">
-    Soon
-  </span>
-</button>
+              <span className="rounded-full bg-yellow-400/20 px-2.5 py-1 text-xs font-semibold text-yellow-300">
+                Soon
+              </span>
+            </button>
           </div>
         </section>
 
@@ -206,22 +206,31 @@ export default function ComingSoonPage() {
 
         {/* Footer */}
 
-       <footer className="mt-20 border-t border-slate-200 py-8 text-center text-slate-500">
-  <h3 className="text-xl font-bold text-slate-900">Workkerz</h3>
+        <footer className="mt-20 border-t border-slate-200 py-8 text-center text-slate-500">
+          <h3 className="text-xl font-bold text-slate-900">Workkerz</h3>
 
-  <p className="mt-2">Powered by Worish Ecosystem Pvt. Ltd.</p>
+          <p className="mt-2">Powered by Worish Ecosystem Pvt. Ltd.</p>
 
-  <div className="mt-4">
-    <Link
-      href="/privacy-policy"
-      className="text-sm font-medium text-green-600 hover:text-green-700 hover:underline"
-    >
-      Privacy Policy
-    </Link>
-  </div>
+         <div className="mt-4 flex flex-wrap items-center justify-center gap-4 text-sm">
+  <Link
+    href="/privacy-policy"
+    className="font-medium text-green-600 hover:text-green-700 hover:underline"
+  >
+    Privacy Policy
+  </Link>
 
-  <p className="mt-4">© 2026 Workkerz. All Rights Reserved.</p>
-</footer>
+  <span className="text-slate-300">|</span>
+
+  <Link
+    href="/delete-account"
+    className="font-medium text-green-600 hover:text-green-700 hover:underline"
+  >
+    Delete Account
+  </Link>
+</div>
+
+          <p className="mt-4">© 2026 Workkerz. All Rights Reserved.</p>
+        </footer>
       </div>
     </main>
   );
