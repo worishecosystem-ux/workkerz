@@ -3,6 +3,11 @@
 import { useEffect, useState } from "react";
 import { App } from "@capacitor/app";
 import {
+  AppUpdate,
+  AppUpdateAvailability,
+} from "@capawesome/capacitor-app-update";
+import { supabase } from "@/lib/supabase";
+import {
   Info,
   Smartphone,
   Calendar,
@@ -10,15 +15,46 @@ import {
 } from "lucide-react";
 
 export default function VersionPage() {
+
+  const [latestVersion, setLatestVersion] = useState("-");
+  const [updateAvailable, setUpdateAvailable] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [releaseDate, setReleaseDate] = useState("-");
+  const [latestBuild, setLatestBuild] = useState("-");
   const [appInfo, setAppInfo] = useState({
     name: "Workkerz",
     version: "-",
     build: "-",
   });
+  const handleUpdate = async () => {
+  try {
+    const updateInfo = await AppUpdate.getAppUpdateInfo();
 
+    if (updateInfo.immediateUpdateAllowed) {
+      await AppUpdate.performImmediateUpdate();
+      return;
+    }
+
+    if (updateInfo.flexibleUpdateAllowed) {
+      await AppUpdate.startFlexibleUpdate();
+      return;
+    }
+
+    await AppUpdate.openAppStore();
+  } catch (error) {
+    console.error("Unable to start update:", error);
+
+    try {
+      await AppUpdate.openAppStore();
+    } catch (e) {
+      console.error(e);
+    }
+  }
+};
   useEffect(() => {
     const loadAppInfo = async () => {
       try {
+        // Installed app info
         const info = await App.getInfo();
 
         setAppInfo({
@@ -26,8 +62,36 @@ export default function VersionPage() {
           version: info.version,
           build: info.build,
         });
+
+        // Latest version from Supabase
+        const { data } = await supabase
+          .from("app_versions")
+          .select("*")
+          .eq("platform", "android")
+          .single();
+
+        if (data) {
+          setLatestVersion(data.latest_version);
+          setLatestBuild(String(data.latest_build));
+          setReleaseDate(data.release_date);
+        }
+
+        // Play Store update check
+        try {
+          const updateInfo = await AppUpdate.getAppUpdateInfo();
+
+          setUpdateAvailable(
+            updateInfo.updateAvailability ===
+            AppUpdateAvailability.UPDATE_AVAILABLE
+          );
+        } catch (err) {
+          console.warn("Play Store update check failed:", err);
+        }
+
+        setLoading(false);
       } catch (error) {
-        console.error("Unable to load app info:", error);
+        console.error(error);
+        setLoading(false);
       }
     };
 
@@ -108,6 +172,24 @@ export default function VersionPage() {
             </div>
           </div>
         </div>
+        {/* Latest Version */}
+        <div className="rounded-2xl bg-white p-4 shadow-sm">
+          <div className="flex items-center gap-3">
+            <div className="rounded-xl bg-violet-100 p-2">
+              <Info className="h-5 w-5 text-violet-600" />
+            </div>
+
+            <div>
+              <p className="text-xs text-slate-500">
+                Latest Version
+              </p>
+
+              <p className="font-semibold text-slate-900">
+                {latestVersion}
+              </p>
+            </div>
+          </div>
+        </div>
 
         {/* Release Date */}
         <div className="rounded-2xl bg-white p-4 shadow-sm">
@@ -122,7 +204,7 @@ export default function VersionPage() {
               </p>
 
               <p className="font-semibold text-slate-900">
-                19 July 2026
+                {releaseDate}
               </p>
             </div>
           </div>
@@ -140,12 +222,27 @@ export default function VersionPage() {
                 Status
               </p>
 
-              <p className="font-semibold text-emerald-600">
-                You're using the latest version
+              <p
+                className={`font-semibold ${updateAvailable
+                  ? "text-red-600"
+                  : "text-emerald-600"
+                  }`}
+              >
+                {updateAvailable
+                  ? "Update Available"
+                  : "You're using the latest version"}
               </p>
             </div>
           </div>
         </div>
+        {updateAvailable && (
+          <button
+            onClick={handleUpdate}
+            className="w-full rounded-2xl bg-emerald-600 py-3 text-center font-semibold text-white transition active:scale-[0.98]"
+          >
+            Update Now
+          </button>
+        )}
 
       </section>
     </main>
