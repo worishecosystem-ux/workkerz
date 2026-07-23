@@ -27,76 +27,102 @@ export default function VersionPage() {
     build: "-",
   });
   const handleUpdate = async () => {
-  try {
-    const updateInfo = await AppUpdate.getAppUpdateInfo();
-
-    if (updateInfo.immediateUpdateAllowed) {
-      await AppUpdate.performImmediateUpdate();
-      return;
-    }
-
-    if (updateInfo.flexibleUpdateAllowed) {
-      await AppUpdate.startFlexibleUpdate();
-      return;
-    }
-
-    await AppUpdate.openAppStore();
-  } catch (error) {
-    console.error("Unable to start update:", error);
-
     try {
+      const updateInfo = await AppUpdate.getAppUpdateInfo();
+
+      if (updateInfo.immediateUpdateAllowed) {
+        await AppUpdate.performImmediateUpdate();
+        return;
+      }
+
+      if (updateInfo.flexibleUpdateAllowed) {
+        await AppUpdate.startFlexibleUpdate();
+        return;
+      }
+
       await AppUpdate.openAppStore();
-    } catch (e) {
-      console.error(e);
+    } catch (error) {
+      console.error("Unable to start update:", error);
+
+      try {
+        await AppUpdate.openAppStore();
+      } catch (e) {
+        console.error(e);
+      }
     }
-  }
-};
+  };
   useEffect(() => {
     const loadAppInfo = async () => {
-      try {
-        // Installed app info
-        const info = await App.getInfo();
+  try {
+    const info = await App.getInfo();
 
-        setAppInfo({
-          name: info.name,
-          version: info.version,
-          build: info.build,
-        });
+    setAppInfo({
+      name: info.name,
+      version: info.version,
+      build: info.build,
+    });
 
-        // Latest version from Supabase
-        const { data } = await supabase
-          .from("app_versions")
-          .select("*")
-          .eq("platform", "android")
-          .single();
+    const { data } = await supabase
+      .from("app_versions")
+      .select("*")
+      .eq("platform", "android")
+      .single();
 
-        if (data) {
-          setLatestVersion(data.latest_version);
-          setLatestBuild(String(data.latest_build));
-          setReleaseDate(data.release_date);
-        }
+    if (data) {
+      setLatestVersion(data.latest_version);
+      setLatestBuild(String(data.latest_build));
+      setReleaseDate(data.release_date);
+    }
 
-        // Play Store update check
-        try {
-          const updateInfo = await AppUpdate.getAppUpdateInfo();
+    // 👇 इस पूरे block को replace करें
+    try {
+      const updateInfo = await AppUpdate.getAppUpdateInfo();
 
-          setUpdateAvailable(
-            updateInfo.updateAvailability ===
-            AppUpdateAvailability.UPDATE_AVAILABLE
-          );
-        } catch (err) {
-          console.warn("Play Store update check failed:", err);
-        }
+      setUpdateAvailable(
+        updateInfo.updateAvailability ===
+          AppUpdateAvailability.UPDATE_AVAILABLE
+      );
+    } catch (error) {
+      console.warn("Play Store update unavailable:", error);
 
-        setLoading(false);
-      } catch (error) {
-        console.error(error);
-        setLoading(false);
-      }
-    };
+      setUpdateAvailable(false);
+    }
+
+    setLoading(false);
+  } catch (error) {
+    console.error(error);
+    setLoading(false);
+  }
+};
 
     loadAppInfo();
+    setLoading(false);
   }, []);
+  if (loading) {
+    return (
+      
+        <section className="space-y-3 px-4 py-5">
+          {[...Array(7)].map((_, index) => (
+            <div
+              key={index}
+              className="rounded-2xl bg-white p-4 shadow-sm"
+            >
+              <div className="flex items-center gap-3">
+                <div className="h-12 w-12 rounded-xl bg-slate-200" />
+
+                <div className="flex-1">
+                  <div className="h-3 w-24 rounded bg-slate-200" />
+                  <div className="mt-2 h-5 w-36 rounded bg-slate-300" />
+                </div>
+              </div>
+            </div>
+          ))}
+
+          {/* Button Skeleton */}
+          <div className="h-12 rounded-2xl bg-slate-300" />
+        </section>
+    );
+  }
 
   return (
     <main className="min-h-screen bg-slate-50">
@@ -168,6 +194,24 @@ export default function VersionPage() {
 
               <p className="font-semibold text-slate-900">
                 {appInfo.build}
+              </p>
+            </div>
+          </div>
+        </div>
+        {/* Latest Build */}
+        <div className="rounded-2xl bg-white p-4 shadow-sm">
+          <div className="flex items-center gap-3">
+            <div className="rounded-xl bg-purple-100 p-2">
+              <Info className="h-5 w-5 text-purple-600" />
+            </div>
+
+            <div>
+              <p className="text-xs text-slate-500">
+                Latest Build
+              </p>
+
+              <p className="font-semibold text-slate-900">
+                {latestBuild}
               </p>
             </div>
           </div>
