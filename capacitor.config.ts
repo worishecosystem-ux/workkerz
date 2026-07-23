@@ -11,7 +11,7 @@ const config: CapacitorConfig = {
   server: {
     url: isProd
       ? "https://workkerz.com"
-      : "http://172.29.22.14:3000",
+      : "http://192.168.137.231:3000",
     cleartext: !isProd,
   },
 

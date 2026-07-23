@@ -34,7 +34,22 @@ export async function POST(req: Request) {
         { status: 404 },
       );
     }
-
+ const { data: address } = booking.address_id
+  ? await supabase
+      .from("customer_addresses")
+      .select(`
+        house_no,
+        address,
+        landmark,
+        city,
+        district,
+        state,
+        country,
+        pincode
+      `)
+      .eq("id", booking.address_id)
+      .single()
+  : { data: null };
     // VALIDATE EMAIL
     const customerEmail = body?.form?.email || booking.customer_email;
 
@@ -94,10 +109,9 @@ export async function POST(req: Request) {
       }
     };
 
-   
     const packageLabel = getBookingTypeLabel(booking.booking_type);
 
-   const packagePrice = Number(booking.package_price || 0);
+    const packagePrice = Number(booking.package_price || 0);
 
     // HTML
     const html = `
@@ -437,15 +451,16 @@ export async function POST(req: Request) {
                     font-weight:600;
                   "
                 >
-                  ${[
-                    booking.address,
-                    booking.city,
-                    booking.district,
-                    booking.state,
-                    booking.pincode,
-                  ]
-                    .filter(Boolean)
-                    .join(", ")}
+                 ${`
+${address?.house_no ?? ""}
+${address?.house_no ? ", " : ""}${address?.address ?? ""}
+${address?.landmark ? `, Landmark: ${address.landmark}` : ""}
+${address?.city ? `, ${address.city}` : ""}
+${address?.district ? `, ${address.district}` : ""}
+${address?.state ? `, ${address.state}` : ""}
+${address?.country ? `, ${address.country}` : ""}
+${address?.pincode ? ` - ${address.pincode}` : ""}
+`}
                 </div>
 
               </div>

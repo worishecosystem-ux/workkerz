@@ -74,7 +74,7 @@ export default function VersionPage() {
       setReleaseDate(data.release_date);
     }
 
-    // 👇 इस पूरे block को replace करें
+
     try {
       const updateInfo = await AppUpdate.getAppUpdateInfo();
 
@@ -96,7 +96,7 @@ export default function VersionPage() {
 };
 
     loadAppInfo();
-    setLoading(false);
+
   }, []);
   if (loading) {
     return (
@@ -225,7 +225,7 @@ export default function VersionPage() {
 
             <div>
               <p className="text-xs text-slate-500">
-                Latest Version
+                previous Version
               </p>
 
               <p className="font-semibold text-slate-900">
