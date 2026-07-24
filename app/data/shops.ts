@@ -39,7 +39,7 @@ export interface Shop {
 
   banner?: string;
 
-  status?: string;
+  status: string;
 
   is_active: boolean;
 }

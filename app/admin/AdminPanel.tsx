@@ -1,11 +1,12 @@
 "use client";
 import { useState, useEffect } from "react";
 import { supabase } from "@/lib/supabase";
-import OrdersTab from "@/app/admin/components/OrdersTab";
+import BookingsTab from "./components/BookingsTab";
 import AdminSidebar from "./components/AdminSidebar";
 import { toast } from "sonner";
 import ShopsTab from "./components/ShopsTab";
 import WorkerExcelImport from "./components/WorkerExcelImport";
+import OrdersTab from "./components/OrdersTab";
 
 import {
   LayoutDashboard,
@@ -37,7 +38,7 @@ import {
 } from "../data/products";
 
 // ── Types ────────────────────────────────────────────────────────────────────
-type Tab = "dashboard" | "workers" | "shops" | "orders";
+type Tab = "dashboard" | "workers" | "shops" | "bookings" | "orders";
 
 const WORKER_CATEGORIES = [
   {
@@ -618,10 +619,10 @@ function WorkerForm({
     initial
       ? { ...initial }
       : {
-          ...emptyWorker(),
-          phone: "",
-          services: [],
-        },
+        ...emptyWorker(),
+        phone: "",
+        services: [],
+      },
   );
 
   const [error, setError] = useState("");
@@ -1133,11 +1134,10 @@ function WorkerForm({
                         u("services", [...form.services, service]);
                       }
                     }}
-                    className={`p-4 rounded-2xl border text-sm font-semibold transition-all ${
-                      active
+                    className={`p-4 rounded-2xl border text-sm font-semibold transition-all ${active
                         ? "bg-[#FF5C39] text-white border-[#FF5C39] shadow-lg"
                         : "bg-white border-gray-200 hover:border-[#FF5C39]"
-                    }`}
+                      }`}
                   >
                     {service}
                   </button>
@@ -1273,7 +1273,7 @@ function WorkerForm({
 // DASHBOARD TAB
 // ═══════════════════════════════════════════════════════════════════════════════
 function DashboardTab({ onGo }: { onGo: (tab: Tab) => void }) {
-  const { workers = [], products = [], shops = [], bookings = [] } = useAdmin();
+  const { workers = [], products = [], shops = [], bookings = [], orders = [] } = useAdmin();
 
   /* =========================================
    REAL LIVE STATS
@@ -1451,11 +1451,10 @@ function DashboardTab({ onGo }: { onGo: (tab: Tab) => void }) {
                   fill="none"
                   stroke="#10B981"
                   strokeWidth="12"
-                  strokeDasharray={`${
-                    stats.totalWorkers > 0
+                  strokeDasharray={`${stats.totalWorkers > 0
                       ? (stats.availableWorkers / stats.totalWorkers) * 283
                       : 0
-                  } 283`}
+                    } 283`}
                   strokeLinecap="round"
                 />
 
@@ -1467,16 +1466,14 @@ function DashboardTab({ onGo }: { onGo: (tab: Tab) => void }) {
                   fill="none"
                   stroke="#FF5C39"
                   strokeWidth="12"
-                  strokeDasharray={`${
-                    stats.totalWorkers > 0
+                  strokeDasharray={`${stats.totalWorkers > 0
                       ? ((stats.totalWorkers - stats.availableWorkers) /
-                          stats.totalWorkers) *
-                        283
+                        stats.totalWorkers) *
+                      283
                       : 0
-                  } 283`}
-                  strokeDashoffset={`-${
-                    (stats.availableWorkers / stats.totalWorkers) * 283
-                  }`}
+                    } 283`}
+                  strokeDashoffset={`-${(stats.availableWorkers / stats.totalWorkers) * 283
+                    }`}
                   strokeLinecap="round"
                 />
               </svg>
@@ -1614,11 +1611,10 @@ function DashboardTab({ onGo }: { onGo: (tab: Tab) => void }) {
               <div
                 className="h-full bg-emerald-500 rounded-full transition-all duration-1000"
                 style={{
-                  width: `${
-                    stats.totalWorkers > 0
+                  width: `${stats.totalWorkers > 0
                       ? (stats.availableWorkers / stats.totalWorkers) * 100
                       : 0
-                  }%`,
+                    }%`,
                 }}
               />
             </div>
@@ -1654,14 +1650,13 @@ function DashboardTab({ onGo }: { onGo: (tab: Tab) => void }) {
               <div
                 className="h-full bg-rose-500 rounded-full transition-all duration-1000"
                 style={{
-                  width: `${
-                    stats.totalProducts > 0
+                  width: `${stats.totalProducts > 0
                       ? Math.min(
-                          (stats.outOfStock / stats.totalProducts) * 100,
-                          100,
-                        )
+                        (stats.outOfStock / stats.totalProducts) * 100,
+                        100,
+                      )
                       : 0
-                  }%`,
+                    }%`,
                 }}
               />
             </div>
@@ -2335,27 +2330,24 @@ function WorkersTab() {
           {/* ALL */}
           <button
             onClick={() => setCatFilter("")}
-            className={`group relative overflow-hidden rounded-2xl border transition-all duration-200 p-4 text-left ${
-              catFilter === ""
+            className={`group relative overflow-hidden rounded-2xl border transition-all duration-200 p-4 text-left ${catFilter === ""
                 ? "border-[#0F172A] bg-[#0F172A]"
                 : "border-gray-200 bg-white hover:border-gray-300"
-            }`}
+              }`}
           >
             <div className="flex items-center justify-between">
               <div>
                 <div
-                  className={`text-xs ${
-                    catFilter === "" ? "text-white/70" : "text-[#94A3B8]"
-                  }`}
+                  className={`text-xs ${catFilter === "" ? "text-white/70" : "text-[#94A3B8]"
+                    }`}
                   style={{ fontWeight: 700 }}
                 >
                   Total
                 </div>
 
                 <div
-                  className={`mt-1 text-3xl ${
-                    catFilter === "" ? "text-white" : "text-[#0F172A]"
-                  }`}
+                  className={`mt-1 text-3xl ${catFilter === "" ? "text-white" : "text-[#0F172A]"
+                    }`}
                   style={{ fontWeight: 900 }}
                 >
                   {(workers ?? []).length}
@@ -2363,22 +2355,19 @@ function WorkersTab() {
               </div>
 
               <div
-                className={`w-11 h-11 rounded-2xl flex items-center justify-center ${
-                  catFilter === "" ? "bg-white/10" : "bg-[#F1F5F9]"
-                }`}
+                className={`w-11 h-11 rounded-2xl flex items-center justify-center ${catFilter === "" ? "bg-white/10" : "bg-[#F1F5F9]"
+                  }`}
               >
                 <Users
-                  className={`w-5 h-5 ${
-                    catFilter === "" ? "text-white" : "text-[#0F172A]"
-                  }`}
+                  className={`w-5 h-5 ${catFilter === "" ? "text-white" : "text-[#0F172A]"
+                    }`}
                 />
               </div>
             </div>
 
             <div
-              className={`mt-4 ${
-                catFilter === "" ? "text-white" : "text-[#0F172A]"
-              }`}
+              className={`mt-4 ${catFilter === "" ? "text-white" : "text-[#0F172A]"
+                }`}
               style={{ fontWeight: 800 }}
             >
               All Workers
@@ -2487,9 +2476,8 @@ function WorkersTab() {
 
                   <div className="absolute -bottom-1 -right-1 flex items-center justify-center">
                     <div
-                      className={`w-4 h-4 rounded-full border-2 border-white shadow-md ${
-                        w.available ? "bg-emerald-500" : "bg-red-500"
-                      }`}
+                      className={`w-4 h-4 rounded-full border-2 border-white shadow-md ${w.available ? "bg-emerald-500" : "bg-red-500"
+                        }`}
                     />
                   </div>
                 </div>
@@ -2508,11 +2496,10 @@ function WorkersTab() {
 
                   <div className="mt-2">
                     <span
-                      className={`px-2 py-1 rounded-full text-[10px] font-bold ${
-                        w.available
+                      className={`px-2 py-1 rounded-full text-[10px] font-bold ${w.available
                           ? "bg-emerald-100 text-emerald-700"
                           : "bg-rose-100 text-rose-700"
-                      }`}
+                        }`}
                     >
                       {w.available ? "Active" : "Inactive"}
                     </span>
@@ -2607,11 +2594,10 @@ function WorkersTab() {
 
                 <button
                   onClick={() => handleToggleWorkerStatus(w.id, w.available)}
-                  className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm border ${
-                    w.available
+                  className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm border ${w.available
                       ? "border-amber-200 text-amber-600 hover:bg-amber-50"
                       : "border-emerald-200 text-emerald-600 hover:bg-emerald-50"
-                  }`}
+                    }`}
                   style={{
                     fontWeight: 700,
                   }}
@@ -2713,33 +2699,34 @@ export function AdminPanel() {
   }, []);
 
   const sidebarItems = [
-    {
-      id: "dashboard" as Tab,
-      icon: LayoutDashboard,
-      label: "Dashboard",
-    },
-
-    {
-      id: "workers" as Tab,
-      icon: Users,
-      label: "Workers",
-      badge: stats.totalWorkers,
-    },
-
-    {
-      id: "shops" as Tab,
-      icon: Briefcase,
-      label: "Shops",
-    },
-
-    // ADD THIS
-    {
-      id: "orders" as Tab,
-      icon: Briefcase,
-      label: "Orders",
-    },
-  ];
-
+  {
+    id: "dashboard" as Tab,
+    icon: LayoutDashboard,
+    label: "Dashboard",
+  },
+  {
+    id: "workers" as Tab,
+    icon: Users,
+    label: "Workers",
+    badge: stats.totalWorkers,
+  },
+  {
+    id: "shops" as Tab,
+    icon: Briefcase,
+    label: "Shops",
+  },
+  {
+    id: "bookings" as Tab,
+    icon: Briefcase,
+    label: "Bookings",
+    badge: stats.totalBookings,
+  },
+  {
+    id: "orders" as Tab,
+    icon: Package,
+    label: "Orders",
+  },
+];
   return (
     <div className="min-h-screen flex bg-[#F8FAFC]">
       {/* Sidebar */}
@@ -2757,6 +2744,7 @@ export function AdminPanel() {
             {tab === "dashboard" && <DashboardTab onGo={setTab} />}
             {tab === "workers" && <WorkersTab />}
             {tab === "shops" && <ShopsTab />}
+            {tab === "bookings" && <BookingsTab />}
             {tab === "orders" && <OrdersTab />}
           </>
         )}

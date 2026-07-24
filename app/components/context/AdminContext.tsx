@@ -60,6 +60,8 @@ interface AdminContextType {
 
   bookings: any[];
 
+  orders: any[];
+
   /* REVIEWS */
 
   reviews: Review[];
@@ -115,12 +117,12 @@ export function AdminProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     const loadAll = async () => {
       setLoading(true);
-
       await Promise.all([
         loadWorkers(),
         loadProducts(),
         loadShops(),
         loadBookings(),
+        loadOrders(),
       ]);
 
       setLoading(false);
@@ -193,6 +195,24 @@ export function AdminProvider({ children }: { children: ReactNode }) {
       setBookings([]);
     }
   };
+  const loadOrders = async () => {
+    try {
+      const { data, error } = await supabase
+        .from("orders")
+        .select("*")
+        .order("created_at", { ascending: false });
+
+      if (error) {
+        console.log(error);
+        return;
+      }
+
+      setOrders(data || []);
+    } catch (error) {
+      console.log(error);
+      setOrders([]);
+    }
+  };
 
   /* ===================================================== */
   /* ONLINE SHOPS */
@@ -203,7 +223,7 @@ export function AdminProvider({ children }: { children: ReactNode }) {
   const offlineShops = shops.filter((shop) => shop.status !== "online");
 
   const onlineShopIds = onlineShops.map((shop) => shop.id);
-
+  const [orders, setOrders] = useState<any[]>([]);
   /* ===================================================== */
   /* VISIBLE PRODUCTS */
   /* ===================================================== */
@@ -464,6 +484,7 @@ export function AdminProvider({ children }: { children: ReactNode }) {
       onlineShops,
       offlineShops,
       bookings,
+      orders,
     ],
   );
 
@@ -506,6 +527,8 @@ export function AdminProvider({ children }: { children: ReactNode }) {
         /* ORDERS */
 
         bookings,
+
+        orders,
 
         /* REVIEWS */
 

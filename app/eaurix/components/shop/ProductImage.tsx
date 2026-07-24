@@ -23,7 +23,7 @@ export default function ProductImage({
     <img
       src={image}
       alt={name}
-      className="h-full w-full object-cover"
+      className="h-full w-full object-cover rounded-[10px]"
       loading="lazy"
       onError={(e) => {
         const target = e.currentTarget;

@@ -61,7 +61,6 @@ export default function Home() {
         <div className=" mx-auto px-4">
           <div className="">
             {/* Header */}
-
             <div>
               <span className="inline-flex items-center gap-2 bg-[#FFF5F3] text-[#FF5C39] px-3 py-1 rounded-full text-xs font-bold">
                 ⭐ FEATURED WORKERS

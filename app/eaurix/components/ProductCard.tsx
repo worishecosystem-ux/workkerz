@@ -1,15 +1,21 @@
 "use client";
 
+import { memo } from "react";
 import Link from "next/link";
 import { Store, ArrowRight, Package } from "lucide-react";
 import { Product } from "@/app/data/products";
-import { useAdmin } from "@/app/components/context/AdminContext";
 
-export default function ProductCard({ product }: { product: Product }) {
-  const { shops } = useAdmin();
-
-  const shop = shops.find((s) => s.id === product.shop_id);
-
+function ProductCard({
+  product,
+  shop,
+}: {
+  product: Product;
+  shop?: {
+    id: string;
+    shop_name: string;
+    status: string;
+  };
+}) {
   const isOffline = shop?.status !== "online";
   const isOutOfStock = product.is_active === false;
 
@@ -27,23 +33,25 @@ export default function ProductCard({ product }: { product: Product }) {
       {/* Image */}
       <div className="relative aspect-square overflow-hidden bg-slate-100">
         <div className="relative h-full w-full overflow-hidden bg-slate-100">
-          {product.image && (
-            <img
-              src={product.image}
-              alt={product.name}
-              className="absolute inset-0 h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
-              onError={(e) => {
-                e.currentTarget.classList.add("hidden");
-                e.currentTarget.parentElement
-                  ?.querySelector(".fallback")
-                  ?.classList.remove("hidden");
-              }}
-            />
-          )}
+          <img
+            src={image}
+            alt={product.name}
+            loading="lazy"
+            decoding="async"
+            draggable={false}
+            className="absolute inset-0 h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
+            onError={(e) => {
+              e.currentTarget.classList.add("hidden");
+              e.currentTarget.parentElement
+                ?.querySelector(".fallback")
+                ?.classList.remove("hidden");
+            }}
+          />
 
           <div
-            className={`fallback absolute inset-0 flex items-center justify-center p-6 text-center ${product.image ? "hidden" : ""
-              }`}
+            className={`fallback absolute inset-0 flex items-center justify-center p-6 text-center ${
+              image ? "hidden" : ""
+            }`}
           >
             <h3 className="line-clamp-3 text-lg font-bold text-slate-700">
               {product.name}
@@ -101,3 +109,4 @@ export default function ProductCard({ product }: { product: Product }) {
     </Link>
   );
 }
+export default memo(ProductCard);

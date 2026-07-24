@@ -26,7 +26,7 @@ export type ProductCategory =
 export interface Product {
   id: string;
 
-  shop_id?: string;
+  shop_id: string;
 
   name: string;
 

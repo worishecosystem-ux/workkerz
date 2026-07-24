@@ -27,7 +27,7 @@ export default function ServiceSection({
         </div>
 
         <Link
-          href={`/workers?category=${encodeURIComponent(category)}`}
+           href={`/browse?category=${category}`}
           className="flex items-center gap-1 text-sm font-semibold text-green-600"
         >
           See All

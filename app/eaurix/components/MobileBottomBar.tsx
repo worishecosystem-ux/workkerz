@@ -14,14 +14,39 @@ export default function MobileBottomBar() {
   const pathname = usePathname();
   const { cart } = usePlatform();
 
-  const cartCount = cart.reduce(
-    (total, item) => total + item.qty,
-    0
-  );
-
+  const cartCount = cart.reduce((total, item) => total + item.qty, 0);
+  const [visible, setVisible] = useState(true);
+  const [lastScrollY, setLastScrollY] = useState(0);
   const [user, setUser] = useState<any>(null);
   const [keyboardOpen, setKeyboardOpen] = useState(false);
+  const [mounted, setMounted] = useState(false);
 
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  useEffect(() => {
+    const onScroll = () => {
+      const currentY = window.scrollY;
+
+      // Top pe hamesha show
+      if (currentY < 50) {
+        setVisible(true);
+      } else if (currentY > lastScrollY) {
+        // Scroll Down
+        setVisible(false);
+      } else {
+        // Scroll Up
+        setVisible(true);
+      }
+
+      setLastScrollY(currentY);
+    };
+
+    window.addEventListener("scroll", onScroll, { passive: true });
+
+    return () => window.removeEventListener("scroll", onScroll);
+  }, [lastScrollY]);
   // --------------------------
   // Load User
   // --------------------------
@@ -112,29 +137,32 @@ export default function MobileBottomBar() {
   return (
     <nav
       className={`
-        fixed bottom-0 left-0 right-0 z-50
-        border-t border-gray-200
-        bg-white/95 backdrop-blur-md
-        shadow-lg transition-all duration-300
-        ${keyboardOpen ? "hidden" : "block"}
-      `}
+    fixed bottom-0 left-0 right-0 z-50
+    border-t border-gray-200
+    bg-white/95 backdrop-blur-md
+    shadow-lg
+    transition-transform duration-300
+    ${keyboardOpen ? "hidden" : visible ? "translate-y-0" : "translate-y-full"}
+  `}
     >
-      <div className="grid h-20 grid-cols-4">
+      <div className="flex h-20">
         {tabs.map((tab) => {
           const Icon = tab.icon;
 
           const active =
-            pathname === tab.href ||
-            pathname.startsWith(tab.href + "/") ||
-            (tab.href.includes("?tab=orders") &&
-              pathname === "/bookings");
+            tab.href === "/eaurix"
+              ? pathname === "/eaurix"
+              : tab.href === "/bookings?tab=orders"
+                ? pathname === "/bookings"
+                : pathname === tab.href;
 
           return (
             <Link
               key={tab.href}
               href={tab.href}
-              className={`relative flex flex-col items-center justify-center gap-1 transition-colors ${active ? "text-sky-600" : "text-gray-500"
-                }`}
+              className={`relative flex flex-1 flex-col items-center justify-center gap-1 py-1 ${
+                active ? "text-sky-600" : "text-gray-500"
+              }`}
             >
               {tab.href === "/dashboard" ? (
                 avatar ? (
@@ -142,13 +170,15 @@ export default function MobileBottomBar() {
                     src={avatar}
                     alt={displayName}
                     referrerPolicy="no-referrer"
-                    className={`h-7 w-7 rounded-full border object-cover ${active ? "border-sky-500" : "border-gray-300"
-                      }`}
+                    className={`h-7 w-7 rounded-full border object-cover ${
+                      active ? "border-sky-500" : "border-gray-300"
+                    }`}
                   />
                 ) : (
                   <div
-                    className={`flex h-7 w-7 items-center justify-center rounded-full border bg-sky-100 text-sm font-semibold text-sky-600 ${active ? "border-sky-500" : "border-gray-300"
-                      }`}
+                    className={`flex h-7 w-7 items-center justify-center rounded-full border bg-sky-100 text-sm font-semibold text-sky-600 ${
+                      active ? "border-sky-500" : "border-gray-300"
+                    }`}
                   >
                     {displayName.charAt(0).toUpperCase()}
                   </div>
@@ -157,7 +187,7 @@ export default function MobileBottomBar() {
                 <div className="relative">
                   <Icon className="h-6 w-6" />
 
-                  {tab.badge !== undefined && tab.badge > 0 && (
+                  {mounted && tab.badge !== undefined && tab.badge > 0 && (
                     <span className="absolute -right-2 -top-2 flex h-5 min-w-5 items-center justify-center rounded-full bg-red-500 px-1 text-[9px] font-bold text-white">
                       {tab.badge > 99 ? "99+" : tab.badge}
                     </span>

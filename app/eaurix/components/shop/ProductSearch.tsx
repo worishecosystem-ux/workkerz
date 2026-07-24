@@ -2,7 +2,7 @@
 
 import { Search, X } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
-
+import { useRouter } from "next/navigation";
 interface Product {
   id: string;
   name: string;
@@ -27,7 +27,7 @@ export default function ProductSearch({
 }: ProductSearchProps) {
   const [open, setOpen] = useState(false);
   const wrapperRef = useRef<HTMLDivElement>(null);
-
+  const router = useRouter();
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase();
 
@@ -38,7 +38,7 @@ export default function ProductSearch({
         (p) =>
           p.name.toLowerCase().includes(q) ||
           p.brand.toLowerCase().includes(q) ||
-          p.category.toLowerCase().includes(q)
+          p.category.toLowerCase().includes(q),
       )
       .slice(0, 5);
   }, [products, search]);
@@ -55,8 +55,7 @@ export default function ProductSearch({
 
     document.addEventListener("mousedown", handleClick);
 
-    return () =>
-      document.removeEventListener("mousedown", handleClick);
+    return () => document.removeEventListener("mousedown", handleClick);
   }, []);
 
   return (
@@ -66,12 +65,18 @@ export default function ProductSearch({
 
         <input
           value={search}
-          type="text"
+          type="search"
+          enterKeyHint="search"
           placeholder="Search products..."
           onFocus={() => setOpen(true)}
           onChange={(e) => {
             setSearch(e.target.value);
             setOpen(true);
+          }}
+          onKeyDown={(e) => {
+            if (e.key === "Enter") {
+              e.currentTarget.blur(); // keyboard hide
+            }
           }}
           className="h-12 w-full bg-transparent pl-11 pr-11 text-sm text-white placeholder:text-slate-300 outline-none"
         />
@@ -98,8 +103,9 @@ export default function ProductSearch({
                 key={item.id}
                 type="button"
                 onClick={() => {
-                  setSearch(item.name);
+                  setSearch("");
                   setOpen(false);
+                  router.push(`/eaurix/product/${item.id}`);
                 }}
                 className="flex w-full items-center gap-3 border-b border-slate-800 px-3 py-3 text-left transition hover:bg-slate-800"
               >

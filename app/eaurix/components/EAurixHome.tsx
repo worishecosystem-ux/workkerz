@@ -1,11 +1,7 @@
 "use client";
 
-import Link from "next/link";
-
-import { Eye, ArrowUpDown, ShoppingCart, ChevronDown } from "lucide-react";
 import FeaturedProducts from "./FeaturedProducts";
 import { getProducts, type Product } from "@/app/data/products";
-import CategoriesDrawer from "./shop/CategoriesDrawer";
 import { useAdmin } from "@/app/components/context/AdminContext";
 import ProductsGrid from "./shop/ProductsGrid";
 import ShopLive from "@/app/components/ShopLive";
@@ -17,13 +13,7 @@ import { usePlatform } from "@/app/components/context/PlatformContext";
 /* ===================================================== */
 
 /* ===================================================== */
-function ProductImage({
-  image,
-  name,
-}: {
-  image?: string;
-  name: string;
-}) {
+function ProductImage({ image, name }: { image?: string; name: string }) {
   const [error, setError] = useState(false);
 
   if (!image || error) {
@@ -48,29 +38,38 @@ function ProductImage({
 export function EAurixHome() {
   const { shops = [] } = useAdmin();
   const categoryRef = useRef<HTMLDivElement>(null);
-  const [imageError, setImageError] = useState(false);
   const [activeCategory, setActiveCategory] = useState<string | null>(null);
   const [sort, setSort] = useState("latest");
   const { cart, addToCart } = usePlatform();
   const [products, setProducts] = useState<Product[]>([]);
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [loading, setLoading] = useState(true);
-  const [hideCart, setHideCart] = useState(false);
   const PRODUCTS_PER_PAGE = 2;
   const loadMoreRef = useRef<HTMLDivElement>(null);
   const [page, setPage] = useState(1);
   const [loadingMore, setLoadingMore] = useState(false);
   const [search, setSearch] = useState("");
   const [showHeader, setShowHeader] = useState(false);
-  useEffect(() => {
-    const handleScroll = () => {
-      setShowHeader(window.scrollY > 180); // 180px ke baad show hoga
-    };
+  const hasHiddenFeatured = useRef(false);
+const [hideFeatured, setHideFeatured] = useState(false);
 
-    window.addEventListener("scroll", handleScroll);
+useEffect(() => {
+  const onScroll = () => {
+    setShowHeader(window.scrollY > 180);
 
-    return () => window.removeEventListener("scroll", handleScroll);
-  }, []);
+    if (!hasHiddenFeatured.current && window.scrollY > 250) {
+      hasHiddenFeatured.current = true;
+      setHideFeatured(true);
+    }
+  };
+
+  window.addEventListener("scroll", onScroll, { passive: true });
+
+  return () => {
+    window.removeEventListener("scroll", onScroll);
+  };
+}, []);
+
   useEffect(() => {
     setPage(1);
     setLoadingMore(false);
@@ -102,17 +101,7 @@ export function EAurixHome() {
       .map((shop) => shop.id);
   }, [shops]);
 
-  const filteredProducts = products.filter((p) => {
-    const q = search.trim().toLowerCase();
 
-    if (!q) return true;
-
-    return (
-      p.name.toLowerCase().includes(q) ||
-      p.brand.toLowerCase().includes(q) ||
-      p.category.toLowerCase().includes(q)
-    );
-  });
   /* =====================================================
      VISIBLE PRODUCTS
   ===================================================== */
@@ -148,18 +137,32 @@ export function EAurixHome() {
     return list;
   }, [products, onlineShopIds, activeCategory, sort]);
 
-
-
-
-
-
   /* =====================================================
      FEATURED PRODUCTS
   ===================================================== */
 
-  const featured = visibleProducts.filter(
-    (p) => p.badge === "popular" || p.badge === "pro",
-  );
+  const featuredProducts = useMemo(() => {
+    let list = products.filter(
+      (product) => !!product.shop_id && onlineShopIds.includes(product.shop_id),
+    );
+
+    switch (sort) {
+      case "low":
+        list.sort((a, b) => a.price - b.price);
+        break;
+
+      case "high":
+        list.sort((a, b) => b.price - a.price);
+        break;
+
+      case "name":
+        list.sort((a, b) => a.name.localeCompare(b.name));
+        break;
+    }
+
+    return list;
+  }, [products, onlineShopIds, sort]);
+
   const paginatedProducts = useMemo(() => {
     return visibleProducts.slice(0, page * PRODUCTS_PER_PAGE);
   }, [visibleProducts, page]);
@@ -286,8 +289,8 @@ export function EAurixHome() {
     <div className="bg-[#F0F9FF]">
       <div
         className={`fixed inset-x-0 top-0 z-50 bg-linear-to-br from-emerald-950 via-emerald-800 to-green-600  pt-10 shadow-md transition-all duration-300 ${showHeader
-          ? "translate-y-0 opacity-100"
-          : "-translate-y-full opacity-0 pointer-events-none"
+            ? "translate-y-0 opacity-100"
+            : "-translate-y-full opacity-0 pointer-events-none"
           }`}
       >
         <CategoriesHeader
@@ -308,28 +311,31 @@ export function EAurixHome() {
       <div className="pt-2 mb-1">
         <ShopLive />
       </div>
-      <FeaturedProducts products={visibleProducts} />
-
-      <ProductsGrid
-        loading={loading}
-        sort={sort}
-        setSort={setSort}
-        sortLabels={sortLabels}
-        categories={categories}
-        activeCategory={activeCategory}
-        setActiveCategory={setActiveCategory}
-        categoryRef={categoryRef}
-        sidebarOpen={sidebarOpen}
-        setSidebarOpen={setSidebarOpen}
-        products={products}
-        search={search}
-        setSearch={setSearch}
-        paginatedProducts={paginatedProducts}
-        visibleProducts={visibleProducts}
-        cart={cart}
-        addToCart={addToCart}
-        loadMoreRef={loadMoreRef}
-      />
+      {!hideFeatured && (
+        <FeaturedProducts products={featuredProducts} />
+      )}
+      <div>
+        <ProductsGrid
+          loading={loading}
+          sort={sort}
+          setSort={setSort}
+          sortLabels={sortLabels}
+          categories={categories}
+          activeCategory={activeCategory}
+          setActiveCategory={setActiveCategory}
+          categoryRef={categoryRef}
+          sidebarOpen={sidebarOpen}
+          setSidebarOpen={setSidebarOpen}
+          products={products}
+          search={search}
+          setSearch={setSearch}
+          paginatedProducts={paginatedProducts}
+          visibleProducts={visibleProducts}
+          cart={cart}
+          addToCart={addToCart}
+          loadMoreRef={loadMoreRef}
+        />
+      </div>
     </div>
   );
 }

@@ -2,6 +2,7 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
+import { Keyboard } from "@capacitor/keyboard";
 import {
   ChevronLeft,
   ShoppingCart,
@@ -25,21 +26,53 @@ import { productCategories } from "../../data/products";
 import { usePlatform } from "@/app/components/context/PlatformContext";
 import { useAdmin } from "@/app/components/context/AdminContext";
 import { getShop } from "@/app/data/shops";
+import ProductSearch from "./shop/ProductSearch";
 
 export function EAurixProduct() {
   const params = useParams();
   const id = params.id as string;
   const router = useRouter();
   const { addToCart, cart } = usePlatform();
-  const { getProductById, getRelatedProducts } = useAdmin();
+  const { getProductById, getRelatedProducts, products } = useAdmin();
   const [qty, setQty] = useState(1);
   const [added, setAdded] = useState(false);
   const [showBrochure, setShowBrochure] = useState(false);
   const product = getProductById(id);
   const [showShopDetails, setShowShopDetails] = useState(false);
-
+  const [search, setSearch] = useState("");
   const [shopData, setShopData] = useState<any>(null);
+  const [isScrolled, setIsScrolled] = useState(false);
+  const [keyboardOpen, setKeyboardOpen] = useState(false);
 
+  useEffect(() => {
+    let showListener: Awaited<ReturnType<typeof Keyboard.addListener>>;
+    let hideListener: Awaited<ReturnType<typeof Keyboard.addListener>>;
+
+    const init = async () => {
+      showListener = await Keyboard.addListener("keyboardDidShow", () => {
+        setKeyboardOpen(true);
+      });
+
+      hideListener = await Keyboard.addListener("keyboardDidHide", () => {
+        setKeyboardOpen(false);
+      });
+    };
+
+    init();
+
+    return () => {
+      showListener?.remove();
+      hideListener?.remove();
+    };
+  }, []);
+  useEffect(() => {
+    const onScroll = () => {
+      setIsScrolled(window.scrollY > 80);
+    };
+
+    window.addEventListener("scroll", onScroll);
+    return () => window.removeEventListener("scroll", onScroll);
+  }, []);
   const [loadingShop, setLoadingShop] = useState(false);
   useEffect(() => {
     async function fetchShop() {
@@ -121,44 +154,30 @@ export function EAurixProduct() {
   const badge = product.badge ? badgeMap[product.badge] : null;
 
   return (
-    <div className="min-h-screen bg-[#F0F9FF] pt-20 pb-16">
+    <div className="bg-linear-to-br from-sky-100 via-sky-150 to-cyan-100 pb-30">
       {/* Breadcrumb */}
-      <div className="bg-white border-b border-gray-100">
-        <div className="max-w-5xl mx-auto px-6 py-3 flex items-center gap-2 text-sm text-[#64748B]">
-          <Link href="/eaurix" className="hover:text-[#0EA5E9]">
-            E-Aurix
-          </Link>
-          <span>/</span>
-          <Link
-            href={`/eaurix/shop?category=${product.category}`}
-            className="hover:text-[#0EA5E9]"
-          >
-            {catData?.label}
-          </Link>
-          <span>/</span>
-          <span
-            className="text-[#0F172A] line-clamp-1"
-            style={{ fontWeight: 500 }}
-          >
-            {product.name}
-          </span>
+      <div
+        className={`fixed inset-x-0 top-0 z-50 overflow-visible border-b border-sky-200/50 bg-[linear-gradient(135deg,#020617_0%,#0F172A_25%,#1D4ED8_65%,#38BDF8_100%)] shadow-xl backdrop-blur-xl transition-all duration-300 ${
+          isScrolled ? "px-5 pt-2 pb-1" : "px-5 pt-12 pb-5"
+        }`}
+      >
+        <div
+          className={`relative transition-all duration-300 ${
+            isScrolled
+              ? "opacity-0 -translate-y-3 pointer-events-none"
+              : "opacity-100 translate-y-0 mt-2"
+          }`}
+        >
+          <ProductSearch
+            products={products}
+            search={search}
+            setSearch={setSearch}
+          />
         </div>
       </div>
-
-      <div className="max-w-5xl mx-auto px-6 py-8">
-        <button
-          onClick={() => router.back()}
-          className="flex items-center gap-1.5 text-sm text-[#64748B] hover:text-[#0F172A] mb-6 transition-colors"
-        >
-          <ChevronLeft className="w-4 h-4" />
-          Back
-        </button>
-
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-10 mb-12">
-          {/* Product Visual */}
+      <div className="max-w-5xl mx-auto px-4  pt-40">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-1">
           <div>
-            {/* MAIN PRODUCT CARD */}
-
             {/* INNER CARD */}
             <div
               className="relative h-90 rounded-[30px] overflow-hidden flex items-center justify-center"
@@ -168,7 +187,7 @@ export function EAurixProduct() {
             >
               {/* SOFT GLOW */}
               <div
-                className="absolute w-72 h-72 rounded-full blur-3xl opacity-20"
+                className="absolute w-70 h-70 rounded-full blur-3xl opacity-20"
                 style={{
                   background: "#fff",
                 }}
@@ -176,75 +195,67 @@ export function EAurixProduct() {
 
               {/* PRODUCT IMAGE */}
               {product.image ? (
-                <img
-                  src={product.image}
-                  alt={product.name}
+                <div
                   className="
-            relative z-10
-            w-[88%]
-            h-[88%]
-            object-cover
-            rounded-3xl
-            shadow-[0_20px_40px_rgba(0,0,0,0.18)]
-            transition-all duration-500
-            hover:scale-[1.02]
-          "
-                />
+      relative z-10
+      flex h-[88%] w-[88%]
+      items-center justify-center
+      rounded-3xl
+      bg-white/15
+      p-3
+      shadow-[0_20px_40px_rgba(0,0,0,0.18)]
+      backdrop-blur-sm
+    "
+                >
+                  <img
+                    src={product.image}
+                    alt={product.name}
+                    className="
+        h-full
+        w-full
+        rounded-2xl
+        object-cover
+        transition-all
+        duration-500
+        hover:scale-[1.02]
+      "
+                  />
+                </div>
               ) : (
                 <div
                   className="
-            relative z-10
-            w-52 h-52
-            rounded-3xl
-            bg-white/30
-            flex items-center justify-center
-            text-white text-6xl
-            font-bold
-          "
+      relative z-10
+      flex h-52 w-52
+      items-center justify-center
+      rounded-3xl
+      bg-white/30
+      text-6xl
+      font-bold
+      text-white
+    "
                 >
                   {product.name.charAt(0)}
                 </div>
               )}
-
-              {/* BADGES */}
-              <div className="absolute top-4 left-4 flex gap-2 z-20">
-                {badge && (
-                  <div
-                    className={`text-white text-xs px-3 py-1 rounded-full shadow-lg ${badge.cls}`}
-                    style={{ fontWeight: 700 }}
-                  >
-                    {badge.label}
-                  </div>
-                )}
-
-                {discount > 0 && (
-                  <div
-                    className="bg-rose-500 text-white text-xs px-3 py-1 rounded-full shadow-lg"
-                    style={{ fontWeight: 700 }}
-                  >
-                    -{discount}% OFF
-                  </div>
-                )}
-              </div>
             </div>
 
             {/* TRUST BADGES */}
-            <div className="grid grid-cols-3 gap-3 mt-4">
+            <div className="mt-3 grid grid-cols-3 gap-2">
               {[
                 {
                   icon: Truck,
                   label: "Next-Day Delivery",
-                  sub: "Order before 3PM",
+                  sub: "Before 3PM",
                 },
                 {
                   icon: Shield,
-                  label: "Quality Guarantee",
-                  sub: "Trade-certified",
+                  label: "Quality",
+                  sub: "Certified",
                 },
                 {
                   icon: Package,
-                  label: "Easy Returns",
-                  sub: "30-day policy",
+                  label: "Returns",
+                  sub: "5 Days",
                 },
               ].map((t) => {
                 const Icon = t.icon;
@@ -253,29 +264,25 @@ export function EAurixProduct() {
                   <div
                     key={t.label}
                     className="
-            bg-white
-            border border-gray-100
-            rounded-2xl
-            p-4
-            text-center
-            hover:shadow-lg
-            transition-all
-          "
+          rounded-xl
+          border border-slate-100
+          bg-white
+          p-2
+          text-center
+          shadow-sm
+        "
                   >
-                    <div className="w-10 h-10 rounded-xl bg-sky-50 flex items-center justify-center mx-auto mb-2">
-                      <Icon className="w-5 h-5 text-[#0EA5E9]" />
+                    <div className="mx-auto mb-1 flex h-8 w-8 items-center justify-center rounded-lg bg-sky-50">
+                      <Icon className="h-4 w-4 text-sky-500" />
                     </div>
 
-                    <div
-                      className="text-[#0F172A] text-xs"
-                      style={{ fontWeight: 700 }}
-                    >
+                    <p className="line-clamp-2 text-[10px] font-semibold leading-tight text-slate-900">
                       {t.label}
-                    </div>
+                    </p>
 
-                    <div className="text-[#94A3B8] text-[11px] mt-1">
+                    <p className="mt-0.5 text-[9px] leading-tight text-slate-500">
                       {t.sub}
-                    </div>
+                    </p>
                   </div>
                 );
               })}
@@ -284,84 +291,147 @@ export function EAurixProduct() {
 
           {/* Product Info */}
           <div>
-            <div className="flex items-center gap-2 mb-2">
-              <span
-                className="text-[#0EA5E9] text-xs px-2 py-0.5 bg-sky-50 border border-sky-200 rounded-full"
-                style={{ fontWeight: 700 }}
-              >
-                {catData?.label}
-              </span>
-              <span className="text-[#64748B] text-xs">{product.brand}</span>
-            </div>
+            <div className="mb-2 flex items-start justify-between gap-2">
+              <h1 className="flex-1 text-[18px] font-extrabold leading-tight text-slate-900">
+                {product.name}
+              </h1>
 
-            <h1
-              className="text-[#0F172A] mb-2"
-              style={{ fontWeight: 800, fontSize: "1.5rem", lineHeight: 1.2 }}
-            >
-              {product.name}
-            </h1>
-
-            <div className="flex items-center gap-3 mb-4">
-              <div className="flex items-center gap-1">
-                {[1, 2, 3, 4, 5].map((s) => (
-                  <Star
-                    key={s}
-                    className={`w-4 h-4 ${s <= Math.floor(product.rating) ? "text-amber-400 fill-amber-400" : "text-gray-200 fill-gray-200"}`}
-                  />
-                ))}
+              <div className="flex items-center gap-3 mb-4">
+                <div className="flex items-center gap-1">
+                  {[1, 2, 3, 4, 5].map((s) => (
+                    <Star
+                      key={s}
+                      className={`w-4 h-4 ${s <= Math.floor(product.rating) ? "text-amber-400 fill-amber-400" : "text-gray-200 fill-gray-200"}`}
+                    />
+                  ))}
+                </div>
+                <span
+                  className="text-sm text-[#0F172A]"
+                  style={{ fontWeight: 600 }}
+                >
+                  {product.rating}
+                </span>
+                <span className="text-sm text-[#64748B]">
+                  ({product.reviewCount} reviews)
+                </span>
               </div>
-              <span
-                className="text-sm text-[#0F172A]"
-                style={{ fontWeight: 600 }}
-              >
-                {product.rating}
-              </span>
-              <span className="text-sm text-[#64748B]">
-                ({product.reviewCount} reviews)
-              </span>
             </div>
 
-            <p className="text-[#475569] text-sm mb-5 leading-relaxed">
+            <p className="text-[#475569] text-sm mb-2 leading-relaxed">
               {product.longDescription}
             </p>
 
             {/* Price */}
-            <div className="flex items-end gap-3 mb-6 p-4 bg-white rounded-2xl border border-gray-100">
-              <div>
-                <span
-                  className="text-[#0F172A]"
-                  style={{ fontWeight: 900, fontSize: "2rem" }}
-                >
-                  ₹{product.price.toFixed(2)}
-                </span>
-                <span className="text-[#94A3B8] text-sm ml-2">
-                  {product.unit}
-                </span>
-              </div>
-              {product.originalPrice && (
-                <div className="mb-1">
-                  <div className="text-[#94A3B8] text-sm line-through">
-                    ₹{product.originalPrice}
+            <div className="mb-2 rounded-2xl border border-slate-200 bg-white p-3">
+              <div className="flex items-start justify-between gap-3">
+                <div>
+                  <div className="flex items-end gap-2">
+                    <span className="text-2xl font-black text-slate-900">
+                      ₹{product.price.toFixed(2)}
+                    </span>
+                    <span className="mb-1 text-xs text-slate-500">
+                      / {product.unit}
+                    </span>
                   </div>
-                  <div
-                    className="text-rose-500 text-xs"
-                    style={{ fontWeight: 700 }}
-                  >
-                    Save ₹{product.originalPrice - product.price}
-                  </div>
+
+                  {product.originalPrice && (
+                    <div className="mt-1 flex items-center gap-2">
+                      <span className="text-xs text-slate-400 line-through">
+                        ₹{product.originalPrice}
+                      </span>
+
+                      <span className="rounded-full bg-rose-50 px-2 py-0.5 text-[11px] font-semibold text-rose-600">
+                        Save ₹{product.originalPrice - product.price}
+                      </span>
+                    </div>
+                  )}
                 </div>
-              )}
-              <div className="ml-auto text-right">
-                <div
-                  className="flex items-center gap-1 text-emerald-600 text-xs"
-                  style={{ fontWeight: 600 }}
-                >
-                  <div className="w-2 h-2 bg-emerald-500 rounded-full" />
-                  In Stock ({product.stock}+ units)
+
+                <div className="rounded-full bg-emerald-50 px-2.5 py-2">
+                  <div className="flex items-center gap-1 text-[11px] font-semibold text-emerald-700">
+                    <span className="h-2 w-2 rounded-full bg-emerald-500" />
+                    {product.stock}+ In Stock
+                  </div>
                 </div>
               </div>
             </div>
 
+            {/* Quantity & Total */}
+            <div className="mb-3 flex items-center justify-between rounded-2xl border border-slate-200 bg-white p-2">
+              {/* Quantity Selector */}
+              <div className="flex items-center gap-2 rounded-xl bg-slate-100 p-1">
+                <button
+                  onClick={() => setQty((q) => Math.max(1, q - 1))}
+                  className="flex h-8 w-8 items-center justify-center rounded-lg bg-white active:scale-95"
+                >
+                  <Minus className="h-4 w-4 text-slate-700" />
+                </button>
+
+                <div className="w-12 text-center">
+                  <p className="text-[10px] uppercase text-slate-400">Qty</p>
+                  <p className="text-base font-bold text-slate-900">{qty}</p>
+                </div>
+
+                <button
+                  onClick={() => setQty((q) => q + 1)}
+                  className="flex h-8 w-8 items-center justify-center rounded-lg bg-sky-500 active:scale-95"
+                >
+                  <Plus className="h-4 w-4 text-white" />
+                </button>
+              </div>
+
+              {/* Total Price */}
+              <div className="rounded-xl bg-sky-50 px-4 py-2 text-right">
+                <p className="text-[10px] font-medium uppercase tracking-wide text-sky-600">
+                  Total
+                </p>
+                <p className="text-lg font-extrabold text-sky-700">
+                  ₹{(product.price * qty).toFixed(2)}
+                </p>
+              </div>
+            </div>
+            {/* Specs */}
+            <div className="bg-white rounded-2xl border border-gray-100 p-6 mb-3">
+              <h2
+                className="text-[#0F172A] mb-5"
+                style={{ fontWeight: 700, fontSize: "1.1rem" }}
+              >
+                Technical Specifications
+              </h2>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-0 divide-y sm:divide-y-0">
+                {Object.entries(product.specs).map(([key, val], i) => (
+                  <div
+                    key={key}
+                    className={`flex items-start gap-4 py-3 sm:py-2.5 border-b border-gray-50 last:border-0 ${i % 2 === 0 ? "sm:pr-8" : "sm:pl-8 sm:border-l sm:border-b"}`}
+                  >
+                    <span
+                      className="text-[#94A3B8] text-sm shrink-0 w-36"
+                      style={{ fontWeight: 500 }}
+                    >
+                      {key}
+                    </span>
+                    <span
+                      className="text-[#0F172A] text-sm"
+                      style={{ fontWeight: 600 }}
+                    >
+                      {val}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            </div>
+            {/* Tags */}
+            <div className="flex flex-wrap gap-1.5 mb-6">
+              {product.tags.map((t) => (
+                <span
+                  key={t}
+                  className="flex items-center gap-1 text-xs bg-white border border-gray-100 text-[#475569] px-2.5 py-1 rounded-full"
+                >
+                  <Tag className="w-2.5 h-2.5" />
+                  {t}
+                </span>
+              ))}
+            </div>
             {/* ====================================================== */
             /* ORDER FULFILLED BY */
             /* ====================================================== */}
@@ -417,92 +487,63 @@ export function EAurixProduct() {
                 </div>
               </div>
             )}
-
-            {/* Quantity */}
-            <div className="mb-4">
-              <label
-                className="block text-sm text-[#0F172A] mb-2"
-                style={{ fontWeight: 600 }}
-              >
-                Quantity
-              </label>
-              <div className="flex items-center gap-3">
-                <div className="flex items-center gap-2 bg-white border border-gray-200 rounded-xl p-1.5">
-                  <button
-                    onClick={() => setQty((q) => Math.max(1, q - 1))}
-                    className="w-8 h-8 rounded-lg bg-gray-50 hover:bg-gray-100 flex items-center justify-center transition-colors"
-                  >
-                    <Minus className="w-4 h-4 text-[#64748B]" />
-                  </button>
-                  <span
-                    className="w-10 text-center text-[#0F172A]"
-                    style={{ fontWeight: 700 }}
-                  >
-                    {qty}
-                  </span>
-                  <button
-                    onClick={() => setQty((q) => q + 1)}
-                    className="w-8 h-8 rounded-lg bg-sky-50 hover:bg-sky-100 flex items-center justify-center transition-colors"
-                  >
-                    <Plus className="w-4 h-4 text-[#0EA5E9]" />
-                  </button>
-                </div>
-                <span className="text-sm text-[#64748B]">
-                  Subtotal:{" "}
-                  <span className="text-[#0F172A]" style={{ fontWeight: 700 }}>
-                    ₹{(product.price * qty).toFixed(2)}
-                  </span>
-                </span>
-              </div>
-            </div>
-
-            {/* Tags */}
-            <div className="flex flex-wrap gap-1.5 mb-6">
-              {product.tags.map((t) => (
-                <span
-                  key={t}
-                  className="flex items-center gap-1 text-xs bg-white border border-gray-100 text-[#475569] px-2.5 py-1 rounded-full"
-                >
-                  <Tag className="w-2.5 h-2.5" />
-                  {t}
-                </span>
-              ))}
-            </div>
-
             {/* Actions */}
-            <div className="flex gap-3">
-              <button
-                onClick={handleAddToCart}
-                className={`flex-1 flex items-center justify-center gap-2 py-3.5 rounded-xl text-sm transition-all ${
-                  added
-                    ? "bg-emerald-500 text-white"
-                    : inCart
-                      ? "bg-sky-50 border-2 border-[#0EA5E9] text-[#0EA5E9]"
-                      : "border-2 border-[#0EA5E9] text-[#0EA5E9] hover:bg-sky-50"
-                }`}
-                style={{ fontWeight: 700 }}
-              >
-                {added ? (
-                  <>
-                    <CheckCircle className="w-4 h-4" /> Added!
-                  </>
-                ) : inCart ? (
-                  <>
-                    <ShoppingCart className="w-4 h-4" /> Update Cart
-                  </>
-                ) : (
-                  <>
-                    <ShoppingCart className="w-4 h-4" /> Add to Cart
-                  </>
-                )}
-              </button>
-              <button
-                onClick={handleBuyNow}
-                className="flex-1 flex items-center justify-center gap-2 py-3.5 rounded-xl text-sm bg-[#0EA5E9] hover:bg-[#0284C7] text-white transition-colors shadow-lg shadow-sky-200"
-                style={{ fontWeight: 700 }}
-              >
-                Buy Now <ArrowRight className="w-4 h-4" />
-              </button>
+            <div
+              className={`fixed bottom-0 left-0 right-0 z-50 border-t border-slate-200 bg-white/95 backdrop-blur-xl shadow-[0_-8px_24px_rgba(0,0,0,0.08)] transition-all duration-300 ${
+                keyboardOpen
+                  ? "translate-y-full opacity-0 pointer-events-none"
+                  : "translate-y-0 opacity-100"
+              }`}
+            >
+              <div className="flex items-center gap-3 px-3 py-3 pb-[calc(env(safe-area-inset-bottom)+8px)]">
+                {/* Cart */}
+                <button
+                  onClick={handleAddToCart}
+                  className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-full shadow-sm transition-all ${
+                    added
+                      ? "bg-emerald-500 text-white"
+                      : inCart
+                        ? "bg-sky-500 text-white"
+                        : "border border-slate-200 bg-white text-slate-700"
+                  }`}
+                >
+                  {added ? (
+                    <CheckCircle className="h-5 w-5" />
+                  ) : (
+                    <ShoppingCart className="h-5 w-5" />
+                  )}
+                </button>
+                {/* Price Card */}
+                <div className="min-w-40 rounded-xl bg-slate-100 px-3 py-2">
+                  <div className="mt-1 flex items-end gap-1">
+                    <span className="text-lg font-extrabold text-slate-900">
+                      Total : ₹{(product.price * qty).toFixed(0)}
+                    </span>
+
+                    {product.originalPrice && (
+                      <span className="mb-0.5 text-[10px] text-slate-400 line-through">
+                        ₹{(product.originalPrice * qty).toFixed(0)}
+                      </span>
+                    )}
+                  </div>
+                </div>
+
+                {/* Buy Now */}
+                <button
+                  onClick={handleBuyNow}
+                  className="flex h-12 flex-1 items-center justify-between rounded-xl bg-linear-to-r from-sky-600 to-cyan-500 px-4 text-white shadow-lg"
+                >
+                  <div>
+                    <p className="text-[10px] font-medium text-white/80">
+                      {qty} Item{qty > 1 ? "s" : ""}
+                    </p>
+
+                    <p className="text-[15px] font-bold">Buy Now</p>
+                  </div>
+
+                  <ArrowRight className="h-5 w-5" />
+                </button>
+              </div>
             </div>
             {/* VIEW BROCHURE BUTTON */}
             {product.brochure && (
@@ -571,37 +612,6 @@ export function EAurixProduct() {
                 )}
               </>
             )}
-          </div>
-        </div>
-
-        {/* Specs */}
-        <div className="bg-white rounded-2xl border border-gray-100 p-6 mb-8">
-          <h2
-            className="text-[#0F172A] mb-5"
-            style={{ fontWeight: 700, fontSize: "1.1rem" }}
-          >
-            Technical Specifications
-          </h2>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-0 divide-y sm:divide-y-0">
-            {Object.entries(product.specs).map(([key, val], i) => (
-              <div
-                key={key}
-                className={`flex items-start gap-4 py-3 sm:py-2.5 border-b border-gray-50 last:border-0 ${i % 2 === 0 ? "sm:pr-8" : "sm:pl-8 sm:border-l sm:border-b"}`}
-              >
-                <span
-                  className="text-[#94A3B8] text-sm shrink-0 w-36"
-                  style={{ fontWeight: 500 }}
-                >
-                  {key}
-                </span>
-                <span
-                  className="text-[#0F172A] text-sm"
-                  style={{ fontWeight: 600 }}
-                >
-                  {val}
-                </span>
-              </div>
-            ))}
           </div>
         </div>
 
