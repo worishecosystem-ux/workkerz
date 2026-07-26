@@ -18,12 +18,12 @@ export default function HomeWorkerCard({ worker }: Props) {
   <div className="flex items-start gap-3">
     {/* Image */}
     <div className="relative shrink-0">
-      <div className="relative h-14 w-14 overflow-hidden rounded-2xl border-2 border-white ring-2 ring-slate-200">
+      <div className="relative h-14 w-14 overflow-hidden rounded-2xl border border-white ring-2 ring-slate-200">
         <Image
           src={worker.photo || "/worker-placeholder.png"}
           alt={worker.name}
           fill
-          className="object-cover"
+          className="object-cover-conatin"
         />
       </div>
 

@@ -7,21 +7,29 @@ import { serviceCategories } from "@/app/data/workers";
 
 const categoryImages: Record<string, string> = {
   all: "/categories/all.png",
+
   Labour: "/categories/1L.png",
   Driver: "/categories/1d.png",
   Mechanic: "/categories/1m.webp",
+  Painter: "/categories/painter.png",
   Washer: "/categories/1w.png",
-  "Computer Operator": "/categories/1c.webp",
+
   "Office Worker": "/categories/1c.webp",
+
   "Home Services": "/categories/1h.png",
-  "Salon & Beauty": "/categories/1sa.png",
   Restaurant: "/categories/1r.png",
-  Contractor: "/categories/1c.png",
-  Factory: "/categories/image copy.png",
+  "Home Contractor": "/categories/1contractor.png",
+
+  Factory: "/categories/f1.png",
+
+  "Salon & Beauty": "/categories/1sa.png",
+
+  Construction: "/categories/cons.png",
+
   Security: "/categories/1sec.png",
+
   "Event Services": "/categories/1e.png",
 };
-
 export default function WorkCategories() {
   const searchParams = useSearchParams();
   const activeCategory = searchParams.get("category") || "";
@@ -42,7 +50,7 @@ export default function WorkCategories() {
             return (
               <Link
                 key={category.id}
-                href={`/browse?category=${category.id}`}
+                href={`/browse?category=${encodeURIComponent(category.id)}`}
                 className="shrink-0"
               >
                 <div className="flex w-18 flex-col items-center">

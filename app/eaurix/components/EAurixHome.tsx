@@ -1,40 +1,22 @@
 "use client";
 
 import FeaturedProducts from "./FeaturedProducts";
-import { getProducts, type Product } from "@/app/data/products";
 import { useAdmin } from "@/app/components/context/AdminContext";
 import ProductsGrid from "./shop/ProductsGrid";
 import ShopLive from "@/app/components/ShopLive";
 import CategoriesHeader from "./shop/CategoriesHeader";
-
+import EAurixHomeSkeleton from "./shop/EAurixHomeSkeleton";
 import { useMemo, useState, useEffect, useRef } from "react";
-
+import {
+  getProducts,
+  productCategories,
+  type Product,
+} from "@/app/data/products";
 import { usePlatform } from "@/app/components/context/PlatformContext";
 /* ===================================================== */
 
 /* ===================================================== */
-function ProductImage({ image, name }: { image?: string; name: string }) {
-  const [error, setError] = useState(false);
 
-  if (!image || error) {
-    return (
-      <div className="flex h-32 w-full items-center justify-center bg-slate-100 px-3 text-center md:h-64">
-        <span className="line-clamp-3 text-sm font-bold text-slate-700 md:text-lg">
-          {name}
-        </span>
-      </div>
-    );
-  }
-
-  return (
-    <img
-      src={image}
-      alt={name}
-      onError={() => setError(true)}
-      className="h-32 w-full object-cover transition-transform duration-300 group-hover:scale-105 md:h-64"
-    />
-  );
-}
 export function EAurixHome() {
   const { shops = [] } = useAdmin();
   const categoryRef = useRef<HTMLDivElement>(null);
@@ -51,24 +33,24 @@ export function EAurixHome() {
   const [search, setSearch] = useState("");
   const [showHeader, setShowHeader] = useState(false);
   const hasHiddenFeatured = useRef(false);
-const [hideFeatured, setHideFeatured] = useState(false);
+  const [hideFeatured, setHideFeatured] = useState(false);
+const [categoriesDrawerOpen, setCategoriesDrawerOpen] = useState(false);
+  useEffect(() => {
+    const onScroll = () => {
+      setShowHeader(window.scrollY > 180);
 
-useEffect(() => {
-  const onScroll = () => {
-    setShowHeader(window.scrollY > 180);
+      if (!hasHiddenFeatured.current && window.scrollY > 250) {
+        hasHiddenFeatured.current = true;
+        setHideFeatured(true);
+      }
+    };
 
-    if (!hasHiddenFeatured.current && window.scrollY > 250) {
-      hasHiddenFeatured.current = true;
-      setHideFeatured(true);
-    }
-  };
+    window.addEventListener("scroll", onScroll, { passive: true });
 
-  window.addEventListener("scroll", onScroll, { passive: true });
-
-  return () => {
-    window.removeEventListener("scroll", onScroll);
-  };
-}, []);
+    return () => {
+      window.removeEventListener("scroll", onScroll);
+    };
+  }, []);
 
   useEffect(() => {
     setPage(1);
@@ -100,7 +82,6 @@ useEffect(() => {
       .filter((shop) => shop.status === "online")
       .map((shop) => shop.id);
   }, [shops]);
-
 
   /* =====================================================
      VISIBLE PRODUCTS
@@ -209,11 +190,7 @@ useEffect(() => {
   }, [paginatedProducts.length, loadingMore]);
 
   if (loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        Loading...
-      </div>
-    );
+    return <EAurixHomeSkeleton />;
   }
   const sortLabels = {
     latest: "Latest",
@@ -227,60 +204,11 @@ useEffect(() => {
       name: "All",
       image: "https://cdn-icons-png.flaticon.com/512/3081/3081559.png",
     },
-
-    {
-      id: "sand",
-      name: "Sand",
-      image: "/sand.webp",
-    },
-
-    {
-      id: "aggregate",
-      name: "Aggregate",
-      image: "/20-mm-aggregates.jpg",
-    },
-
-    {
-      id: "brick",
-      name: "Brick",
-      image: "/red-brick.jpeg",
-    },
-
-    {
-      id: "cement",
-      name: "Cement",
-      image: "/cements_.jpg",
-    },
-
-    {
-      id: "tmt",
-      name: "TMT",
-      image: "/captain-tmt-bars-500x500.webp",
-    },
-
-    {
-      id: "paint",
-      name: "Paint",
-      image: "/closeup-of-house-painting-renovation-4519567.webp",
-    },
-
-    {
-      id: "plumbing",
-      name: "Plumbing",
-      image: "/pipes-18242-1676036604740.webp",
-    },
-
-    {
-      id: "tiles",
-      name: "Tiles",
-      image: "/tiles.avif",
-    },
-
-    {
-      id: "electrical",
-      name: "Electrical",
-      image: "/electrical.avif",
-    },
+    ...productCategories.map((category) => ({
+      id: category.id,
+      name: category.label,
+      image: category.image,
+    })),
   ];
 
   /* ===================================================== */
@@ -288,11 +216,13 @@ useEffect(() => {
   return (
     <div className="bg-[#F0F9FF]">
       <div
-        className={`fixed inset-x-0 top-0 z-50 bg-linear-to-br from-emerald-950 via-emerald-800 to-green-600  pt-10 shadow-md transition-all duration-300 ${showHeader
+        className={`fixed inset-x-0 top-0 z-50 bg-[linear-gradient(135deg,#020617_0%,#0F172A_25%,#1D4ED8_65%,#38BDF8_100%)]  pt-10 shadow-md transition-all duration-300 ${
+          showHeader
             ? "translate-y-0 opacity-100"
             : "-translate-y-full opacity-0 pointer-events-none"
-          }`}
+        }`}
       >
+        
         <CategoriesHeader
           loading={loading}
           sort={sort}
@@ -306,14 +236,13 @@ useEffect(() => {
           products={products}
           search={search}
           setSearch={setSearch}
+          
         />
       </div>
       <div className="pt-2 mb-1">
         <ShopLive />
       </div>
-      {!hideFeatured && (
-        <FeaturedProducts products={featuredProducts} />
-      )}
+      {!hideFeatured && <FeaturedProducts products={featuredProducts} />}
       <div>
         <ProductsGrid
           loading={loading}

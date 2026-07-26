@@ -35,7 +35,35 @@ export default function DashboardPage() {
   const [favoriteWorkers, setFavoriteWorkers] = useState<any[]>([]);
 
   const [unreadCount, setUnreadCount] = useState(0);
+  const [profile, setProfile] = useState<{
+    full_name: string;
+  }>({
+    full_name: "",
+  });
 
+  useEffect(() => {
+    async function loadProfile() {
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+
+      if (!user?.email) return;
+
+      const { data } = await supabase
+        .from("customer_profiles")
+        .select("customer_name")
+        .eq("customer_email", user.email)
+        .maybeSingle();
+
+      if (data) {
+        setProfile({
+          full_name: data.customer_name ?? "",
+        });
+      }
+    }
+
+    loadProfile();
+  }, []);
   const loadUnreadCount = useCallback(async () => {
     const {
       data: { user },
@@ -239,12 +267,13 @@ export default function DashboardPage() {
               <div>
                 <div className="mt-1 flex items-center gap-1">
                   <h1 className="max-w-37.5 truncate text-lg font-bold">
-                    {user?.user_metadata?.full_name ||
+                    {profile?.full_name ||
+                      user?.user_metadata?.full_name ||
                       user?.user_metadata?.name ||
                       "Guest"}
                   </h1>
 
-                  <BadgeCheck className="h-4 w-4 text-emerald-200" />
+                  <BadgeCheck className="h-4 w-4 shrink-0 text-emerald-200" />
                 </div>
 
                 <p className="mt-1 text-xs text-emerald-100/80">

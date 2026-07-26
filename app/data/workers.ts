@@ -72,108 +72,21 @@ export interface Review {
 ========================= */
 
 export const serviceCategories = [
-  {
-    id: "all",
-    label: "Workers",
-    description: "Browse all workers",
-    color: "#0F172A",
-    bgColor: "#F8FAFC",
-  },
-  {
-    id: "Labour",
-    label: "Labour",
-    description: "General & skilled labour workers",
-    color: "#F97316",
-    bgColor: "#FFF7ED",
-  },
-
-  {
-    id: "Driver",
-    label: "Driver",
-    description: "Car, taxi & heavy vehicle drivers",
-    color: "#10B981",
-    bgColor: "#ECFDF5",
-  },
-
-  {
-    id: "Mechanic",
-    label: "Mechanic",
-    description: "Vehicle repair specialists",
-    color: "#3B82F6",
-    bgColor: "#EFF6FF",
-  },
-
-  {
-    id: "Washer",
-    label: "Washer",
-    description: "Vehicle washing services",
-    color: "#06B6D4",
-    bgColor: "#ECFEFF",
-  },
-
-  {
-    id: "Office Worker",
-    label: "Office Worker",
-    description: "Office support staff",
-    color: "#EC4899",
-    bgColor: "#FCE7F3",
-  },
-
-  {
-    id: "Home Services",
-    label: "Home Services",
-    description: "Domestic & cleaning services",
-    color: "#22C55E",
-    bgColor: "#DCFCE7",
-  },
-
-  {
-    id: "Salon & Beauty",
-    label: "Salon & Beauty",
-    description: "Salon & beauty experts",
-    color: "#F43F5E",
-    bgColor: "#FFE4E6",
-  },
-
-  {
-    id: "Restaurant",
-    label: "Restaurant",
-    description: "Restaurant staff & chefs",
-    color: "#EF4444",
-    bgColor: "#FEE2E2",
-  },
-
-  {
-    id: "Contractor",
-    label: "Contractor",
-    description: "Repair & contractor services",
-    color: "#F59E0B",
-    bgColor: "#FEF3C7",
-  },
-
-  {
-    id: "Factory",
-    label: "Factory",
-    description: "Factory & warehouse workers",
-    color: "#475569",
-    bgColor: "#F1F5F9",
-  },
-
-  {
-    id: "Security",
-    label: "Security",
-    description: "Security guards & bouncers",
-    color: "#334155",
-    bgColor: "#E2E8F0",
-  },
-
-  {
-    id: "Event Services",
-    label: "Event Services",
-    description: "Event & decoration staff",
-    color: "#A855F7",
-    bgColor: "#F3E8FF",
-  },
+   { id: "all", label: "All" },
+  { id: "Labour", label: "Labour" },
+  { id: "Driver", label: "Driver" },
+  { id: "Mechanic", label: "Mechanic" },
+  { id: "Painter", label: "Painter" },
+  { id: "Washer", label: "Washer" },
+  { id: "Office Worker", label: "Office Worker" },
+  { id: "Home Services", label: "Home Services" },
+  { id: "Restaurant", label: "Restaurant" },
+  { id: "Home Contractor", label: "Contractor" },
+  { id: "Factory", label: "Factory" },
+  { id: "Salon & Beauty", label: "Salon & Beauty" },
+  { id: "Construction", label: "Construction" },
+  { id: "Security", label: "Security" },
+  { id: "Event Services", label: "Event Services" },
 ];
 
 /* =========================

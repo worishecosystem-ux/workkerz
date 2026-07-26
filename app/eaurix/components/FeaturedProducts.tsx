@@ -64,7 +64,7 @@ export default function FeaturedProducts({
 
   return (
     <div className="px-4">
-      <div className="mb-5 pt-5">
+      <div className="mb-4 pt-4">
         <h2 className="text-xl font-black tracking-tight text-slate-900">
           Welcome to E-aurix,{" "}
           <span className="bg-linear-to-r from-emerald-600 to-teal-500 bg-clip-text text-transparent">

@@ -20,7 +20,7 @@ export default function MobileBottomBar() {
   const [user, setUser] = useState<any>(null);
   const [keyboardOpen, setKeyboardOpen] = useState(false);
   const [mounted, setMounted] = useState(false);
-
+  const hideBottomBar = pathname.startsWith("/eaurix/cart");
   useEffect(() => {
     setMounted(true);
   }, []);
@@ -133,7 +133,9 @@ export default function MobileBottomBar() {
       icon: User,
     },
   ];
-
+  if (hideBottomBar) {
+    return null;
+  }
   return (
     <nav
       className={`

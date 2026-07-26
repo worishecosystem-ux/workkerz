@@ -96,8 +96,8 @@ export default function BookingAddressCard({
         {/* Name + Badges */}
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 flex-wrap">
-            <h3 className="text-[15px] font-semibold text-black truncate">
-              {address.customer_name}
+            <h3 className="text-[15px] font-semibold text-black capitalize">
+              {address.address_type || "Address"}
             </h3>
 
             {address.is_default && (

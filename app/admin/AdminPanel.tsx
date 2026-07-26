@@ -61,7 +61,6 @@ const WORKER_CATEGORIES = [
       "Bus Driver",
       "Commercial Driver",
       "Heavy Vehicle Driver",
-      "Delivery Driver",
     ],
   },
 
@@ -78,26 +77,25 @@ const WORKER_CATEGORIES = [
   },
 
   {
-    name: "Washer",
+    name: "Painter",
     subcategories: [
-      "Car Washer",
-      "Bike Washer",
-      "Foam Wash",
-      "Truck Washer",
-      "Interior Cleaning",
+      "House Painter",
+      "Wall Painter",
+      "Spray Painter",
+      "Industrial Painter",
+      "Texture Painter",
+      "Waterproof Painter",
     ],
   },
 
   {
-    name: "Computer Operator",
+    name: "Washer",
     subcategories: [
-      "Web Developer",
-      "Software Developer",
-      "Graphic Designer",
-      "Video Editor",
-      "Data Entry Operator",
-      "Computer Technician",
-      "Billing Executive",
+      "Car Washer",
+      "Bike Washer",
+      "Truck Washer",
+      "Foam Wash",
+      "Interior Cleaning",
     ],
   },
 
@@ -108,8 +106,8 @@ const WORKER_CATEGORIES = [
       "Office Assistant",
       "Receptionist",
       "Back Office Staff",
-      "Helper",
       "Cleaner",
+      "Helper",
     ],
   },
 
@@ -157,9 +155,8 @@ const WORKER_CATEGORIES = [
       "Electrician",
       "Welder",
       "Carpenter",
-      "Painter",
-      "Roofer",
       "Fabricator",
+      "Roofer",
     ],
   },
 
@@ -181,29 +178,8 @@ const WORKER_CATEGORIES = [
       "Machine Operator",
       "Packaging Worker",
       "Warehouse Worker",
-      "Maintenance Technician",
       "Assembly Worker",
-    ],
-  },
-
-  {
-    name: "Roads",
-    subcategories: [
-      "Road Labour",
-      "Roller Operator",
-      "Paver Machine Operator",
-      "Drain Worker",
-      "Concrete Finisher",
-    ],
-  },
-
-  {
-    name: "Delivery",
-    subcategories: [
-      "Food Delivery",
-      "Parcel Delivery",
-      "Courier Boy",
-      "E-commerce Delivery",
+      "Maintenance Technician",
     ],
   },
 
@@ -214,22 +190,32 @@ const WORKER_CATEGORIES = [
       "Night Guard",
       "Bouncer",
       "Society Guard",
+      "Bodyguard",
+      "Gate Security",
     ],
   },
 
   {
     name: "Healthcare",
-    subcategories: ["Ward Boy", "Caretaker", "Home Nurse", "Patient Helper"],
+    subcategories: [
+      "Ward Boy",
+      "Caretaker",
+      "Home Nurse",
+      "Patient Helper",
+      "Hospital Attendant",
+    ],
   },
 
   {
     name: "Event Services",
     subcategories: [
       "Decorator",
-      "DJ Helper",
       "Tent Worker",
       "Catering Staff",
       "Photographer",
+      "Videographer",
+      "DJ Helper",
+      "Light Technician",
     ],
   },
 ];
@@ -353,25 +339,7 @@ const SERVICES_BY_SUBCATEGORY: Record<string, string[]> = {
 
   "Interior Cleaning": ["Dashboard Cleaning", "Seat Cleaning"],
 
-  // COMPUTER
-  "Web Developer": [
-    "Website Design",
-    "Frontend Development",
-    "Backend Development",
-  ],
-
-  "Software Developer": ["Software Development", "App Development"],
-
-  "Graphic Designer": ["Logo Design", "Banner Design", "Poster Design"],
-
-  "Video Editor": ["Video Editing", "Reel Editing", "YouTube Editing"],
-
-  "Data Entry Operator": ["Typing", "Excel Work", "Data Management"],
-
-  "Computer Technician": ["Computer Repair", "Laptop Repair", "System Setup"],
-
-  "Billing Executive": ["Billing", "Invoice Management"],
-
+ 
   // OFFICE
   "Office Boy": ["Tea Service", "Office Cleaning", "File Management"],
 
@@ -461,75 +429,117 @@ const SERVICES_BY_SUBCATEGORY: Record<string, string[]> = {
 
   "Assembly Worker": ["Assembly Line Work", "Factory Assembly"],
 
-  // ROADS
-  "Road Labour": ["Road Construction", "Material Loading"],
 
-  "Roller Operator": ["Road Roller Operation"],
+// PAINTER
+"House Painter": [
+  "Interior Painting",
+  "Exterior Painting",
+  "Wall Painting",
+],
 
-  "Paver Machine Operator": ["Paver Machine Work"],
+"Wall Painter": [
+  "Wall Painting",
+  "Putty Work",
+  "Primer Coating",
+],
 
-  "Drain Worker": ["Drain Cleaning", "Drain Construction"],
+"Spray Painter": [
+  "Spray Painting",
+  "Metal Painting",
+  "Furniture Painting",
+],
 
-  "Concrete Finisher": ["Road Finishing", "Concrete Finish"],
+"Industrial Painter": [
+  "Factory Painting",
+  "Machine Painting",
+  "Industrial Coating",
+],
 
-  // DELIVERY
-  "Food Delivery": ["Restaurant Delivery", "Fast Delivery"],
+"Texture Painter": [
+  "Texture Finish",
+  "Designer Wall",
+  "Decorative Paint",
+],
 
-  "Parcel Delivery": ["Courier Delivery", "Parcel Service"],
+"Waterproof Painter": [
+  "Waterproof Coating",
+  "Roof Coating",
+  "Wall Protection",
+],
 
-  "Courier Boy": ["Courier Pickup", "Document Delivery"],
-
-  "E-commerce Delivery": ["Online Order Delivery", "COD Delivery"],
 
   // SECURITY
-  "Security Guard": ["Society Security", "Office Security"],
+"Security Guard": [
+  "Society Security",
+  "Office Security",
+  "Gate Security",
+],
 
-  "Night Guard": ["Night Patrol", "Night Security"],
+"Night Guard": [
+  "Night Patrol",
+  "Night Security",
+],
 
-  Bouncer: ["Club Security", "Event Security"],
+Bouncer: [
+  "Club Security",
+  "Event Security",
+  "VIP Protection",
+],
 
-  "Society Guard": ["Gate Security", "Visitor Management"],
+"Society Guard": [
+  "Visitor Management",
+  "Apartment Security",
+],
 
-  // HEALTHCARE
-  "Ward Boy": ["Patient Care", "Hospital Support"],
+Bodyguard: [
+  "Personal Security",
+  "VIP Protection",
+],
 
-  Caretaker: ["Elder Care", "Patient Assistance"],
+"Gate Security": [
+  "Gate Monitoring",
+  "Entry Checking",
+],
 
-  "Home Nurse": ["Home Nursing", "Medical Care"],
 
-  "Patient Helper": ["Hospital Assistance", "Patient Support"],
 
-  // EVENT
-  Decorator: ["Wedding Decoration", "Event Decoration"],
+// EVENT SERVICES
+Decorator: [
+  "Wedding Decoration",
+  "Stage Decoration",
+],
 
-  "DJ Helper": ["DJ Setup", "Sound Support"],
+"Tent Worker": [
+  "Tent Setup",
+  "Stage Setup",
+],
 
-  "Tent Worker": ["Tent Setup", "Event Support"],
+"Catering Staff": [
+  "Food Serving",
+  "Buffet Service",
+],
 
-  "Catering Staff": ["Food Serving", "Event Catering"],
+Photographer: [
+  "Wedding Photography",
+  "Event Photography",
+],
 
-  Photographer: ["Wedding Shoot", "Event Photography"],
+Videographer: [
+  "Wedding Videography",
+  "Event Video Shoot",
+],
+
+"DJ Helper": [
+  "DJ Setup",
+  "Sound Support",
+],
+
+"Light Technician": [
+  "Lighting Setup",
+  "Stage Lighting",
+],
 };
 
-const CATEGORY_COLORS: Record<ProductCategory, string> = {
-  sand: "#FFF7ED",
-
-  aggregate: "#F3F4F6",
-
-  brick: "#FEF2F2",
-
-  cement: "#F8FAFC",
-
-  tmt: "#F1F5F9",
-
-  paint: "#F5F3FF",
-
-  plumbing: "#EFF6FF",
-
-  tiles: "#F0FDFA",
-
-  electrical: "#FEFCE8",
-};
 
 // ── Tag input ────────────────────────────────────────────────────────────────
 function TagInput({
@@ -619,10 +629,10 @@ function WorkerForm({
     initial
       ? { ...initial }
       : {
-        ...emptyWorker(),
-        phone: "",
-        services: [],
-      },
+          ...emptyWorker(),
+          phone: "",
+          services: [],
+        },
   );
 
   const [error, setError] = useState("");
@@ -652,10 +662,9 @@ function WorkerForm({
   useEffect(() => {
     switch (form.category) {
       case "Labour":
-        u("pricingType", "daily");
-        break;
-
       case "Driver":
+      case "Construction":
+      case "Factory":
         u("pricingType", "daily");
         break;
 
@@ -663,36 +672,35 @@ function WorkerForm({
         u("pricingType", "visit_charge");
         break;
 
+      case "Painter":
+        u("pricingType", "per_job");
+        break;
+
       case "Washer":
+      case "Salon & Beauty":
         u("pricingType", "per_service");
+        break;
+
+      case "Home Services":
+      case "Event Services":
+        u("pricingType", "per_job");
+        break;
+
+      case "Office Worker":
+      case "Security":
+        u("pricingType", "monthly");
         break;
 
       case "Restaurant":
         u("pricingType", "daily");
         break;
 
-      case "Security":
+      case "Home Contractor":
+        u("pricingType", "visit_charge");
+        break;
+
+      case "Healthcare":
         u("pricingType", "monthly");
-        break;
-
-      case "Home Services":
-        u("pricingType", "per_job");
-        break;
-
-      case "Salon & Beauty":
-        u("pricingType", "per_service");
-        break;
-
-      case "Office Worker":
-        u("pricingType", "monthly");
-        break;
-
-      case "Factory":
-        u("pricingType", "daily");
-        break;
-
-      case "Event Services":
-        u("pricingType", "per_job");
         break;
 
       default:
@@ -1072,7 +1080,17 @@ function WorkerForm({
               <Field label="Category">
                 <select
                   value={form.category}
-                  onChange={(e) => u("category", e.target.value)}
+                  onChange={(e) => {
+                    const value = e.target.value;
+
+                    setForm((prev) => ({
+                      ...prev,
+                      category: value,
+                      subcategory: "",
+                      specialty: "",
+                      services: [],
+                    }));
+                  }}
                   className={inp}
                 >
                   <option>Select Category</option>
@@ -1134,10 +1152,11 @@ function WorkerForm({
                         u("services", [...form.services, service]);
                       }
                     }}
-                    className={`p-4 rounded-2xl border text-sm font-semibold transition-all ${active
+                    className={`p-4 rounded-2xl border text-sm font-semibold transition-all ${
+                      active
                         ? "bg-[#FF5C39] text-white border-[#FF5C39] shadow-lg"
                         : "bg-white border-gray-200 hover:border-[#FF5C39]"
-                      }`}
+                    }`}
                   >
                     {service}
                   </button>
@@ -1273,7 +1292,13 @@ function WorkerForm({
 // DASHBOARD TAB
 // ═══════════════════════════════════════════════════════════════════════════════
 function DashboardTab({ onGo }: { onGo: (tab: Tab) => void }) {
-  const { workers = [], products = [], shops = [], bookings = [], orders = [] } = useAdmin();
+  const {
+    workers = [],
+    products = [],
+    shops = [],
+    bookings = [],
+    orders = [],
+  } = useAdmin();
 
   /* =========================================
    REAL LIVE STATS
@@ -1451,10 +1476,11 @@ function DashboardTab({ onGo }: { onGo: (tab: Tab) => void }) {
                   fill="none"
                   stroke="#10B981"
                   strokeWidth="12"
-                  strokeDasharray={`${stats.totalWorkers > 0
+                  strokeDasharray={`${
+                    stats.totalWorkers > 0
                       ? (stats.availableWorkers / stats.totalWorkers) * 283
                       : 0
-                    } 283`}
+                  } 283`}
                   strokeLinecap="round"
                 />
 
@@ -1466,14 +1492,16 @@ function DashboardTab({ onGo }: { onGo: (tab: Tab) => void }) {
                   fill="none"
                   stroke="#FF5C39"
                   strokeWidth="12"
-                  strokeDasharray={`${stats.totalWorkers > 0
+                  strokeDasharray={`${
+                    stats.totalWorkers > 0
                       ? ((stats.totalWorkers - stats.availableWorkers) /
-                        stats.totalWorkers) *
-                      283
+                          stats.totalWorkers) *
+                        283
                       : 0
-                    } 283`}
-                  strokeDashoffset={`-${(stats.availableWorkers / stats.totalWorkers) * 283
-                    }`}
+                  } 283`}
+                  strokeDashoffset={`-${
+                    (stats.availableWorkers / stats.totalWorkers) * 283
+                  }`}
                   strokeLinecap="round"
                 />
               </svg>
@@ -1611,10 +1639,11 @@ function DashboardTab({ onGo }: { onGo: (tab: Tab) => void }) {
               <div
                 className="h-full bg-emerald-500 rounded-full transition-all duration-1000"
                 style={{
-                  width: `${stats.totalWorkers > 0
+                  width: `${
+                    stats.totalWorkers > 0
                       ? (stats.availableWorkers / stats.totalWorkers) * 100
                       : 0
-                    }%`,
+                  }%`,
                 }}
               />
             </div>
@@ -1650,13 +1679,14 @@ function DashboardTab({ onGo }: { onGo: (tab: Tab) => void }) {
               <div
                 className="h-full bg-rose-500 rounded-full transition-all duration-1000"
                 style={{
-                  width: `${stats.totalProducts > 0
+                  width: `${
+                    stats.totalProducts > 0
                       ? Math.min(
-                        (stats.outOfStock / stats.totalProducts) * 100,
-                        100,
-                      )
+                          (stats.outOfStock / stats.totalProducts) * 100,
+                          100,
+                        )
                       : 0
-                    }%`,
+                  }%`,
                 }}
               />
             </div>
@@ -1849,10 +1879,6 @@ function WorkersTab() {
       light: "#F1F5F9",
     },
 
-    Roads: {
-      bg: "#D97706",
-      light: "#FEF3C7",
-    },
     "Salon & Beauty": {
       bg: "#EC4899",
       light: "#FCE7F3",
@@ -1861,11 +1887,6 @@ function WorkersTab() {
     Construction: {
       bg: "#F97316",
       light: "#FFF7ED",
-    },
-
-    Delivery: {
-      bg: "#06B6D4",
-      light: "#ECFEFF",
     },
 
     Security: {
@@ -2215,7 +2236,10 @@ function WorkersTab() {
                     <img
                       src={w.photo}
                       alt={w.name}
-                      onError={() => console.log("IMAGE FAILED", w.photo)}
+                      onError={(e) => {
+                        console.log("Image failed:", w.photo);
+                        e.currentTarget.src = "/placeholder-worker.png";
+                      }}
                       className="w-24 h-24 rounded-3xl object-cover border border-gray-100"
                     />
 
@@ -2330,24 +2354,27 @@ function WorkersTab() {
           {/* ALL */}
           <button
             onClick={() => setCatFilter("")}
-            className={`group relative overflow-hidden rounded-2xl border transition-all duration-200 p-4 text-left ${catFilter === ""
+            className={`group relative overflow-hidden rounded-2xl border transition-all duration-200 p-4 text-left ${
+              catFilter === ""
                 ? "border-[#0F172A] bg-[#0F172A]"
                 : "border-gray-200 bg-white hover:border-gray-300"
-              }`}
+            }`}
           >
             <div className="flex items-center justify-between">
               <div>
                 <div
-                  className={`text-xs ${catFilter === "" ? "text-white/70" : "text-[#94A3B8]"
-                    }`}
+                  className={`text-xs ${
+                    catFilter === "" ? "text-white/70" : "text-[#94A3B8]"
+                  }`}
                   style={{ fontWeight: 700 }}
                 >
                   Total
                 </div>
 
                 <div
-                  className={`mt-1 text-3xl ${catFilter === "" ? "text-white" : "text-[#0F172A]"
-                    }`}
+                  className={`mt-1 text-3xl ${
+                    catFilter === "" ? "text-white" : "text-[#0F172A]"
+                  }`}
                   style={{ fontWeight: 900 }}
                 >
                   {(workers ?? []).length}
@@ -2355,19 +2382,22 @@ function WorkersTab() {
               </div>
 
               <div
-                className={`w-11 h-11 rounded-2xl flex items-center justify-center ${catFilter === "" ? "bg-white/10" : "bg-[#F1F5F9]"
-                  }`}
+                className={`w-11 h-11 rounded-2xl flex items-center justify-center ${
+                  catFilter === "" ? "bg-white/10" : "bg-[#F1F5F9]"
+                }`}
               >
                 <Users
-                  className={`w-5 h-5 ${catFilter === "" ? "text-white" : "text-[#0F172A]"
-                    }`}
+                  className={`w-5 h-5 ${
+                    catFilter === "" ? "text-white" : "text-[#0F172A]"
+                  }`}
                 />
               </div>
             </div>
 
             <div
-              className={`mt-4 ${catFilter === "" ? "text-white" : "text-[#0F172A]"
-                }`}
+              className={`mt-4 ${
+                catFilter === "" ? "text-white" : "text-[#0F172A]"
+              }`}
               style={{ fontWeight: 800 }}
             >
               All Workers
@@ -2476,8 +2506,9 @@ function WorkersTab() {
 
                   <div className="absolute -bottom-1 -right-1 flex items-center justify-center">
                     <div
-                      className={`w-4 h-4 rounded-full border-2 border-white shadow-md ${w.available ? "bg-emerald-500" : "bg-red-500"
-                        }`}
+                      className={`w-4 h-4 rounded-full border-2 border-white shadow-md ${
+                        w.available ? "bg-emerald-500" : "bg-red-500"
+                      }`}
                     />
                   </div>
                 </div>
@@ -2496,10 +2527,11 @@ function WorkersTab() {
 
                   <div className="mt-2">
                     <span
-                      className={`px-2 py-1 rounded-full text-[10px] font-bold ${w.available
+                      className={`px-2 py-1 rounded-full text-[10px] font-bold ${
+                        w.available
                           ? "bg-emerald-100 text-emerald-700"
                           : "bg-rose-100 text-rose-700"
-                        }`}
+                      }`}
                     >
                       {w.available ? "Active" : "Inactive"}
                     </span>
@@ -2594,10 +2626,11 @@ function WorkersTab() {
 
                 <button
                   onClick={() => handleToggleWorkerStatus(w.id, w.available)}
-                  className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm border ${w.available
+                  className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm border ${
+                    w.available
                       ? "border-amber-200 text-amber-600 hover:bg-amber-50"
                       : "border-emerald-200 text-emerald-600 hover:bg-emerald-50"
-                    }`}
+                  }`}
                   style={{
                     fontWeight: 700,
                   }}
@@ -2699,34 +2732,34 @@ export function AdminPanel() {
   }, []);
 
   const sidebarItems = [
-  {
-    id: "dashboard" as Tab,
-    icon: LayoutDashboard,
-    label: "Dashboard",
-  },
-  {
-    id: "workers" as Tab,
-    icon: Users,
-    label: "Workers",
-    badge: stats.totalWorkers,
-  },
-  {
-    id: "shops" as Tab,
-    icon: Briefcase,
-    label: "Shops",
-  },
-  {
-    id: "bookings" as Tab,
-    icon: Briefcase,
-    label: "Bookings",
-    badge: stats.totalBookings,
-  },
-  {
-    id: "orders" as Tab,
-    icon: Package,
-    label: "Orders",
-  },
-];
+    {
+      id: "dashboard" as Tab,
+      icon: LayoutDashboard,
+      label: "Dashboard",
+    },
+    {
+      id: "workers" as Tab,
+      icon: Users,
+      label: "Workers",
+      badge: stats.totalWorkers,
+    },
+    {
+      id: "shops" as Tab,
+      icon: Briefcase,
+      label: "Shops",
+    },
+    {
+      id: "bookings" as Tab,
+      icon: Briefcase,
+      label: "Bookings",
+      badge: stats.totalBookings,
+    },
+    {
+      id: "orders" as Tab,
+      icon: Package,
+      label: "Orders",
+    },
+  ];
   return (
     <div className="min-h-screen flex bg-[#F8FAFC]">
       {/* Sidebar */}

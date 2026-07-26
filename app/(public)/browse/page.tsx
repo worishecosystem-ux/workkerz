@@ -73,7 +73,7 @@ function BrowseContent() {
       if (
         activeCategory &&
         activeCategory !== serviceCategories[0]?.id &&
-        w.category !== activeCategory
+        w.category.trim().toLowerCase() !== activeCategory.trim().toLowerCase()
       )
         return false;
       if (availableOnly && !w.available) return false;

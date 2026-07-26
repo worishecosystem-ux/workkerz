@@ -3,9 +3,6 @@
 import Link from "next/link";
 import { Eye, ShoppingCart } from "lucide-react";
 import type { Dispatch, RefObject, SetStateAction } from "react";
-
-import CategoriesHeader from "./CategoriesHeader";
-import CategoriesDrawer from "./CategoriesDrawer";
 import ProductImage from "./ProductImage";
 
 interface ProductsGridProps {
@@ -93,7 +90,6 @@ export default function ProductsGrid({
           <div className="grid grid-cols-2 gap-3 md:grid-cols-4 md:gap-4">
             {paginatedProducts.map((product) => {
               const inCart = cart.some((item) => item.productId === product.id);
-
               return (
                 <div
                   key={product.id}
@@ -185,7 +181,7 @@ export default function ProductsGrid({
       </div>
       {activeCategory &&
         visibleProducts.length > 0 &&
-        visibleProducts.length < 4 && (
+        visibleProducts.length < 6 && (
           <div className="mx-4 my-4 rounded-2xl border border-slate-200 bg-white px-5 py-6 text-center shadow-sm">
             <div className="mx-auto mb-3 flex h-14 w-14 items-center justify-center rounded-full bg-slate-100 text-2xl">
               📦

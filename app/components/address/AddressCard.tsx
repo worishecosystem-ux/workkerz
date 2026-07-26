@@ -24,7 +24,6 @@ export default function AddressCard({
   onOverlayChange,
 }: AddressCardProps) {
   const [loading, setLoading] = useState(true);
-  const [customerName, setCustomerName] = useState("");
   const [address, setAddress] = useState("");
   const [addressType, setAddressType] = useState<"home" | "office">("home");
   const [showSelector, setShowSelector] = useState(false);
@@ -38,18 +37,13 @@ export default function AddressCard({
   );
 
   useEffect(() => {
-  const show = !(showSelector || showForm);
+    const show = !(showSelector || showForm);
 
-  setShowMobileNavbar(show);
-  onOverlayChange?.(!show);
+    setShowMobileNavbar(show);
+    onOverlayChange?.(!show);
 
-  return () => setShowMobileNavbar(true);
-}, [
-  showSelector,
-  showForm,
-  onOverlayChange,
-  setShowMobileNavbar,
-]);
+    return () => setShowMobileNavbar(true);
+  }, [showSelector, showForm, onOverlayChange, setShowMobileNavbar]);
 
   useEffect(() => {
     onOverlayChange?.(showSelector || showForm);
@@ -110,8 +104,6 @@ export default function AddressCard({
       ]
         .filter(Boolean)
         .join(", ");
-
-      setCustomerName(booking.customer_name || "");
       setAddress(fullAddress);
       setAddressType((booking.address_type as "home" | "office") || "home");
       setSelectedAddress(booking);
@@ -136,20 +128,14 @@ export default function AddressCard({
               </div>
             ) : (
               <div
-                className="flex items-center gap-1 min-w-0"
-                title={`${addressType} • ${customerName}, ${address}`}
+                className="flex items-center gap-2 min-w-0"
+                title={address || "Add work location"}
               >
                 <span className="shrink-0 scale-90">
                   {getAddressIcon(addressType)}
                 </span>
 
-                <span className="text-gray-300 text-[10px] shrink-0">•</span>
-
-                <span className="shrink-0 text-[10px] font-semibold text-gray-900 max-w-17.5 truncate">
-                  {customerName || "Name"}
-                </span>
-
-                <span className="truncate text-[10px] text-gray-500">
+                <span className="truncate text-[11px] font-medium text-slate-700">
                   {address || "Add work location"}
                 </span>
               </div>
@@ -164,44 +150,41 @@ export default function AddressCard({
           </button>
         </div>
       </div>
-<AddressSelectorModal
-  open={showSelector}
-  selected={selectedAddress}
-  onClose={() => setShowSelector(false)}
-  onSelect={(item) => {
-    const fullAddress = [
-      item.house_no,
-      item.address,
-      item.landmark,
-      item.city,
-      item.district,
-      item.state,
-      item.pincode,
-    ]
-      .filter(Boolean)
-      .join(", ");
+      <AddressSelectorModal
+        open={showSelector}
+        selected={selectedAddress}
+        onClose={() => setShowSelector(false)}
+        onSelect={(item) => {
+          const fullAddress = [
+            item.house_no,
+            item.address,
+            item.landmark,
+            item.city,
+            item.district,
+            item.state,
+            item.pincode,
+          ]
+            .filter(Boolean)
+            .join(", ");
 
-    setSelectedAddress(item);
-    setCustomerName(item.customer_name || "");
-    setAddress(fullAddress);
-    setAddressType(
-      (item.address_type as "home" | "office") || "home"
-    );
+          setSelectedAddress(item);
+          setAddress(fullAddress);
+          setAddressType((item.address_type as "home" | "office") || "home");
 
-    onAddressChange?.(item);
-    setShowSelector(false);
-  }}
-  onAdd={() => {
-    setEditingAddress(null);
-    setShowSelector(false);
-    setShowForm(true);
-  }}
-  onEdit={(item) => {
-    setEditingAddress(item);
-    setShowSelector(false);
-    setShowForm(true);
-  }}
-/>
+          onAddressChange?.(item);
+          setShowSelector(false);
+        }}
+        onAdd={() => {
+          setEditingAddress(null);
+          setShowSelector(false);
+          setShowForm(true);
+        }}
+        onEdit={(item) => {
+          setEditingAddress(item);
+          setShowSelector(false);
+          setShowForm(true);
+        }}
+      />
 
       <AddressFormModal
         open={showForm}

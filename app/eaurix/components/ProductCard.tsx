@@ -39,7 +39,7 @@ function ProductCard({
             loading="lazy"
             decoding="async"
             draggable={false}
-            className="absolute inset-0 h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
+            className="absolute inset-1 h-[calc(100%-8px)] w-[calc(100%-8px)] rounded-xl border border-white object-cover transition-transform duration-500 group-hover:scale-105"
             onError={(e) => {
               e.currentTarget.classList.add("hidden");
               e.currentTarget.parentElement
@@ -53,7 +53,7 @@ function ProductCard({
               image ? "hidden" : ""
             }`}
           >
-            <h3 className="line-clamp-3 text-lg font-bold text-slate-700">
+            <h3 className="line-clamp-3 text-[16px] font-bold text-slate-700">
               {product.name}
             </h3>
           </div>
@@ -86,8 +86,8 @@ function ProductCard({
       </div>
 
       {/* Content */}
-      <div className="space-y-4 p-4">
-        <div className="flex items-start justify-between gap-3">
+      <div className="space-y-2 p-4">
+        <div className="flex items-start justify-between gap-2">
           <h3 className="line-clamp-2 flex-1 text-[15px] font-bold leading-5 text-slate-900">
             {product.name}
           </h3>
@@ -100,7 +100,7 @@ function ProductCard({
           </div>
         </div>
 
-        <button className="flex w-full items-center justify-center gap-2 rounded-2xl bg-slate-900 py-3 text-sm font-semibold text-white transition group-hover:bg-emerald-600">
+        <button className="flex w-full items-center justify-center gap-2 rounded-2xl bg-slate-900 py-2 text-sm font-semibold text-white transition group-hover:bg-emerald-600">
           <Package size={16} />
           View Product
           <ArrowRight size={16} />

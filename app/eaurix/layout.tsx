@@ -14,7 +14,10 @@ export default function PublicLayout({
 }) {
   const pathname = usePathname();
 
-  const hideBottomBar = pathname.startsWith("/eaurix/product/");
+  const hideBottomBar = [
+  "/eaurix/product/",
+  "/eaurix/checkout",
+].some((path) => pathname.startsWith(path));
 
   return (
     <PlatformProvider>

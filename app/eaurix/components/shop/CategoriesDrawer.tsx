@@ -44,7 +44,7 @@ export default function CategoriesDrawer({
 
       {/* Bottom Sheet */}
       <div
-        className={`fixed inset-x-0 bottom-0 z-50 max-h-[82vh] rounded-t-[28px] bg-white shadow-[0_-10px_40px_rgba(0,0,0,0.15)] transition-transform duration-300 ${
+        className={`fixed inset-x-0 bottom-0 z-50 max-h-[65vh] rounded-t-3xl bg-white transition-transform duration-300 ${
           open ? "translate-y-0" : "translate-y-full"
         }`}
       >
@@ -56,12 +56,8 @@ export default function CategoriesDrawer({
         {/* Header */}
         <div className="flex items-center justify-between px-5 py-4">
           <div>
-            <h2 className="text-lg font-bold text-slate-900">
-              Categories
-            </h2>
-            <p className="text-xs text-slate-500">
-              Select material category
-            </p>
+            <h2 className="text-lg font-bold text-slate-900">Categories</h2>
+            <p className="text-xs text-slate-500">Select material category</p>
           </div>
 
           <button
@@ -74,9 +70,9 @@ export default function CategoriesDrawer({
         </div>
 
         {/* Categories */}
-        <div className="overflow-y-auto px-3 pb-24">
-          <div className="grid grid-cols-4 gap-2">
-            {categories.map((cat) => {
+        <div className="overflow-y-auto px-3 pb-2">
+          <div className="grid grid-cols-5 gap-2">
+            {categories.slice(6).map((cat) => {
               const active =
                 activeCategory === cat.id ||
                 (activeCategory === null && cat.id === null);
@@ -86,37 +82,32 @@ export default function CategoriesDrawer({
                   type="button"
                   key={cat.id ?? "all"}
                   onClick={() => handleSelect(cat.id)}
-                  className={`relative flex flex-col items-center rounded-xl border p-2 transition-all active:scale-95 ${
-                    active
-                      ? "border-emerald-500 bg-emerald-50 shadow-sm"
-                      : "border-slate-200 bg-white hover:border-slate-300"
-                  }`}
+                  className="flex flex-col items-center gap-1.5 py-2 transition active:scale-95"
                 >
-                  {/* Active Indicator */}
-                  {active && (
-                    <span className="absolute right-1.5 top-1.5 h-2.5 w-2.5 rounded-full bg-emerald-500" />
-                  )}
-
-                  {/* Icon */}
                   <div
-                    className={`flex h-12 w-12 items-center justify-center rounded-xl transition ${
+                    className={`relative flex h-12 w-12 items-center justify-center rounded-2xl border transition-all ${
                       active
-                        ? "bg-linear-to-br from-emerald-500 to-teal-500"
-                        : "bg-slate-100"
+                        ? "border-slate-900 bg-slate-900 shadow-md"
+                        : "border-slate-200 bg-slate-50"
                     }`}
                   >
                     <img
                       src={cat.image}
                       alt={cat.name}
                       draggable={false}
-                      className="h-7 w-7 object-contain select-none"
+                      className={`h-6 w-6 object-contain select-none ${
+                        active ? "brightness-0 invert" : ""
+                      }`}
                     />
+
+                    {active && (
+                      <span className="absolute -right-1 -top-1 h-3 w-3 rounded-full bg-emerald-500 ring-2 ring-white" />
+                    )}
                   </div>
 
-                  {/* Name */}
                   <span
-                    className={`mt-2 line-clamp-2 text-center text-[11px] font-medium leading-tight ${
-                      active ? "text-emerald-700" : "text-slate-700"
+                    className={`max-w-15 truncate text-center text-[10px] font-medium ${
+                      active ? "text-slate-900" : "text-slate-600"
                     }`}
                   >
                     {cat.name}
@@ -130,3 +121,4 @@ export default function CategoriesDrawer({
     </>
   );
 }
+ 

@@ -17,7 +17,29 @@ export type ProductCategory =
   | "paint"
   | "plumbing"
   | "tiles"
-  | "electrical";
+  | "electrical"
+  | "hardware"
+  | "sanitaryware"
+  | "bathroom_fittings"
+  | "kitchen_fittings"
+  | "water_tank"
+  | "pipes"
+  | "doors"
+  | "windows"
+  | "roofing"
+  | "flooring"
+  | "adhesive"
+  | "tools"
+  | "safety"
+  | "lighting"
+  | "wire_cable"
+  | "switches"
+  | "pumps"
+  | "construction_chemicals"
+  | "steel"
+  | "stone"
+  | "marble"
+  | "granite";
 
 /* =========================================
    PRODUCT INTERFACE
@@ -88,7 +110,6 @@ export const productCategories = [
     color: "#F59E0B",
     bgColor: "#FFF7ED",
   },
-
   {
     id: "aggregate",
     label: "Aggregate",
@@ -97,7 +118,6 @@ export const productCategories = [
     color: "#6B7280",
     bgColor: "#F3F4F6",
   },
-
   {
     id: "brick",
     label: "Brick",
@@ -106,7 +126,6 @@ export const productCategories = [
     color: "#DC2626",
     bgColor: "#FEF2F2",
   },
-
   {
     id: "cement",
     label: "Cement",
@@ -115,36 +134,30 @@ export const productCategories = [
     color: "#2563EB",
     bgColor: "#EFF6FF",
   },
-
   {
     id: "tmt",
-    label: "TMT",
+    label: "TMT Steel",
     description: "TMT bars & steel rods",
     image: "/captain-tmt-bars-500x500.webp",
     color: "#475569",
     bgColor: "#F1F5F9",
   },
-
   {
     id: "paint",
     label: "Paint",
     description: "Wall paint & waterproof paint",
-    image:
-      "/closeup-of-house-painting-renovation-4519567.webp",
+    image: "/closeup-of-house-painting-renovation-4519567.webp",
     color: "#7C3AED",
     bgColor: "#F5F3FF",
   },
-
   {
     id: "plumbing",
     label: "Plumbing",
     description: "Pipes, taps & fittings",
-    image:
-      "/pipes-18242-1676036604740.webp",
+    image: "/pipes-18242-1676036604740.webp",
     color: "#0891B2",
     bgColor: "#ECFEFF",
   },
-
   {
     id: "tiles",
     label: "Tiles",
@@ -153,7 +166,6 @@ export const productCategories = [
     color: "#EA580C",
     bgColor: "#FFF7ED",
   },
-
   {
     id: "electrical",
     label: "Electrical",
@@ -162,164 +174,337 @@ export const productCategories = [
     color: "#EAB308",
     bgColor: "#FEFCE8",
   },
+  {
+    id: "hardware",
+    label: "Hardware",
+    description: "Construction hardware & fasteners",
+    image: "/hardware.webp",
+    color: "#52525B",
+    bgColor: "#F5F5F5",
+  },
+  {
+    id: "sanitaryware",
+    label: "Sanitary Ware",
+    description: "Wash basins, toilets & sanitary products",
+    image: "/sanitaryware.webp",
+    color: "#059669",
+    bgColor: "#ECFDF5",
+  },
+  {
+    id: "bathroom_fittings",
+    label: "Bathroom Fittings",
+    description: "Showers, faucets & bathroom accessories",
+    image: "/bathroom-fittings.webp",
+    color: "#0284C7",
+    bgColor: "#F0F9FF",
+  },
+  {
+    id: "kitchen_fittings",
+    label: "Kitchen Fittings",
+    description: "Kitchen sinks & accessories",
+    image: "/kitchen-fittings.webp",
+    color: "#4F46E5",
+    bgColor: "#EEF2FF",
+  },
+  {
+    id: "water_tank",
+    label: "Water Tank",
+    description: "Plastic & overhead water tanks",
+    image: "/water-tank.webp",
+    color: "#0EA5E9",
+    bgColor: "#E0F2FE",
+  },
+  {
+    id: "pipes",
+    label: "Pipes",
+    description: "PVC, CPVC & GI pipes",
+    image: "/pipes.webp",
+    color: "#06B6D4",
+    bgColor: "#ECFEFF",
+  },
+  {
+    id: "doors",
+    label: "Doors",
+    description: "Wooden, steel & PVC doors",
+    image: "/doors.webp",
+    color: "#B45309",
+    bgColor: "#FFF7ED",
+  },
+  {
+    id: "windows",
+    label: "Windows",
+    description: "Aluminium, UPVC & wooden windows",
+    image: "/windows.webp",
+    color: "#9333EA",
+    bgColor: "#FDF4FF",
+  },
+  {
+    id: "roofing",
+    label: "Roofing",
+    description: "Roof sheets & roofing solutions",
+    image: "/roofing.webp",
+    color: "#64748B",
+    bgColor: "#F1F5F9",
+  },
+  {
+    id: "flooring",
+    label: "Flooring",
+    description: "Wooden, vinyl & laminate flooring",
+    image: "/flooring.webp",
+    color: "#7C3AED",
+    bgColor: "#FAF5FF",
+  },
+  {
+    id: "adhesive",
+    label: "Adhesive",
+    description: "Tile adhesive & construction glue",
+    image: "/adhesive.webp",
+    color: "#D97706",
+    bgColor: "#FEF3C7",
+  },
+  {
+    id: "tools",
+    label: "Tools",
+    description: "Hand tools & power tools",
+    image: "/tools.webp",
+    color: "#4B5563",
+    bgColor: "#F3F4F6",
+  },
+  {
+    id: "safety",
+    label: "Safety",
+    description: "Safety helmets, gloves & PPE",
+    image: "/safety.webp",
+    color: "#DC2626",
+    bgColor: "#FEF2F2",
+  },
+  {
+    id: "lighting",
+    label: "Lighting",
+    description: "LED lights & lighting fixtures",
+    image: "/lighting.webp",
+    color: "#CA8A04",
+    bgColor: "#FFFBEB",
+  },
+  {
+    id: "wire_cable",
+    label: "Wire & Cable",
+    description: "Electrical wires & power cables",
+    image: "/wire-cable.webp",
+    color: "#4338CA",
+    bgColor: "#EEF2FF",
+  },
+  {
+    id: "switches",
+    label: "Switches & Sockets",
+    description: "Switches, sockets & electrical plates",
+    image: "/switches.webp",
+    color: "#475569",
+    bgColor: "#F8FAFC",
+  },
+  {
+    id: "pumps",
+    label: "Water Pumps",
+    description: "Submersible & pressure pumps",
+    image: "/pumps.webp",
+    color: "#0891B2",
+    bgColor: "#ECFEFF",
+  },
+  {
+    id: "construction_chemicals",
+    label: "Construction Chemicals",
+    description: "Waterproofing & repair chemicals",
+    image: "/construction-chemicals.webp",
+    color: "#8B5CF6",
+    bgColor: "#F5F3FF",
+  },
+  {
+    id: "steel",
+    label: "Steel",
+    description: "Steel sheets, sections & bars",
+    image: "/steel.webp",
+    color: "#475569",
+    bgColor: "#E2E8F0",
+  },
+  {
+    id: "stone",
+    label: "Stone",
+    description: "Natural stones & paving stones",
+    image: "/stone.webp",
+    color: "#64748B",
+    bgColor: "#F1F5F9",
+  },
+  {
+    id: "marble",
+    label: "Marble",
+    description: "Premium marble slabs & tiles",
+    image: "/marble.webp",
+    color: "#94A3B8",
+    bgColor: "#F8FAFC",
+  },
+  {
+    id: "granite",
+    label: "Granite",
+    description: "Granite slabs & countertops",
+    image: "/granite.webp",
+    color: "#6B7280",
+    bgColor: "#E5E7EB",
+  },
 ] as const;
 
 /* =========================================
    CATEGORY LABELS
 ========================================= */
 
-export const CATEGORY_LABELS: Record<
-  ProductCategory,
-  string
-> = {
+export const CATEGORY_LABELS: Record<ProductCategory, string> = {
   sand: "Sand",
-
   aggregate: "Aggregate",
-
   brick: "Brick",
-
   cement: "Cement",
-
-  tmt: "TMT",
-
+  tmt: "TMT Steel",
   paint: "Paint",
-
   plumbing: "Plumbing",
-
   tiles: "Tiles",
-
   electrical: "Electrical",
+
+  hardware: "Hardware",
+  sanitaryware: "Sanitary Ware",
+  bathroom_fittings: "Bathroom Fittings",
+  kitchen_fittings: "Kitchen Fittings",
+  water_tank: "Water Tank",
+  pipes: "Pipes",
+  doors: "Doors",
+  windows: "Windows",
+  roofing: "Roofing",
+  flooring: "Flooring",
+  adhesive: "Adhesive",
+  tools: "Tools",
+  safety: "Safety Equipment",
+  lighting: "Lighting",
+  wire_cable: "Wire & Cable",
+  switches: "Switches & Sockets",
+  pumps: "Water Pumps",
+  construction_chemicals: "Construction Chemicals",
+  steel: "Steel",
+  stone: "Stone",
+  marble: "Marble",
+  granite: "Granite",
 };
 
 /* =========================================
    CATEGORY COLORS
 ========================================= */
 
-export const CATEGORY_COLORS: Record<
-  ProductCategory,
-  string
-> = {
+export const CATEGORY_COLORS: Record<ProductCategory, string> = {
   sand: "#FFF7ED",
-
   aggregate: "#F3F4F6",
-
   brick: "#FEF2F2",
-
   cement: "#F8FAFC",
-
   tmt: "#F1F5F9",
-
   paint: "#F5F3FF",
-
   plumbing: "#EFF6FF",
-
   tiles: "#F0FDFA",
-
   electrical: "#FEFCE8",
+
+  hardware: "#F5F5F5",
+  sanitaryware: "#ECFDF5",
+  bathroom_fittings: "#F0F9FF",
+  kitchen_fittings: "#EEF2FF",
+  water_tank: "#E0F2FE",
+  pipes: "#ECFEFF",
+  doors: "#FFF1F2",
+  windows: "#FDF4FF",
+  roofing: "#F3F4F6",
+  flooring: "#FAF5FF",
+  adhesive: "#FEF3C7",
+  tools: "#F3F4F6",
+  safety: "#FEF2F2",
+  lighting: "#FFFBEB",
+  wire_cable: "#EEF2FF",
+  switches: "#F8FAFC",
+  pumps: "#ECFEFF",
+  construction_chemicals: "#F5F3FF",
+  steel: "#E2E8F0",
+  stone: "#F1F5F9",
+  marble: "#F8FAFC",
+  granite: "#E5E7EB",
 };
 
 /* =========================================
    EMPTY PRODUCT
 ========================================= */
 
-export const emptyProduct =
-  (): Omit<Product, "id"> => ({
-    shop_id: "",
+export const emptyProduct = (): Omit<Product, "id"> => ({
+  shop_id: "",
 
-    name: "",
+  name: "",
 
-    brand: "",
+  brand: "",
 
-    category: "sand",
+  category: "sand",
 
-    categoryLabel: "Sand",
+  categoryLabel: "Sand",
 
-    description: "",
+  description: "",
 
-    longDescription: "",
+  longDescription: "",
 
-    price: 0,
+  price: 0,
 
-    originalPrice: undefined,
+  originalPrice: undefined,
 
-    rating: 4.8,
+  rating: 4.8,
 
-    reviewCount: 0,
+  reviewCount: 0,
 
-    stock: 0,
+  stock: 0,
 
-    unit: "",
+  unit: "",
 
-    image: "",
+  image: "",
 
-    images: [],
+  images: [],
 
-    brochure: "",
+  brochure: "",
 
-    color: "#FFF7ED",
+  color: "#FFF7ED",
 
-    badge: undefined,
+  badge: undefined,
 
-    tags: [],
+  tags: [],
 
-    specs: {},
+  specs: {},
 
-    is_active: true,
-  });
+  is_active: true,
+});
 
 /* =========================================
    GET IMAGE URL
 ========================================= */
 
-const getBucketImage = (
-  fileName?: string,
-) => {
+const getBucketImage = (fileName?: string) => {
   try {
     if (!fileName) {
       return "/placeholder.png";
     }
 
-    let cleanPath =
-      fileName.trim();
+    let cleanPath = fileName.trim();
 
-    cleanPath =
-      cleanPath.replace(
-        /^\/+/,
-        "",
-      );
+    cleanPath = cleanPath.replace(/^\/+/, "");
 
-    if (
-      cleanPath.startsWith(
-        "http://",
-      ) ||
-      cleanPath.startsWith(
-        "https://",
-      )
-    ) {
+    if (cleanPath.startsWith("http://") || cleanPath.startsWith("https://")) {
       return cleanPath;
     }
 
-    if (
-      !cleanPath.startsWith(
-        "images/",
-      )
-    ) {
+    if (!cleanPath.startsWith("images/")) {
       cleanPath = `images/${cleanPath}`;
     }
 
-    const { data } =
-      supabase.storage
-        .from(BUCKET)
-        .getPublicUrl(
-          cleanPath,
-        );
+    const { data } = supabase.storage.from(BUCKET).getPublicUrl(cleanPath);
 
     return data.publicUrl;
   } catch (error) {
-    console.log(
-      "IMAGE ERROR:",
-      error,
-    );
+    console.log("IMAGE ERROR:", error);
 
     return "/placeholder.png";
   }
@@ -329,55 +514,29 @@ const getBucketImage = (
    GET BROCHURE URL
 ========================================= */
 
-const getBrochureUrl = (
-  fileName?: string,
-) => {
+const getBrochureUrl = (fileName?: string) => {
   try {
     if (!fileName) {
       return "";
     }
 
-    let cleanPath =
-      fileName.trim();
+    let cleanPath = fileName.trim();
 
-    cleanPath =
-      cleanPath.replace(
-        /^\/+/,
-        "",
-      );
+    cleanPath = cleanPath.replace(/^\/+/, "");
 
-    if (
-      cleanPath.startsWith(
-        "http://",
-      ) ||
-      cleanPath.startsWith(
-        "https://",
-      )
-    ) {
+    if (cleanPath.startsWith("http://") || cleanPath.startsWith("https://")) {
       return cleanPath;
     }
 
-    if (
-      !cleanPath.startsWith(
-        "brochures/",
-      )
-    ) {
+    if (!cleanPath.startsWith("brochures/")) {
       cleanPath = `brochures/${cleanPath}`;
     }
 
-    const { data } =
-      supabase.storage
-        .from(BUCKET)
-        .getPublicUrl(
-          cleanPath,
-        );
+    const { data } = supabase.storage.from(BUCKET).getPublicUrl(cleanPath);
 
     return data.publicUrl;
   } catch (error) {
-    console.log(
-      "BROCHURE ERROR:",
-      error,
-    );
+    console.log("BROCHURE ERROR:", error);
 
     return "";
   }
@@ -387,123 +546,55 @@ const getBrochureUrl = (
    MAP PRODUCT
 ========================================= */
 
-const mapProduct = (
-  p: any,
-): Product => {
-  const category =
-    (
-      p.category ||
-      "sand"
-    ) as ProductCategory;
+const mapProduct = (p: any): Product => {
+  const category = (p.category || "sand") as ProductCategory;
 
   return {
-    id: String(
-      p.id,
-    ),
+    id: String(p.id),
 
-    shop_id:
-      p.shop_id || "",
+    shop_id: p.shop_id || "",
 
-    name:
-      p.name || "",
+    name: p.name || "",
 
-    brand:
-      p.brand || "",
+    brand: p.brand || "",
 
     category,
 
-    categoryLabel:
-      p.category_label ||
-      CATEGORY_LABELS[
-        category
-      ],
+    categoryLabel: p.category_label || CATEGORY_LABELS[category],
 
-    description:
-      p.description || "",
+    description: p.description || "",
 
-    longDescription:
-      p.long_description ||
-      "",
+    longDescription: p.long_description || "",
 
-    price: Number(
-      p.price || 0,
-    ),
+    price: Number(p.price || 0),
 
-    originalPrice:
-      p.original_price
-        ? Number(
-            p.original_price,
-          )
-        : undefined,
+    originalPrice: p.original_price ? Number(p.original_price) : undefined,
 
-    rating: Number(
-      p.rating || 0,
-    ),
+    rating: Number(p.rating || 0),
 
-    reviewCount:
-      Number(
-        p.review_count ||
-          0,
-      ),
+    reviewCount: Number(p.review_count || 0),
 
-    stock: Number(
-      p.stock || 0,
-    ),
+    stock: Number(p.stock || 0),
 
-    unit:
-      p.unit || "",
+    unit: p.unit || "",
 
-    image:
-      getBucketImage(
-        p.image,
-      ),
+    image: getBucketImage(p.image),
 
-    images:
-      Array.isArray(
-        p.images,
-      )
-        ? p.images.map(
-            (
-              img: string,
-            ) =>
-              getBucketImage(
-                img,
-              ),
-          )
-        : [],
+    images: Array.isArray(p.images)
+      ? p.images.map((img: string) => getBucketImage(img))
+      : [],
 
-    brochure:
-      getBrochureUrl(
-        p.brochure,
-      ),
+    brochure: getBrochureUrl(p.brochure),
 
-    color:
-      p.color ||
-      CATEGORY_COLORS[
-        category
-      ],
+    color: p.color || CATEGORY_COLORS[category],
 
-    badge:
-      p.badge ||
-      undefined,
+    badge: p.badge || undefined,
 
-    tags:
-      Array.isArray(
-        p.tags,
-      )
-        ? p.tags
-        : [],
+    tags: Array.isArray(p.tags) ? p.tags : [],
 
-    specs:
-      typeof p.specs ===
-        "object" &&
-      p.specs !== null
-        ? p.specs
-        : {},
+    specs: typeof p.specs === "object" && p.specs !== null ? p.specs : {},
 
-    is_active:
-      p.is_active !==
-      false,
+    is_active: p.is_active !== false,
   };
 };
 
@@ -516,74 +607,44 @@ export async function getProducts(
   includeOffline = false,
 ): Promise<Product[]> {
   try {
-    let query =
-      supabase
-        .from("products")
-        .select(
-          `
+    let query = supabase
+      .from("products")
+      .select(
+        `
           *,
           shops!inner (
             id,
             status
           )
         `,
-        )
-        .order(
-          "created_at",
-          {
-            ascending: false,
-          },
-        );
+      )
+      .order("created_at", {
+        ascending: false,
+      });
 
     /* SHOP FILTER */
 
     if (shopId) {
-      query = query.eq(
-        "shop_id",
-        shopId,
-      );
+      query = query.eq("shop_id", shopId);
     }
 
     /* ONLINE SHOP ONLY */
 
-    if (
-      !includeOffline
-    ) {
-      query = query.eq(
-        "shops.status",
-        "online",
-      );
+    if (!includeOffline) {
+      query = query.eq("shops.status", "online");
 
-      query = query.eq(
-        "is_active",
-        true,
-      );
+      query = query.eq("is_active", true);
     }
 
-    const {
-      data,
-      error,
-    } = await query;
+    const { data, error } = await query;
 
     if (error) {
-      console.log(
-        "GET PRODUCTS ERROR:",
-        error,
-      );
+      console.log("GET PRODUCTS ERROR:", error);
 
       return [];
     }
 
-    return (
-      data || []
-    ).map(
-      (
-        item: any,
-      ) =>
-        mapProduct(
-          item,
-        ),
-    );
+    return (data || []).map((item: any) => mapProduct(item));
   } catch (err) {
     console.log(err);
 
@@ -595,134 +656,79 @@ export async function getProducts(
    GET PRODUCT BY ID
 ========================================= */
 
-export async function getProductById(
-  id: string,
-): Promise<Product | null> {
-  const {
-    data,
-    error,
-  } =
-    await supabase
-      .from(
-        "products",
-      )
-      .select("*")
-      .eq(
-        "id",
-        id,
-      )
-      .maybeSingle();
+export async function getProductById(id: string): Promise<Product | null> {
+  const { data, error } = await supabase
+    .from("products")
+    .select("*")
+    .eq("id", id)
+    .maybeSingle();
 
-  if (
-    error ||
-    !data
-  ) {
-    console.log(
-      "GET PRODUCT ERROR:",
-      error,
-    );
+  if (error || !data) {
+    console.log("GET PRODUCT ERROR:", error);
 
     return null;
   }
 
-  return mapProduct(
-    data,
-  );
+  return mapProduct(data);
 }
 
 /* =========================================
    ADD PRODUCT
 ========================================= */
 
-export async function addProduct(
-  product: Omit<
-    Product,
-    "id"
-  >,
-) {
-  const {
-    data,
-    error,
-  } =
-    await supabase
-      .from(
-        "products",
-      )
-      .insert([
-        {
-          shop_id:
-            product.shop_id,
+export async function addProduct(product: Omit<Product, "id">) {
+  const { data, error } = await supabase
+    .from("products")
+    .insert([
+      {
+        shop_id: product.shop_id,
 
-          name:
-            product.name,
+        name: product.name,
 
-          brand:
-            product.brand,
+        brand: product.brand,
 
-          category:
-            product.category,
+        category: product.category,
 
-          category_label:
-            product.categoryLabel,
+        category_label: product.categoryLabel,
 
-          description:
-            product.description,
+        description: product.description,
 
-          long_description:
-            product.longDescription,
+        long_description: product.longDescription,
 
-          price:
-            product.price,
+        price: product.price,
 
-          original_price:
-            product.originalPrice,
+        original_price: product.originalPrice,
 
-          rating:
-            product.rating,
+        rating: product.rating,
 
-          review_count:
-            product.reviewCount,
+        review_count: product.reviewCount,
 
-          stock:
-            product.stock,
+        stock: product.stock,
 
-          unit:
-            product.unit,
+        unit: product.unit,
 
-          image:
-            product.image,
+        image: product.image,
 
-          images:
-            product.images,
+        images: product.images,
 
-          brochure:
-            product.brochure,
+        brochure: product.brochure,
 
-          color:
-            product.color,
+        color: product.color,
 
-          badge:
-            product.badge,
+        badge: product.badge,
 
-          tags:
-            product.tags,
+        tags: product.tags,
 
-          specs:
-            product.specs,
+        specs: product.specs,
 
-          is_active:
-            product.is_active ??
-            true,
-        },
-      ])
-      .select()
-      .single();
+        is_active: product.is_active ?? true,
+      },
+    ])
+    .select()
+    .single();
 
   if (error) {
-    console.log(
-      "ADD PRODUCT ERROR:",
-      error,
-    );
+    console.log("ADD PRODUCT ERROR:", error);
 
     throw error;
   }
@@ -734,94 +740,58 @@ export async function addProduct(
    UPDATE PRODUCT
 ========================================= */
 
-export async function updateProduct(
-  id: string,
-  product: Partial<Product>,
-) {
-  const {
-    data,
-    error,
-  } =
-    await supabase
-      .from(
-        "products",
-      )
-      .update({
-        shop_id:
-          product.shop_id,
+export async function updateProduct(id: string, product: Partial<Product>) {
+  const { data, error } = await supabase
+    .from("products")
+    .update({
+      shop_id: product.shop_id,
 
-        name:
-          product.name,
+      name: product.name,
 
-        brand:
-          product.brand,
+      brand: product.brand,
 
-        category:
-          product.category,
+      category: product.category,
 
-        category_label:
-          product.categoryLabel,
+      category_label: product.categoryLabel,
 
-        description:
-          product.description,
+      description: product.description,
 
-        long_description:
-          product.longDescription,
+      long_description: product.longDescription,
 
-        price:
-          product.price,
+      price: product.price,
 
-        original_price:
-          product.originalPrice,
+      original_price: product.originalPrice,
 
-        rating:
-          product.rating,
+      rating: product.rating,
 
-        review_count:
-          product.reviewCount,
+      review_count: product.reviewCount,
 
-        stock:
-          product.stock,
+      stock: product.stock,
 
-        unit:
-          product.unit,
+      unit: product.unit,
 
-        image:
-          product.image,
+      image: product.image,
 
-        images:
-          product.images,
+      images: product.images,
 
-        brochure:
-          product.brochure,
+      brochure: product.brochure,
 
-        color:
-          product.color,
+      color: product.color,
 
-        badge:
-          product.badge,
+      badge: product.badge,
 
-        tags:
-          product.tags,
+      tags: product.tags,
 
-        specs:
-          product.specs,
+      specs: product.specs,
 
-        is_active:
-          product.is_active,
-      })
-      .eq(
-        "id",
-        id,
-      )
-      .select()
-      .single();
+      is_active: product.is_active,
+    })
+    .eq("id", id)
+    .select()
+    .single();
 
   if (error) {
-    console.log(
-      "UPDATE PRODUCT ERROR:",
-      error,
-    );
+    console.log("UPDATE PRODUCT ERROR:", error);
 
     throw error;
   }
@@ -833,34 +803,18 @@ export async function updateProduct(
    TOGGLE PRODUCT STATUS
 ========================================= */
 
-export async function toggleProductStatus(
-  id: string,
-  active: boolean,
-) {
-  const {
-    data,
-    error,
-  } =
-    await supabase
-      .from(
-        "products",
-      )
-      .update({
-        is_active:
-          active,
-      })
-      .eq(
-        "id",
-        id,
-      )
-      .select()
-      .single();
+export async function toggleProductStatus(id: string, active: boolean) {
+  const { data, error } = await supabase
+    .from("products")
+    .update({
+      is_active: active,
+    })
+    .eq("id", id)
+    .select()
+    .single();
 
   if (error) {
-    console.log(
-      "TOGGLE PRODUCT ERROR:",
-      error,
-    );
+    console.log("TOGGLE PRODUCT ERROR:", error);
 
     throw error;
   }
@@ -872,27 +826,11 @@ export async function toggleProductStatus(
    DELETE PRODUCT
 ========================================= */
 
-export async function deleteProduct(
-  id: string,
-) {
-  const {
-    error,
-  } =
-    await supabase
-      .from(
-        "products",
-      )
-      .delete()
-      .eq(
-        "id",
-        id,
-      );
+export async function deleteProduct(id: string) {
+  const { error } = await supabase.from("products").delete().eq("id", id);
 
   if (error) {
-    console.log(
-      "DELETE PRODUCT ERROR:",
-      error,
-    );
+    console.log("DELETE PRODUCT ERROR:", error);
 
     return false;
   }
@@ -904,52 +842,26 @@ export async function deleteProduct(
    HELPERS
 ========================================= */
 
-export async function getProductsByCategory(
-  cat: ProductCategory,
-) {
-  const products =
-    await getProducts();
+export async function getProductsByCategory(cat: ProductCategory) {
+  const products = await getProducts();
 
-  return products.filter(
-    (p) =>
-      p.category ===
-      cat,
-  );
+  return products.filter((p) => p.category === cat);
 }
 
 /* ========================================= */
 
 export async function getFeaturedProducts() {
-  const products =
-    await getProducts();
+  const products = await getProducts();
 
-  return products.filter(
-    (p) =>
-      p.badge ===
-        "popular" ||
-      p.badge ===
-        "pro",
-  );
+  return products.filter((p) => p.badge === "popular" || p.badge === "pro");
 }
 
 /* ========================================= */
 
-export async function getRelatedProducts(
-  product: Product,
-  count = 4,
-) {
-  const products =
-    await getProducts(
-      product.shop_id,
-    );
+export async function getRelatedProducts(product: Product, count = 4) {
+  const products = await getProducts(product.shop_id);
 
   return products
-    .filter(
-      (p) =>
-        p.category ===
-          product.category &&
-        p.id !==
-          product.id,
-    )
+    .filter((p) => p.category === product.category && p.id !== product.id)
     .slice(0, count);
 }

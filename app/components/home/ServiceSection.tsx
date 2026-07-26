@@ -38,7 +38,7 @@ export default function ServiceSection({
       {/* Horizontal Scroll */}
       <div className="overflow-x-auto scrollbar-hide">
         <div className="flex gap-3 overflow-x-auto scrollbar-hide px-4">
-          {workers.slice(0, 10).map((worker) => (
+          {workers.slice(0, 1000).map((worker) => (
             <HomeWorkerCard key={worker.id} worker={worker} />
           ))}
         </div>
