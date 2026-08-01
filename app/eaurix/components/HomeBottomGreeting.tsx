@@ -3,7 +3,7 @@ import { ArrowRight } from "lucide-react";
 
 export default function HomeBottomGreeting() {
   return (
-    <section className="relative mt-12 overflow-hidden bg-gradient-to-r from-orange-600 via-amber-500 to-yellow-500 px-6 py-14 text-white">
+    <section className="relative mt-12 overflow-hidden bg-linear-to-r from-orange-600 via-amber-500 to-yellow-500 px-6 py-14 text-white">
       {/* Background Glow */}
       <div className="absolute -top-16 -right-16 h-48 w-48 rounded-full bg-white/10 blur-3xl" />
       <div className="absolute -bottom-20 -left-16 h-56 w-56 rounded-full bg-white/10 blur-3xl" />

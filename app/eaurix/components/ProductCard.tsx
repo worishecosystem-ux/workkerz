@@ -28,83 +28,64 @@ function ProductCard({
   return (
     <Link
       href={isOffline || isOutOfStock ? "#" : `/eaurix/product/${product.id}`}
-      className="group block overflow-hidden rounded-[20px] border border-slate-200 bg-white shadow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-xl active:scale-[0.98]"
+      className="group block overflow-hidden rounded-xl border border-slate-200 bg-linear-to-b from-white via-white to-slate-50 shadow-sm transition-all duration-300 hover:-translate-y-0.5 hover:border-emerald-300 hover:shadow-lg active:scale-[0.99]"
     >
-      {/* Image */}
-      <div className="relative aspect-square overflow-hidden bg-slate-100">
-        <div className="relative h-full w-full overflow-hidden bg-slate-100">
-          <img
-            src={image}
-            alt={product.name}
-            loading="lazy"
-            decoding="async"
-            draggable={false}
-            className="absolute inset-1 h-[calc(100%-8px)] w-[calc(100%-8px)] rounded-xl border border-white object-cover transition-transform duration-500 group-hover:scale-105"
-            onError={(e) => {
-              e.currentTarget.classList.add("hidden");
-              e.currentTarget.parentElement
-                ?.querySelector(".fallback")
-                ?.classList.remove("hidden");
-            }}
-          />
+      <div className="flex gap-3 p-3">
+        {/* Left Image */}
+        <div className="flex w-26.25 shrink-0 items-center justify-center">
+          <div className="flex h-23.75 w-23.75 items-center justify-center rounded-lg border border-slate-200 bg-slate-50 shadow-xs transition-colors duration-300 group-hover:bg-white">
+            <img
+              src={image}
+              alt={product.name}
+              loading="lazy"
+              draggable={false}
+              className="h-16 w-20 object-contain transition duration-300 group-hover:scale-105 rounded-2xl"
+              onError={(e) => {
+                e.currentTarget.classList.add("hidden");
+              }}
+            />
+          </div>
+        </div>
 
-          <div
-            className={`fallback absolute inset-0 flex items-center justify-center p-6 text-center ${
-              image ? "hidden" : ""
-            }`}
-          >
-            <h3 className="line-clamp-3 text-[16px] font-bold text-slate-700">
+        {/* Right Details */}
+        <div className="flex flex-1 flex-col justify-between">
+          <div>
+            <h3 className="line-clamp-2 wrap-break-word text-[14px] font-semibold leading-5 text-slate-900">
               {product.name}
             </h3>
+
+            <div className="mt-2 flex items-center gap-2">
+              <Store size={13} className="text-emerald-600" />
+              <span className="truncate text-xs text-slate-600">
+                {shop?.shop_name ?? "Store"}
+              </span>
+            </div>
+
+            {isOffline && (
+              <span className="mt-2 inline-flex rounded bg-red-100 px-2 py-1 text-[10px] font-medium text-red-600">
+                Store Offline
+              </span>
+            )}
+
+            {isOutOfStock && (
+              <span className="mt-2 inline-flex rounded bg-orange-100 px-2 py-1 text-[10px] font-medium text-orange-600">
+                Out of Stock
+              </span>
+            )}
           </div>
-        </div>
 
-        <div className="absolute inset-x-0 bottom-0 h-24 bg-linear-to-t from-black/40 via-black/10 to-transparent" />
+          {/* Bottom */}
+          <div className="mt-3 flex items-center justify-between">
+            <span className="text-[12px] font-medium text-emerald-600">
+              More Details
+            </span>
 
-        {product.brand && (
-          <div className="absolute right-3 top-3 flex items-start justify-between">
-            {/* Price */}
-            <div className="rounded-full bg-linear-to-r from-emerald-600 to-teal-500 px-3 py-1 shadow-lg shadow-emerald-500/30">
-              <div className="flex items-center gap-1">
-                <span className="text-[12px] font-medium uppercase tracking-wide text-white">
-                  Starting
-                </span>
-                <span className="text-[12px] font-black text-white">
-                  ₹{product.price}
-                </span>
-              </div>
+            <div className="flex items-center gap-1 text-sm font-semibold text-slate-800 group-hover:text-emerald-600">
+              View
+              <ArrowRight size={15} />
             </div>
           </div>
-        )}
-        {(isOffline || isOutOfStock) && (
-          <div className="absolute inset-0 flex items-center justify-center bg-black/65 backdrop-blur-sm">
-            <span className="rounded-full bg-red-500 px-4 py-2 text-xs font-bold text-white">
-              {isOffline ? "Shop Offline" : "Out of Stock"}
-            </span>
-          </div>
-        )}
-      </div>
-
-      {/* Content */}
-      <div className="space-y-2 p-4">
-        <div className="flex items-start justify-between gap-2">
-          <h3 className="line-clamp-2 flex-1 text-[15px] font-bold leading-5 text-slate-900">
-            {product.name}
-          </h3>
-
-          <div className="flex shrink-0 items-center gap-1 rounded-full border border-emerald-100 bg-emerald-50 px-2.5 py-1">
-            <Store size={10} className="text-emerald-600" />
-            <span className="max-w-20 truncate text-[10px] font-semibold text-emerald-700">
-              {shop?.shop_name ?? "Store"}
-            </span>
-          </div>
         </div>
-
-        <button className="flex w-full items-center justify-center gap-2 rounded-2xl bg-slate-900 py-2 text-sm font-semibold text-white transition group-hover:bg-emerald-600">
-          <Package size={16} />
-          View Product
-          <ArrowRight size={16} />
-        </button>
       </div>
     </Link>
   );

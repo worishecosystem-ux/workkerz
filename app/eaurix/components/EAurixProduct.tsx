@@ -43,7 +43,8 @@ export function EAurixProduct() {
   const [shopData, setShopData] = useState<any>(null);
   const [isScrolled, setIsScrolled] = useState(false);
   const [keyboardOpen, setKeyboardOpen] = useState(false);
-
+  const [showCartHint, setShowCartHint] = useState(false);
+  const [showImage, setShowImage] = useState(false);
   useEffect(() => {
     let showListener: Awaited<ReturnType<typeof Keyboard.addListener>>;
     let hideListener: Awaited<ReturnType<typeof Keyboard.addListener>>;
@@ -152,7 +153,6 @@ export function EAurixProduct() {
     pro: { label: "Pro Choice", cls: "bg-violet-500" },
   };
   const badge = product.badge ? badgeMap[product.badge] : null;
-  const [showCartHint, setShowCartHint] = useState(false);
 
   const handleCartClick = () => {
     if (!inCart) {
@@ -165,7 +165,7 @@ export function EAurixProduct() {
       }, 9000);
 
       return;
-    }                                                
+    }
 
     // Already in cart → open cart
     router.push("/eaurix/cart"); // ya setCartOpen(true)
@@ -199,7 +199,7 @@ export function EAurixProduct() {
       <div className="bg-linear-to-br from-sky-100 via-sky-150 to-cyan-100 pb-30">
         {/* Breadcrumb */}
         <div
-          className={`fixed inset-x-0 top-0 z-50 overflow-visible border-b border-sky-200/50 bg-[linear-gradient(135deg,#020617_0%,#0F172A_25%,#1D4ED8_65%,#38BDF8_100%)] shadow-xl backdrop-blur-xl transition-all duration-300 ${
+          className={`fixed inset-x-0 top-0 z-50 overflow-visible border-b border-sky-200/50 bg-linear-to-br from-sky-100 via-sky-150 to-cyan-100 shadow-xl backdrop-blur-xl transition-all duration-300 ${
             isScrolled ? "px-5 pt-2 pb-1" : "px-5 pt-12 pb-5"
           }`}
         >
@@ -252,15 +252,17 @@ export function EAurixProduct() {
                     <img
                       src={product.image}
                       alt={product.name}
+                      onClick={() => setShowImage(true)}
                       className="
-        h-full
-        w-full
-        rounded-2xl
-        object-cover
-        transition-all
-        duration-500
-        hover:scale-[1.02]
-      "
+    h-full
+    w-full
+    cursor-zoom-in
+    rounded-2xl
+    object-cover
+    transition-all
+    duration-500
+    hover:scale-[1.02]
+  "
                     />
                   </div>
                 ) : (
@@ -367,7 +369,15 @@ export function EAurixProduct() {
               <p className="text-[#475569] text-sm mb-2 leading-relaxed">
                 {product.longDescription}
               </p>
+              {product.about && (
+                <div className="mb-3 rounded-2xl border border-slate-200 bg-white p-4">
+                  <h2 className="mb-2 text-lg font-bold">About Product</h2>
 
+                  <p className="text-sm text-slate-600 leading-7">
+                    {product.about}
+                  </p>
+                </div>
+              )}
               {/* Price */}
               <div className="mb-2 rounded-2xl border border-slate-200 bg-white p-3">
                 <div className="flex items-start justify-between gap-3">
@@ -402,6 +412,34 @@ export function EAurixProduct() {
                   </div>
                 </div>
               </div>
+              <div className="mb-3 rounded-2xl border border-slate-200 bg-white p-4">
+                <h2 className="mb-3 text-lg font-bold text-slate-900">
+                  Product Details
+                </h2>
+
+                <InfoRow label="Brand" value={product.brand} />
+                <InfoRow label="Category" value={product.categoryLabel} />
+                <InfoRow label="Material" value={product.materialName} />
+              </div>
+              <div className="mb-3 rounded-2xl border border-slate-200 bg-white p-4">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-sky-100 text-xl">
+                      📏
+                    </div>
+
+                    <div>
+                      <p className="text-xs font-medium uppercase tracking-wide text-slate-500">
+                        Measurement
+                      </p>
+
+                      <p className="text-base font-bold text-slate-900">
+                        {product.description}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              </div>
               {/* Specs */}
               {product.specs &&
                 Object.entries(product.specs).filter(
@@ -410,7 +448,7 @@ export function EAurixProduct() {
                     value !== undefined &&
                     String(value).trim() !== "",
                 ).length > 0 && (
-                  <div className="mb-3 rounded-2xl border border-gray-100 bg-white p-6">
+                  <div className="mb-3 rounded-2xl border border-gray-100 bg-black p-6">
                     <h2
                       className="mb-5 text-[#0F172A]"
                       style={{ fontWeight: 700, fontSize: "1.1rem" }}
@@ -435,7 +473,7 @@ export function EAurixProduct() {
                                 : "sm:border-l sm:border-b sm:pl-8"
                             }`}
                           >
-                            <span className="w-36 shrink-0 text-sm font-medium text-[#94A3B8]">
+                            <span className="w-36 shrink-0 text-sm font-medium text-[#000000]">
                               {key}
                             </span>
 
@@ -880,6 +918,41 @@ export function EAurixProduct() {
           </div>
         )}
       </div>
+      {showImage && (
+        <div
+          className="fixed inset-0 z-9999 flex items-center justify-center bg-black/70 backdrop-blur-md p-4"
+          onClick={() => setShowImage(false)}
+        >
+          {/* Close Button */}
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              setShowImage(false);
+            }}
+            className="absolute top-20 right-5 flex h-11 w-11 items-center justify-center rounded-full bg-white/15 text-2xl font-semibold text-white backdrop-blur-md transition hover:bg-white/25"
+            aria-label="Close"
+          >
+            ✕
+          </button>
+
+          <img
+            src={product.image}
+            alt={product.name}
+            onClick={(e) => e.stopPropagation()}
+            className="max-h-[95vh] max-w-[95vw] cursor-zoom-out rounded-2xl object-contain"
+          />
+        </div>
+      )}
     </>
+  );
+}
+function InfoRow({ label, value }: { label: string; value?: any }) {
+  if (value === null || value === undefined || value === "") return null;
+
+  return (
+    <div className="flex justify-between border-b border-slate-100 py-2">
+      <span className="text-slate-500">{label}</span>
+      <span className="font-semibold text-slate-900">{String(value)}</span>
+    </div>
   );
 }

@@ -26,19 +26,15 @@ export function EAurixHome() {
   const [products, setProducts] = useState<Product[]>([]);
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [loading, setLoading] = useState(true);
-  const PRODUCTS_PER_PAGE = 2;
+  const PRODUCTS_PER_PAGE = 8;
   const loadMoreRef = useRef<HTMLDivElement>(null);
   const [page, setPage] = useState(1);
   const [loadingMore, setLoadingMore] = useState(false);
   const [search, setSearch] = useState("");
-  const [showHeader, setShowHeader] = useState(false);
   const hasHiddenFeatured = useRef(false);
   const [hideFeatured, setHideFeatured] = useState(false);
-const [categoriesDrawerOpen, setCategoriesDrawerOpen] = useState(false);
   useEffect(() => {
     const onScroll = () => {
-      setShowHeader(window.scrollY > 180);
-
       if (!hasHiddenFeatured.current && window.scrollY > 250) {
         hasHiddenFeatured.current = true;
         setHideFeatured(true);
@@ -202,7 +198,7 @@ const [categoriesDrawerOpen, setCategoriesDrawerOpen] = useState(false);
     {
       id: null,
       name: "All",
-      image: "https://cdn-icons-png.flaticon.com/512/3081/3081559.png",
+      image: "/categories/all-categories.png",
     },
     ...productCategories.map((category) => ({
       id: category.id,
@@ -210,19 +206,11 @@ const [categoriesDrawerOpen, setCategoriesDrawerOpen] = useState(false);
       image: category.image,
     })),
   ];
-
   /* ===================================================== */
 
   return (
-    <div className="bg-[#F0F9FF]">
-      <div
-        className={`fixed inset-x-0 top-0 z-50 bg-[linear-gradient(135deg,#020617_0%,#0F172A_25%,#1D4ED8_65%,#38BDF8_100%)]  pt-10 shadow-md transition-all duration-300 ${
-          showHeader
-            ? "translate-y-0 opacity-100"
-            : "-translate-y-full opacity-0 pointer-events-none"
-        }`}
-      >
-        
+    <div className="bg-linear-to-br from-sky-100 via-sky-150 to-cyan-100">
+      <div className="sticky top-0 z-50 bg-linear-to-br from-sky-100 via-sky-150 to-cyan-100  shadow-md">
         <CategoriesHeader
           loading={loading}
           sort={sort}
@@ -236,7 +224,6 @@ const [categoriesDrawerOpen, setCategoriesDrawerOpen] = useState(false);
           products={products}
           search={search}
           setSearch={setSearch}
-          
         />
       </div>
       <div className="pt-2 mb-1">

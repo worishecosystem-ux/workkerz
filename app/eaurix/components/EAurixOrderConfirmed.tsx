@@ -75,7 +75,7 @@ export function EAurixOrderConfirmed() {
 
       setTimeout(() => {
         setWaSent(false);
-      }, 4000);
+      }, 4000); 
     }, 1500);
 
     return () => clearTimeout(timer);
@@ -115,92 +115,80 @@ export function EAurixOrderConfirmed() {
   const deliveryDays = isExpress ? "1 business day" : "3–5 business days";
 
   // ── WhatsApp ────────────────────────────────────────────────────────────────
- const buildWhatsAppMessage = () => {
-  const itemLines = cart.map(
-    (item: any, index: number) =>
-      `┃ ${index + 1}. ${item.name}
+  const buildWhatsAppMessage = () => {
+    const itemLines = cart.map(
+      (item: any, index: number) =>
+        `┃ ${index + 1}. ${item.name}
 ┃ Qty: ${item.qty} × ₹${item.price}
-┃ Total: ₹${(item.price * item.qty).toFixed(2)}`
-  );
+┃ Total: ₹${(item.price * item.qty).toFixed(2)}`,
+    );
 
-  const lines = [
-    `╔══════════════════════╗`,
-    `      🛒 *E-AURIX RECEIPT*`,
-    `╚══════════════════════╝`,
-    ``,
-    `✅ *Your order has been confirmed!*`,
-    ``,
-    `🆔 *Order ID*`,
-    `┃ ${orderId.current}`,
-    ``,
-    `👤 *Customer Details*`,
-    `┃ ${form.name}`,
-    `┃ ${form.phone}`,
-    `┃ ${form.email}`,
-    ``,
-    `📍 *Delivery Address*`,
-    `┃ ${form.address}`,
-    `┃ ${form.city}, ${form.zip}`,
-    ``,
-    `🚚 *Delivery Type*`,
-    `┃ ${
-      isExpress
-        ? "⚡ Express Delivery"
-        : "📦 Standard Delivery"
-    }`,
-    `┃ ETA: ${deliveryDays}`,
-    ``,
-    `📦 *Ordered Items*`,
-    `┃────────────────────`,
-    ...itemLines,
-    ``,
+    const lines = [
+      `╔══════════════════════╗`,
+      `      🛒 *E-AURIX RECEIPT*`,
+      `╚══════════════════════╝`,
+      ``,
+      `✅ *Your order has been confirmed!*`,
+      ``,
+      `🆔 *Order ID*`,
+      `┃ ${orderId.current}`,
+      ``,
+      `👤 *Customer Details*`,
+      `┃ ${form.name}`,
+      `┃ ${form.phone}`,
+      `┃ ${form.email}`,
+      ``,
+      `📍 *Delivery Address*`,
+      `┃ ${form.address}`,
+      `┃ ${form.city}, ${form.zip}`,
+      ``,
+      `🚚 *Delivery Type*`,
+      `┃ ${isExpress ? "⚡ Express Delivery" : "📦 Standard Delivery"}`,
+      `┃ ETA: ${deliveryDays}`,
+      ``,
+      `📦 *Ordered Items*`,
+      `┃────────────────────`,
+      ...itemLines,
+      ``,
 
-    workerAddon
-      ? [
-          `🔧 *Worker Add-On*`,
-          `┃ ${workerAddon.workerName}`,
-          `┃ ${workerAddon.workerSpecialty}`,
-          `┃ ${workerAddon.hours} hour(s) × ₹${workerAddon.workerRate}/hr`,
-          `┃ Total: ₹${workerAddon.cost.toFixed(2)}`,
-          ``,
-        ]
-      : [],
+      workerAddon
+        ? [
+            `🔧 *Worker Add-On*`,
+            `┃ ${workerAddon.workerName}`,
+            `┃ ${workerAddon.workerSpecialty}`,
+            `┃ ${workerAddon.hours} hour(s) × ₹${workerAddon.workerRate}/hr`,
+            `┃ Total: ₹${workerAddon.cost.toFixed(2)}`,
+            ``,
+          ]
+        : [],
 
-    `💳 *Payment Summary*`,
-    `┃────────────────────`,
-    `┃ Subtotal : ₹${cartTotal.toFixed(2)}`,
-    `┃ Delivery : ${
-      delivery === 0
-        ? "FREE"
-        : `₹${delivery.toFixed(2)}`
-    }`,
-    `┃ Tax (8%) : ₹${tax.toFixed(2)}`,
+      `💳 *Payment Summary*`,
+      `┃────────────────────`,
+      `┃ Subtotal : ₹${cartTotal.toFixed(2)}`,
+      `┃ Delivery : ${delivery === 0 ? "FREE" : `₹${delivery.toFixed(2)}`}`,
+      `┃ Tax (8%) : ₹${tax.toFixed(2)}`,
 
-    workerAddon
-      ? `┃ Worker Add-On : ₹${workerAddon.cost.toFixed(2)}`
-      : null,
+      workerAddon ? `┃ Worker Add-On : ₹${workerAddon.cost.toFixed(2)}` : null,
 
-    `┃────────────────────`,
-    `┃ 💰 *Grand Total: ₹${grandTotal.toFixed(2)}*`,
-    ``,
-    `💳 Payment Method`,
-    `┃ •••• •••• •••• ${
-      form.cardNumber
-        ? form.cardNumber.slice(-4)
-        : "****"
-    }`,
-    ``,
-    `✨ Thank you for shopping with`,
-    `🚀 *E-Aurix by Workkerz*`,
-    ``,
-    `📲 Track your orders anytime`,
-    `🛠️ Premium Materials • Fast Delivery • Trusted Workers`,
-    ``,
-    `══════════════════════`,
-  ];
+      `┃────────────────────`,
+      `┃ 💰 *Grand Total: ₹${grandTotal.toFixed(2)}*`,
+      ``,
+      `💳 Payment Method`,
+      `┃ •••• •••• •••• ${
+        form.cardNumber ? form.cardNumber.slice(-4) : "****"
+      }`,
+      ``,
+      `✨ Thank you for shopping with`,
+      `🚀 *E-Aurix by Workkerz*`,
+      ``,
+      `📲 Track your orders anytime`,
+      `🛠️ Premium Materials • Fast Delivery • Trusted Workers`,
+      ``,
+      `══════════════════════`,
+    ];
 
-  return lines.flat().filter(Boolean).join("\n");
-};
+    return lines.flat().filter(Boolean).join("\n");
+  };
 
   const handleShareWhatsApp = () => {
     const adminNumber = "918602190366"; // India country code included

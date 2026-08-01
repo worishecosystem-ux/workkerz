@@ -2,7 +2,7 @@
 
 import React from "react";
 import { ArrowUpDown, ChevronDown, Menu } from "lucide-react";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import ProductSearch from "./ProductSearch";
 interface Product {
   id: string;
@@ -48,6 +48,16 @@ export default function CategoriesHeader({
   search,
   setSearch,
 }: CategoriesHeaderProps) {
+  const [isScrolled, setIsScrolled] = useState(false);
+
+  useEffect(() => {
+    const handleScroll = () => {
+      setIsScrolled(window.scrollY > 50);
+    };
+
+    window.addEventListener("scroll", handleScroll, { passive: true });
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, []);
   if (loading) {
     return (
       <div className="relative z-40 border-b border-slate-200/70 bg-white/90 backdrop-blur-xl">
@@ -79,9 +89,13 @@ export default function CategoriesHeader({
   }
 
   return (
-    <div className="sticky top-0 z-40 border-b border-slate-200">
+    <div
+      className={`sticky top-0 z-40 border-b border-slate-500 bg-linear-to-br from-sky-100 via-sky-150 to-cyan-100 transition-all duration-300 ${
+        isScrolled ? "pt-12" : "pt-0"
+      }`}
+    >
       {/* Search */}
-      <div className="px-4  pt-3">
+      <div className="px-4 ">
         <ProductSearch
           products={products}
           search={search}
@@ -92,7 +106,7 @@ export default function CategoriesHeader({
       {/* Categories */}
       <div
         ref={categoryRef}
-        className="flex gap-4 overflow-x-auto px-3 pb-3 pt-5 scrollbar-hide"
+        className="flex gap-4 overflow-x-auto px-3 pt-2 pb-2 scrollbar-hide"
       >
         {categories.map((cat) => {
           const active =
@@ -104,42 +118,30 @@ export default function CategoriesHeader({
               onClick={() => setActiveCategory(cat.id)}
               className="shrink-0"
             >
-              <div
-                className={`flex flex-col items-center transition-all duration-200 ${
-                  active ? "scale-105" : ""
-                }`}
-              >
-                <div
-                  className={`relative flex h-14 w-14 items-center justify-center rounded-2xl border transition-all ${
-                    active
-                      ? "bg-slate-600 border-slate-900 shadow-lg"
-                      : "bg-slate-50 border-slate-200"
-                  }`}
-                >
-                  <div
-                    className={`flex h-10 w-10 items-center justify-center rounded-xl ${
-                      active ? "bg-white" : "bg-white"
+              <div className="flex flex-col items-center">
+                {!isScrolled && (
+                  <img
+                    src={cat.image}
+                    alt={cat.name}
+                    className={`h-14 w-14 object-contain transition-all duration-200 ${
+                      active ? "scale-110" : "opacity-90 hover:scale-105"
                     }`}
-                  >
-                    <img
-                      src={cat.image}
-                      alt={cat.name}
-                      className="h-6 w-6 object-contain"
-                    />
-                  </div>
-
-                  {active && (
-                    <span className="absolute top-1 -right-2 h-2 w-2 rounded-full bg-orange-400 ring-2 ring-white" />
-                  )}
-                </div>
+                  />
+                )}
 
                 <span
-                  className={`mt-2 max-w-16 truncate text-center text-[11px] font-semibold ${
-                    active ? "text-slate-400" : "text-slate-50"
+                  className={`${
+                    isScrolled ? "mt-0 text-xs" : "mt-2 text-[11px]"
+                  } font-medium ${
+                    active ? "text-slate-900" : "text-slate-500"
                   }`}
                 >
                   {cat.name}
                 </span>
+
+                {active && (
+                  <div className="mt-1 h-0.5 w-10 rounded-full bg-slate-900" />
+                )}
               </div>
             </button>
           );

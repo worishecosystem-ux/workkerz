@@ -2,7 +2,12 @@
 
 import Link from "next/link";
 import { Eye, ShoppingCart } from "lucide-react";
-import type { Dispatch, RefObject, SetStateAction } from "react";
+import {
+  useMemo,
+  type Dispatch,
+  type RefObject,
+  type SetStateAction,
+} from "react";
 import ProductImage from "./ProductImage";
 
 interface ProductsGridProps {
@@ -57,9 +62,42 @@ export default function ProductsGrid({
   addToCart,
   loadMoreRef,
 }: ProductsGridProps) {
+  const mixedTopProducts = useMemo(() => {
+    if (activeCategory) return paginatedProducts;
+
+    const grouped = new Map<string, any[]>();
+
+    for (const product of products) {
+      const category = product.category ?? "other";
+
+      if (!grouped.has(category)) {
+        grouped.set(category, []);
+      }
+
+      grouped.get(category)!.push(product);
+    }
+
+    const result: any[] = [];
+    const groups = Array.from(grouped.values());
+
+    let added = true;
+
+    while (added) {
+      added = false;
+
+      for (const group of groups) {
+        if (group.length > 0) {
+          result.push(group.shift());
+          added = true;
+        }
+      }
+    }
+
+    return result;
+  }, [products, paginatedProducts, activeCategory]);
   return (
     <>
-      <div className="px-4 pt-3">
+      <div className="px-4 pt-3 pb-8">
         {activeCategory && !loading && visibleProducts.length === 0 && (
           <div className="flex min-h-80 flex-col items-center justify-center rounded-3xl border border-slate-200 bg-white p-8 text-center shadow-sm">
             <div className="mb-4 flex h-20 w-20 items-center justify-center rounded-full bg-slate-100 text-4xl">
@@ -82,18 +120,18 @@ export default function ProductsGrid({
               onClick={() => setActiveCategory(null)}
               className="mt-5 rounded-xl bg-emerald-500 px-5 py-2 text-sm font-semibold text-white hover:bg-emerald-600"
             >
-             Please Check more products
+              Please Check more products
             </button>
           </div>
         )}
         {visibleProducts.length > 0 && (
-          <div className="grid grid-cols-2 gap-3 md:grid-cols-4 md:gap-4">
-            {paginatedProducts.map((product) => {
+          <div className="grid grid-cols-2 gap-3 md:grid-cols-4 md:gap-4 pb-10">
+           {mixedTopProducts.map((product) => {
               const inCart = cart.some((item) => item.productId === product.id);
               return (
                 <div
                   key={product.id}
-                  className="group overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm transition-all hover:shadow-md"
+                  className="group overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm transition-all hover:shadow-md "
                 >
                   <Link href={`/eaurix/product/${product.id}`}>
                     <div className="relative overflow-hidden">
@@ -178,33 +216,37 @@ export default function ProductsGrid({
             })}
           </div>
         )}
-      </div>
-      {activeCategory &&
-        visibleProducts.length > 0 &&
-        visibleProducts.length < 6 && (
-          <div className="mx-4 my-4 rounded-2xl border border-slate-200 bg-white px-5 py-6 text-center shadow-sm">
-            <div className="mx-auto mb-3 flex h-14 w-14 items-center justify-center rounded-full bg-slate-100 text-2xl">
-              📦
+        {activeCategory &&
+          visibleProducts.length > 0 &&
+          visibleProducts.length < 6 && (
+            <div className="mx-4 rounded-2xl border border-slate-200 bg-white px-5 py-3 text-center shadow-sm">
+              <div className=" flex items-center justify-center gap-3">
+                <div className="flex h-12 w-12 items-center justify-center rounded-full bg-slate-100 text-2xl">
+                  📦
+                </div>
+
+                <h2 className="text-base font-semibold text-slate-900">
+                  More Products Coming Soon
+                </h2>
+              </div>
+
+              <p className="mx-auto mt-2 max-w-xs text-sm leading-6 text-slate-500">
+                Only {visibleProducts.length} product
+                {visibleProducts.length !== 1 ? "s are" : " is"} available in{" "}
+                {categories.find((c) => c.id === activeCategory)?.name}{" "}
+                category.
+              </p>
+
+              <button
+                onClick={() => setActiveCategory(null)}
+                className="mt-4 rounded-xl bg-emerald-500 px-5 py-2 text-sm font-semibold text-white transition hover:bg-emerald-600"
+              >
+                Visit Again Soon
+              </button>
             </div>
+          )}
+      </div>
 
-            <h2 className="text-base font-semibold text-slate-900">
-              More Products Coming Soon
-            </h2>
-
-            <p className="mx-auto mt-2 max-w-xs text-sm leading-6 text-slate-500">
-              Only {visibleProducts.length} product
-              {visibleProducts.length !== 1 ? "s are" : " is"} available in{" "}
-              {categories.find((c) => c.id === activeCategory)?.name} category.
-            </p>
-
-            <button
-              onClick={() => setActiveCategory(null)}
-              className="mt-4 rounded-xl bg-emerald-500 px-5 py-2 text-sm font-semibold text-white transition hover:bg-emerald-600"
-            >
-             Visit Again Soon
-            </button>
-          </div>
-        )}
       {visibleProducts.length > 0 &&
         paginatedProducts.length < visibleProducts.length && (
           <div

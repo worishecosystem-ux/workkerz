@@ -60,8 +60,8 @@ export default function ProductSearch({
 
   return (
     <div ref={wrapperRef} className={`relative ${className}`}>
-      <div className="relative overflow-hidden rounded-2xl border border-white/10 bg-white/10 shadow-xl backdrop-blur-2xl">
-        <Search className="absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-300" />
+      <div className="relative overflow-hidden rounded-2xl border border-slate-900 bg-white backdrop-blur-xl">
+        <Search className="absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-500" />
 
         <input
           value={search}
@@ -78,7 +78,7 @@ export default function ProductSearch({
               e.currentTarget.blur(); // keyboard hide
             }
           }}
-          className="h-12 w-full bg-transparent pl-11 pr-11 text-sm text-white placeholder:text-slate-300 outline-none"
+          className="h-12 w-full bg-transparent pl-11 pr-11 text-sm text-black placeholder:text-slate-300 outline-none"
         />
 
         {search && (

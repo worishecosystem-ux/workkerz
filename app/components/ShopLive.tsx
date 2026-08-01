@@ -70,16 +70,7 @@ export default function ShopLive() {
 
   return (
     <section className="overflow-hidden border-y border-emerald-500/20 bg-linear-to-br from-emerald-100 via-green-50 to-white py-2">
-      <div className="flex items-center mb-2 px-3 ">
-        <span className="bg-red-500 text-white text-[9px] md:text-xs px-2 py-0.5 rounded-full font-semibold animate-pulse">
-          🔴 LIVE
-        </span>
-
-        <p className="ml-2 md:ml-4 text-[9px] md:text-sm text-gray-900 font-bold">
-          Shops Currently Online
-        </p>
-      </div>
-
+    
       <div className="marquee flex items-center">
         {shops.map((shop, i) => (
           <div

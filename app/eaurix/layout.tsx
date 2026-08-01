@@ -22,7 +22,7 @@ export default function PublicLayout({
   return (
     <PlatformProvider>
       <MobileNavbarProvider>
-        <main className="min-h-screen md:pb-0">
+        <main className="min-h-screen md:pb-0 bg-linear-to-br from-sky-100 via-sky-150 to-cyan-100">
           <HomePlatformToggle />
           {children}
         </main>
