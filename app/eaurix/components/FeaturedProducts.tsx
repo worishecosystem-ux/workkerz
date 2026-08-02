@@ -18,7 +18,7 @@ export default function FeaturedProducts({
   const [selectedIndex, setSelectedIndex] = useState(0);
   const autoplay = useRef(
     Autoplay({
-      delay: 5000, // 30 sec
+      delay: 8000, // 30 sec
       stopOnInteraction: false,
       stopOnMouseEnter: true,
     }),
@@ -106,13 +106,13 @@ export default function FeaturedProducts({
       <div className="overflow-hidden pt-1" ref={emblaRef}>
         <div className="flex">
          {featuredProducts.map((product) => (
-            <div key={product.id} className="flex-[0_0_96%]  px-2 first:pl-0">
+            <div key={product.id} className="flex-[0_0_98%]  px-2 first:pl-0">
               <ProductCard product={product} shop={shopsMap[product.shop_id]} />
             </div>
           ))}
         </div>
       </div>
-      <div className=" flex items-center justify-center gap-2 mb-2">
+      <div className=" flex items-center justify-center gap-2 mb-2 mt-2">
         {Array.from({ length: 10 }).map((_, i) => {
           const active = i === selectedIndex % 7;
 

@@ -104,7 +104,12 @@ export default function OrderSummarySidebar({
         </div>
 
         {/* Products */}
-        <div className="flex-1 overflow-y-auto pb-4">
+        {/* Products */}
+        <div
+          className={`pb-4 ${
+            cart.length > 8 ? "max-h-105 overflow-y-auto" : ""
+          }`}
+        >
           <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white">
             {cart.map((item, index) => (
               <div

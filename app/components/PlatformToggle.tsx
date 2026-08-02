@@ -22,54 +22,54 @@ export default function PlatformToggle({ isApp }: Props) {
     return (
       <>
         <div className="flex w-full items-center justify-center gap-2 px-3 pt-12 pb-2">
-  <button
-    onClick={() => handleToggle("workkerz")}
-    className={`flex-1 min-w-0 h-12 flex items-center justify-center gap-2 rounded-xl border transition-all duration-300 ${
-      !isEaurix
-        ? "bg-[#FFF7ED] border-[#FF5C39] shadow-lg"
-        : "bg-white border-slate-300"
-    }`}
-  >
-    <img
-      src="/workkerzapp.png"
-      alt="Workkerz"
-      className="h-7 w-7 shrink-0"
-    />
+          <button
+            onClick={() => handleToggle("workkerz")}
+            className={`flex-1 min-w-0 h-12 flex items-center justify-center gap-2 rounded-xl border transition-all duration-300 ${
+              !isEaurix
+                ? "bg-[#FFF7ED] border-[#FF5C39] shadow-lg"
+                : "bg-white border-slate-300"
+            }`}
+          >
+            <img
+              src="/workkerzapp.png"
+              alt="Workkerz"
+              className="h-7 w-7 shrink-0"
+            />
 
-    <span
-      className={`truncate text-sm font-bold ${
-        !isEaurix ? "text-[#FF5C39]" : "text-slate-700"
-      }`}
-    >
-      Workkerz
-    </span>
-  </button>
+            <span
+              className={`truncate text-sm font-bold ${
+                !isEaurix ? "text-[#FF5C39]" : "text-slate-700"
+              }`}
+            >
+              Workkerz
+            </span>
+          </button>
 
-  <button
-    onClick={() => handleToggle("eaurix")}
-    className={`flex-1 min-w-0 h-12 flex items-center justify-center gap-2 rounded-xl border transition-all duration-300 ${
-      isEaurix
-        ? "bg-[#F0F9FF] border-[#0EA5E9] shadow-lg"
-        : "bg-white border-slate-300"
-    }`}
-  >
-    <img
-      src="/aurixapp.png"
-      alt="E-Aurix"
-      className="h-7 w-7 flex-shrink-0"
-    />
+          <button
+            onClick={() => handleToggle("eaurix")}
+            className={`flex-1 min-w-0 h-12 flex items-center justify-center gap-2 rounded-xl border transition-all duration-300 ${
+              isEaurix
+                ? "bg-[#F0F9FF] border-[#0EA5E9] shadow-lg"
+                : "bg-white border-slate-300"
+            }`}
+          >
+            <img
+              src="/aurixapp.png"
+              alt="E-Aurix"
+              className="h-7 w-7 shrink-0"
+            />
 
-    <span
-      className={`truncate text-sm font-bold ${
-        isEaurix ? "text-[#0EA5E9]" : "text-slate-700"
-      }`}
-    >
-      E-Aurix
-    </span>
-  </button>
-</div>
+            <span
+              className={`truncate text-sm font-bold ${
+                isEaurix ? "text-[#0EA5E9]" : "text-slate-700"
+              }`}
+            >
+              E-Aurix
+            </span>
+          </button>
+        </div>
 
-        <div className="mx-auto w-full max-w-90 px-4 pb-2">
+        <div className="w-full px-3 sm:px-4 pb-2">
           <AddressCard onOverlayChange={setHideCart} />
         </div>
       </>
@@ -81,8 +81,9 @@ export default function PlatformToggle({ isApp }: Props) {
       <div className="flex items-center bg-white/10 backdrop-blur-xl border border-white/10 rounded-full p-1 shadow-xl mt-10">
         <button
           onClick={() => handleToggle("workkerz")}
-          className={`h-11 px-4 rounded-full flex items-center gap-2 transition-all duration-300 ${!isEaurix ? "bg-white text-[#0F172A] shadow-lg" : "text-white/70"
-            }`}
+          className={`h-11 px-4 rounded-full flex items-center gap-2 transition-all duration-300 ${
+            !isEaurix ? "bg-white text-[#0F172A] shadow-lg" : "text-white/70"
+          }`}
         >
           <img
             src="/workkerzapp.png"
@@ -95,8 +96,9 @@ export default function PlatformToggle({ isApp }: Props) {
 
         <button
           onClick={() => handleToggle("eaurix")}
-          className={`h-11 px-4 rounded-full flex items-center gap-2 transition-all duration-300 ${isEaurix ? "bg-[#0EA5E9] text-white shadow-lg" : "text-white/70"
-            }`}
+          className={`h-11 px-4 rounded-full flex items-center gap-2 transition-all duration-300 ${
+            isEaurix ? "bg-[#0EA5E9] text-white shadow-lg" : "text-white/70"
+          }`}
         >
           <img
             src="/aurixapp.png"

@@ -7,36 +7,20 @@ import CheckoutDeliveryDetails from "./components/checkout/CheckoutDeliveryDetai
 import AddressSelectorModal, {
   type AddressItem,
 } from "@/app/components/address/AddressSelectorModal";
-import OrderSummarySidebar from "./components/eaurix/OrderSummarySidebar";
+import OrderSummarySidebar from "./eaurix/OrderSummarySidebar";
 import AddressFormModal from "@/app/components/address/AddressFormModal";
 import { supabase } from "@/lib/supabase";
 import CheckoutPaymentStep from "./components/checkout/CheckoutPaymentStep";
 import {
   ChevronLeft,
   ChevronRight,
-  MapPin,
-  CreditCard,
-  User,
-  Mail,
-  Phone,
   Lock,
   Trash2,
   Truck,
-  Star,
-  Briefcase,
-  Plus,
-  Minus,
-  CheckCircle,
   X,
-  Zap,
-  CalendarDays,
-  Clock3,
-  Timer,
+  ShoppingCart,
 } from "lucide-react";
 import { usePlatform } from "@/app/components/context/PlatformContext";
-import { useAdmin } from "@/app/components/context/AdminContext";
-import type { Worker } from "../../data/workers";
-import type { ProductCategory } from "../../data/products";
 
 const steps = [
   { id: 1, label: "Details" },
@@ -60,13 +44,18 @@ export function EAurixCheckout() {
     setShowAddressModal(true);
   };
   const [loadingAddress, setLoadingAddress] = useState(true);
-
+  const [showOrderPopup, setShowOrderPopup] = useState(false);
   const [showAddressModal, setShowAddressModal] = useState(false);
-
+  const [showOrderItems, setShowOrderItems] = useState(false);
   const [showAddressForm, setShowAddressForm] = useState(false);
 
   const [editingAddress, setEditingAddress] = useState<AddressItem | null>(
     null,
+  );
+  1;
+  const totalAmount = reviewCart.reduce(
+    (total, item) => total + item.price * item.qty,
+    0,
   );
   const [showOrderSummary, setShowOrderSummary] = useState(false);
   const [form, setForm] = useState({
@@ -247,22 +236,96 @@ export function EAurixCheckout() {
     return true; // Review
   };
 
-  const handleConfirm = () => {
-    const orderData = {
-      form,
-      cart,
-      cartTotal,
-      delivery,
-      tax,
-      grandTotal,
-    };
+  const handleConfirm = async () => {
+    try {
+      const orderData = {
+        form,
+        cart,
+        cartTotal,
+        delivery,
+        tax,
+        grandTotal,
+      };
 
-    sessionStorage.setItem("eaurix-order", JSON.stringify(orderData));
+      // Create Order
+      const { data: order, error } = await supabase
+        .from("orders")
+        .insert({
+          order_number: `EA-${Date.now()}`,
 
-    setTimeout(() => {
-      clearCart();
-      router.push("/eaurix/confirmed");
-    }, 100);
+          customer_name: form.name,
+          customer_email: form.email,
+          customer_phone: form.phone,
+
+          address: form.address,
+          city: form.city,
+          pincode: form.zip,
+
+          delivery_option: form.deliveryOption,
+          delivery_slot: form.deliverySlot,
+
+          subtotal: cartTotal,
+          delivery,
+          tax,
+          total: grandTotal,
+
+          payment_method: "UPI", // or "COD"
+          payment_status: "Pending",
+          status: "Pending",
+        })
+        .select()
+        .single();
+
+      if (error) {
+        console.error("Order Error:", error);
+
+        alert(`
+Message: ${error.message}
+
+Details: ${error.details ?? "-"}
+
+Hint: ${error.hint ?? "-"}
+  `);
+
+        return;
+      }
+
+      // Create Order Items
+      const items = cart.map((item) => ({
+        order_id: order.id,
+        product_id: item.id,
+        product_name: item.name,
+        product_image: item.icon,
+        qty: item.qty,
+        price: item.price,
+        unit: item.unit,
+      }));
+
+      const { error: itemError } = await supabase
+        .from("order_items")
+        .insert(items);
+
+      if (itemError) {
+        console.error("Order Items Error:", itemError);
+        alert("Failed to save order items.");
+        return;
+      }
+
+      // Save for confirmation page
+      sessionStorage.setItem(
+        "eaurix-order",
+        JSON.stringify({
+          ...orderData,
+          orderId: order.id,
+          orderNumber: order.order_number,
+        }),
+      );
+
+      router.push("/eaurix/order-placed");
+    } catch (err) {
+      console.error("Checkout Error:", err);
+      alert("Something went wrong. Please try again.");
+    }
   };
   const [mounted, setMounted] = useState(false);
 
@@ -297,13 +360,13 @@ export function EAurixCheckout() {
     "w-full bg-[#F8FAFC] border border-gray-200 rounded-xl px-3 py-2.5 text-sm text-[#0F172A] outline-none focus:border-[#0EA5E9] transition-colors";
 
   return (
-    <div className="min-h-screen   pb-16">
+    <div className="min-h-screen  pb-14">
       {/* Header */}
       <div className="sticky top-0 z-40 bg-white/95 backdrop-blur-xl border-b border-slate-200">
         {/* Header */}
         <div
           className={`overflow-hidden transition-all duration-300 ${
-            compactHeader ? "max-h-0 opacity-0" : "max-h-24 opacity-100 pt-12"
+            compactHeader ? "max-h-0 opacity-0" : "max-h-28 opacity-100 pt-12"
           }`}
         >
           <div className="mx-auto flex h-16 max-w-4xl items-center justify-between px-4">
@@ -342,233 +405,344 @@ export function EAurixCheckout() {
           </div>
         </div>
       </div>
-      <div className="mx-auto px-6 mt-8 pb-8">
-        <div className="grid grid-cols-1 xl:grid-cols-[1.6fr_0.9fr] gap-8 items-start">
+      <div className="mx-auto px-6 mt-4 pb-4">
+        <div className="grid grid-cols-1 xl:grid-cols-[1.6fr_0.9fr] gap-2 items-start">
           {/* Form panel */}
           <div className="">
-            <div className="">
-              {step === 1 && (
-                <CheckoutCustomerDetails
-                  form={form}
-                  update={update}
-                  inp={inp}
-                  selectedAddress={selectedAddress}
-                  loadingAddress={loadingAddress}
-                  onAddressClick={handleAddressPicker}
-                />
-              )}
-              {step === 2 && (
-                <CheckoutDeliveryDetails
-                  form={form}
-                  update={update}
-                  inp={inp}
-                  cartTotal={cartTotal}
-                />
-              )}
+            {step === 1 && (
+              <CheckoutCustomerDetails
+                form={form}
+                update={update}
+                inp={inp}
+                selectedAddress={selectedAddress}
+                loadingAddress={loadingAddress}
+                onAddressClick={handleAddressPicker}
+              />
+            )}
+            {step === 2 && (
+              <CheckoutDeliveryDetails
+                form={form}
+                update={update}
+                inp={inp}
+                cartTotal={cartTotal}
+              />
+            )}
 
-              {/* ── STEP 2: Payment ── */}
-              {step === 3 && (
-                <CheckoutPaymentStep
-                  form={form}
-                  update={update}
-                  grandTotal={grandTotal}
-                  inp={inp}
-                />
-              )}
+            {/* ── STEP 2: Payment ── */}
+            {step === 3 && (
+              <CheckoutPaymentStep
+                form={form}
+                update={update}
+                grandTotal={grandTotal}
+                inp={inp}
+              />
+            )}
 
-              {/* ── STEP 4: Review ── */}
-              {step === 4 && (
-                <div className="space-y-3">
-                  {/* Header */}
-                  <div>
-                    <h2 className="text-base font-bold text-slate-900">
-                      Review Order
-                    </h2>
-                    <p className="text-xs text-slate-500 mt-0.5">
-                      Check your delivery details before placing the order.
-                    </p>
-                  </div>
+            {/* ── STEP 4: Review ── */}
+            {step === 4 && (
+              <div className="space-y-2">
+                {/* Header */}
+                <div>
+                  <h2 className="text-base font-bold text-slate-900">
+                    Review Order
+                  </h2>
+                  <p className="text-xs text-slate-500 mt-0.5">
+                    Check your delivery details before placing the order.
+                  </p>
+                </div>
 
-                  {/* Delivery Summary */}
-                  <div className="rounded-2xl border border-slate-200 bg-slate-50 p-3 space-y-2">
-                    <div className="rounded-2xl border border-slate-200 bg-slate-50 p-3 space-y-3">
-                      {/* Header */}
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-2">
-                          <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-sky-100">
-                            <Truck className="h-4 w-4 text-sky-600" />
-                          </div>
-
-                          <div>
-                            <h3 className="text-sm font-semibold text-slate-900">
-                              Delivering To
-                            </h3>
-                            <p className="text-[11px] text-slate-500">
-                              {form.deliveryOption === "express"
-                                ? "Express Delivery"
-                                : "Standard Delivery"}
-                            </p>
-                          </div>
+                {/* Delivery Summary */}
+                <div className="rounded-2xl border border-slate-200 bg-slate-50 p-3 ">
+                  <div className="rounded-2xl border border-slate-200 bg-slate-50 p-3 ">
+                    {/* Header */}
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-sky-100">
+                          <Truck className="h-4 w-4 text-sky-600" />
                         </div>
 
-                        <span className="rounded-full bg-sky-100 px-2 py-1 text-[10px] font-semibold text-sky-700">
-                          {form.deliveryOption === "express"
-                            ? "⚡ Next Day"
-                            : "🚚 3–5 Days"}
+                        <div>
+                          <h3 className="text-sm font-semibold text-slate-900">
+                            Delivering To
+                          </h3>
+                          <p className="text-[11px] text-slate-500">
+                            {form.deliveryOption === "express"
+                              ? "Express Delivery"
+                              : "Standard Delivery"}
+                          </p>
+                        </div>
+                      </div>
+
+                      <span className="rounded-full bg-sky-100 px-2 py-1 text-[10px] font-semibold text-sky-700">
+                        {form.deliveryOption === "express"
+                          ? "⚡ Next Day"
+                          : "🚚 3–5 Days"}
+                      </span>
+                    </div>
+
+                    {/* Customer */}
+                    <div className="rounded-xl bg-white p-3 border border-slate-100">
+                      <div className="flex items-center justify-between">
+                        <span className="text-sm font-semibold text-slate-900">
+                          {form.name}
+                        </span>
+
+                        <span className="text-xs text-slate-500">
+                          {form.phone}
                         </span>
                       </div>
 
-                      {/* Customer */}
-                      <div className="rounded-xl bg-white p-3 border border-slate-100">
-                        <div className="flex items-center justify-between">
-                          <span className="text-sm font-semibold text-slate-900">
-                            {form.name}
-                          </span>
-
-                          <span className="text-xs text-slate-500">
-                            {form.phone}
-                          </span>
-                        </div>
-
-                        <p className="mt-2 wrap-break-word text-xs leading-5 text-slate-600 whitespace-normal">
-                          {form.address}, {form.city} {form.zip}
-                        </p>
-                      </div>
+                      <p className="mt-2 wrap-break-word text-xs leading-5 text-slate-600 whitespace-normal">
+                        {form.address}, {form.city} {form.zip}
+                      </p>
                     </div>
                   </div>
+                </div>
 
-                  {/* Products */}
-                  <div className="rounded-2xl border border-slate-200 bg-white divide-y divide-slate-100 max-h-64 overflow-y-auto">
-                    {reviewCart.map((item) => (
+                {/* Products */}
+                <div className="rounded-2xl border border-slate-200 bg-white overflow-hidden">
+                  {/* Header */}
+                  <div className="rounded-2xl border border-slate-200 bg-white px-4 py-1">
+                    <button
+                      type="button"
+                      onClick={() => setShowOrderPopup(true)}
+                      className="flex w-full items-center justify-between rounded-xl bg-slate-50 px-4 py-3 transition hover:bg-slate-100"
+                    >
+                      <div>
+                        <h3 className="text-sm font-semibold text-slate-900">
+                          Order Items
+                        </h3>
+                        <p className="text-xs text-slate-500">
+                          {reviewCart.length}{" "}
+                          {reviewCart.length === 1 ? "Item" : "Items"}
+                        </p>
+                      </div>
+
+                      <span className="rounded-full bg-emerald-600 px-3 py-1 text-xs font-semibold text-white">
+                        View Order
+                      </span>
+                    </button>
+                  </div>
+
+                  {showOrderPopup && (
+                    <div
+                      className="fixed inset-0 z-[9999] flex items-end justify-center bg-black/60 p-4 sm:items-center"
+                      onClick={() => setShowOrderPopup(false)}
+                    >
                       <div
-                        key={item.id}
-                        className="flex items-center gap-2 px-3 py-2"
+                        onClick={(e) => e.stopPropagation()}
+                        className="w-full max-w-lg overflow-hidden rounded-3xl bg-white shadow-2xl"
                       >
-                        {/* Product Image */}
-                        <div
-                          className="h-9 w-9 shrink-0 rounded-lg p-0.5"
-                          style={{
-                            background: `linear-gradient(135deg, ${item.color}15, ${item.color}35)`,
-                          }}
-                        >
-                          <div
-                            className="flex h-full w-full items-center justify-center rounded-md overflow-hidden"
-                            style={{
-                              background: `linear-gradient(135deg, ${item.color}, ${item.color}90)`,
-                            }}
-                          >
-                            {item.icon ? (
-                              <img
-                                src={item.icon}
-                                alt={item.name}
-                                className="h-full w-full object-cover"
-                                onError={(e) => {
-                                  (e.target as HTMLImageElement).src =
-                                    "/placeholder.png";
-                                }}
-                              />
-                            ) : (
-                              <span className="text-xs font-bold text-white">
-                                {item.name.charAt(0)}
-                              </span>
-                            )}
+                        {/* Header */}
+                        <div className="flex items-center justify-between border-b px-5 py-4">
+                          <div>
+                            <h3 className="text-lg font-bold text-slate-900">
+                              Order Items
+                            </h3>
+                            <p className="text-xs text-slate-500">
+                              {reviewCart.length}{" "}
+                              {reviewCart.length === 1 ? "Item" : "Items"}
+                            </p>
                           </div>
-                        </div>
-
-                        {/* Details */}
-                        <div className="min-w-0 flex-1">
-                          <p className="truncate text-[13px] font-semibold text-slate-900">
-                            {item.name}
-                          </p>
-
-                          <p className="text-[11px] text-slate-500">
-                            {item.qty} × ₹{item.price}
-                            {item.unit && ` / ${item.unit}`}
-                          </p>
-                        </div>
-
-                        {/* Right Side */}
-                        <div className="flex items-center gap-2 shrink-0">
-                          <p className="text-[13px] font-bold text-slate-900">
-                            ₹{(item.price * item.qty).toFixed(2)}
-                          </p>
 
                           <button
-                            onClick={() => removeFromCart(item.id)}
-                            className="flex h-8 w-8 items-center justify-center rounded-full text-red-500 transition hover:bg-red-50 active:scale-95"
+                            onClick={() => setShowOrderPopup(false)}
+                            className="flex h-9 w-9 items-center justify-center rounded-full bg-slate-100 hover:bg-slate-200"
                           >
-                            <Trash2 className="h-4 w-4" />
+                            <X className="h-5 w-5" />
+                          </button>
+                        </div>
+
+                        {/* Product List */}
+                        <div className="max-h-[65vh] overflow-y-auto divide-y">
+                          {reviewCart.map((item) => (
+                            <div
+                              key={item.id}
+                              className="flex items-center gap-3 px-4 py-3"
+                            >
+                              <img
+                                src={item.icon || "/placeholder.png"}
+                                alt={item.name}
+                                className="h-12 w-12 rounded-xl border object-cover"
+                              />
+
+                              <div className="min-w-0 flex-1">
+                                <p className="truncate font-semibold text-slate-900">
+                                  {item.name}
+                                </p>
+
+                                <p className="text-xs text-slate-500">
+                                  {item.qty} × ₹{item.price}
+                                  {item.unit && ` / ${item.unit}`}
+                                </p>
+                              </div>
+
+                              <div className="text-right">
+                                <p className="font-bold text-slate-900">
+                                  ₹{(item.qty * item.price).toFixed(2)}
+                                </p>
+
+                                <button
+                                  onClick={() => removeFromCart(item.id)}
+                                  className="mt-1 text-red-500 hover:text-red-600"
+                                >
+                                  <Trash2 className="h-4 w-4" />
+                                </button>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+
+                        {/* Footer */}
+                        <div className="border-t p-4">
+                          <button
+                            onClick={() => setShowOrderPopup(false)}
+                            className="w-full rounded-xl bg-emerald-600 py-3 text-sm font-semibold text-white hover:bg-emerald-700"
+                          >
+                            Close
                           </button>
                         </div>
                       </div>
-                    ))}
+                    </div>
+                  )}
+                </div>
+                {/* Amazon Style Bill Card */}
+                <div className=" mt-2 rounded-2xl border border-slate-200 bg-linear-to-br from-slate-50 to-white p-4 shadow-sm">
+                  <div className="mb-2 flex items-center justify-between">
+                    <h4 className="text-sm font-bold text-slate-900">
+                      Bill Details
+                    </h4>
+
+                    <span className="rounded-full bg-emerald-100 px-3 py-1 text-xs font-semibold text-emerald-700">
+                      {reviewCart.reduce((sum, item) => sum + item.qty, 0)}{" "}
+                      Items
+                    </span>
                   </div>
 
-                  {/* Terms */}
-                  <div className="flex gap-2 rounded-2xl border border-sky-100 bg-sky-50 p-3">
-                    <Lock className="mt-0.5 h-4 w-4 shrink-0 text-sky-600" />
+                  <div className="space-y-2.5 text-sm">
+                    <div className="flex justify-between text-slate-600">
+                      <span>Items Total</span>
+                      <span>₹{cartTotal.toFixed(2)}</span>
+                    </div>
 
-                    <p className="text-[11px] leading-5 text-sky-700">
-                      By placing this order, you agree to E-Aurix's Terms &
-                      Returns Policy.
-                    </p>
+                    <div className="flex justify-between text-slate-600">
+                      <span>Delivery Charges</span>
+                      <span
+                        className={`font-medium ${
+                          delivery === 0 ? "text-emerald-600" : "text-slate-900"
+                        }`}
+                      >
+                        {delivery === 0 ? "FREE" : `₹${delivery.toFixed(2)}`}
+                      </span>
+                    </div>
+
+                    <div className="flex justify-between text-slate-600">
+                      <span>Discount</span>
+                      <span className="font-medium text-emerald-600">
+                        -₹0.00
+                      </span>
+                    </div>
+
+                    <div className="flex justify-between text-slate-600">
+                      <span>GST</span>
+                      <span>₹{tax.toFixed(2)}</span>
+                    </div>
+
+                    <div className="my-2 border-t border-dashed border-slate-300"></div>
+
+                    <div className="flex items-center justify-between">
+                      <span className="text-base font-bold text-slate-900">
+                        Total Amount
+                      </span>
+
+                      <span className="text-xl font-extrabold text-emerald-600">
+                        ₹{grandTotal.toFixed(2)}
+                      </span>
+                    </div>
+
+                    <div className="rounded-xl bg-emerald-50 px-3 py-2 text-xs text-emerald-700">
+                      {delivery === 0 ? (
+                        <>
+                          🎉 Your order is eligible for <b>FREE Delivery</b>.
+                        </>
+                      ) : (
+                        <>
+                          🚚 Delivery Charge: <b>₹{delivery.toFixed(2)}</b>
+                        </>
+                      )}
+                    </div>
                   </div>
                 </div>
-              )}
+                {/* Terms */}
+                <div className="flex items-start gap-2 rounded-xl border border-slate-200 bg-slate-50 px-3 py-2">
+                  <Lock className="mt-0.5 h-3.5 w-3.5 shrink-0 text-emerald-600" />
 
-              {/* Bottom Action Bar */}
-              <div
-                className={`fixed bottom-0 left-0 right-0 z-50 border-t border-gray-200 bg-white/95 backdrop-blur-md px-4 py-3 pb-[calc(env(safe-area-inset-bottom)+12px)] transition-all duration-300 ${
-                  showOrderSummary
-                    ? "translate-y-full opacity-0 pointer-events-none"
-                    : "translate-y-0 opacity-100"
-                }`}
-              >
-                <div className="mx-auto flex max-w-md gap-3">
-                  {/* View Products */}
-                  <button
-                    onClick={() => setShowOrderSummary(true)}
-                    className="flex-1 rounded-xl border border-gray-200 bg-white py-3 text-sm font-semibold text-slate-700 transition hover:bg-gray-50"
-                  >
-                    View Products
-                  </button>
-
-                  {/* Continue / Place Order */}
-                  <button
-                    onClick={() =>
-                      step === 4 ? handleConfirm() : setStep((prev) => prev + 1)
-                    }
-                    disabled={!canNext()}
-                    className={`flex-1 flex items-center justify-center gap-2 rounded-xl py-3 text-sm font-bold transition-all ${
-                      canNext()
-                        ? step === 4
-                          ? "bg-[#FF5C39] hover:bg-[#E54E2E] text-white"
-                          : "bg-[#0EA5E9] hover:bg-[#0284C7] text-white"
-                        : "bg-gray-200 text-gray-400 cursor-not-allowed"
-                    }`}
-                  >
-                    {step === 4 ? (
-                      <>
-                        <Lock className="w-4 h-4 shrink-0" />
-                        <span className="text-xs font-semibold whitespace-nowrap">
-                          Place Order
-                        </span>
-                        <span className="text-xs font-bold whitespace-nowrap">
-                          ₹{grandTotal.toFixed(0)}
-                        </span>
-                      </>
-                    ) : (
-                      <>
-                        <span className="text-sm">Continue</span>
-                        <ChevronRight className="w-4 h-4 shrink-0" />
-                      </>
-                    )}
-                  </button>
+                  <p className="text-[10px] leading-4 text-slate-600">
+                    By placing your order, you agree to{" "}
+                    <span className="font-medium text-slate-900">
+                      E-Aurix Terms
+                    </span>{" "}
+                    &{" "}
+                    <span className="font-medium text-slate-900">
+                      Returns Policy
+                    </span>
+                    .
+                  </p>
                 </div>
+              </div>
+            )}
+
+            {/* Bottom Action Bar */}
+            <div
+              className={`fixed bottom-0 left-0 right-0 z-50 border-t border-gray-200 bg-white/95 backdrop-blur-md px-4 py-3 pb-[calc(env(safe-area-inset-bottom)+12px)] transition-all duration-300 ${
+                showOrderSummary
+                  ? "translate-y-full opacity-0 pointer-events-none"
+                  : "translate-y-0 opacity-100"
+              }`}
+            >
+              <div className="mx-auto flex max-w-md gap-3">
+                {/* View Products */}
+                <button
+                  onClick={() => setShowOrderSummary(true)}
+                  className="flex-1 rounded-xl border border-gray-200 bg-white py-3 text-sm font-semibold text-slate-700 transition hover:bg-gray-50"
+                >
+                  View Products
+                </button>
+
+                {/* Continue / Place Order */}
+                <button
+                  onClick={() =>
+                    step === 4 ? handleConfirm() : setStep((prev) => prev + 1)
+                  }
+                  disabled={!canNext()}
+                  className={`flex-1 flex items-center justify-center gap-2 rounded-xl py-3 text-sm font-bold transition-all ${
+                    canNext()
+                      ? step === 4
+                        ? "bg-[#FF5C39] hover:bg-[#E54E2E] text-white"
+                        : "bg-[#0EA5E9] hover:bg-[#0284C7] text-white"
+                      : "bg-gray-200 text-gray-400 cursor-not-allowed"
+                  }`}
+                >
+                  {step === 4 ? (
+                    <>
+                      <Lock className="w-4 h-4 shrink-0" />
+                      <span className="text-xs font-semibold whitespace-nowrap">
+                        Place Order
+                      </span>
+                      <span className="text-xs font-bold whitespace-nowrap">
+                        ₹{grandTotal.toFixed(0)}
+                      </span>
+                    </>
+                  ) : (
+                    <>
+                      <span className="text-sm">Continue</span>
+                      <ChevronRight className="w-4 h-4 shrink-0" />
+                    </>
+                  )}
+                </button>
               </div>
             </div>
           </div>
-
           {showOrderSummary && (
             <>
               <div

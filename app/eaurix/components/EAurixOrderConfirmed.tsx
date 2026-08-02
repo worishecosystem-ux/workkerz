@@ -5,7 +5,7 @@ import Link from "next/link";
 
 import {
   CheckCircle,
-  Package,
+  MapPin,
   Truck,
   ArrowRight,
   Home,
@@ -13,7 +13,7 @@ import {
   Printer,
   Send,
   X,
-  Briefcase,
+  HardHat,
 } from "lucide-react";
 import confetti from "canvas-confetti";
 
@@ -25,7 +25,7 @@ export function EAurixOrderConfirmed() {
     `EAX-${Math.random().toString(36).slice(2, 8).toUpperCase()}`,
   );
 
-  const [whatsappNum, setWhatsappNum] = useState("");
+  const whatsappNum = "918602190366";
   const [waSent, setWaSent] = useState(false);
 
   const [state, setState] = useState<{
@@ -75,7 +75,7 @@ export function EAurixOrderConfirmed() {
 
       setTimeout(() => {
         setWaSent(false);
-      }, 4000); 
+      }, 4000);
     }, 1500);
 
     return () => clearTimeout(timer);
@@ -191,17 +191,23 @@ export function EAurixOrderConfirmed() {
   };
 
   const handleShareWhatsApp = () => {
-    const adminNumber = "918602190366"; // India country code included
+    const message = `🛍️ *E-Aurix Order Confirmation*
 
-    const msg = encodeURIComponent(buildWhatsAppMessage());
+Order ID: ${orderId.current}
 
-    window.open(`https://wa.me/${adminNumber}?text=${msg}`, "_blank");
+Customer: ${form.name}
+Phone: ${form.phone}
+
+Total: ₹${grandTotal.toFixed(2)}
+
+Track your order in the E-Aurix app.`;
+
+    window.open(
+      `https://wa.me/${whatsappNum}?text=${encodeURIComponent(message)}`,
+      "_blank",
+    );
 
     setWaSent(true);
-
-    setTimeout(() => {
-      setWaSent(false);
-    }, 4000);
   };
 
   const handlePrint = () => window.print();
@@ -218,280 +224,321 @@ export function EAurixOrderConfirmed() {
         }
       `}</style>
 
-      <div className="min-h-screen bg-[#F0F9FF] pt-24 pb-16">
-        <div className="max-w-2xl mx-auto px-6">
+      <div className="min-h-screen bg-[#F0F9FF] pt-18 pb-20">
+        <div className="max-w-2xl mx-auto px-4">
           {/* ── Receipt area ── */}
-          <div id="order-receipt">
+          <div id="order-receipt" className="pt-28">
             {/* Success Header */}
-            <div className="text-center mb-8">
-              <div className="w-20 h-20 bg-sky-100 rounded-full flex items-center justify-center mx-auto mb-5 shadow-lg shadow-sky-100">
-                <CheckCircle className="w-10 h-10 text-[#0EA5E9]" />
-              </div>
-              <h1
-                className="text-[#0F172A] mb-2"
-                style={{
-                  fontSize: "1.8rem",
-                  fontWeight: 900,
-                  letterSpacing: "-0.02em",
-                }}
-              >
-                Order Confirmed! 🎉
-              </h1>
-              <p className="text-[#64748B]">
-                Thank you, {form.name?.split(" ")[0]}! Your materials are on
-                their way.
-              </p>
-              <div className="inline-flex items-center gap-2 bg-white border border-gray-200 rounded-full px-4 py-2 mt-4 shadow-sm">
-                <span className="text-xs text-[#64748B]">Order ID:</span>
-                <span
-                  className="text-sm text-[#0F172A]"
-                  style={{ fontWeight: 700 }}
-                >
-                  {orderId.current}
-                </span>
+            <div className="fixed inset-x-0 top-0 z-100 border-b border-emerald-100 bg-white/95 backdrop-blur-xl shadow-sm">
+              <div className="mx-auto max-w-2xl">
+                {/* Order ID */}
+                <div className="flex items-center justify-between border-b border-emerald-100 bg-emerald-50 px-4 py-3 pt-12">
+                  <div>
+                    <p className="text-[10px] font-medium uppercase tracking-wider text-slate-500">
+                      Order ID
+                    </p>
+
+                    <p className="mt-0.5 text-sm font-bold tracking-wide text-slate-900">
+                      #{orderId.current}
+                    </p>
+                  </div>
+
+                  <span className="rounded-full bg-emerald-600 px-4 py-1 text-[10px] font-semibold text-white">
+                    Placed
+                  </span>
+                </div>
+
+                {/* Success */}
+                <div className="flex items-center gap-3 bg-white px-4 py-3">
+                  <div className="flex h-11 w-11 items-center justify-center rounded-full bg-emerald-500">
+                    <CheckCircle className="h-5 w-5 text-white" />
+                  </div>
+
+                  <div className="min-w-0 flex-1">
+                    <h1 className="text-sm font-bold text-slate-900">
+                      Order Confirmed
+                    </h1>
+
+                    <p className="mt-0.5 text-[11px] leading-4 text-slate-600">
+                      Thank you,{" "}
+                      <span className="font-semibold">
+                        {form.name?.split(" ")[0]}
+                      </span>
+                      . Your order is being prepared.
+                    </p>
+                  </div>
+                </div>
               </div>
             </div>
 
-            {/* Delivery Status Card */}
-            <div className="bg-linear-to-r from-[#0F2744] to-[#0C3B5E] rounded-2xl p-6 mb-4 text-white">
-              <div className="flex items-center gap-3 mb-4">
-                <div className="w-10 h-10 bg-[#0EA5E9]/30 rounded-xl flex items-center justify-center">
-                  <Truck className="w-5 h-5 text-[#38BDF8]" />
-                </div>
-                <div>
-                  <div style={{ fontWeight: 700 }}>
-                    {isExpress ? "⚡ Express Delivery" : "📦 Standard Delivery"}
+            {/* Delivery Details */}
+            <div className="mb-5 overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
+              {/* Header */}
+              <div className="flex items-center justify-between border-b border-slate-200 bg-slate-50 px-4 py-3">
+                <div className="flex items-center gap-3">
+                  <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-sky-100">
+                    <Truck className="h-5 w-5 text-sky-600" />
                   </div>
-                  <div className="text-sky-300 text-sm">
-                    Estimated in {deliveryDays}
+
+                  <div>
+                    <h3 className="text-sm font-bold text-slate-900">
+                      {isExpress ? "Express Delivery" : "Standard Delivery"}
+                    </h3>
+
+                    <p className="text-xs text-slate-500">
+                      Estimated delivery in {deliveryDays}
+                    </p>
                   </div>
                 </div>
+
+                <span className="rounded-full bg-emerald-100 px-3 py-1 text-[10px] font-semibold text-emerald-700">
+                  Order Confirmed
+                </span>
               </div>
-              <div className="flex items-start gap-3 p-3.5 bg-white/10 rounded-xl text-sm">
-                <Package className="w-4 h-4 text-sky-300 shrink-0 mt-0.5" />
-                <div>
-                  <div
-                    className="text-white mb-0.5"
-                    style={{ fontWeight: 600 }}
-                  >
-                    Delivering to
+
+              {/* Details */}
+              <div className="space-y-4 p-4">
+                <div className="flex items-start gap-3">
+                  <MapPin className="mt-0.5 h-4 w-4 text-slate-500" />
+
+                  <div>
+                    <p className="text-xs font-semibold text-slate-900">
+                      Delivery Address
+                    </p>
+
+                    <p className="mt-1 text-xs leading-5 text-slate-600">
+                      {form.address}, {form.city} {form.zip}
+                    </p>
                   </div>
-                  <div className="text-sky-200">
-                    {form.address}, {form.city} {form.zip}
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="rounded-xl border border-slate-200 bg-slate-50 p-3">
+                    <p className="text-[10px] uppercase tracking-wide text-slate-500">
+                      Payment
+                    </p>
+
+                    <p className="mt-1 text-sm font-semibold text-slate-900">
+                      UPI
+                    </p>
+
+                    <span className="mt-2 inline-flex rounded-full bg-amber-100 px-2 py-0.5 text-[10px] font-semibold text-amber-700">
+                      Pending Verification
+                    </span>
                   </div>
+
+                  <div className="rounded-xl border border-slate-200 bg-slate-50 p-3">
+                    <p className="text-[10px] uppercase tracking-wide text-slate-500">
+                      Delivery
+                    </p>
+
+                    <p className="mt-1 text-sm font-semibold text-slate-900">
+                      {deliveryDays}
+                    </p>
+
+                    <span className="mt-2 inline-flex rounded-full bg-sky-100 px-2 py-0.5 text-[10px] font-semibold text-sky-700">
+                      Preparing
+                    </span>
+                  </div>
+                </div>
+
+                <div className="rounded-xl border border-emerald-100 bg-emerald-50 p-3">
+                  <p className="text-xs font-semibold text-emerald-800">
+                    What's next?
+                  </p>
+
+                  <p className="mt-1 text-[11px] leading-5 text-emerald-700">
+                    Your order has been received successfully. The seller will
+                    verify your payment and start preparing your materials.
+                    You'll receive updates as your order progresses.
+                  </p>
                 </div>
               </div>
             </div>
 
             {/* Order Items */}
             <div className="bg-white rounded-2xl border border-gray-100 p-6 mb-4 shadow-sm">
-              <h3 className="text-[#0F172A] mb-4" style={{ fontWeight: 700 }}>
-                Order Items
-              </h3>
-              <div className="space-y-3 mb-5">
-                {cart.map((item: any) => (
-                  <div
-                    key={item.id}
-                    className="flex items-center gap-3 py-2 border-b border-gray-50 last:border-0"
-                  >
-                    <div
-                      className="w-14 h-14 rounded-2xl overflow-hidden shrink-0 p-1"
-                      style={{
-                        background: `linear-gradient(135deg, ${item.color}15, ${item.color}35)`,
-                      }}
-                    >
-                      <div
-                        className="w-full h-full rounded-xl overflow-hidden flex items-center justify-center"
-                        style={{
-                          background: `linear-gradient(135deg, ${item.color}, ${item.color}90)`,
-                        }}
-                      >
-                        {item.icon && item.icon.trim() !== "" ? (
-                          <img
-                            src={item.icon}
-                            alt={item.name}
-                            className="w-full h-full object-cover"
-                            onError={(e) => {
-                              (e.target as HTMLImageElement).src =
-                                "/placeholder.png";
-                            }}
-                          />
-                        ) : (
-                          <div className="text-white text-lg font-bold">
-                            {item.name.charAt(0)}
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <div
-                        className="text-sm text-[#0F172A] line-clamp-1"
-                        style={{ fontWeight: 600 }}
-                      >
-                        {item.name}
-                      </div>
-                      <div className="text-xs text-[#94A3B8]">
-                        {item.brand} · {item.qty} × ${item.price}
-                      </div>
-                    </div>
-                    <div
-                      className="text-sm text-[#0F172A]"
-                      style={{ fontWeight: 700 }}
-                    >
-                      ₹{(item.price * item.qty).toFixed(2)}
-                    </div>
-                  </div>
-                ))}
-
-                {/* Worker Add-On row */}
-                {workerAddon && (
-                  <div className="flex items-center gap-3 py-2 border-t-2 border-dashed border-orange-200 mt-2 pt-4">
-                    <img
-                      src={workerAddon.workerPhoto}
-                      alt={workerAddon.workerName}
-                      className="w-10 h-10 rounded-xl object-cover border border-orange-200 shrink-0"
-                      onError={(e) => {
-                        (e.target as HTMLImageElement).src =
-                          `https://ui-avatars.com/api/?name=${encodeURIComponent(workerAddon.workerName)}&background=f97316&color=fff`;
-                      }}
-                    />
-                    <div className="flex-1 min-w-0">
-                      <div
-                        className="text-sm text-[#0F172A] line-clamp-1"
-                        style={{ fontWeight: 600 }}
-                      >
-                        🔧 {workerAddon.workerName}
-                        <span className="ml-2 text-xs text-[#FF5C39] bg-orange-50 border border-orange-200 px-1.5 py-0.5 rounded-full">
-                          Worker Add-On
-                        </span>
-                      </div>
-                      <div className="text-xs text-[#94A3B8]">
-                        {workerAddon.workerSpecialty} · {workerAddon.hours}h × $
-                        {workerAddon.workerRate}/hr
-                      </div>
-                    </div>
-                    <div
-                      className="text-sm text-[#FF5C39]"
-                      style={{ fontWeight: 700 }}
-                    >
-                      ₹{workerAddon.cost.toFixed(2)}
-                    </div>
-                  </div>
-                )}
-              </div>
-
-              {/* Payment breakdown */}
-              <div className="space-y-2 text-sm border-t border-gray-100 pt-4">
-                <div className="flex justify-between">
-                  <span className="text-[#64748B]">Subtotal</span>
-                  <span className="text-[#0F172A]">
-                    ₹{cartTotal.toFixed(2)}
-                  </span>
+              {/* Bill Details */}
+              <div className="border-t border-slate-200 bg-slate-50">
+                <div className="px-4 py-3">
+                  <h4 className="text-sm font-bold text-slate-900">
+                    Bill Details
+                  </h4>
                 </div>
-                <div className="flex justify-between">
-                  <span className="text-[#64748B]">Delivery</span>
-                  {delivery === 0 ? (
-                    <span
-                      className="text-emerald-600"
-                      style={{ fontWeight: 600 }}
-                    >
-                      FREE
+
+                <div className="space-y-3 px-4 pb-4 text-sm">
+                  <div className="flex items-center justify-between">
+                    <span className="text-slate-600">Items Total</span>
+                    <span className="font-medium text-slate-900">
+                      ₹{cartTotal.toFixed(2)}
                     </span>
-                  ) : (
-                    <span className="text-[#0F172A]">
-                      ₹{delivery.toFixed(2)}
-                    </span>
+                  </div>
+
+                  {workerAddon && (
+                    <div className="flex items-center justify-between">
+                      <span className="text-slate-600">Worker Add-On</span>
+
+                      <span className="font-medium text-orange-600">
+                        ₹{workerAddon.cost.toFixed(2)}
+                      </span>
+                    </div>
                   )}
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-[#64748B]">Tax (8%)</span>
-                  <span className="text-[#0F172A]">₹{tax.toFixed(2)}</span>
-                </div>
-                {workerAddon && (
-                  <div className="flex justify-between">
-                    <span
-                      className="text-[#FF5C39] flex items-center gap-1"
-                      style={{ fontWeight: 600 }}
-                    >
-                      <Briefcase className="w-3 h-3" /> Worker Add-On (
-                      {workerAddon.hours}h)
-                    </span>
-                    <span
-                      className="text-[#FF5C39]"
-                      style={{ fontWeight: 600 }}
-                    >
-                      ₹{workerAddon.cost.toFixed(2)}
+
+                  <div className="flex items-center justify-between">
+                    <span className="text-slate-600">Delivery Charges</span>
+
+                    {delivery === 0 ? (
+                      <span className="font-semibold text-emerald-600">
+                        FREE
+                      </span>
+                    ) : (
+                      <span className="font-medium text-slate-900">
+                        ₹{delivery.toFixed(2)}
+                      </span>
+                    )}
+                  </div>
+
+                  <div className="flex items-center justify-between">
+                    <span className="text-slate-600">Packaging Charges</span>
+
+                    <span className="font-medium text-slate-900">₹0.00</span>
+                  </div>
+
+                  <div className="flex items-center justify-between">
+                    <span className="text-slate-600">GST (8%)</span>
+
+                    <span className="font-medium text-slate-900">
+                      ₹{tax.toFixed(2)}
                     </span>
                   </div>
-                )}
-                <div className="flex justify-between pt-2 border-t border-gray-100">
-                  <span className="text-[#0F172A]" style={{ fontWeight: 700 }}>
-                    Total Charged
-                  </span>
-                  <span
-                    className="text-[#0EA5E9]"
-                    style={{ fontWeight: 900, fontSize: "1.1rem" }}
-                  >
-                    ₹{grandTotal.toFixed(2)}
-                  </span>
-                </div>
-              </div>
-              <div className="mt-4 p-3 bg-gray-50 rounded-xl">
-                <div className="text-xs text-[#94A3B8]">Payment Method</div>
-                <div
-                  className="text-sm text-[#0F172A] mt-0.5"
-                  style={{ fontWeight: 500 }}
-                >
-                  •••• •••• ••••{" "}
-                  {form.cardNumber ? form.cardNumber.slice(-4) : "****"}
+
+                  <div className="flex items-center justify-between">
+                    <span className="text-slate-600">Discount</span>
+
+                    <span className="font-semibold text-emerald-600">
+                      -₹0.00
+                    </span>
+                  </div>
+
+                  <div className="border-t border-dashed border-slate-300 pt-3">
+                    <div className="flex items-center justify-between">
+                      <span className="text-base font-bold text-slate-900">
+                        Grand Total
+                      </span>
+
+                      <span className="text-xl font-extrabold text-emerald-600">
+                        ₹{grandTotal.toFixed(2)}
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* Payment */}
+                  <div className="mt-4 rounded-xl border border-slate-200 bg-white p-3">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="text-[10px] uppercase tracking-wide text-slate-500">
+                          Payment Method
+                        </p>
+
+                        <p className="mt-1 text-sm font-semibold text-slate-900">
+                          UPI Payment
+                        </p>
+                      </div>
+
+                      <span className="rounded-full bg-amber-100 px-2.5 py-1 text-[10px] font-semibold text-amber-700">
+                        Pending
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* Savings */}
+                  <div className="rounded-xl border border-emerald-200 bg-emerald-50 p-3">
+                    <p className="text-xs font-semibold text-emerald-700">
+                      Order Summary
+                    </p>
+
+                    <p className="mt-1 text-[11px] leading-5 text-emerald-600">
+                      {delivery === 0
+                        ? "Congratulations! You received FREE delivery on this order."
+                        : "Delivery charges have been included in your total amount."}
+                    </p>
+                  </div>
                 </div>
               </div>
             </div>
 
-            {/* What happens next */}
-            <div className="bg-white rounded-2xl border border-gray-100 p-6 mb-6 shadow-sm">
-              <h3 className="text-[#0F172A] mb-4" style={{ fontWeight: 700 }}>
-                What Happens Next?
-              </h3>
-              <div className="space-y-4">
+            {/* Order Timeline */}
+            <div className="mb-5 overflow-hidden rounded-2xl border border-slate-200 bg-white">
+              <div className="border-b border-slate-200 bg-slate-50 px-4 py-3">
+                <h3 className="text-sm font-bold text-slate-900">
+                  Order Timeline
+                </h3>
+                <p className="mt-0.5 text-[11px] text-slate-500">
+                  Track what happens next
+                </p>
+              </div>
+
+              <div className="px-4 py-2">
                 {[
                   {
-                    step: "1",
-                    text: `A confirmation email has been sent to ${form.email}`,
+                    title: "Order Confirmed",
+                    subtitle: `Confirmation sent to ${form.email}`,
                     done: true,
                   },
                   {
-                    step: "2",
-                    text: "E-Aurix warehouse picks and packs your order within 2 hours",
+                    title: "Preparing Order",
+                    subtitle: "Seller is packing your items",
                     done: false,
                   },
                   {
-                    step: "3",
-                    text: `Your order ships and arrives in ${deliveryDays}`,
+                    title: "Out for Delivery",
+                    subtitle: `Expected in ${deliveryDays}`,
                     done: false,
                   },
                   {
-                    step: "4",
-                    text: "Rate your purchase and track future orders in My Orders",
+                    title: "Delivered",
+                    subtitle: "Rate your order after delivery",
                     done: false,
                   },
-                ].map((item) => (
-                  <div key={item.step} className="flex items-start gap-3">
+                ].map((item, index, arr) => (
+                  <div
+                    key={index}
+                    className="relative flex gap-3 py-3 last:pb-1"
+                  >
+                    {/* Line */}
+                    {index !== arr.length - 1 && (
+                      <div className="absolute left-2.5 top-8 h-full w-px bg-slate-200" />
+                    )}
+
+                    {/* Icon */}
                     <div
-                      className={`w-7 h-7 rounded-full flex items-center justify-center shrink-0 ${item.done ? "bg-[#0EA5E9]" : "bg-gray-100"}`}
+                      className={`z-10 flex h-5 w-5 shrink-0 items-center justify-center rounded-full ${
+                        item.done
+                          ? "bg-emerald-500"
+                          : "border-2 border-slate-300 bg-white"
+                      }`}
                     >
-                      {item.done ? (
-                        <CheckCircle className="w-4 h-4 text-white" />
-                      ) : (
-                        <span
-                          className="text-xs text-gray-400"
-                          style={{ fontWeight: 600 }}
-                        >
-                          {item.step}
-                        </span>
+                      {item.done && (
+                        <CheckCircle className="h-3.5 w-3.5 text-white" />
                       )}
                     </div>
-                    <p className="text-sm text-[#475569] pt-1">{item.text}</p>
+
+                    {/* Text */}
+                    <div className="min-w-0 flex-1">
+                      <p
+                        className={`text-sm ${
+                          item.done
+                            ? "font-semibold text-slate-900"
+                            : "font-medium text-slate-700"
+                        }`}
+                      >
+                        {item.title}
+                      </p>
+
+                      <p className="mt-0.5 text-xs text-slate-500">
+                        {item.subtitle}
+                      </p>
+                    </div>
                   </div>
                 ))}
               </div>
@@ -499,98 +546,72 @@ export function EAurixOrderConfirmed() {
           </div>
           {/* ── End receipt area ── */}
 
-          {/* ── WhatsApp Share Panel ── */}
-          <div className="bg-white rounded-2xl border border-gray-100 p-5 mb-4 shadow-sm no-print">
-            <div className="flex items-center justify-between mb-3">
-              <div className="flex items-center gap-2">
-                <div className="w-9 h-9 bg-[#25D366]/10 rounded-xl flex items-center justify-center">
-                  <MessageCircle className="w-5 h-5 text-[#25D366]" />
+          <div className="bg-white rounded-2xl border border-gray-200 p-4 mb-4 shadow-sm no-print">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#25D366]/10">
+                  <MessageCircle className="h-5 w-5 text-[#25D366]" />
                 </div>
-                <div>
-                  <div
-                    className="text-[#0F172A] text-sm"
-                    style={{ fontWeight: 700 }}
-                  >
-                    Share on WhatsApp
-                  </div>
-                  <div className="text-[#64748B] text-xs">
-                    Send order details to any number
-                  </div>
-                </div>
-              </div>
-              {waSent && (
-                <span
-                  className="text-xs text-emerald-600 bg-emerald-50 px-2.5 py-1 rounded-full border border-emerald-200"
-                  style={{ fontWeight: 600 }}
-                >
-                  ✓ Opened WhatsApp
-                </span>
-              )}
-            </div>
 
-            <div className="flex gap-2">
-              <div className="flex-1 relative">
-                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-[#64748B] text-sm select-none">
-                  +
-                </span>
-                <input
-                  type="tel"
-                  value={whatsappNum}
-                  onChange={(e) => setWhatsappNum(e.target.value)}
-                  placeholder="1 234 567 8900  (with country code)"
-                  className="w-full bg-[#F8FAFC] border border-gray-200 rounded-xl pl-7 pr-10 py-2.5 text-sm text-[#0F172A] outline-none focus:border-[#25D366] transition-colors"
-                />
-                {whatsappNum && (
-                  <button
-                    onClick={() => setWhatsappNum("")}
-                    className="absolute right-3 top-1/2 -translate-y-1/2"
-                  >
-                    <X className="w-3.5 h-3.5 text-gray-400" />
-                  </button>
-                )}
+                <div>
+                  <h3 className="text-sm font-semibold text-slate-900">
+                    Send Order to WhatsApp
+                  </h3>
+
+                  <p className="text-xs text-slate-500">8602190366</p>
+                </div>
               </div>
+
               <button
                 onClick={handleShareWhatsApp}
-                disabled={!whatsappNum.trim()}
-                className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm transition-colors shrink-0 ${
-                  whatsappNum.trim()
-                    ? "bg-[#25D366] hover:bg-[#1da851] text-white"
-                    : "bg-gray-100 text-gray-400 cursor-not-allowed"
-                }`}
-                style={{ fontWeight: 600 }}
+                className="flex items-center gap-2 rounded-xl bg-[#25D366] px-4 py-2 text-sm font-semibold text-white hover:bg-[#1da851]"
               >
-                <Send className="w-4 h-4" />
+                <Send className="h-4 w-4" />
                 Send
               </button>
             </div>
           </div>
 
-          {/* ── Action Buttons ── */}
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 no-print">
-            <Link
-              href="/"
-              className="flex items-center justify-center gap-2 bg-white border border-gray-200 text-[#475569] hover:bg-gray-50 py-3 rounded-xl text-sm transition-colors"
-              style={{ fontWeight: 500 }}
-            >
-              <Home className="w-4 h-4" />
-              Home
-            </Link>
-            <button
-              onClick={handlePrint}
-              className="flex items-center justify-center gap-2 bg-white border border-gray-200 text-[#475569] hover:bg-gray-50 py-3 rounded-xl text-sm transition-colors"
-              style={{ fontWeight: 500 }}
-            >
-              <Printer className="w-4 h-4" />
-              Print Receipt
-            </button>
-            <Link
-              href="/browse"
-              className="flex items-center justify-center gap-2 bg-[#FF5C39] hover:bg-[#e54e2e] text-white py-3 rounded-xl text-sm transition-colors"
-              style={{ fontWeight: 600 }}
-            >
-              Book a Worker
-              <ArrowRight className="w-4 h-4" />
-            </Link>
+          {/* Bottom Action Bar */}
+          <div className="fixed inset-x-0 bottom-0 z-50 border-t border-slate-200 bg-white/95 backdrop-blur-xl no-print">
+            <div className="mx-auto max-w-5xl px-3 py-2 pb-[calc(env(safe-area-inset-bottom)+8px)]">
+              <div className="grid grid-cols-[72px_1fr] gap-2">
+                {/* Home */}
+                <Link
+                  href="/"
+                  className="flex h-12 flex-col items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-700 transition hover:bg-slate-50"
+                >
+                  <Home className="h-4 w-4" />
+                  <span className="mt-0.5 text-[10px] font-medium">Home</span>
+                </Link>
+
+                {/* Book Worker */}
+                <Link
+                  href="/browse"
+                  className="group flex h-12 items-center justify-between rounded-xl bg-linear-to-r from-emerald-600 via-emerald-500 to-green-500 px-3 shadow-lg shadow-emerald-200 transition-all duration-200 hover:shadow-xl hover:shadow-emerald-300 active:scale-[0.98]"
+                >
+                  <div className="flex items-center gap-2.5">
+                    <div className="flex h-8 w-8 items-center justify-center rounded-full bg-white/15">
+                      <HardHat className="h-4.5 w-4.5 text-white" />
+                    </div>
+
+                    <div className="leading-tight">
+                      <p className="text-sm font-semibold text-white">
+                        Book Worker
+                      </p>
+
+                      <p className="text-[10px] text-emerald-100">
+                        Verified Professionals
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="flex h-7 w-7 items-center justify-center rounded-full bg-white/15 transition-transform duration-200 group-hover:translate-x-1">
+                    <ArrowRight className="h-4 w-4 text-white" />
+                  </div>
+                </Link>
+              </div>
+            </div>
           </div>
         </div>
       </div>

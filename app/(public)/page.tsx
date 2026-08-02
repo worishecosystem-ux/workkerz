@@ -14,16 +14,9 @@ import HomeServices from "../components/home/HomeServices";
 import WorkerLive from "../components/WorkerLive";
 import { useAdmin } from "../components/context/AdminContext";
 export default function Home() {
-  const [searchQuery] = useState("");
-  const [selectedCategory] = useState("");
   const router = useRouter();
   const { workers } = useAdmin();
-  const handleSearch = () => {
-    const params = new URLSearchParams();
-    if (selectedCategory) params.set("category", selectedCategory);
-    if (searchQuery) params.set("q", searchQuery);
-    router.push(`/browse?${params.toString()}`);
-  };
+ 
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
@@ -40,10 +33,38 @@ export default function Home() {
       return () => clearTimeout(timer);
     }
   }, []);
+  const featuredWorkers = (() => {
+    const availableWorkers = (workers || []).filter((w) => w.available);
 
-  const featuredWorkers = (workers || [])
-    .filter((worker) => worker.available)
-    .slice(0, 8);
+    // Group workers by category
+    const grouped = availableWorkers.reduce(
+      (acc, worker) => {
+        const category = worker.category || "Other";
+
+        if (!acc[category]) acc[category] = [];
+        acc[category].push(worker);
+
+        return acc;
+      },
+      {} as Record<string, typeof availableWorkers>,
+    );
+
+    // Take one worker from each category first
+    const mixed: typeof availableWorkers = [];
+
+    Object.values(grouped).forEach((list) => {
+      if (list.length) mixed.push(list[0]);
+    });
+
+    // Fill remaining slots with other workers
+    Object.values(grouped).forEach((list) => {
+      list.slice(1).forEach((worker) => {
+        if (mixed.length < 12) mixed.push(worker);
+      });
+    });
+
+    return mixed.slice(0, 12);
+  })();
 
   if (loading) {
     return <SplashScreen />;
@@ -83,8 +104,6 @@ export default function Home() {
                 ))}
               </div>
             </div>
-
-           
           </div>
         </div>
       </section>

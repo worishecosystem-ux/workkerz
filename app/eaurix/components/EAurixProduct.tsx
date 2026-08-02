@@ -3,6 +3,7 @@ import { useState, useEffect } from "react";
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { Keyboard } from "@capacitor/keyboard";
+import { TransformWrapper, TransformComponent } from "react-zoom-pan-pinch";
 import {
   ChevronLeft,
   ShoppingCart,
@@ -920,7 +921,7 @@ export function EAurixProduct() {
       </div>
       {showImage && (
         <div
-          className="fixed inset-0 z-9999 flex items-center justify-center bg-black/70 backdrop-blur-md p-4"
+          className="fixed inset-0 z-9999 flex items-center justify-center bg-black/70 backdrop-blur-md"
           onClick={() => setShowImage(false)}
         >
           {/* Close Button */}
@@ -929,18 +930,35 @@ export function EAurixProduct() {
               e.stopPropagation();
               setShowImage(false);
             }}
-            className="absolute top-20 right-5 flex h-11 w-11 items-center justify-center rounded-full bg-white/15 text-2xl font-semibold text-white backdrop-blur-md transition hover:bg-white/25"
-            aria-label="Close"
+            className="absolute top-20 right-5 z-20 flex h-11 w-11 items-center justify-center rounded-full bg-white/15 text-2xl font-semibold text-white backdrop-blur-md"
           >
             ✕
           </button>
 
-          <img
-            src={product.image}
-            alt={product.name}
+          <div
+            className="flex h-screen w-screen items-center justify-center overflow-hidden"
             onClick={(e) => e.stopPropagation()}
-            className="max-h-[95vh] max-w-[95vw] cursor-zoom-out rounded-2xl object-contain"
-          />
+          >
+            <TransformWrapper
+              initialScale={1}
+              minScale={1}
+              maxScale={5}
+              centerOnInit
+              centerZoomedOut
+            >
+              <TransformComponent
+                wrapperClass="!h-screen !w-screen"
+                contentClass="!flex !h-screen !w-screen !items-center !justify-center"
+              >
+                <img
+                  src={product.image}
+                  alt={product.name}
+                  draggable={false}
+                  className="max-h-[70vh] max-w-[90vw] object-contain select-none"
+                />
+              </TransformComponent>
+            </TransformWrapper>
+          </div>
         </div>
       )}
     </>
