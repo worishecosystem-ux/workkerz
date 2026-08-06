@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
-
+import { supabase } from "@/lib/supabase";
 import {
   CheckCircle,
   MapPin,
@@ -18,16 +18,37 @@ import {
 import confetti from "canvas-confetti";
 
 export function EAurixOrderConfirmed() {
+  const [orderItems, setOrderItems] = useState<any[]>([]);
+  const [loadingItems, setLoadingItems] = useState(false);
   const fired = useRef(false);
   const autoSent = useRef(false);
-
-  const orderId = useRef(
-    `EAX-${Math.random().toString(36).slice(2, 8).toUpperCase()}`,
-  );
+  const [showOrderItems, setShowOrderItems] = useState(false);
+  const [orderNumber, setOrderNumber] = useState("");
+  const [dbOrderId, setDbOrderId] = useState("");
 
   const whatsappNum = "918602190366";
   const [waSent, setWaSent] = useState(false);
+  const fetchOrderItems = async () => {
+    if (!dbOrderId) return;
 
+    const { data, error } = await supabase
+      .from("order_items")
+      .select("*")
+      .eq("order_id", dbOrderId);
+
+    if (error) {
+      console.error(error);
+      return;
+    }
+
+    setOrderItems(data || []);
+  };
+
+  useEffect(() => {
+    if (dbOrderId) {
+      fetchOrderItems();
+    }
+  }, [dbOrderId]);
   const [state, setState] = useState<{
     form: Record<string, string>;
     cart: any[];
@@ -84,9 +105,13 @@ export function EAurixOrderConfirmed() {
   useEffect(() => {
     const savedOrder = sessionStorage.getItem("eaurix-order");
 
-    if (savedOrder) {
-      setState(JSON.parse(savedOrder));
-    }
+    if (!savedOrder) return;
+
+    const parsed = JSON.parse(savedOrder);
+
+    setState(parsed);
+    setOrderNumber(parsed.orderNumber);
+    setDbOrderId(parsed.orderId);
   }, []);
 
   if (state === undefined) {
@@ -131,7 +156,7 @@ export function EAurixOrderConfirmed() {
       `✅ *Your order has been confirmed!*`,
       ``,
       `🆔 *Order ID*`,
-      `┃ ${orderId.current}`,
+      `┃ ${orderNumber}`,
       ``,
       `👤 *Customer Details*`,
       `┃ ${form.name}`,
@@ -193,7 +218,7 @@ export function EAurixOrderConfirmed() {
   const handleShareWhatsApp = () => {
     const message = `🛍️ *E-Aurix Order Confirmation*
 
-Order ID: ${orderId.current}
+Order ID: ${orderNumber}
 
 Customer: ${form.name}
 Phone: ${form.phone}
@@ -209,8 +234,6 @@ Track your order in the E-Aurix app.`;
 
     setWaSent(true);
   };
-
-  const handlePrint = () => window.print();
 
   return (
     <>
@@ -239,7 +262,7 @@ Track your order in the E-Aurix app.`;
                     </p>
 
                     <p className="mt-0.5 text-sm font-bold tracking-wide text-slate-900">
-                      #{orderId.current}
+                      #{orderNumber}
                     </p>
                   </div>
 
@@ -290,10 +313,6 @@ Track your order in the E-Aurix app.`;
                     </p>
                   </div>
                 </div>
-
-                <span className="rounded-full bg-emerald-100 px-3 py-1 text-[10px] font-semibold text-emerald-700">
-                  Order Confirmed
-                </span>
               </div>
 
               {/* Details */}
@@ -311,37 +330,6 @@ Track your order in the E-Aurix app.`;
                     </p>
                   </div>
                 </div>
-
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="rounded-xl border border-slate-200 bg-slate-50 p-3">
-                    <p className="text-[10px] uppercase tracking-wide text-slate-500">
-                      Payment
-                    </p>
-
-                    <p className="mt-1 text-sm font-semibold text-slate-900">
-                      UPI
-                    </p>
-
-                    <span className="mt-2 inline-flex rounded-full bg-amber-100 px-2 py-0.5 text-[10px] font-semibold text-amber-700">
-                      Pending Verification
-                    </span>
-                  </div>
-
-                  <div className="rounded-xl border border-slate-200 bg-slate-50 p-3">
-                    <p className="text-[10px] uppercase tracking-wide text-slate-500">
-                      Delivery
-                    </p>
-
-                    <p className="mt-1 text-sm font-semibold text-slate-900">
-                      {deliveryDays}
-                    </p>
-
-                    <span className="mt-2 inline-flex rounded-full bg-sky-100 px-2 py-0.5 text-[10px] font-semibold text-sky-700">
-                      Preparing
-                    </span>
-                  </div>
-                </div>
-
                 <div className="rounded-xl border border-emerald-100 bg-emerald-50 p-3">
                   <p className="text-xs font-semibold text-emerald-800">
                     What's next?
@@ -354,6 +342,63 @@ Track your order in the E-Aurix app.`;
                   </p>
                 </div>
               </div>
+            </div>
+            {/* Order Items */}
+            <div className="rounded-xl border border-slate-200 bg-slate-50 p-3 mb-2">
+              <div className="mb-3 flex items-center justify-between">
+                <p className="text-xs font-semibold text-slate-900">
+                  Order Items ({orderItems.length})
+                </p>
+              </div>
+
+              <div className="space-y-2">
+                {orderItems.slice(0, 2).map((item: any) => (
+                  <div
+                    key={item.id}
+                    className="flex items-center justify-between rounded-lg bg-white p-2"
+                  >
+                    <div className="flex items-center gap-3">
+                      <div className="flex h-10 w-10 items-center justify-center overflow-hidden rounded-lg border bg-white">
+                        <img
+                          src={
+                            item.product?.image ||
+                            item.product_image ||
+                            "/placeholder-product.png"
+                          }
+                          alt={item.product?.name || item.product_name}
+                          className="h-8 w-8 object-contain"
+                        />
+                      </div>
+
+                      <div>
+                        <p className="line-clamp-1 text-xs font-semibold text-slate-900">
+                          {item.product?.name || item.product_name}
+                        </p>
+
+                        <p className="text-[11px] text-slate-500">
+                          Qty: {item.qty}
+                        </p>
+                      </div>
+                    </div>
+
+                    <p className="text-xs font-semibold text-slate-900">
+                      ₹
+                      {(
+                        Number(item.price ?? 0) * Number(item.qty ?? 0)
+                      ).toLocaleString()}
+                    </p>
+                  </div>
+                ))}
+              </div>
+
+              {orderItems.length > 2 && (
+                <button
+                  onClick={() => setShowOrderItems(true)}
+                  className="mt-3 w-full rounded-lg border border-slate-300 bg-white py-2 text-xs font-semibold text-slate-700 transition hover:bg-slate-100"
+                >
+                  View All ({orderItems.length} Items)
+                </button>
+              )}
             </div>
 
             {/* Order Items */}
@@ -615,6 +660,80 @@ Track your order in the E-Aurix app.`;
           </div>
         </div>
       </div>
+      {showOrderItems && (
+        <div
+          className="fixed inset-0 z-50 flex items-end bg-black/60"
+          onClick={() => setShowOrderItems(false)}
+        >
+          <div
+            onClick={(e) => e.stopPropagation()}
+            className="w-full max-h-[75vh] rounded-t-3xl bg-white shadow-2xl p-4 pb-8"
+          >
+            {/* Header */}
+            <div className="flex items-center justify-between border-b px-4 py-3">
+              <h3 className="text-sm font-bold text-slate-900">
+                Order Items ({orderItems.length})
+              </h3>
+
+              <button
+                onClick={() => setShowOrderItems(false)}
+                className="flex h-7 w-7 items-center justify-center rounded-full bg-slate-100 text-slate-600"
+              >
+                ✕
+              </button>
+            </div>
+
+            {/* List */}
+            <div className="max-h-[65vh] overflow-y-auto">
+              {orderItems.map((item: any) => (
+                <div
+                  key={item.id}
+                  className="flex items-center gap-3 border-b border-slate-100 px-3 py-2.5 last:border-b-0"
+                >
+                  {/* Image */}
+                  <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-lg border bg-white">
+                    <img
+                      src={item.product_image || "/placeholder-product.png"}
+                      alt={item.product_name}
+                      className="h-8 w-8 object-contain"
+                    />
+                  </div>
+
+                  {/* Details */}
+                  <div className="min-w-0 flex-1">
+                    <p className="line-clamp-1 text-[13px] font-semibold text-slate-900">
+                      {item.product_name}
+                    </p>
+
+                    <div className="mt-0.5 flex items-center gap-2 text-[10px] text-slate-500">
+                      <span>Qty: {item.qty}</span>
+
+                      {item.unit && (
+                        <>
+                          <span>•</span>
+                          <span>{item.unit}</span>
+                        </>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Price */}
+                  <div className="text-right">
+                    <p className="text-[13px] font-bold text-emerald-600">
+                      ₹
+                      {(Number(item.price) * Number(item.qty)).toLocaleString()}
+                    </p>
+
+                    <p className="text-[10px] text-slate-400">
+                      ₹{Number(item.price).toLocaleString()}/unit
+                    </p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
     </>
   );
 }

@@ -7,7 +7,7 @@ const nextConfig: NextConfig = {
   allowedDevOrigins: [
     "localhost",
     "127.0.0.1",
-    "192.168.137.50",
+    "192.168.137.186",
   ],
 
   images: {

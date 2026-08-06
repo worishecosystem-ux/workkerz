@@ -3,7 +3,8 @@ import { useState, useEffect } from "react";
 import { supabase } from "@/lib/supabase";
 import BookingsTab from "./components/BookingsTab";
 import AdminSidebar from "./components/AdminSidebar";
-import { toast } from "sonner";
+import { useRef } from "react";
+import NewOrderNotification from "./components/orders/NewOrderNotification";
 import ShopsTab from "./components/ShopsTab";
 import WorkerExcelImport from "./components/WorkerExcelImport";
 import OrdersTab from "./components/OrdersTab";
@@ -339,7 +340,6 @@ const SERVICES_BY_SUBCATEGORY: Record<string, string[]> = {
 
   "Interior Cleaning": ["Dashboard Cleaning", "Seat Cleaning"],
 
- 
   // OFFICE
   "Office Boy": ["Tea Service", "Office Cleaning", "File Management"],
 
@@ -429,117 +429,55 @@ const SERVICES_BY_SUBCATEGORY: Record<string, string[]> = {
 
   "Assembly Worker": ["Assembly Line Work", "Factory Assembly"],
 
+  // PAINTER
+  "House Painter": ["Interior Painting", "Exterior Painting", "Wall Painting"],
 
-// PAINTER
-"House Painter": [
-  "Interior Painting",
-  "Exterior Painting",
-  "Wall Painting",
-],
+  "Wall Painter": ["Wall Painting", "Putty Work", "Primer Coating"],
 
-"Wall Painter": [
-  "Wall Painting",
-  "Putty Work",
-  "Primer Coating",
-],
+  "Spray Painter": ["Spray Painting", "Metal Painting", "Furniture Painting"],
 
-"Spray Painter": [
-  "Spray Painting",
-  "Metal Painting",
-  "Furniture Painting",
-],
+  "Industrial Painter": [
+    "Factory Painting",
+    "Machine Painting",
+    "Industrial Coating",
+  ],
 
-"Industrial Painter": [
-  "Factory Painting",
-  "Machine Painting",
-  "Industrial Coating",
-],
+  "Texture Painter": ["Texture Finish", "Designer Wall", "Decorative Paint"],
 
-"Texture Painter": [
-  "Texture Finish",
-  "Designer Wall",
-  "Decorative Paint",
-],
-
-"Waterproof Painter": [
-  "Waterproof Coating",
-  "Roof Coating",
-  "Wall Protection",
-],
-
+  "Waterproof Painter": [
+    "Waterproof Coating",
+    "Roof Coating",
+    "Wall Protection",
+  ],
 
   // SECURITY
-"Security Guard": [
-  "Society Security",
-  "Office Security",
-  "Gate Security",
-],
+  "Security Guard": ["Society Security", "Office Security", "Gate Security"],
 
-"Night Guard": [
-  "Night Patrol",
-  "Night Security",
-],
+  "Night Guard": ["Night Patrol", "Night Security"],
 
-Bouncer: [
-  "Club Security",
-  "Event Security",
-  "VIP Protection",
-],
+  Bouncer: ["Club Security", "Event Security", "VIP Protection"],
 
-"Society Guard": [
-  "Visitor Management",
-  "Apartment Security",
-],
+  "Society Guard": ["Visitor Management", "Apartment Security"],
 
-Bodyguard: [
-  "Personal Security",
-  "VIP Protection",
-],
+  Bodyguard: ["Personal Security", "VIP Protection"],
 
-"Gate Security": [
-  "Gate Monitoring",
-  "Entry Checking",
-],
+  "Gate Security": ["Gate Monitoring", "Entry Checking"],
 
+  // EVENT SERVICES
+  Decorator: ["Wedding Decoration", "Stage Decoration"],
 
+  "Tent Worker": ["Tent Setup", "Stage Setup"],
 
-// EVENT SERVICES
-Decorator: [
-  "Wedding Decoration",
-  "Stage Decoration",
-],
+  "Catering Staff": ["Food Serving", "Buffet Service"],
 
-"Tent Worker": [
-  "Tent Setup",
-  "Stage Setup",
-],
+  Photographer: ["Wedding Photography", "Event Photography"],
 
-"Catering Staff": [
-  "Food Serving",
-  "Buffet Service",
-],
+  Videographer: ["Wedding Videography", "Event Video Shoot"],
 
-Photographer: [
-  "Wedding Photography",
-  "Event Photography",
-],
+  "DJ Helper": ["DJ Setup", "Sound Support"],
 
-Videographer: [
-  "Wedding Videography",
-  "Event Video Shoot",
-],
-
-"DJ Helper": [
-  "DJ Setup",
-  "Sound Support",
-],
-
-"Light Technician": [
-  "Lighting Setup",
-  "Stage Lighting",
-],
+  "Light Technician": ["Lighting Setup", "Stage Lighting"],
 };
-
 
 // ── Tag input ────────────────────────────────────────────────────────────────
 function TagInput({
@@ -2719,10 +2657,12 @@ function WorkersTab() {
 // MAIN ADMIN PANEL
 // ═══════════════════════════════════════════════════════════════════════════════
 export function AdminPanel() {
-  const [tab, setTab] = useState<Tab>("dashboard");
   const { stats } = useAdmin();
   const [isLoggedIn, setIsLoggedIn] = useState(false);
-  const [activeTab, setActiveTab] = useState<Tab>("dashboard");
+  const [newOrder, setNewOrder] = useState<any>(null);
+  const [tab, setTab] = useState<Tab>("dashboard");
+  const [notificationOrder, setNotificationOrder] = useState<any>(null);
+  const audioRef = useRef<HTMLAudioElement | null>(null);
   useEffect(() => {
     const saved = localStorage.getItem("workkerz-admin-login");
 
@@ -2730,7 +2670,62 @@ export function AdminPanel() {
       setIsLoggedIn(true);
     }
   }, []);
+  useEffect(() => {
+    audioRef.current = new Audio("/sounds/new-order.mp3");
+    audioRef.current.preload = "auto";
+    audioRef.current.loop = true;
+  }, []);
+  useEffect(() => {
+    const unlock = async () => {
+      if (!audioRef.current) return;
 
+      try {
+        audioRef.current.muted = true;
+        await audioRef.current.play();
+        audioRef.current.pause();
+        audioRef.current.currentTime = 0;
+        audioRef.current.muted = false;
+      } catch {}
+    };
+
+    window.addEventListener("click", unlock, { once: true });
+
+    return () => window.removeEventListener("click", unlock);
+  }, []);
+  useEffect(() => {
+    const channel = supabase
+      .channel("admin-orders")
+      .on(
+        "postgres_changes",
+        {
+          event: "INSERT",
+          schema: "public",
+          table: "orders",
+        },
+        (payload) => {
+          if (audioRef.current) {
+            audioRef.current.currentTime = 0;
+            audioRef.current.play().catch(() => {});
+          }
+          setNotificationOrder(payload.new);
+          setNewOrder(payload.new);
+
+          if (
+            "Notification" in window &&
+            Notification.permission === "granted"
+          ) {
+            new Notification("New Order Received", {
+              body: payload.new.order_number,
+            });
+          }
+        },
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, []);
   const sidebarItems = [
     {
       id: "dashboard" as Tab,
@@ -2760,6 +2755,7 @@ export function AdminPanel() {
       label: "Orders",
     },
   ];
+
   return (
     <div className="min-h-screen flex bg-[#F8FAFC]">
       {/* Sidebar */}
@@ -2778,10 +2774,32 @@ export function AdminPanel() {
             {tab === "workers" && <WorkersTab />}
             {tab === "shops" && <ShopsTab />}
             {tab === "bookings" && <BookingsTab />}
-            {tab === "orders" && <OrdersTab />}
+            {tab === "orders" && (
+              <OrdersTab
+                notificationOrder={notificationOrder}
+                onNotificationHandled={() => setNotificationOrder(null)}
+              />
+            )}
           </>
         )}
       </div>
+      <NewOrderNotification
+        order={notificationOrder}
+        onClose={() => {
+          audioRef.current?.pause();
+          if (audioRef.current) audioRef.current.currentTime = 0;
+          setNotificationOrder(null);
+        }}
+        onView={() => {
+          audioRef.current?.pause();
+
+          if (audioRef.current) {
+            audioRef.current.currentTime = 0;
+          }
+
+          setTab("orders");
+        }}
+      />
     </div>
   );
 }
