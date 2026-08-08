@@ -1,237 +1,274 @@
-import Link from "next/link";
-import {
-  ArrowRight,
-  Globe,
-  Smartphone,
-  Play,
-  Users,
-  ShieldCheck,
-  Wrench,
-  Truck,
-  Hammer,
-  Sparkles,
-} from "lucide-react";
+"use client";
+
 import Image from "next/image";
+import {
+  Download,
+  Smartphone,
+  ShieldCheck,
+  Zap,
+  Truck,
+  Users,
+  Star,
+  CheckCircle2,
+  ArrowDown,
+  Play
+} from "lucide-react";
+import MobileAppMockup from "@/app/components/MobileAppMockup";
+const PLAY_STORE_URL =
+  "https://play.google.com/store/apps/details?id=com.workkerz.app&pcampaignid=web_share";
+
 export default function ComingSoonPage() {
   return (
-    <main className="min-h-screen bg-linear-to-br from-green-50 via-white to-emerald-100">
-      {/* Background */}
-      <div className="absolute inset-0 overflow-hidden -z-10">
-        <div className="absolute -top-24 -left-20 h-72 w-72 rounded-full bg-green-300/20 blur-3xl" />
-        <div className="absolute bottom-0 right-0 h-80 w-80 rounded-full bg-emerald-400/20 blur-3xl" />
-      </div>
-
-      <div className="mx-auto max-w-7xl px-6 py-16">
-        {/* Hero */}
-        <section className="text-center">
-          <div className="inline-flex items-center gap-2 rounded-full bg-green-100 px-4 py-2 text-sm font-semibold text-green-700">
-            <Sparkles className="h-4 w-4" />
-            Coming Soon
-          </div>
-
-          <h1 className="mt-6 text-5xl font-black tracking-tight text-slate-900">
-            Workkerz Mobile App
-          </h1>
-
-          <p className="mx-auto mt-6 max-w-2xl text-lg leading-8 text-slate-600">
-            India's workforce marketplace for booking verified workers and
-            purchasing construction materials from trusted local suppliers.
-          </p>
-
-          <div className="mt-10 flex flex-wrap justify-center gap-4">
-
-            <button
-              disabled
-              className="inline-flex items-center gap-3 rounded-2xl bg-slate-900 px-6 py-3 text-white shadow-lg opacity-80 cursor-not-allowed"
-            >
-              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-white/10">
-                <Play className="h-6 w-6 fill-current" />
-              </div>
-
-              <div className="flex flex-col items-start leading-none">
-                <span className="text-xs text-slate-300">
-                  Coming Soon on
-                </span>
-                <span className="text-base font-semibold">
-                  Google Play
-                </span>
-              </div>
-
-              <span className="rounded-full bg-yellow-400/20 px-2.5 py-1 text-xs font-semibold text-yellow-300">
-                Soon
-              </span>
-            </button>
-          </div>
-        </section>
-
-        {/* Cards */}
-        <section className="mt-20 grid gap-8 md:grid-cols-2">
-          <div className="rounded-3xl border border-green-100 bg-white/70 p-8 backdrop-blur shadow-xl">
+    <main className="min-h-screen bg-[#f7f8f5] text-slate-900">
+      {/* HEADER */}
+      <header className="sticky top-0 z-50 border-b border-slate-200/70 bg-white/95 backdrop-blur">
+        <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4 sm:px-6">
+          <div className="flex items-center">
             <Image
-              src="/WORKKERZ (1).png" // change if your logo filename is different
-              alt="Workkerz Logo"
-              width={100}
-              height={42}
-              className="object-contain"
+              src="/WORKKERZ (1).png"
+              alt="Workkerz"
+              width={115}
+              height={44}
+              className="h-9 w-auto object-contain"
               priority
             />
-
-            <p className="mt-4 text-slate-600 leading-7">
-              Connect with verified professionals for home services,
-              construction work and daily labour.
-            </p>
-
-            <div className="mt-8 grid grid-cols-2 gap-3">
-              {[
-                "Electrician",
-                "Plumber",
-                "Painter",
-                "Carpenter",
-                "Mason",
-                "Cleaning",
-                "AC Repair",
-                "Gardener",
-              ].map((item) => (
-                <div
-                  key={item}
-                  className="rounded-xl bg-green-50 px-4 py-3 font-medium text-slate-700"
-                >
-                  {item}
-                </div>
-              ))}
-            </div>
           </div>
 
-          <div className="rounded-3xl border border-green-100 bg-white/70 p-8 backdrop-blur shadow-xl">
-            <div className="flex items-center gap-3">
-              <Image
-                src="/aurixapp.png"
-                alt="E-Aurix Logo"
-                width={40}
-                height={40}
-                className="object-contain"
-                priority
-              />
+          <a
+            href={PLAY_STORE_URL}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center gap-2 rounded-xl bg-green-600 px-4 py-2.5 text-sm font-bold text-white shadow-sm transition hover:bg-green-700"
+          >
+            <Download className="h-4 w-4" />
+            Get App
+          </a>
+        </div>
+      </header>
 
-              <h2 className="text-2xl font-bold text-slate-900">E-Aurix</h2>
-            </div>
-
-            <p className="mt-4 text-slate-600 leading-7">
-              Construction materials delivered from nearby trusted suppliers.
-            </p>
-
-            <div className="mt-8 grid grid-cols-2 gap-3">
-              {[
-                "Cement",
-                "Bricks",
-                "Sand",
-                "Steel",
-                "Paint",
-                "Tiles",
-                "Electrical",
-                "Plumbing",
-              ].map((item) => (
-                <div
-                  key={item}
-                  className="rounded-xl bg-emerald-50 px-4 py-3 font-medium text-slate-700"
-                >
-                  {item}
-                </div>
-              ))}
-            </div>
-          </div>
-        </section>
-
-        {/* Features */}
-
-        <section className="mt-20">
-          <h2 className="text-center text-3xl font-bold">
-            Why Choose Workkerz
-          </h2>
-
-          <div className="mt-10 grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
-            {[
-              {
-                icon: Users,
-                title: "Verified Workers",
-                desc: "Trusted professionals near you",
-              },
-              {
-                icon: ShieldCheck,
-                title: "Secure Platform",
-                desc: "Safe booking experience",
-              },
-              {
-                icon: Wrench,
-                title: "Instant Booking",
-                desc: "Book workers in minutes",
-              },
-              {
-                icon: Truck,
-                title: "Material Delivery",
-                desc: "Construction essentials",
-              },
-            ].map((item) => (
-              <div
-                key={item.title}
-                className="rounded-3xl bg-white p-8 shadow-lg transition hover:-translate-y-2 hover:shadow-2xl"
-              >
-                <item.icon className="mb-5 h-10 w-10 text-green-600" />
-
-                <h3 className="text-xl font-bold">{item.title}</h3>
-
-                <p className="mt-3 text-slate-600">{item.desc}</p>
+      {/* HERO */}
+      <section className="overflow-hidden bg-white">
+        <div className="mx-auto max-w-7xl px-4 pb-14 pt-10 sm:px-6 sm:pb-20 sm:pt-16">
+          <div className="grid items-center gap-12 lg:grid-cols-2">
+            {/* LEFT */}
+            <div>
+              {/* LIVE BADGE */}
+              <div className="inline-flex items-center gap-2 rounded-full bg-green-50 px-3.5 py-2 text-xs font-bold text-green-700">
+                <span className="h-2 w-2 animate-pulse rounded-full bg-green-500" />
+                Workkerz App is Live
               </div>
-            ))}
+
+              <h1 className="mt-6 max-w-2xl text-4xl font-black leading-[1.05] tracking-tight sm:text-6xl">
+                Your work.
+                <br />
+                <span className="text-green-600">Your workers.</span>
+                <br />
+                Your materials.
+              </h1>
+
+              <p className="mt-6 max-w-xl text-base leading-7 text-slate-600 sm:text-lg">
+                Workkerz brings workers and work-related materials together in
+                one simple mobile app.
+              </p>
+
+              {/* DOWNLOAD BUTTON */}
+              <div className="mt-8">
+                <a
+                  href="https://play.google.com/store/apps/details?id=com.workkerz.app&pcampaignid=web_share"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  aria-label="Get Workkerz on Google Play"
+                  className="
+    inline-flex
+    items-center
+    gap-3
+    rounded-xl
+    bg-black
+    px-4
+    py-2.5
+    text-white
+    shadow-lg
+    transition
+    duration-200
+    hover:scale-[1.02]
+    hover:bg-slate-900
+  "
+                >
+                  {/* Google Play Icon */}
+                  <div className="flex h-9 w-9 items-center justify-center">
+                    <Play className="h-7 w-7 fill-white text-white" />
+                  </div>
+
+                  <div className="text-left leading-none">
+                    <span className="block text-[9px] font-medium uppercase tracking-wide text-white/70">
+                      GET IT ON
+                    </span>
+
+                    <span className="mt-1 block text-[17px] font-semibold tracking-tight text-white">
+                      Google Play
+                    </span>
+                  </div>
+                </a>
+              </div>
+
+              {/* TRUST */}
+              <div className="mt-6 flex flex-wrap gap-x-5 gap-y-3 text-sm text-slate-500">
+                <div className="flex items-center gap-2">
+                  <CheckCircle2 className="h-4 w-4 text-green-600" />
+                  Easy to use
+                </div>
+
+                <div className="flex items-center gap-2">
+                  <ShieldCheck className="h-4 w-4 text-green-600" />
+                  Secure platform
+                </div>
+
+                <div className="flex items-center gap-2">
+                  <Smartphone className="h-4 w-4 text-green-600" />
+                  Android App
+                </div>
+              </div>
+            </div>
+
+            {/* APP VISUAL */}
+            <div className="relative">
+              <MobileAppMockup />
+            </div>
           </div>
-        </section>
+        </div>
+      </section>
 
-        {/* Bottom CTA */}
-
-        <section className="mt-24 rounded-4xl bg-linear-to-r from-green-700 to-emerald-600 p-12 text-center text-white shadow-2xl">
-          <h2 className="text-4xl font-black">Mobile App Launching Soon</h2>
-
-          <p className="mx-auto mt-5 max-w-xl text-lg text-green-100">
-            We're putting the finishing touches on the Workkerz app. Stay tuned
-            for the official launch on Android.
+      {/* WHAT YOU GET */}
+      <section className="mx-auto max-w-7xl px-4 py-14 sm:px-6 sm:py-20">
+        <div className="mx-auto max-w-2xl text-center">
+          <p className="text-xs font-bold uppercase tracking-wider text-green-600">
+            One app
           </p>
 
-          <button
-            disabled
-            className="mt-10 rounded-xl bg-white px-8 py-4 font-bold text-green-700 opacity-80"
-          >
-            Google Play • Coming Soon
-          </button>
-        </section>
+          <h2 className="mt-2 text-3xl font-black sm:text-4xl">
+            Everything you need for work
+          </h2>
 
-        {/* Footer */}
+          <p className="mt-3 text-sm leading-6 text-slate-500">
+            Workkerz makes it easier to find workers and get the materials you
+            need for your work.
+          </p>
+        </div>
 
-        <footer className="mt-20 border-t border-slate-200 py-8 text-center text-slate-500">
-          <h3 className="text-xl font-bold text-slate-900">Workkerz</h3>
+        <div className="mt-10 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          {/* CARD 1 */}
+          <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+            <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-green-50 text-green-600">
+              <Users className="h-5 w-5" />
+            </div>
 
-          <p className="mt-2">Powered by Worish Ecosystem Pvt. Ltd.</p>
+            <h3 className="mt-4 font-bold">Find Workers</h3>
 
-         <div className="mt-4 flex flex-wrap items-center justify-center gap-4 text-sm">
-  <Link
-    href="/privacy-policy"
-    className="font-medium text-green-600 hover:text-green-700 hover:underline"
-  >
-    Privacy Policy
-  </Link>
+            <p className="mt-2 text-sm leading-6 text-slate-500">
+              Discover skilled professionals for different types of work.
+            </p>
+          </div>
 
-  <span className="text-slate-300">|</span>
+          {/* CARD 2 */}
+          <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+            <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-green-50 text-green-600">
+              <Truck className="h-5 w-5" />
+            </div>
 
-  <Link
-    href="/delete-account"
-    className="font-medium text-green-600 hover:text-green-700 hover:underline"
-  >
-    Delete Account
-  </Link>
-</div>
+            <h3 className="mt-4 font-bold">Order Materials</h3>
 
-          <p className="mt-4">© 2026 Workkerz. All Rights Reserved.</p>
-        </footer>
-      </div>
+            <p className="mt-2 text-sm leading-6 text-slate-500">
+              Get construction and work-related materials from local sellers.
+            </p>
+          </div>
+
+          {/* CARD 3 */}
+          <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+            <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-green-50 text-green-600">
+              <Zap className="h-5 w-5" />
+            </div>
+
+            <h3 className="mt-4 font-bold">Simple Experience</h3>
+
+            <p className="mt-2 text-sm leading-6 text-slate-500">
+              Everything is designed to make your everyday work easier.
+            </p>
+          </div>
+
+          {/* CARD 4 */}
+          <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+            <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-green-50 text-green-600">
+              <ShieldCheck className="h-5 w-5" />
+            </div>
+
+            <h3 className="mt-4 font-bold">Trusted Platform</h3>
+
+            <p className="mt-2 text-sm leading-6 text-slate-500">
+              A dedicated platform built around workers and work-related needs.
+            </p>
+          </div>
+        </div>
+      </section>
+
+      {/* APP DOWNLOAD CTA */}
+      <section id="download" className="mx-auto max-w-7xl px-4 pb-12 sm:px-6">
+        <div className="relative overflow-hidden rounded-[2rem] bg-green-600 px-6 py-12 text-white sm:px-10 sm:py-14">
+          <div className="absolute -right-20 -top-20 h-64 w-64 rounded-full bg-white/10 blur-3xl" />
+
+          <div className="relative mx-auto max-w-3xl text-center">
+            <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-white/15">
+              <Smartphone className="h-7 w-7" />
+            </div>
+
+            <h2 className="mt-5 text-3xl font-black sm:text-4xl">
+              Download the Workkerz App
+            </h2>
+
+            <p className="mx-auto mt-4 max-w-xl text-sm leading-6 text-green-50 sm:text-base">
+              Get the Workkerz experience on your Android phone and manage your
+              work from one place.
+            </p>
+
+            <a
+              href={PLAY_STORE_URL}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="mt-8 inline-flex items-center gap-3 rounded-2xl bg-white px-6 py-4 text-sm font-black text-green-700 shadow-xl transition hover:bg-green-50"
+            >
+              <Download className="h-5 w-5" />
+              Download from Google Play
+            </a>
+
+            <div className="mt-5 flex items-center justify-center gap-2 text-xs text-green-100">
+              <ArrowDown className="h-4 w-4" />
+              Available now on Android
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* FOOTER */}
+      <footer className="border-t border-slate-200 bg-white">
+        <div className="mx-auto flex max-w-7xl flex-col gap-3 px-4 py-7 sm:px-6 md:flex-row md:items-center md:justify-between">
+          <div className="flex items-center gap-3">
+            <Image
+              src="/WORKKERZ (1).png"
+              alt="Workkerz"
+              width={95}
+              height={35}
+              className="h-8 w-auto object-contain"
+            />
+
+            <span className="text-xs text-slate-400">
+              Powered by Worish Ecosystem Pvt. Ltd.
+            </span>
+          </div>
+
+          <p className="text-xs text-slate-400">
+            © 2026 Workkerz. All Rights Reserved.
+          </p>
+        </div>
+      </footer>
     </main>
   );
 }

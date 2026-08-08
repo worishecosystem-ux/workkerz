@@ -19,6 +19,7 @@ import {
   Pencil,
   Home,
   Building2,
+  Navigation,
 } from "lucide-react";
 import { serviceCategories, type ServiceCategory } from "@/app/data/workers";
 import { useAdmin } from "@/app/components/context/AdminContext";
@@ -40,18 +41,7 @@ const sortOptions = [
   { value: "price_desc", label: "Starting Price: High to Low" },
   { value: "reviews", label: "Most Reviewed" },
 ];
-const getAddressIcon = (type?: string) => {
-  switch (type?.toLowerCase()) {
-    case "home":
-      return <Home className="w-4 h-4 text-orange-500" />;
 
-    case "office":
-      return <Building2 className="w-4 h-4 text-blue-500" />;
-
-    default:
-      return <MapPin className="w-4 h-4 text-gray-500" />;
-  }
-};
 
 function BrowseContent() {
   const searchParams = useSearchParams();
@@ -68,33 +58,135 @@ function BrowseContent() {
   const { workers, loading } = useAdmin();
   const { setShowMobileNavbar } = useMobileNavbar();
   const [minExperience, setMinExperience] = useState(0);
-  const filteredWorkers = (workers ?? [])
-    .filter((w) => {
-      if (
-        activeCategory &&
-        activeCategory !== serviceCategories[0]?.id &&
-        w.category.trim().toLowerCase() !== activeCategory.trim().toLowerCase()
-      )
-        return false;
-      if (availableOnly && !w.available) return false;
-      if (w.startingPrice > maxPrice) return false;
-      if (
-        query &&
-        !w.name.toLowerCase().includes(query.toLowerCase()) &&
-        !w.specialty.toLowerCase().includes(query.toLowerCase()) &&
-        !w.skills.some((s) => s.toLowerCase().includes(query.toLowerCase()))
-      )
-        return false;
-      return true;
-    })
-    .sort((a, b) => {
-      if (sortBy === "rating") return b.rating - a.rating;
-      if (sortBy === "price_asc") return a.startingPrice - b.startingPrice;
+  const [selectedLocation, setSelectedLocation] = useState("");
+  const [locationOpen, setLocationOpen] = useState(false);
+const filteredWorkers = (workers ?? [])
+  .filter((w) => {
+    // =====================================================
+    // CATEGORY
+    // =====================================================
 
-      if (sortBy === "price_desc") return b.startingPrice - a.startingPrice;
-      if (sortBy === "reviews") return b.reviewCount - a.reviewCount;
-      return 0;
-    });
+    if (
+      activeCategory &&
+      activeCategory !== serviceCategories[0]?.id &&
+      w.category.trim().toLowerCase() !==
+        activeCategory.trim().toLowerCase()
+    ) {
+      return false;
+    }
+
+    // =====================================================
+    // LABOUR CHAUK LOCATION
+    // =====================================================
+
+    if (selectedLocation) {
+      const workerLabourChauk = String(
+        (w as any).labour_chauk ||
+          (w as any).labourChauk ||
+          "",
+      )
+        .trim()
+        .toLowerCase();
+
+      if (
+        workerLabourChauk !==
+        selectedLocation.trim().toLowerCase()
+      ) {
+        return false;
+      }
+    }
+
+    // =====================================================
+    // AVAILABILITY
+    // =====================================================
+
+    if (availableOnly && !w.available) {
+      return false;
+    }
+
+    // =====================================================
+    // PRICE
+    // =====================================================
+
+    if (w.startingPrice > maxPrice) {
+      return false;
+    }
+
+    // =====================================================
+    // SEARCH
+    // =====================================================
+
+    if (query) {
+      const searchQuery =
+        query.trim().toLowerCase();
+
+      const matchesName =
+        w.name
+          ?.toLowerCase()
+          .includes(searchQuery);
+
+      const matchesSpecialty =
+        w.specialty
+          ?.toLowerCase()
+          .includes(searchQuery);
+
+      const matchesSkills =
+        Array.isArray(w.skills) &&
+        w.skills.some((skill) =>
+          skill
+            .toLowerCase()
+            .includes(searchQuery),
+        );
+
+      const matchesLabourChauk =
+        String(
+          (w as any).labour_chauk ||
+            (w as any).labourChauk ||
+            "",
+        )
+          .toLowerCase()
+          .includes(searchQuery);
+
+      if (
+        !matchesName &&
+        !matchesSpecialty &&
+        !matchesSkills &&
+        !matchesLabourChauk
+      ) {
+        return false;
+      }
+    }
+
+    return true;
+  })
+  .sort((a, b) => {
+    if (sortBy === "rating") {
+      return b.rating - a.rating;
+    }
+
+    if (sortBy === "price_asc") {
+      return (
+        a.startingPrice -
+        b.startingPrice
+      );
+    }
+
+    if (sortBy === "price_desc") {
+      return (
+        b.startingPrice -
+        a.startingPrice
+      );
+    }
+
+    if (sortBy === "reviews") {
+      return (
+        b.reviewCount -
+        a.reviewCount
+      );
+    }
+
+    return 0;
+  });
 
   const suggestions =
     query.trim() === ""
@@ -111,50 +203,65 @@ function BrowseContent() {
             );
           })
           .slice(0, 6);
+  const locations = Array.from(
+  new Set(
+    (workers ?? [])
+      .map((worker) => {
+        const w = worker as any;
+
+        return (
+          w.labour_chauk ||
+          w.labourChauk ||
+          ""
+        );
+      })
+      .filter(Boolean)
+      .map((location) =>
+        String(location).trim(),
+      )
+      .filter(Boolean),
+  ),
+).sort((a, b) =>
+  a.localeCompare(b),
+);
   const currentSort = sortOptions.find((s) => s.value === sortBy);
 
   return (
     <div className="min-h-screen bg-[#F8FAFC]">
       {/* Page Header */}
-      <div className="fixed inset-x-0 top-0 z-999 border-b border-emerald-700 bg-linear-to-br from-emerald-950 via-emerald-800 to-green-600 pt-2 pb-4">
-        <div className="max-w-7xl mx-auto px-4 mt-10">
-          {/* Search */}
-          <div className="relative mnp w-full max-w-2xl">
-            {/* Search Bar */}
-
+      {/* STICKY HEADER */}
+      <div className="sticky top-0 z-50 border-b border-emerald-700/30 bg-linear-to-br from-emerald-950 via-emerald-900 to-emerald-700 shadow-lg">
+        <div className="mx-auto max-w-7xl px-3 pb-3 pt-12 sm:px-5">
+          {/* SEARCH */}
+          <div className="relative mt-3 mb-2">
             <div
               className="
-      flex items-center
-      h-14
-      rounded-2xl
-      bg-white
-      border border-gray-200
-      px-4
-      shadow-lg
-      transition-all
-      focus-within:border-sky-500
-      focus-within:ring-4
-      focus-within:ring-sky-100
-    "
+          flex h-12 items-center gap-3
+          rounded-2xl
+          bg-white
+          px-3.5
+          shadow-xl
+          ring-1 ring-black/5
+          transition
+          focus-within:ring-2
+          focus-within:ring-emerald-300
+        "
             >
-              <Search className="w-5 h-5 text-gray-400 mr-3" />
+              <Search className="h-5 w-5 shrink-0 text-slate-400" />
 
               <input
                 type="text"
-                placeholder="Search workers, skills or specialty..."
+                placeholder="Search workers, skills or services..."
                 value={query}
                 onFocus={() => {
                   setShowMobileNavbar(false);
                   setShowSuggestions(true);
                 }}
-                onBlur={() => {
-                  setShowMobileNavbar(true);
-                }}
                 onChange={(e) => {
                   setQuery(e.target.value);
                   setShowSuggestions(true);
                 }}
-                className="flex-1 outline-none text-gray-800 placeholder:text-gray-400"
+                className="min-w-0 flex-1 bg-transparent text-sm font-medium text-slate-800 outline-none placeholder:text-slate-400"
               />
 
               {query && (
@@ -164,70 +271,34 @@ function BrowseContent() {
                     setShowSuggestions(false);
                     setShowMobileNavbar(true);
                   }}
-                  className="p-2 rounded-lg hover:bg-gray-100"
+                  className="flex h-7 w-7 items-center justify-center rounded-full bg-slate-100"
                 >
-                  <X className="w-4 h-4" />
+                  <X className="h-3.5 w-3.5 text-slate-500" />
                 </button>
               )}
-            </div>
-            {/* Smart Suggestions */}
-            {!query && (
-              <div className="mt-2 flex flex-wrap gap-1.5">
-                {smartSuggestions.map((item) => (
-                  <button
-                    key={item.label}
-                    onClick={() => {
-                      setQuery(item.label);
-                      setShowSuggestions(true);
-                    }}
-                    className="
-          group inline-flex items-center gap-1
-          h-7 px-2.5
-          rounded-full
-          bg-orange-50
-          border border-orange-200
-          text-[11px] font-medium text-orange-700
-          hover:bg-orange-500
-          hover:border-orange-500
-          hover:text-white
-          active:scale-95
-          transition-all duration-200
-        "
-                  >
-                    <span className="text-xs leading-none group-hover:scale-110 transition-transform">
-                      {item.icon}
-                    </span>
 
-                    <span className="leading-none whitespace-nowrap">
-                      {item.label}
-                    </span>
-                  </button>
-                ))}
-              </div>
-            )}
-            {/* Dropdown */}
-
-            {showSuggestions && suggestions.length > 0 && (
-              <div
-                className="
-        absolute top-16 left-0 right-0
-        bg-white
-        rounded-2xl
-        shadow-2xl
-        border
-        overflow-hidden
-        z-50
-      "
+              <button
+                onClick={() => setShowFilters(true)}
+                className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-emerald-50 text-emerald-600"
               >
-                <div className="flex items-center justify-between px-5 py-2 border-b bg-gray-50">
-                  <span className="font-semibold text-gray-800">Workers</span>
+                <SlidersHorizontal className="h-4 w-4" />
+              </button>
+            </div>
 
-                  <span className="text-sm text-gray-500">
+            {/* SEARCH SUGGESTIONS */}
+            {showSuggestions && suggestions.length > 0 && (
+              <div className="absolute left-0 right-0 top-14 z-50 overflow-hidden rounded-2xl border border-slate-100 bg-white shadow-2xl">
+                <div className="flex items-center justify-between border-b border-slate-100 bg-slate-50 px-4 py-2.5">
+                  <span className="text-xs font-bold text-slate-800">
+                    Workers
+                  </span>
+
+                  <span className="text-[10px] text-slate-400">
                     {suggestions.length} found
                   </span>
                 </div>
 
-                <div className="max-h-70 overflow-y-auto">
+                <div className="max-h-64 overflow-y-auto">
                   {suggestions.map((worker) => (
                     <button
                       key={worker.id}
@@ -235,50 +306,152 @@ function BrowseContent() {
                         router.push(`/workers/${worker.id}`);
                         setShowSuggestions(false);
                       }}
-                      className="
-        w-full
-        flex
-        items-center
-        gap-3
-        px-6
-        py-2
-        hover:bg-sky-50
-        active:bg-sky-100
-        transition
-        border-b
-        border-gray-100
-        last:border-0
-      "
+                      className="flex w-full items-center gap-3 border-b border-slate-100 px-4 py-3 text-left transition hover:bg-emerald-50 last:border-0"
                     >
-                      {/* Worker Image */}
                       <img
                         src={worker.photo || "/worker-placeholder.png"}
                         alt={worker.name}
-                        className="w-10 h-10 rounded-full object-contain-content shrink-0"
+                        className="h-10 w-10 shrink-0 rounded-xl object-cover"
                       />
 
-                      {/* Name + Specialty */}
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center justify-between gap-3 px-2">
-                          <h3 className="text-sm font-semibold text-lime-500 truncate">
-                            {worker.name}
-                          </h3>
+                      <div className="min-w-0 flex-1">
+                        <p className="truncate text-sm font-bold text-slate-800">
+                          {worker.name}
+                        </p>
 
-                          <p className="text-xs text-gray-500 whitespace-nowrap">
-                            {worker.specialty}
-                          </p>
-                        </div>
+                        <p className="mt-0.5 truncate text-[11px] text-slate-400">
+                          {worker.specialty}
+                        </p>
                       </div>
+
+                      <ChevronDown className="-rotate-90 h-4 w-4 text-slate-300" />
                     </button>
                   ))}
                 </div>
               </div>
             )}
           </div>
-        </div>
-      </div>
+          {/* TOP ROW */}
+          <div className="flex h-10 items-center justify-between">
+            {/* LOCATION */}
+            <button
+              onClick={() => setLocationOpen(!locationOpen)}
+              className="flex min-w-0 items-center gap-2 text-left"
+            >
+              <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-white/10">
+                <MapPin className="h-4 w-4 text-white" />
+              </div>
 
-      <div className="px-4 pt-48 pb-2">
+              <div className="min-w-0">
+                <p className="text-[9px] font-medium text-emerald-200">
+                  Your location
+                </p>
+
+                <div className="flex max-w-45 items-center gap-1">
+                  <span className="truncate text-xs font-bold text-white">
+                    {selectedLocation || "Select location"}
+                  </span>
+
+                  <ChevronDown
+                    className={`h-3 w-3 shrink-0 text-emerald-200 transition-transform ${
+                      locationOpen ? "rotate-180" : ""
+                    }`}
+                  />
+                </div>
+              </div>
+            </button>
+
+            {/* RIGHT */}
+            <div className="flex items-center gap-2">
+              <div className="hidden rounded-full bg-white/10 px-3 py-1.5 text-[10px] font-semibold text-emerald-100 sm:block">
+                {filteredWorkers.length} workers nearby
+              </div>
+
+              <button className="flex h-9 w-9 items-center justify-center rounded-full bg-white/10">
+                <Navigation className="h-4 w-4 text-white" />
+              </button>
+            </div>
+          </div>
+          {/* QUICK SUGGESTIONS */}
+          {!query && (
+            <div className="mt-2.5 flex gap-2 overflow-x-auto pb-0.5 scrollbar-none">
+              {smartSuggestions.map((item) => (
+                <button
+                  key={item.label}
+                  onClick={() => {
+                    setQuery(item.label);
+                    setShowSuggestions(true);
+                  }}
+                  className="
+              flex shrink-0 items-center gap-1.5
+              rounded-full
+              border border-white/10
+              bg-white/10
+              px-3 py-1.5
+              text-[10px]
+              font-semibold
+              text-white
+              backdrop-blur
+              transition
+              hover:bg-white/20
+              active:scale-95
+            "
+                >
+                  <span>{item.icon}</span>
+                  {item.label}
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
+
+        {/* LOCATION DROPDOWN */}
+        {locationOpen && (
+          <div className="absolute left-3 right-3 top-full z-50 mt-2 overflow-hidden rounded-2xl border border-slate-100 bg-white shadow-2xl sm:left-auto sm:right-5 sm:w-80">
+            <button
+              onClick={() => {
+                setSelectedLocation("");
+                setLocationOpen(false);
+              }}
+              className={`flex w-full items-center gap-3 px-4 py-3 text-left text-sm ${
+                selectedLocation === ""
+                  ? "bg-emerald-50 font-bold text-emerald-700"
+                  : "text-slate-700 hover:bg-slate-50"
+              }`}
+            >
+              <Navigation className="h-4 w-4" />
+              All Locations
+            </button>
+
+            <div className="max-h-60 overflow-y-auto border-t border-slate-100">
+              {locations.length > 0 ? (
+                locations.map((location) => (
+                  <button
+                    key={location}
+                    onClick={() => {
+                      setSelectedLocation(location);
+                      setLocationOpen(false);
+                    }}
+                    className={`flex w-full items-center gap-3 px-4 py-3 text-left text-sm ${
+                      selectedLocation.toLowerCase() === location.toLowerCase()
+                        ? "bg-emerald-50 font-bold text-emerald-700"
+                        : "text-slate-700 hover:bg-slate-50"
+                    }`}
+                  >
+                    <MapPin className="h-4 w-4 text-slate-400" />
+                    <span className="truncate">{location}</span>
+                  </button>
+                ))
+              ) : (
+                <div className="px-4 py-5 text-center text-xs text-slate-400">
+                  No locations available
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+      </div>
+      <div className="px-4  pb-2">
         <div className="mb-2">
           <WorkCategories />
         </div>
@@ -306,174 +479,9 @@ function BrowseContent() {
                   </div>
                 </div>
               </div>
+              {/* Location */}
 
               {/* Body */}
-              <div className="space-y-8 p-6">
-                {/* Availability */}
-                <div className="rounded-2xl border border-gray-100 bg-[#FAFAFA] p-5">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <h4
-                        className="text-sm text-[#0F172A]"
-                        style={{ fontWeight: 700 }}
-                      >
-                        Available Now
-                      </h4>
-
-                      <p className="mt-1 text-xs leading-relaxed text-[#64748B]">
-                        Show workers ready to start immediately
-                      </p>
-                    </div>
-
-                    <button
-                      onClick={() => setAvailableOnly(!availableOnly)}
-                      className={`relative h-7 w-14 rounded-full transition-all duration-300 ${
-                        availableOnly
-                          ? "bg-[#FF5C39] shadow-lg shadow-orange-200"
-                          : "bg-gray-300"
-                      }`}
-                    >
-                      <div
-                        className={`absolute top-1 h-5 w-5 rounded-full bg-white shadow-md transition-all duration-300 ${
-                          availableOnly ? "left-8" : "left-1"
-                        }`}
-                      />
-                    </button>
-                  </div>
-                </div>
-
-                {/* Max Rate */}
-                <div>
-                  <div className="mb-4 flex items-center justify-between">
-                    <div>
-                      <h4
-                        className="text-sm text-[#0F172A]"
-                        style={{ fontWeight: 700 }}
-                      >
-                        Starting Price
-                      </h4>
-
-                      <p className="mt-1 text-xs text-[#64748B]">
-                        Maximum rate you want to pay
-                      </p>
-                    </div>
-
-                    <div className="rounded-xl bg-[#FFF1EC] px-3 py-2 text-[#FF5C39]">
-                      <div className="text-lg font-extrabold">₹{maxPrice}</div>
-
-                      <div className="text-[10px] uppercase tracking-wide">
-                        Max Price
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="rounded-2xl border border-gray-100 bg-[#FAFAFA] p-5">
-                    <input
-                      type="range"
-                      min={100}
-                      max={10000}
-                      step={100}
-                      value={maxPrice}
-                      onChange={(e) => setMaxPrice(Number(e.target.value))}
-                    />
-
-                    <div className="mt-3 flex justify-between text-xs text-[#94A3B8]">
-                      <span>₹100</span>
-                      <span>₹10,000+</span>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Rating */}
-                <div>
-                  <div className="mb-4">
-                    <h4
-                      className="text-sm text-[#0F172A]"
-                      style={{ fontWeight: 700 }}
-                    >
-                      Minimum Rating
-                    </h4>
-
-                    <p className="mt-1 text-xs text-[#64748B]">
-                      Hire highly rated professionals
-                    </p>
-                  </div>
-
-                  <div className="grid grid-cols-3 gap-3">
-                    {[4, 4.5, 4.8].map((r) => (
-                      <button
-                        key={r}
-                        className="group rounded-2xl border border-gray-200 bg-white px-3 py-4 transition-all duration-200 hover:border-[#FF5C39] hover:bg-[#FFF7F4]"
-                      >
-                        <div className="flex flex-col items-center">
-                          <Star className="mb-1 h-4 w-4 fill-[#FDBA74] text-[#FDBA74]" />
-
-                          <span
-                            className="text-sm text-[#0F172A] group-hover:text-[#FF5C39]"
-                            style={{ fontWeight: 700 }}
-                          >
-                            {r}+
-                          </span>
-                        </div>
-                      </button>
-                    ))}
-                  </div>
-                </div>
-
-                {/* Experience */}
-                <div>
-                  <div className="mb-4">
-                    <h4
-                      className="text-sm text-[#0F172A]"
-                      style={{ fontWeight: 700 }}
-                    >
-                      Experience Level
-                    </h4>
-
-                    <p className="mt-1 text-xs text-[#64748B]">
-                      Choose workers by expertise
-                    </p>
-                  </div>
-
-                  <div className="space-y-3">
-                    {["Any", "2+ years", "5+ years", "10+ years"].map((exp) => (
-                      <label
-                        key={exp}
-                        className="group flex cursor-pointer items-center justify-between rounded-2xl border border-gray-100 bg-[#FAFAFA] px-4 py-3 transition-all hover:border-[#FF5C39] hover:bg-[#FFF7F4]"
-                      >
-                        <div className="flex items-center gap-3">
-                          <div className="flex h-5 w-5 items-center justify-center rounded-full border-2 border-gray-300 transition-colors group-hover:border-[#FF5C39]">
-                            <div className="h-2 w-2 rounded-full bg-[#FF5C39] opacity-0 transition-opacity group-hover:opacity-100" />
-                          </div>
-
-                          <span
-                            className="text-sm text-[#334155]"
-                            style={{ fontWeight: 500 }}
-                          >
-                            {exp}
-                          </span>
-                        </div>
-                      </label>
-                    ))}
-                  </div>
-                </div>
-
-                {/* Footer */}
-                <div className="border-t border-gray-100 pt-6">
-                  <button
-                    onClick={() => {
-                      setAvailableOnly(false);
-                      setMaxPrice(5000);
-                      router.push("/browse");
-                      setQuery("");
-                    }}
-                    className="flex w-full items-center justify-center gap-2 rounded-2xl border border-gray-200 bg-white py-3.5 text-sm text-[#475569] transition-all hover:border-[#FF5C39] hover:bg-[#FFF7F4] hover:text-[#FF5C39]"
-                    style={{ fontWeight: 700 }}
-                  >
-                    Reset All Filters
-                  </button>
-                </div>
-              </div>
             </div>
           </aside>
           <MobileFilterSheet
@@ -486,64 +494,8 @@ function BrowseContent() {
             minExperience={minExperience}
             setMinExperience={setMinExperience}
           />
-
           {/* Results */}
           <div className="flex-1">
-            {/* Toolbar */}
-            <div className="flex items-center justify-between mb-1">
-              {/* Result Count */}
-              <div className="flex items-center gap-2">
-                <div className="h-9 px-3.5 rounded-full bg-linear-to-r from-slate-800 via-slate-700 to-slate-600 text-white text-xs font-bold flex items-center justify-center shadow-lg shadow-slate-400/30">
-                  {filteredWorkers.length} Workers
-                </div>
-              </div>
-
-              <div className="flex items-center gap-2">
-                {/* Filter */}
-                <button
-                  onClick={() => setShowFilters(!showFilters)}
-                  className="lg:hidden h-8 px-3 rounded-full bg-white border border-orange-200 text-orange-600 text-xs font-medium flex items-center gap-1.5 shadow-sm active:scale-95 transition"
-                >
-                  <SlidersHorizontal className="w-3.5 h-3.5" />
-                  Filter
-                </button>
-
-                {/* Sort */}
-                <div className="relative">
-                  <button
-                    onClick={() => setSortOpen(!sortOpen)}
-                    className="h-8 px-3 rounded-full bg-[#F8FAFC] border border-gray-200 text-xs font-medium text-gray-700 flex items-center gap-1.5 shadow-sm active:scale-95 transition"
-                  >
-                    {currentSort?.label}
-                    <ChevronDown
-                      className={`w-3.5 h-3.5 transition-transform ${sortOpen ? "rotate-180" : ""}`}
-                    />
-                  </button>
-
-                  {sortOpen && (
-                    <div className="absolute right-0 mt-2 w-44 bg-white rounded-2xl border border-gray-100 shadow-xl overflow-hidden z-20">
-                      {sortOptions.map((opt) => (
-                        <button
-                          key={opt.value}
-                          onClick={() => {
-                            setSortBy(opt.value);
-                            setSortOpen(false);
-                          }}
-                          className={`w-full px-4 py-3 text-left text-sm transition ${
-                            sortBy === opt.value
-                              ? "bg-orange-50 text-orange-600 font-semibold"
-                              : "text-gray-700 hover:bg-gray-50"
-                          }`}
-                        >
-                          {opt.label}
-                        </button>
-                      ))}
-                    </div>
-                  )}
-                </div>
-              </div>
-            </div>
-
             {/* Worker Grid */}
             {filteredWorkers.length > 0 ? (
               <>

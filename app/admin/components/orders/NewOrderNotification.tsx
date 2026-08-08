@@ -18,7 +18,7 @@ export default function NewOrderNotification({
   return (
     <div className="fixed right-6 top-6 z-[999] w-96 overflow-hidden rounded-2xl border border-orange-200 bg-white shadow-2xl">
       {/* Top Glow */}
-      <div className="h-1 bg-gradient-to-r from-orange-500 via-amber-400 to-orange-500" />
+      <div className="h-1 bg-linear-to-r from-orange-500 via-amber-400 to-orange-500" />
 
       <div className="p-5">
         <div className="flex items-start justify-between">

@@ -19,7 +19,6 @@ import confetti from "canvas-confetti";
 
 export function EAurixOrderConfirmed() {
   const [orderItems, setOrderItems] = useState<any[]>([]);
-  const [loadingItems, setLoadingItems] = useState(false);
   const fired = useRef(false);
   const autoSent = useRef(false);
   const [showOrderItems, setShowOrderItems] = useState(false);

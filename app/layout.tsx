@@ -29,15 +29,10 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html
-      lang="en"
-      suppressHydrationWarning
-      className="h-full"
-    >
+    <html lang="en" suppressHydrationWarning className="h-full">
       <body className="min-h-dvh overflow-x-hidden bg-white antialiased">
         <PlatformProvider>
           <AdminProvider>
-           
             <BackButtonHandler />
             {children}
           </AdminProvider>
