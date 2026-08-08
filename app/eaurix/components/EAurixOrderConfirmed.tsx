@@ -126,7 +126,7 @@ export function EAurixOrderConfirmed() {
             No order found
           </h2>
 
-          <Link href="/eaurix/shop" className="text-[#0EA5E9] text-sm">
+          <Link href="/eaurix" className="text-[#0EA5E9] text-sm">
             Go Shopping
           </Link>
         </div>

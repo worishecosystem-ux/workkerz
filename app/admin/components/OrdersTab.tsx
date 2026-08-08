@@ -17,7 +17,19 @@ type Props = {
   notificationOrder?: any;
   onNotificationHandled?: () => void;
 };
-export default function OrdersTab({ notificationOrder, onNotificationHandled, }: Props) {
+
+const statusMessages: Record<string, string> = {
+  Pending: "Your order has been placed successfully.",
+  Confirmed: "Your order has been confirmed.",
+  "Ready to Dispatch": "Your order is being prepared.",
+  "Out For Delivery": "Your order is out for delivery.",
+  Delivered: "Your order has been delivered successfully.",
+  Cancelled: "Your order has been cancelled.",
+};
+export default function OrdersTab({
+  notificationOrder,
+  onNotificationHandled,
+}: Props) {
   const [orders, setOrders] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
@@ -31,24 +43,23 @@ export default function OrdersTab({ notificationOrder, onNotificationHandled, }:
 
   const [highlightOrderId, setHighlightOrderId] = useState<string | null>(null);
   const filtered = useMemo(() => {
-  const q = search.toLowerCase();
+    const q = search.toLowerCase();
 
-  return orders.filter((order) => {
-    const matchesSearch =
-      order.order_number?.toLowerCase().includes(q) ||
-      order.customer_name?.toLowerCase().includes(q) ||
-      order.customer_phone?.toLowerCase().includes(q);
+    return orders.filter((order) => {
+      const matchesSearch =
+        order.order_number?.toLowerCase().includes(q) ||
+        order.customer_name?.toLowerCase().includes(q) ||
+        order.customer_phone?.toLowerCase().includes(q);
 
-    const matchesStatus =
-      statusFilter === "All" || order.status === statusFilter;
+      const matchesStatus =
+        statusFilter === "All" || order.status === statusFilter;
 
-    const matchesPayment =
-      paymentFilter === "All" ||
-      order.payment_status === paymentFilter;
+      const matchesPayment =
+        paymentFilter === "All" || order.payment_status === paymentFilter;
 
-    return matchesSearch && matchesStatus && matchesPayment;
-  });
-}, [orders, search, statusFilter, paymentFilter]);
+      return matchesSearch && matchesStatus && matchesPayment;
+    });
+  }, [orders, search, statusFilter, paymentFilter]);
   const updateOrderStatus = async (id: string, status: string) => {
     const currentOrder = orders.find((o) => o.id === id);
 
@@ -68,17 +79,44 @@ export default function OrdersTab({ notificationOrder, onNotificationHandled, }:
       alert("Out For Delivery orders cannot be moved back.");
       return;
     }
+
     const { error } = await supabase
       .from("orders")
       .update({ status })
       .eq("id", id);
 
-    await supabase.from("order_status_history").insert({
-      order_id: id,
-      status,
-    });
     if (error) {
+      console.error(error);
       return;
+    }
+
+    const { error: timelineError } = await supabase
+      .from("order_status_history")
+      .insert({
+        order_id: id,
+        status,
+        note: statusMessages[status] ?? status,
+      });
+
+    if (timelineError) {
+      console.log("Timeline Error");
+      console.log("code:", timelineError?.code);
+      console.log("message:", timelineError?.message);
+      console.log("details:", timelineError?.details);
+      console.log("hint:", timelineError?.hint);
+
+      alert(
+        JSON.stringify(
+          {
+            code: timelineError?.code,
+            message: timelineError?.message,
+            details: timelineError?.details,
+            hint: timelineError?.hint,
+          },
+          null,
+          2,
+        ),
+      );
     }
 
     setOrders((prev) =>
@@ -102,31 +140,40 @@ export default function OrdersTab({ notificationOrder, onNotificationHandled, }:
     }
   };
   useEffect(() => {
-  if (!notificationOrder) return;
+    if (!notificationOrder) return;
 
-  (async () => {
-    await openOrder(notificationOrder);
-    onNotificationHandled?.();
-  })();
-}, [notificationOrder]);
-  useEffect(() => {
-    fetchOrders();
-  }, []);
+    (async () => {
+      await openOrder(notificationOrder);
+      onNotificationHandled?.();
+    })();
+  }, [notificationOrder]);
 
   const fetchOrders = useCallback(async () => {
-  setLoading(true);
+    const {
+      data: { session },
+    } = await supabase.auth.getSession();
 
-  const { data } = await supabase
-    .from("orders")
-    .select("*")
-    .order("created_at", {
-      ascending: false,
-    });
+    console.log("Session:", session);
 
-  setOrders(data || []);
-  setLoading(false);
-}, []);
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
 
+    console.log("User:", user);
+
+    setLoading(true);
+
+    const { data } = await supabase
+      .from("orders")
+      .select("*")
+      .order("created_at", { ascending: false });
+
+    setOrders(data || []);
+    setLoading(false);
+  }, []);
+  useEffect(() => {
+    fetchOrders();
+  }, [fetchOrders]);
   const openOrder = async (order: any) => {
     setSelectedOrder(order);
 
@@ -134,18 +181,7 @@ export default function OrdersTab({ notificationOrder, onNotificationHandled, }:
       .from("order_items")
       .select("*")
       .eq("order_id", order.id);
-    const openOrder = async (order: any) => {
-      const { data, error } = await supabase
-        .from("order_items")
-        .select("*")
-        .eq("order_id", order.id);
 
-      if (error) return;
-
-      setSelectedOrder(order);
-      setOrderItems(data || []);
-      setShowOrder(true);
-    };
     if (error) {
       return;
     }
@@ -218,6 +254,7 @@ export default function OrdersTab({ notificationOrder, onNotificationHandled, }:
       selectedOrders.map((id) => ({
         order_id: id,
         status,
+        note: statusMessages[status] ?? status,
       })),
     );
 
@@ -241,7 +278,7 @@ export default function OrdersTab({ notificationOrder, onNotificationHandled, }:
         </div>
 
         <button
-         onClick={() => setShowMore((prev) => !prev)}
+          onClick={() => setShowMore((prev) => !prev)}
           className="flex items-center gap-2 rounded-xl border border-slate-300 bg-white px-5 py-2.5 text-sm font-semibold text-slate-700 shadow-sm transition hover:border-orange-500 hover:bg-orange-50 hover:text-orange-600"
         >
           {showMore ? (

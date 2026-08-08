@@ -1,7 +1,10 @@
 import type { CapacitorConfig } from "@capacitor/cli";
 import { KeyboardResize } from "@capacitor/keyboard";
 
-const isProd = process.env.NODE_ENV === "production";
+const serverUrl =
+  process.env.CAPACITOR_SERVER_URL || "https://workkerz.com";
+
+const isLocal = serverUrl.startsWith("http://");
 
 const config: CapacitorConfig = {
   appId: "com.workkerz.app",
@@ -9,10 +12,8 @@ const config: CapacitorConfig = {
   webDir: "public",
 
   server: {
-    url: isProd
-      ? "https://workkerz.com"
-      : "http://192.168.137.186:3000",
-    cleartext: !isProd,
+    url: serverUrl,
+    cleartext: isLocal,
   },
 
   android: {

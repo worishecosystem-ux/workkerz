@@ -11,6 +11,7 @@ import OrderSummarySidebar from "./eaurix/OrderSummarySidebar";
 import AddressFormModal from "@/app/components/address/AddressFormModal";
 import { supabase } from "@/lib/supabase";
 import CheckoutPaymentStep from "./components/checkout/CheckoutPaymentStep";
+import { Keyboard } from "@capacitor/keyboard";
 import {
   ChevronLeft,
   ChevronRight,
@@ -54,6 +55,30 @@ export function EAurixCheckout() {
   1;
 
   const [showOrderSummary, setShowOrderSummary] = useState(false);
+  const [keyboardOpen, setKeyboardOpen] = useState(false);
+
+  useEffect(() => {
+    let showListener: Awaited<ReturnType<typeof Keyboard.addListener>>;
+    let hideListener: Awaited<ReturnType<typeof Keyboard.addListener>>;
+
+    const setup = async () => {
+      showListener = await Keyboard.addListener("keyboardWillShow", () => {
+        setKeyboardOpen(true);
+      });
+
+      hideListener = await Keyboard.addListener("keyboardWillHide", () => {
+        setKeyboardOpen(false);
+      });
+    };
+
+    setup();
+
+    return () => {
+      showListener?.remove();
+      hideListener?.remove();
+    };
+  }, []);
+
   const [form, setForm] = useState({
     transactionId: "",
     name: "",
@@ -232,117 +257,128 @@ export function EAurixCheckout() {
   };
 
   const handleConfirm = async () => {
-  try {
-    const orderData = {
-      form,
-      cart,
-      cartTotal,
-      delivery,
-      tax,
-      grandTotal,
-    };
-
-    // Create Order
-    const { data: order, error } = await supabase
-      .from("orders")
-      .insert({
-        order_number: `EA-${Date.now()}`,
-
-        // Customer Details
-        customer_name: form.name,
-        customer_email: form.email,
-        customer_phone: form.phone,
-
-        // Address
-        address: [
-          selectedAddress?.house_no,
-          selectedAddress?.address,
-          selectedAddress?.landmark,
-          selectedAddress?.district,
-          selectedAddress?.state,
-        ]
-          .filter(Boolean)
-          .join(", "),
-
-        city: selectedAddress?.city || "",
-        pincode: selectedAddress?.pincode || "",
-
-        // Delivery
-        delivery_option: form.deliveryOption,
-        delivery_slot: form.deliverySlot,
-
-        // Pricing
-        subtotal: cartTotal,
+    try {
+      const orderData = {
+        form,
+        cart,
+        cartTotal,
         delivery,
         tax,
-        total: grandTotal,
+        grandTotal,
+      };
 
-        // Payment
-        payment_method: "UPI",
-        payment_status: "Pending",
+      // Create Order
+      const { data: order, error } = await supabase
+        .from("orders")
+        .insert({
+          order_number: `EA-${Date.now()}`,
 
-        // Order Status
-        status: "Pending",
-      })
-      .select()
-      .single();
+          // Customer Details
+          customer_name: form.name,
+          customer_email: form.email,
+          customer_phone: form.phone,
 
-    if (error) {
-      console.error("Order Error:", error);
-      alert(error.message);
-      return;
+          // Address
+          address: [
+            selectedAddress?.house_no,
+            selectedAddress?.address,
+            selectedAddress?.landmark,
+            selectedAddress?.district,
+            selectedAddress?.state,
+          ]
+            .filter(Boolean)
+            .join(", "),
+
+          city: selectedAddress?.city || "",
+          pincode: selectedAddress?.pincode || "",
+
+          // Delivery
+          delivery_option: form.deliveryOption,
+          delivery_slot: form.deliverySlot,
+
+          // Pricing
+          subtotal: cartTotal,
+          delivery,
+          tax,
+          total: grandTotal,
+
+          // Payment
+          payment_method: "UPI",
+          payment_status: "Pending",
+
+          // Order Status
+          status: "Pending",
+        })
+        .select()
+        .single();
+
+      if (error) {
+
+        alert(error.message);
+        return;
+      }
+      const { error: timelineError } = await supabase
+        .from("order_status_history")
+        .insert({
+          order_id: order.id,
+          status: "Pending",
+          note: "Your order has been placed successfully.",
+        });
+
+      if (timelineError) {
+  console.log("Timeline Error Full:", JSON.stringify(timelineError, null, 2));
+  alert(timelineError.message);
+}
+      // Verify Order
+      const { data: verify, error: verifyError } = await supabase
+        .from("orders")
+        .select("*")
+        .eq("id", order.id)
+        .single();
+
+      if (verifyError) {
+        console.error("Verify Error:", verifyError);
+      } else {
+        console.log("Saved Order:", verify);
+      }
+
+      // Create Order Items
+      const items = cart.map((item) => ({
+        order_id: order.id,
+        product_id: item.id,
+        product_name: item.name,
+        product_image: item.icon,
+        qty: item.qty,
+        price: item.price,
+        unit: item.unit,
+      }));
+
+      const { error: itemError } = await supabase
+        .from("order_items")
+        .insert(items);
+
+      if (itemError) {
+        console.error("Order Items Error:", itemError);
+        alert(itemError.message);
+        return;
+      }
+
+      // Save for Confirmation Page
+      sessionStorage.setItem(
+        "eaurix-order",
+        JSON.stringify({
+          ...orderData,
+          orderId: order.id,
+          orderNumber: order.order_number,
+        }),
+      );
+
+      router.push("/eaurix/order-placed");
+    } catch (err) {
+      console.error("Checkout Error:", err);
+      alert("Something went wrong. Please try again.");
     }
-
-    // Verify Order
-    const { data: verify, error: verifyError } = await supabase
-      .from("orders")
-      .select("*")
-      .eq("id", order.id)
-      .single();
-
-    if (verifyError) {
-      console.error("Verify Error:", verifyError);
-    } else {
-      console.log("Saved Order:", verify);
-    }
-
-    // Create Order Items
-    const items = cart.map((item) => ({
-      order_id: order.id,
-      product_id: item.id,
-      product_name: item.name,
-      product_image: item.icon,
-      qty: item.qty,
-      price: item.price,
-      unit: item.unit,
-    }));
-
-    const { error: itemError } = await supabase
-      .from("order_items")
-      .insert(items);
-
-    if (itemError) {
-      console.error("Order Items Error:", itemError);
-      alert(itemError.message);
-      return;
-    }
-
-    // Save for Confirmation Page
-    sessionStorage.setItem(
-      "eaurix-order",
-      JSON.stringify({
-        ...orderData,
-        orderId: order.id,
-        orderNumber: order.order_number,
-      })
-    );
-
-    router.push("/eaurix/order-placed");
-  } catch (err) {
-    console.error("Checkout Error:", err);
-    alert("Something went wrong. Please try again.");
-  }
-};
+  };
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
@@ -711,7 +747,7 @@ export function EAurixCheckout() {
             {/* Bottom Action Bar */}
             <div
               className={`fixed bottom-0 left-0 right-0 z-50 border-t border-gray-200 bg-white/95 backdrop-blur-md px-4 py-3 pb-[calc(env(safe-area-inset-bottom)+12px)] transition-all duration-300 ${
-                showOrderSummary
+                showOrderSummary || (step === 3 && keyboardOpen)
                   ? "translate-y-full opacity-0 pointer-events-none"
                   : "translate-y-0 opacity-100"
               }`}

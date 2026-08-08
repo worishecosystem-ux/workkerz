@@ -1,109 +1,89 @@
 "use client";
 
 import { useState } from "react";
-
 import { useRouter } from "next/navigation";
-
 import { supabase } from "@/lib/supabase";
 
-export default function AdminLogin() {
+export default function AdminLoginPage() {
   const router = useRouter();
 
-  const [email, setEmail] =
-    useState("");
-
-  const [password, setPassword] =
-    useState("");
-
-  const [loading, setLoading] =
-    useState(false);
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [loading, setLoading] = useState(false);
 
   const login = async () => {
+    if (!email || !password) {
+      alert("Please enter email and password.");
+      return;
+    }
+
     try {
       setLoading(true);
 
-      const { data, error } =
-        await supabase
-          .from("admin_users")
-          .select("*")
-          .eq("email", email)
-          .eq("password", password)
-          .single();
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email: email.trim(),
+        password,
+      });
 
-      if (error || !data) {
-        alert(
-          "Invalid credentials",
-        );
+      console.log("LOGIN DATA:", data);
+      console.log("LOGIN ERROR:", error);
 
+      if (error) {
+        alert(error.message);
         return;
       }
 
-      localStorage.setItem(
-        "admin-auth",
-        JSON.stringify(data),
-      );
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
 
-      router.push("/admin");
+      console.log("SESSION AFTER LOGIN:", session);
+
+      if (!session) {
+        alert("Login failed. Session not created.");
+        return;
+      }
+
+      router.replace("/admin");
+      router.refresh();
     } catch (err) {
-      console.log(err);
+      console.error(err);
+      alert("Something went wrong.");
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div className="min-h-screen bg-[#F8FAFC] flex items-center justify-center p-5">
-      <div className="w-full max-w-md bg-white rounded-4xl border border-gray-200 p-8 shadow-xl">
-        <div className="text-3xl font-black text-center text-[#0F172A]">
+    <div className="flex min-h-screen items-center justify-center bg-slate-100">
+      <div className="w-full max-w-sm rounded-2xl bg-white p-8 shadow-xl">
+        <h1 className="mb-6 text-center text-2xl font-bold">
           Admin Login
-        </div>
+        </h1>
 
-        <div className="mt-8 space-y-4">
-          <input
-            type="email"
-            placeholder="Email"
-            value={email}
-            onChange={(e) =>
-              setEmail(
-                e.target.value,
-              )
-            }
-            className="w-full h-14 rounded-2xl border border-gray-200 px-5 outline-none"
-          />
+        <input
+          type="email"
+          placeholder="Admin Email"
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
+          className="mb-4 w-full rounded-lg border p-3"
+        />
 
-          <input
-            type="password"
-            placeholder="Password"
-            value={password}
-            onChange={(e) =>
-              setPassword(
-                e.target.value,
-              )
-            }
-            className="w-full h-14 rounded-2xl border border-gray-200 px-5 outline-none"
-          />
+        <input
+          type="password"
+          placeholder="Password"
+          value={password}
+          onChange={(e) => setPassword(e.target.value)}
+          className="mb-6 w-full rounded-lg border p-3"
+        />
 
-          <button
-            onClick={login}
-            disabled={loading}
-            className="w-full h-14 rounded-2xl bg-[#0F172A] text-white font-bold"
-          >
-            {loading
-              ? "Please wait..."
-              : "Login"}
-          </button>
-
-          <button
-            onClick={() =>
-              router.push
-                ("/admin/admin-register")
-              
-            }
-            className="w-full text-sm text-[#64748B]"
-          >
-            Create Admin Account
-          </button>
-        </div>
+        <button
+          onClick={login}
+          disabled={loading}
+          className="w-full rounded-lg bg-blue-600 py-3 font-semibold text-white disabled:opacity-50"
+        >
+          {loading ? "Signing in..." : "Login"}
+        </button>
       </div>
     </div>
   );

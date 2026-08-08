@@ -51,7 +51,7 @@ export function EAurixCart() {
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
   /* ========================================= */
-
+  const [showPriceDetails, setShowPriceDetails] = useState(false);
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
@@ -105,7 +105,7 @@ export function EAurixCart() {
   ========================================= */
 
   return (
-    <div className="min-h-screen bg-sky-50 pt-18 sm:pt-20 pb-16">
+    <div className="min-h-screen bg-sky-50 pt-18 sm:pt-20 pb-25">
       {/* HEADER */}
       <div
         className={`fixed inset-x-0 top-0 z-50 overflow-hidden border-b border-white/10 bg-linear-to-br from-sky-50 via-sky-100 to-cyan-200 shadow-xl transition-all duration-300 ${
@@ -289,7 +289,7 @@ export function EAurixCart() {
 
           {/* ORDER SUMMARY */}
 
-          <div>
+          <div className="hidden lg:block">
             <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm lg:sticky lg:top-24 mb-10 mt-4">
               {/* Header */}
               <div className="flex items-center gap-3 border-b border-slate-100 bg-linear-to-r from-sky-500 to-cyan-500 px-4 py-2">
@@ -386,19 +386,89 @@ export function EAurixCart() {
                     100% Secure Payments • Fast Delivery
                   </span>
                 </div>
-                {/* Bottom Checkout Bar */}
-                <div className="fixed bottom-0 left-0 right-0 z-50 border-t border-slate-200 bg-white/95 backdrop-blur-xl px-4 py-3 pb-[calc(env(safe-area-inset-bottom)+12px)] shadow-[0_-8px_30px_rgba(0,0,0,0.08)]">
-                  <button
-                    onClick={() => router.push("/eaurix/checkout")}
-                    className="h-14 w-full rounded-2xl bg-black text-[15px] font-semibold text-white shadow-xl active:scale-[0.98]"
-                  >
-                    Proceed to Checkout
-                  </button>
-                </div>
               </div>
             </div>
           </div>
         </div>
+      </div>
+      {/* Bottom Checkout Bar */}
+      {/* Bottom Checkout Bar */}
+      <div className="fixed bottom-0 left-0 right-0 z-50 border-t border-slate-200 bg-white shadow-[0_-4px_20px_rgba(0,0,0,0.08)]">
+        <div className="mx-auto flex h-25 max-w-md items-center px-4">
+          {/* Left */}
+          <div className="flex flex-1 flex-col items-start">
+            <span className="text-lg font-bold text-slate-900">
+              ₹{grandTotal.toFixed(2)}
+            </span>
+
+            <button
+              type="button"
+              onClick={() => setShowPriceDetails(true)}
+              className="text-xs font-medium text-sky-600 hover:text-sky-700"
+            >
+              View price details
+            </button>
+          </div>
+
+          {/* Right */}
+          <button
+            onClick={() => router.push("/eaurix/checkout")}
+            className="ml-4 flex h-12 min-w-42.5 items-center justify-center rounded-md bg-[#FB641B] px-6 text-sm font-bold uppercase tracking-wide text-white active:scale-[0.98]"
+          >
+            Place Order
+          </button>
+        </div>
+        {showPriceDetails && (
+          <>
+            {/* Overlay */}
+            <div
+              className="fixed inset-0 z-[90] bg-black/40"
+              onClick={() => setShowPriceDetails(false)}
+            />
+
+            {/* Bottom Sheet */}
+            <div className="fixed bottom-0 left-0 right-0 z-[91] rounded-t-3xl bg-white p-5 shadow-2xl">
+              <div className="mx-auto mb-4 h-1.5 w-12 rounded-full bg-slate-300" />
+
+              <div className="flex items-center justify-between">
+                <h3 className="text-lg font-bold">Price Details</h3>
+
+                <button onClick={() => setShowPriceDetails(false)}>
+                  <X className="h-5 w-5" />
+                </button>
+              </div>
+
+              <div className="mt-5 space-y-4">
+                <div className="flex justify-between">
+                  <span>
+                    Price ({cart.reduce((s, c) => s + c.qty, 0)} items)
+                  </span>
+                  <span>₹{subtotal.toFixed(2)}</span>
+                </div>
+
+                <div className="flex justify-between">
+                  <span>Delivery Fee</span>
+
+                  {delivery === 0 ? (
+                    <span className="font-semibold text-green-600">FREE</span>
+                  ) : (
+                    <span>₹{delivery.toFixed(2)}</span>
+                  )}
+                </div>
+
+                <div className="border-t pt-4 flex justify-between text-lg font-bold">
+                  <span>Total Amount</span>
+                  <span>₹{grandTotal.toFixed(2)}</span>
+                </div>
+
+                <div className="rounded-xl bg-green-50 p-3 text-sm text-green-700">
+                  You will save ₹{delivery === 0 ? "80.00" : "0.00"} on this
+                  order.
+                </div>
+              </div>
+            </div>
+          </>
+        )}
       </div>
     </div>
   );
