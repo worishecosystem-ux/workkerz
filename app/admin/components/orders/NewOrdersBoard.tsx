@@ -1,12 +1,12 @@
 "use client";
 
-import NewOrderCard from "./NewOrderCard";
 import { ShoppingBag } from "lucide-react";
+import NewOrderCard from "./NewOrderCard";
 
 type Props = {
   orders: any[];
   onView: (order: any) => void;
-  onConfirm: (id: string, status: string) => void;
+  onConfirm: (id: string | number, status: string) => void;
   onReject: (order: any) => void;
 };
 
@@ -14,53 +14,69 @@ export default function NewOrdersBoard({
   orders,
   onView,
   onConfirm,
+  onReject,
 }: Props) {
   const newOrders = orders.filter(
-    (o) => o.status === "Pending"
+    (order) => order.status === "Pending"
   );
 
   return (
-    <div className="mb-8 rounded-3xl border border-slate-200 bg-slate-50 p-6">
-      <div className="mb-6 flex items-center justify-between">
-        <div>
-          <h2 className="text-2xl font-bold text-slate-900">
-            🔴 New Orders
-          </h2>
+    <section className="w-full overflow-hidden rounded-xl border border-red-100 bg-white shadow-sm">
+      {/* HEADER */}
+      <div className="flex items-center justify-between gap-3 border-b border-red-100 bg-red-50/50 px-3 py-2.5 sm:px-4">
+        <div className="flex min-w-0 items-center gap-2.5">
+          <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-red-100">
+            <ShoppingBag className="h-4 w-4 text-red-600" />
+          </div>
 
-          <p className="mt-1 text-sm text-slate-500">
-            {newOrders.length} Orders Waiting For Confirmation
-          </p>
+          <div className="min-w-0">
+            <div className="flex items-center gap-1.5">
+              <span className="h-2 w-2 shrink-0 rounded-full bg-red-500" />
+
+              <h2 className="text-sm font-bold text-slate-900">
+                New Orders
+              </h2>
+            </div>
+
+            <p className="mt-0.5 text-[10px] text-slate-500">
+              {newOrders.length} orders waiting for confirmation
+            </p>
+          </div>
         </div>
 
-        <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-orange-100">
-          <ShoppingBag className="h-7 w-7 text-orange-600" />
-        </div>
+        <span className="shrink-0 rounded-full bg-red-100 px-2 py-1 text-[10px] font-bold text-red-700">
+          {newOrders.length}
+        </span>
       </div>
 
-      {newOrders.length === 0 ? (
-        <div className="rounded-2xl border border-dashed border-slate-300 bg-white py-16 text-center">
-          <ShoppingBag className="mx-auto mb-4 h-12 w-12 text-slate-300" />
+      {/* BOARD */}
+      <div className="p-2.5 sm:p-3">
+        {newOrders.length === 0 ? (
+          <div className="flex min-h-[150px] flex-col items-center justify-center rounded-lg border border-dashed border-red-200 bg-red-50/20 px-4 text-center">
+            <ShoppingBag className="mb-2 h-7 w-7 text-red-200" />
 
-          <h3 className="text-lg font-semibold text-slate-700">
-            No New Orders
-          </h3>
+            <p className="text-xs font-semibold text-slate-600">
+              No New Orders
+            </p>
 
-          <p className="mt-2 text-sm text-slate-500">
-            New customer orders will appear here instantly.
-          </p>
-        </div>
-      ) : (
-        <div className="grid gap-5 md:grid-cols-2 xl:grid-cols-3">
-          {newOrders.map((order) => (
-            <NewOrderCard
-              key={order.id}
-              order={order}
-              onView={onView}
-              onConfirm={onConfirm}
-            />
-          ))}
-        </div>
-      )}
-    </div>
+            <p className="mt-1 text-[10px] text-slate-400">
+              New customer orders will appear here.
+            </p>
+          </div>
+        ) : (
+          <div className="flex gap-2.5 overflow-x-auto pb-1 [scrollbar-width:thin] sm:gap-3">
+            {newOrders.map((order) => (
+              <NewOrderCard
+                key={order.id}
+                order={order}
+                onView={onView}
+                onConfirm={onConfirm}
+                onReject={onReject}
+              />
+            ))}
+          </div>
+        )}
+      </div>
+    </section>
   );
 }

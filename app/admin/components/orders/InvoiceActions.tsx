@@ -1,32 +1,82 @@
 "use client";
 
-import { Printer, Download } from "lucide-react";
+import { Download, FileText } from "lucide-react";
 
 type Props = {
   order: any;
   onPrint: () => void;
 };
 
-export default function InvoiceActions({ order, onPrint }: Props) {
+export default function InvoiceActions({
+  order,
+  onPrint,
+}: Props) {
   return (
-    <div className="flex items-center gap-2">
+    <div className="flex min-w-0 items-center gap-1.5">
+      {/* PRINT / PDF */}
       <button
+        type="button"
         onClick={onPrint}
-        className="flex h-9 items-center gap-2 rounded-lg border border-slate-200 bg-white px-3 text-sm font-medium text-slate-700 transition hover:bg-slate-100"
+        aria-label="Print invoice"
+        className="
+          flex
+          h-8
+          shrink-0
+          items-center
+          gap-1.5
+          rounded-lg
+          border
+          border-slate-200
+          bg-white
+          px-2.5
+          text-[10px]
+          font-semibold
+          text-slate-700
+          transition
+          hover:border-slate-300
+          hover:bg-slate-50
+          active:scale-95
+          sm:h-9
+          sm:px-3
+          sm:text-xs
+        "
       >
-        <Printer className="h-4 w-4" />
-        <span className="hidden sm:block">Print</span>
+        <Download className="h-3.5 w-3.5 shrink-0" />
+
+        <span className="hidden xs:inline sm:inline">
+          PDF
+        </span>
+
+        <span className="sm:hidden">
+          Print
+        </span>
       </button>
 
-      <button
-        className="flex h-9 items-center gap-2 rounded-lg border border-slate-200 bg-white px-3 text-sm font-medium text-slate-700 transition hover:bg-slate-100"
+      {/* ORDER NUMBER */}
+      <div
+        className="
+          flex
+          min-w-0
+          max-w-[110px]
+          items-center
+          gap-1.5
+          rounded-lg
+          bg-slate-100
+          px-2
+          py-1.5
+          text-[9px]
+          font-bold
+          text-slate-600
+          sm:max-w-[150px]
+          sm:px-2.5
+          sm:text-[10px]
+        "
       >
-        <Download className="h-4 w-4" />
-        <span className="hidden sm:block">PDF</span>
-      </button>
+        <FileText className="h-3 w-3 shrink-0 text-slate-400" />
 
-      <div className="hidden lg:block rounded-lg bg-slate-100 px-3 py-1.5 text-xs font-semibold text-slate-600">
-        #{order.order_number}
+        <span className="truncate">
+          #{order?.order_number || "-"}
+        </span>
       </div>
     </div>
   );

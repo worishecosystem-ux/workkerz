@@ -12,6 +12,10 @@ const supabaseAdmin = createClient(
   },
 );
 
+/* =====================================================
+   ADMIN AUTHORIZATION
+===================================================== */
+
 async function getAuthorizedAdmin(
   request: NextRequest,
 ) {
@@ -92,28 +96,28 @@ async function getAuthorizedAdmin(
     };
   }
 
-  // Super Admin
+  /* SUPER ADMIN */
+
   if (admin.role === "super_admin") {
     return {
       admin,
     };
   }
 
-  // Worker Admin
+  /* WORKER ADMIN */
+
   const {
     data: workerRole,
     error: workerRoleError,
   } = await supabaseAdmin
     .from("admin_role_assignments")
-    .select(
-      `
-        role_id,
-        admin_roles!inner (
-          name,
-          is_active
-        )
-      `,
-    )
+    .select(`
+      role_id,
+      admin_roles!inner (
+        name,
+        is_active
+      )
+    `)
     .eq("admin_id", user.id)
     .eq(
       "admin_roles.name",
@@ -153,7 +157,7 @@ async function getAuthorizedAdmin(
 
 /* =====================================================
    GET WORKERS
-   /api/admin/workers
+   GET /api/admin/workers
 ===================================================== */
 
 export async function GET(
@@ -200,7 +204,7 @@ export async function GET(
       100,
     );
 
-    /* QUERY WORKERS */
+    /* WORKERS QUERY */
 
     let query = supabaseAdmin
       .from("workers")
@@ -216,7 +220,10 @@ export async function GET(
 
     if (search) {
       const safeSearch =
-        search.replace(/[%(),]/g, "");
+        search.replace(
+          /[%(),]/g,
+          "",
+        );
 
       query = query.or(
         [
@@ -246,7 +253,9 @@ export async function GET(
             workersError.message ||
             "Unable to load workers.",
         },
-        { status: 500 },
+        {
+          status: 500,
+        },
       );
     }
 
@@ -256,7 +265,9 @@ export async function GET(
         workers: workers ?? [],
         total: count ?? 0,
       },
-      { status: 200 },
+      {
+        status: 200,
+      },
     );
   } catch (error) {
     console.error(
@@ -271,7 +282,399 @@ export async function GET(
             ? error.message
             : "Something went wrong while loading workers.",
       },
-      { status: 500 },
+      {
+        status: 500,
+      },
+    );
+  }
+}
+
+/* =====================================================
+   CREATE WORKER
+   POST /api/admin/workers
+===================================================== */
+
+export async function POST(
+  request: NextRequest,
+) {
+  try {
+    /* =================================================
+       AUTH
+    ================================================= */
+
+    const authorization =
+      await getAuthorizedAdmin(request);
+
+    if ("error" in authorization) {
+      return NextResponse.json(
+        {
+          error: authorization.error,
+        },
+        {
+          status: authorization.status,
+        },
+      );
+    }
+
+    /* =================================================
+       REQUEST BODY
+    ================================================= */
+
+    let body: Record<
+      string,
+      unknown
+    >;
+
+    try {
+      body = await request.json();
+    } catch {
+      return NextResponse.json(
+        {
+          error:
+            "Invalid JSON request body.",
+        },
+        {
+          status: 400,
+        },
+      );
+    }
+
+    console.log(
+      "[Workers POST] Body:",
+      body,
+    );
+
+    /* =================================================
+       HELPERS
+    ================================================= */
+
+    const stringValue = (
+      value: unknown,
+    ) => {
+      if (
+        typeof value !== "string"
+      ) {
+        return "";
+      }
+
+      return value.trim();
+    };
+
+    const nullableString = (
+      value: unknown,
+    ) => {
+      const result =
+        stringValue(value);
+
+      return result || null;
+    };
+
+    const numberValue = (
+      value: unknown,
+    ) => {
+      const number = Number(value);
+
+      if (
+        !Number.isFinite(number) ||
+        number < 0
+      ) {
+        return 0;
+      }
+
+      return number;
+    };
+
+    const arrayValue = (
+      value: unknown,
+    ): string[] => {
+      if (!Array.isArray(value)) {
+        return [];
+      }
+
+      return value
+        .map((item) =>
+          String(item).trim(),
+        )
+        .filter(Boolean);
+    };
+
+    /* =================================================
+       REQUIRED FIELDS
+    ================================================= */
+
+    const name =
+      stringValue(body.name);
+
+    const phone =
+      stringValue(body.phone);
+
+    const category =
+      stringValue(body.category);
+
+    const subcategory =
+      stringValue(
+        body.subcategory,
+      );
+
+    const specialty =
+      stringValue(body.specialty);
+
+    const location =
+      stringValue(body.location);
+
+    if (!name) {
+      return NextResponse.json(
+        {
+          error:
+            "Worker name is required.",
+        },
+        {
+          status: 400,
+        },
+      );
+    }
+
+    if (!phone) {
+      return NextResponse.json(
+        {
+          error:
+            "Phone number is required.",
+        },
+        {
+          status: 400,
+        },
+      );
+    }
+
+    if (!/^[6-9]\d{9}$/.test(phone)) {
+      return NextResponse.json(
+        {
+          error:
+            "Enter valid 10 digit mobile number.",
+        },
+        {
+          status: 400,
+        },
+      );
+    }
+
+    if (!category) {
+      return NextResponse.json(
+        {
+          error:
+            "Worker category is required.",
+        },
+        {
+          status: 400,
+        },
+      );
+    }
+
+    if (!subcategory) {
+      return NextResponse.json(
+        {
+          error:
+            "Worker subcategory is required.",
+        },
+        {
+          status: 400,
+        },
+      );
+    }
+
+    if (!specialty) {
+      return NextResponse.json(
+        {
+          error:
+            "Specialty is required.",
+        },
+        {
+          status: 400,
+        },
+      );
+    }
+
+    if (!location) {
+      return NextResponse.json(
+        {
+          error:
+            "Location is required.",
+        },
+        {
+          status: 400,
+        },
+      );
+    }
+
+    /* =================================================
+       PAYLOAD
+    ================================================= */
+
+    const workerPayload = {
+      name,
+
+      phone,
+
+      category,
+
+      subcategory,
+
+      specialty,
+
+      location,
+
+      labour_chauk:
+        nullableString(
+          body.labour_chauk,
+        ),
+
+      years_experience:
+        numberValue(
+          body.years_experience,
+        ),
+
+      bio:
+        nullableString(
+          body.bio,
+        ),
+
+      response_time:
+        nullableString(
+          body.response_time,
+        ),
+
+      skills:
+        arrayValue(
+          body.skills,
+        ),
+
+      services:
+        arrayValue(
+          body.services,
+        ),
+
+      certifications:
+        arrayValue(
+          body.certifications,
+        ),
+
+      pricing_type:
+        stringValue(
+          body.pricing_type,
+        ) || "custom",
+
+      starting_price:
+        numberValue(
+          body.starting_price,
+        ),
+
+      half_day_price:
+        numberValue(
+          body.half_day_price,
+        ),
+
+      full_day_price:
+        numberValue(
+          body.full_day_price,
+        ),
+
+      monthly_price:
+        numberValue(
+          body.monthly_price,
+        ),
+
+      visit_charge:
+        numberValue(
+          body.visit_charge,
+        ),
+
+      available:
+        typeof body.available ===
+        "boolean"
+          ? body.available
+          : true,
+
+      photo:
+        nullableString(
+          body.photo,
+        ),
+    };
+
+    console.log(
+      "[Workers POST] Payload:",
+      workerPayload,
+    );
+
+    /* =================================================
+       INSERT
+    ================================================= */
+
+    const {
+      data: worker,
+      error: workerError,
+    } = await supabaseAdmin
+      .from("workers")
+      .insert(workerPayload)
+      .select("*")
+      .single();
+
+    if (workerError) {
+      console.error(
+        "[Workers POST] Supabase error:",
+        workerError,
+      );
+
+      return NextResponse.json(
+        {
+          success: false,
+          error:
+            workerError.message ||
+            "Unable to create worker.",
+          code:
+            workerError.code || null,
+          details:
+            workerError.details || null,
+          hint:
+            workerError.hint || null,
+        },
+        {
+          status: 500,
+        },
+      );
+    }
+
+    /* =================================================
+       SUCCESS
+    ================================================= */
+
+    return NextResponse.json(
+      {
+        success: true,
+        message:
+          "Worker created successfully.",
+        worker,
+      },
+      {
+        status: 201,
+      },
+    );
+  } catch (error) {
+    console.error(
+      "[Workers POST] API error:",
+      error,
+    );
+
+    return NextResponse.json(
+      {
+        success: false,
+        error:
+          error instanceof Error
+            ? error.message
+            : "Something went wrong while creating worker.",
+      },
+      {
+        status: 500,
+      },
     );
   }
 }

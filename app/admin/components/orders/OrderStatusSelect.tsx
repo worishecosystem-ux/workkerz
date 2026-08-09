@@ -1,11 +1,13 @@
+"use client";
+
 import {
-  Clock3,
+  Bike,
+  Check,
   CheckCircle2,
+  Clock3,
   Package,
   PackageCheck,
   Truck,
-  Bike,
-  Check,
   XCircle,
 } from "lucide-react";
 
@@ -15,46 +17,14 @@ type Props = {
 };
 
 const statuses = [
-  {
-    value: "Pending",
-    label: "Pending",
-    icon: Clock3,
-  },
-  {
-    value: "Confirmed",
-    label: "Confirmed",
-    icon: CheckCircle2,
-  },
-  {
-    value: "Preparing",
-    label: "Preparing",
-    icon: Package,
-  },
-  {
-    value: "Packed",
-    label: "Packed",
-    icon: PackageCheck,
-  },
-  {
-    value: "Ready to Dispatch",
-    label: "Dispatch",
-    icon: Truck,
-  },
-  {
-    value: "Out For Delivery",
-    label: "Delivery",
-    icon: Bike,
-  },
-  {
-    value: "Delivered",
-    label: "Delivered",
-    icon: Check,
-  },
-  {
-    value: "Cancelled",
-    label: "Cancelled",
-    icon: XCircle,
-  },
+  { value: "Pending", label: "Pending", icon: Clock3 },
+  { value: "Confirmed", label: "Confirmed", icon: CheckCircle2 },
+  { value: "Preparing", label: "Preparing", icon: Package },
+  { value: "Packed", label: "Packed", icon: PackageCheck },
+  { value: "Ready to Dispatch", label: "Dispatch", icon: Truck },
+  { value: "Out For Delivery", label: "Delivery", icon: Bike },
+  { value: "Delivered", label: "Delivered", icon: Check },
+  { value: "Cancelled", label: "Cancelled", icon: XCircle },
 ];
 
 export default function OrderStatusTimeline({
@@ -62,50 +32,66 @@ export default function OrderStatusTimeline({
   onChange,
 }: Props) {
   const currentIndex = statuses.findIndex(
-    (s) => s.value === value
+    (status) => status.value === value
   );
 
+  const cancelled = value === "Cancelled";
+
   return (
-    <div className="border-t border-slate-200 bg-slate-50 py-2">
-      <div className="flex w-full items-center justify-between gap-1">
-        {statuses.map((status, index) => {
-          const Icon = status.icon;
+    <div className="w-full overflow-hidden">
+      <div className="overflow-x-auto px-1 py-2 scrollbar-none [&::-webkit-scrollbar]:hidden">
+        <div className="flex w-max min-w-full items-center">
+          {statuses.map((status, index) => {
+            const Icon = status.icon;
+            const active = status.value === value;
+            const isCancelled = status.value === "Cancelled";
+            const completed =
+              !cancelled && currentIndex > index;
 
-          const completed = index < currentIndex;
-          const active = index === currentIndex;
-
-          return (
-            <div
-              key={status.value}
-              className="flex shrink-0 items-center"
-            >
-              <button
-                onClick={() => onChange(status.value)}
-                className={`flex h-9 shrink-0 items-center gap-1.5 rounded-full border px-3 text-xs font-semibold transition-all duration-200
-                ${
-                  active
-                    ? "border-emerald-600 bg-emerald-600 text-white shadow-sm"
-                    : completed
-                    ? "border-emerald-200 bg-emerald-50 text-emerald-700"
-                    : "border-slate-200 bg-white text-slate-600 hover:border-slate-300 hover:bg-slate-100"
-                }`}
+            return (
+              <div
+                key={status.value}
+                className="flex shrink-0 items-center"
               >
-                <Icon className="h-3.5 w-3.5" />
-                <span>{status.label}</span>
-              </button>
+                <button
+                  type="button"
+                  onClick={() => onChange(status.value)}
+                  className={[
+                    "flex h-8 shrink-0 items-center gap-1.5",
+                    "rounded-lg border px-2.5",
+                    "text-[9px] font-bold whitespace-nowrap",
+                    "transition-all duration-200",
+                    "active:scale-[0.97]",
+                    "sm:h-9 sm:px-3 sm:text-xs",
+                    active
+                      ? isCancelled
+                        ? "border-red-500 bg-red-500 text-white shadow-sm"
+                        : "border-emerald-600 bg-emerald-600 text-white shadow-sm"
+                      : completed
+                        ? "border-emerald-200 bg-emerald-50 text-emerald-700"
+                        : "border-slate-200 bg-white text-slate-500 hover:border-slate-300 hover:bg-slate-50",
+                  ].join(" ")}
+                >
+                  <Icon className="h-3 w-3 shrink-0 sm:h-3.5 sm:w-3.5" />
 
-              {index !== statuses.length - 1 && (
-                <div
-                  className={`mx-2 h-0.5 w-6 rounded-full ${
-                    completed || active
-                      ? "bg-emerald-500"
-                      : "bg-slate-300"
-                  }`}
-                />
-              )}
-            </div>
-          );
-        })}
+                  <span>{status.label}</span>
+                </button>
+
+                {index < statuses.length - 1 && (
+                  <div
+                    className={[
+                      "mx-1.5 h-0.5 w-4 shrink-0 rounded-full",
+                      "sm:mx-2 sm:w-6",
+                      completed
+                        ? "bg-emerald-400"
+                        : "bg-slate-200",
+                    ].join(" ")}
+                  />
+                )}
+              </div>
+            );
+          })}
+        </div>
       </div>
     </div>
   );

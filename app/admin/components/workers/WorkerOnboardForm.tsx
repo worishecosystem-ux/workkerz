@@ -4,7 +4,6 @@ import {
   ArrowLeft,
   BriefcaseBusiness,
   Camera,
-  Check,
   CheckCircle2,
   ChevronDown,
   ImagePlus,
@@ -14,7 +13,6 @@ import {
   Phone,
   Plus,
   Save,
-  Search,
   Tag,
   User,
   X,
@@ -24,11 +22,7 @@ import { ChangeEvent, FormEvent, useEffect, useRef, useState } from "react";
 
 import { supabase } from "@/lib/supabase";
 
-/* =====================================================
-   TYPES
-===================================================== */
-
-type WorkerOnboardFormProps = {
+type Props = {
   onBack: () => void;
   onCreated?: (worker: any) => void;
 };
@@ -41,13 +35,8 @@ type PricingType =
   | "per_service"
   | "visit_charge";
 
-/* =====================================================
-   WORKER CATEGORY DATA
-===================================================== */
-
-const WORKER_CATEGORIES = {
+const CATEGORIES = {
   Labour: ["Labour", "Skilled Labour", "Certified Labour"],
-
   Driver: [
     "Car Driver",
     "Commercial Driver",
@@ -55,21 +44,18 @@ const WORKER_CATEGORIES = {
     "Heavy Vehicle Driver",
     "Heavy Vehicle Helper",
   ],
-
   Mechanic: [
     "Two Wheeler Mechanic",
     "Three Wheeler Mechanic",
     "Four Wheeler Mechanic",
     "Heavy Vehicle Mechanic",
   ],
-
   Washer: [
     "Two Wheeler Washer",
     "Three Wheeler Washer",
     "Four Wheeler Washer",
     "Heavy Vehicle Washer",
   ],
-
   "Computer Operator": [
     "Web Developer",
     "Application Developer",
@@ -78,9 +64,7 @@ const WORKER_CATEGORIES = {
     "Computer Technician",
     "Data Entry Operator",
   ],
-
   "Office Worker": ["Peon", "Cleaner", "Helper", "Assistant"],
-
   "Home Services": [
     "Chef",
     "Maid",
@@ -88,7 +72,6 @@ const WORKER_CATEGORIES = {
     "Laundry Worker",
     "Washroom Cleaner",
   ],
-
   Restaurant: [
     "Chef",
     "Kitchen Helper",
@@ -97,7 +80,6 @@ const WORKER_CATEGORIES = {
     "Captain",
     "Manager",
   ],
-
   "Home Contractor": [
     "Welder",
     "Plumber",
@@ -105,232 +87,119 @@ const WORKER_CATEGORIES = {
     "Electrician",
     "Roofer",
   ],
-
   Factory: [
     "Assembly Line Worker",
     "Machine Operator",
     "Maintenance Technician",
     "Warehouse Associate",
   ],
-
   Roads: ["Roller Operator", "General Labour", "Mason", "Concrete Finisher"],
 } as const;
 
-type WorkerCategory = keyof typeof WORKER_CATEGORIES;
+type Category = keyof typeof CATEGORIES;
 
-/* =====================================================
-   CONSTANTS
-===================================================== */
+const BUCKET = "workers";
 
-const WORKER_IMAGE_BUCKET = "workers";
-
-/* =====================================================
-   COMPONENT
-===================================================== */
-
-export default function WorkerOnboardForm({
-  onBack,
-  onCreated,
-}: WorkerOnboardFormProps) {
-  /* =====================================================
-     BASIC INFORMATION
-  ===================================================== */
-
+export default function WorkerOnboardForm({ onBack, onCreated }: Props) {
   const [name, setName] = useState("");
-
   const [phone, setPhone] = useState("");
-
-  const [category, setCategory] = useState<WorkerCategory | "">("");
-
+  const [category, setCategory] = useState<Category | "">("");
   const [subcategory, setSubcategory] = useState("");
-
   const [specialty, setSpecialty] = useState("");
-
   const [location, setLocation] = useState("");
-
   const [labourChauk, setLabourChauk] = useState("");
 
-  /* =====================================================
-     PROFESSIONAL INFORMATION
-  ===================================================== */
-
   const [yearsExperience, setYearsExperience] = useState("0");
-
   const [bio, setBio] = useState("");
-
   const [responseTime, setResponseTime] = useState("");
 
   const [skills, setSkills] = useState<string[]>([]);
-
   const [services, setServices] = useState<string[]>([]);
-
   const [certifications, setCertifications] = useState<string[]>([]);
 
   const [skillInput, setSkillInput] = useState("");
-
   const [serviceInput, setServiceInput] = useState("");
-
   const [certificationInput, setCertificationInput] = useState("");
 
-  /* =====================================================
-     PHOTO
-  ===================================================== */
-
-  const cameraInputRef = useRef<HTMLInputElement | null>(null);
-
-  const fileInputRef = useRef<HTMLInputElement | null>(null);
-
   const [photoFile, setPhotoFile] = useState<File | null>(null);
-
   const [photoPreview, setPhotoPreview] = useState("");
-
   const [photoUrl, setPhotoUrl] = useState("");
-
   const [photoError, setPhotoError] = useState("");
-
   const [photoUploading, setPhotoUploading] = useState(false);
-
-  /* =====================================================
-     PRICING
-  ===================================================== */
 
   const [pricingType, setPricingType] = useState<PricingType>("custom");
 
   const [startingPrice, setStartingPrice] = useState("0");
-
   const [halfDayPrice, setHalfDayPrice] = useState("0");
-
   const [fullDayPrice, setFullDayPrice] = useState("0");
-
   const [monthlyPrice, setMonthlyPrice] = useState("0");
-
   const [visitCharge, setVisitCharge] = useState("0");
 
-  /* =====================================================
-     STATUS
-  ===================================================== */
-
   const [available, setAvailable] = useState(true);
-
-  /* =====================================================
-     UI
-  ===================================================== */
-
   const [loading, setLoading] = useState(false);
-
   const [error, setError] = useState("");
-
   const [success, setSuccess] = useState("");
 
-  /* =====================================================
-     CLEAN PHOTO PREVIEW
-  ===================================================== */
+  const cameraRef = useRef<HTMLInputElement>(null);
+  const fileRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     return () => {
-      if (photoPreview && photoPreview.startsWith("blob:")) {
+      if (photoPreview.startsWith("blob:")) {
         URL.revokeObjectURL(photoPreview);
       }
     };
   }, [photoPreview]);
 
-  /* =====================================================
-     PHOTO VALIDATION
-  ===================================================== */
-
   const validatePhoto = (file: File) => {
-    const allowedTypes = ["image/jpeg", "image/png", "image/webp"];
-
-    if (!allowedTypes.includes(file.type)) {
+    if (!["image/jpeg", "image/png", "image/webp"].includes(file.type))
       return "Only JPG, PNG and WebP images are allowed.";
-    }
 
-    const maxSize = 5 * 1024 * 1024;
-
-    if (file.size > maxSize) {
+    if (file.size > 5 * 1024 * 1024)
       return "Image size must be less than 5 MB.";
-    }
 
     return "";
   };
 
-  /* =====================================================
-     SELECT PHOTO
-  ===================================================== */
+  const selectPhoto = (e: ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
 
-  const handlePhotoSelect = (event: ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
+    const error = validatePhoto(file);
+    setPhotoError(error);
 
-    if (!file) {
+    if (error) {
+      e.target.value = "";
       return;
     }
 
-    setPhotoError("");
-
-    const validationError = validatePhoto(file);
-
-    if (validationError) {
-      setPhotoError(validationError);
-
-      event.target.value = "";
-
-      return;
-    }
-
-    if (photoPreview && photoPreview.startsWith("blob:")) {
-      URL.revokeObjectURL(photoPreview);
-    }
-
-    const previewUrl = URL.createObjectURL(file);
+    if (photoPreview.startsWith("blob:")) URL.revokeObjectURL(photoPreview);
 
     setPhotoFile(file);
-
-    setPhotoPreview(previewUrl);
-
+    setPhotoPreview(URL.createObjectURL(file));
     setPhotoUrl("");
 
-    if (cameraInputRef.current) {
-      cameraInputRef.current.value = "";
-    }
-
-    if (fileInputRef.current) {
-      fileInputRef.current.value = "";
-    }
+    if (cameraRef.current) cameraRef.current.value = "";
+    if (fileRef.current) fileRef.current.value = "";
   };
 
-  /* =====================================================
-     REMOVE PHOTO
-  ===================================================== */
-
   const removePhoto = () => {
-    if (photoPreview && photoPreview.startsWith("blob:")) {
-      URL.revokeObjectURL(photoPreview);
-    }
+    if (photoPreview.startsWith("blob:")) URL.revokeObjectURL(photoPreview);
 
     setPhotoFile(null);
     setPhotoPreview("");
     setPhotoUrl("");
     setPhotoError("");
 
-    if (cameraInputRef.current) {
-      cameraInputRef.current.value = "";
-    }
-
-    if (fileInputRef.current) {
-      fileInputRef.current.value = "";
-    }
+    if (cameraRef.current) cameraRef.current.value = "";
+    if (fileRef.current) fileRef.current.value = "";
   };
 
-  /* =====================================================
-     UPLOAD WORKER PHOTO
-  ===================================================== */
-
-  const uploadWorkerPhoto = async (file: File): Promise<string> => {
+  const uploadPhoto = async (file: File) => {
     setPhotoUploading(true);
-    setPhotoError("");
 
     try {
-      const extension = file.name.split(".").pop()?.toLowerCase() || "jpg";
+      const ext = file.name.split(".").pop()?.toLowerCase() || "jpg";
 
       const safeName =
         name
@@ -339,225 +208,154 @@ export default function WorkerOnboardForm({
           .replace(/[^a-z0-9]+/g, "-")
           .replace(/^-+|-+$/g, "") || "worker";
 
-      const fileName = `${safeName}-${Date.now()}.${extension}`;
+      const path = `workers/${safeName}-${Date.now()}.${ext}`;
 
-      const filePath = `workers/${fileName}`;
+      const { error } = await supabase.storage.from(BUCKET).upload(path, file, {
+        cacheControl: "3600",
+        upsert: false,
+        contentType: file.type,
+      });
 
-      const { error: uploadError } = await supabase.storage
-        .from(WORKER_IMAGE_BUCKET)
-        .upload(filePath, file, {
-          cacheControl: "3600",
-          upsert: false,
-          contentType: file.type,
-        });
+      if (error) throw error;
 
-      if (uploadError) {
-        throw uploadError;
-      }
+      const { data } = supabase.storage.from(BUCKET).getPublicUrl(path);
 
-      const { data: publicUrlData } = supabase.storage
-        .from(WORKER_IMAGE_BUCKET)
-        .getPublicUrl(filePath);
-
-      const publicUrl = publicUrlData?.publicUrl;
-
-      if (!publicUrl) {
+      if (!data?.publicUrl)
         throw new Error("Unable to generate worker photo URL.");
-      }
 
-      return publicUrl;
-    } catch (error) {
-      console.error("WORKER PHOTO UPLOAD ERROR:", error);
-
-      throw new Error(
-        error instanceof Error
-          ? error.message
-          : "Unable to upload worker photo.",
-      );
+      return data.publicUrl;
     } finally {
       setPhotoUploading(false);
     }
   };
 
-  /* =====================================================
-     CREATE WORKER
-  ===================================================== */
+  const addItem = (
+    value: string,
+    setItems: React.Dispatch<React.SetStateAction<string[]>>,
+    items: string[],
+    clear: () => void,
+  ) => {
+    const item = value.trim();
+    if (!item) return;
 
-  const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
-    event.preventDefault();
+    if (!items.some((x) => x.toLowerCase() === item.toLowerCase())) {
+      setItems([...items, item]);
+    }
+
+    clear();
+  };
+
+  const submit = async (e: FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+
+    if (loading) return;
 
     setError("");
     setSuccess("");
 
-    if (loading) {
-      return;
-    }
-
     try {
       setLoading(true);
 
-      if (!name.trim()) {
-        throw new Error("Worker name is required.");
-      }
+      if (!name.trim()) throw new Error("Worker name is required.");
 
-      if (!phone.trim()) {
-        throw new Error("Phone number is required.");
-      }
+      if (!phone.trim()) throw new Error("Phone number is required.");
 
-      if (!/^[6-9]\d{9}$/.test(phone.trim())) {
+      if (!/^[6-9]\d{9}$/.test(phone.trim()))
         throw new Error("Enter valid 10 digit mobile number.");
-      }
 
-      if (!category) {
-        throw new Error("Worker category is required.");
-      }
+      if (!category) throw new Error("Worker category is required.");
 
-      if (!subcategory.trim()) {
+      if (!subcategory.trim())
         throw new Error("Worker subcategory is required.");
-      }
 
-      if (!specialty.trim()) {
-        throw new Error("Specialty is required.");
-      }
+      if (!specialty.trim()) throw new Error("Specialty is required.");
 
-      if (!location.trim()) {
-        throw new Error("Location is required.");
-      }
-
-      /* =================================================
-         SUPABASE SESSION
-      ================================================= */
+      if (!location.trim()) throw new Error("Location is required.");
 
       const {
         data: { session },
       } = await supabase.auth.getSession();
 
-      if (!session?.access_token) {
+      if (!session?.access_token)
         throw new Error("Your admin session has expired. Please login again.");
-      }
-
-      /* =================================================
-         PHOTO
-      ================================================= */
 
       let finalPhoto = photoUrl.trim();
 
-      if (photoFile) {
-        finalPhoto = await uploadWorkerPhoto(photoFile);
-      }
+      if (photoFile) finalPhoto = await uploadPhoto(photoFile);
 
-      /* =================================================
-         PAYLOAD
-      ================================================= */
-
-      const workerPayload = {
+      const payload = {
         name: name.trim(),
-
         category: category.trim(),
-
         subcategory: subcategory.trim(),
-
         specialty: specialty.trim(),
-
         location: location.trim(),
-
-        phone: phone.trim() || null,
-
+        phone: phone.trim(),
         labour_chauk: labourChauk.trim() || null,
-
         years_experience: Number(yearsExperience) || 0,
-
         bio: bio.trim() || null,
-
         response_time: responseTime.trim() || null,
-
-        skills: [...skills],
-
-        services: [...services],
-
-        certifications: [...certifications],
-
+        skills,
+        services,
+        certifications,
         pricing_type: pricingType,
-
         starting_price: Number(startingPrice) || 0,
-
         half_day_price: Number(halfDayPrice) || 0,
-
         full_day_price: Number(fullDayPrice) || 0,
-
         monthly_price: Number(monthlyPrice) || 0,
-
         visit_charge: Number(visitCharge) || 0,
-
         available,
-
         photo: finalPhoto || null,
       };
 
-      /* =================================================
-         API
-      ================================================= */
-
       const response = await fetch("/api/admin/workers", {
         method: "POST",
-
         headers: {
           "Content-Type": "application/json",
-
           Authorization: `Bearer ${session.access_token}`,
         },
-
-        body: JSON.stringify(workerPayload),
+        body: JSON.stringify(payload),
       });
 
       const data = await response.json();
 
-      if (!response.ok) {
+      if (!response.ok)
         throw new Error(data.error || "Unable to create worker.");
-      }
 
       setSuccess("Worker onboarded successfully.");
-
       onCreated?.(data.worker);
-    } catch (error) {
-      console.error("Worker onboarding error:", error);
-
+    } catch (err) {
+      console.error("Worker onboarding error:", err);
       setError(
-        error instanceof Error ? error.message : "Unable to onboard worker.",
+        err instanceof Error ? err.message : "Unable to onboard worker.",
       );
     } finally {
       setLoading(false);
     }
   };
 
-  /* =====================================================
-     UI
-  ===================================================== */
+  const disabled = loading || photoUploading;
 
   return (
-    <div className="min-h-screen bg-[#F8FAFC]">
-      {/* =================================================
-          HEADER
-      ================================================= */}
-
-      <header className="sticky top-0 z-40 border-b border-gray-100 bg-white">
-        <div className="flex min-h-16 items-center justify-between gap-3 px-3 py-3 sm:min-h-20 sm:px-5 lg:px-8">
-          <div className="flex min-w-0 items-center">
+    <div className="min-h-screen w-full overflow-x-hidden bg-[#F8FAFC]">
+      {/* HEADER */}
+      <header className="sticky top-0 z-40 border-b border-gray-100 bg-white/95 backdrop-blur">
+        <div className="mx-auto flex min-h-16 w-full max-w-7xl items-center justify-between gap-2 px-3 py-2 sm:min-h-20 sm:px-5 lg:px-8">
+          <div className="flex min-w-0 items-center gap-2">
             <button
               type="button"
               onClick={onBack}
-              disabled={loading}
-              className="mr-2 flex h-9 w-9 shrink-0 items-center justify-center rounded-xl hover:bg-[#F8FAFC] disabled:opacity-50 sm:mr-4 sm:h-10 sm:w-10"
+              disabled={disabled}
+              className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl hover:bg-gray-50 disabled:opacity-50 sm:h-10 sm:w-10"
             >
               <ArrowLeft className="h-5 w-5 text-[#64748B]" />
             </button>
 
             <div className="min-w-0">
-              <h1 className="truncate text-lg font-black text-[#0F172A] sm:text-2xl">
+              <h1 className="truncate text-base font-black text-[#0F172A] sm:text-xl lg:text-2xl">
                 Worker Onboarding
               </h1>
 
-              <p className="mt-0.5 hidden text-xs text-[#64748B] sm:block sm:text-sm">
+              <p className="hidden truncate text-xs text-[#64748B] sm:block">
                 Add a worker to the Workkerz marketplace.
               </p>
             </div>
@@ -565,7 +363,6 @@ export default function WorkerOnboardForm({
 
           <div className="flex shrink-0 items-center gap-1.5">
             <span className="h-2 w-2 rounded-full bg-emerald-500" />
-
             <span className="hidden text-xs font-semibold text-[#64748B] sm:block">
               New Worker
             </span>
@@ -573,27 +370,16 @@ export default function WorkerOnboardForm({
         </div>
       </header>
 
-      {/* =================================================
-          CONTENT
-      ================================================= */}
-
-      <main className="mx-auto w-full max-w-6xl p-3 sm:p-5 lg:p-8">
-        <form
-          onSubmit={handleSubmit}
-          className="space-y-4 pb-6 sm:space-y-6 sm:pb-8"
-        >
-          {/* =================================================
-              BASIC INFORMATION
-          ================================================= */}
-
-          <section className="overflow-visible rounded-xl border border-gray-100 bg-white sm:rounded-2xl">
-            <SectionHeader
-              title="Basic Information"
-              description="Worker identity and contact details."
-            />
-
-            <div className="grid grid-cols-1 gap-4 p-4 sm:grid-cols-2 sm:gap-5 sm:p-6">
-              <InputField
+      {/* CONTENT */}
+      <main className="mx-auto w-full max-w-7xl px-3 py-3 pb-28 sm:px-5 sm:py-5 sm:pb-8 lg:px-8 lg:py-7">
+        <form onSubmit={submit} className="min-w-0 space-y-3 sm:space-y-5">
+          {/* BASIC */}
+          <Section
+            title="Basic Information"
+            description="Worker identity and contact details."
+          >
+            <div className="grid min-w-0 grid-cols-1 gap-3 sm:grid-cols-2 sm:gap-4">
+              <Input
                 label="Worker Name"
                 icon={User}
                 value={name}
@@ -602,39 +388,32 @@ export default function WorkerOnboardForm({
                 required
               />
 
-              <InputField
+              <Input
                 label="Phone Number"
                 icon={Phone}
                 value={phone}
-                onChange={(value) =>
-                  setPhone(value.replace(/\D/g, "").slice(0, 10))
-                }
+                onChange={(v) => setPhone(v.replace(/\D/g, "").slice(0, 10))}
                 placeholder="Enter mobile number"
                 type="tel"
                 inputMode="numeric"
                 required
               />
 
-              {/* CUSTOM CATEGORY */}
-
-              <CategoryDropdown
+              <CategorySelect
                 value={category}
-                onChange={(value) => {
-                  setCategory(value);
-
+                onChange={(v) => {
+                  setCategory(v);
                   setSubcategory("");
                 }}
               />
 
-              {/* CUSTOM SUBCATEGORY */}
-
-              <SubcategoryDropdown
+              <SubcategorySelect
                 category={category}
                 value={subcategory}
                 onChange={setSubcategory}
               />
 
-              <InputField
+              <Input
                 label="Specialty"
                 icon={BriefcaseBusiness}
                 value={specialty}
@@ -643,7 +422,7 @@ export default function WorkerOnboardForm({
                 required
               />
 
-              <InputField
+              <Input
                 label="Location"
                 icon={MapPin}
                 value={location}
@@ -652,141 +431,121 @@ export default function WorkerOnboardForm({
                 required
               />
 
-              <InputField
-                label="Labour Chauk"
-                icon={MapPin}
-                value={labourChauk}
-                onChange={setLabourChauk}
-                placeholder="e.g. Thatipur Labour Chauk"
-              />
+              <div className="sm:col-span-2">
+                <Input
+                  label="Labour Chauk"
+                  icon={MapPin}
+                  value={labourChauk}
+                  onChange={setLabourChauk}
+                  placeholder="e.g. Thatipur Labour Chauk"
+                />
+              </div>
             </div>
-          </section>
+          </Section>
 
-          {/* =================================================
-              WORKER PHOTO
-          ================================================= */}
-
-          <section className="overflow-hidden rounded-xl border border-gray-100 bg-white sm:rounded-2xl">
-            <SectionHeader
-              title="Worker Photo"
-              description="Take a live photo or choose an existing image."
+          {/* PHOTO */}
+          <Section
+            title="Worker Photo"
+            description="Take a live photo or choose an existing image."
+          >
+            <input
+              ref={cameraRef}
+              type="file"
+              accept="image/*"
+              capture="environment"
+              onChange={selectPhoto}
+              className="hidden"
             />
 
-            <div className="p-4 sm:p-6">
-              <input
-                ref={cameraInputRef}
-                type="file"
-                accept="image/*"
-                capture="environment"
-                onChange={handlePhotoSelect}
-                className="hidden"
-              />
+            <input
+              ref={fileRef}
+              type="file"
+              accept="image/jpeg,image/png,image/webp"
+              onChange={selectPhoto}
+              className="hidden"
+            />
 
-              <input
-                ref={fileInputRef}
-                type="file"
-                accept="image/jpeg,image/png,image/webp"
-                onChange={handlePhotoSelect}
-                className="hidden"
-              />
+            <div className="flex min-w-0 flex-col gap-4 rounded-xl border border-dashed border-gray-200 bg-[#F8FAFC] p-3 sm:flex-row sm:items-center sm:p-5">
+              <div className="relative mx-auto flex h-28 w-28 shrink-0 items-center justify-center overflow-hidden rounded-2xl border border-gray-200 bg-orange-50 sm:mx-0 sm:h-32 sm:w-32">
+                {photoPreview ? (
+                  <img
+                    src={photoPreview}
+                    alt={name || "Worker"}
+                    className="h-full w-full object-cover"
+                  />
+                ) : (
+                  <Camera className="h-9 w-9 text-[#FF5C39]" />
+                )}
 
-              <div className="flex flex-col gap-4 rounded-2xl border border-dashed border-gray-200 bg-[#F8FAFC] p-4 sm:flex-row sm:items-center sm:p-5">
-                <div className="relative mx-auto flex h-28 w-28 shrink-0 items-center justify-center overflow-hidden rounded-2xl border border-gray-200 bg-orange-50 sm:mx-0 sm:h-32 sm:w-32">
-                  {photoPreview ? (
-                    <img
-                      src={photoPreview}
-                      alt={name || "Worker photo"}
-                      className="h-full w-full object-cover"
-                    />
-                  ) : (
-                    <Camera className="h-9 w-9 text-[#FF5C39]" />
-                  )}
-
-                  {photoFile && (
-                    <span className="absolute bottom-2 left-1/2 -translate-x-1/2 rounded-full bg-emerald-500 px-2 py-1 text-[9px] font-bold text-white">
-                      SELECTED
-                    </span>
-                  )}
-                </div>
-
-                <div className="min-w-0 flex-1">
-                  <p className="text-center text-sm font-bold text-[#0F172A] sm:text-left">
-                    {photoPreview
-                      ? "Worker photo selected"
-                      : "Add worker photo"}
-                  </p>
-
-                  <p className="mt-1 text-center text-xs text-[#64748B] sm:text-left">
-                    Use camera for a new photo or choose one from your device.
-                  </p>
-
-                  <div className="mt-4 flex flex-col gap-2 sm:flex-row">
-                    <button
-                      type="button"
-                      onClick={() => cameraInputRef.current?.click()}
-                      disabled={loading || photoUploading}
-                      className="flex h-10 w-full items-center justify-center gap-2 rounded-xl bg-[#FF5C39] px-4 text-xs font-bold text-white shadow-sm hover:bg-[#e54e2e] disabled:opacity-50 sm:w-auto sm:text-sm"
-                    >
-                      <Camera className="h-4 w-4" />
-                      Take Photo
-                    </button>
-
-                    <button
-                      type="button"
-                      onClick={() => fileInputRef.current?.click()}
-                      disabled={loading || photoUploading}
-                      className="flex h-10 w-full items-center justify-center gap-2 rounded-xl border border-gray-200 bg-white px-4 text-xs font-bold text-[#475569] hover:bg-gray-50 disabled:opacity-50 sm:w-auto sm:text-sm"
-                    >
-                      <ImagePlus className="h-4 w-4" />
-                      Choose File
-                    </button>
-
-                    {photoPreview && (
-                      <button
-                        type="button"
-                        onClick={removePhoto}
-                        disabled={loading || photoUploading}
-                        className="flex h-10 w-full items-center justify-center gap-2 rounded-xl border border-red-200 bg-white px-4 text-xs font-bold text-red-500 hover:bg-red-50 disabled:opacity-50 sm:w-auto sm:text-sm"
-                      >
-                        <X className="h-4 w-4" />
-                        Remove
-                      </button>
-                    )}
-                  </div>
-
-                  <p className="mt-3 text-center text-[10px] text-[#94A3B8] sm:text-left sm:text-xs">
-                    JPG, PNG or WebP • Maximum 5 MB
-                  </p>
-
-                  {photoFile && (
-                    <p className="mt-1 truncate text-center text-[10px] font-medium text-emerald-600 sm:text-left sm:text-xs">
-                      {photoFile.name}
-                    </p>
-                  )}
-                </div>
+                {photoFile && (
+                  <span className="absolute bottom-2 rounded-full bg-emerald-500 px-2 py-1 text-[9px] font-bold text-white">
+                    SELECTED
+                  </span>
+                )}
               </div>
 
-              {photoError && (
-                <div className="mt-3 rounded-xl border border-red-200 bg-red-50 px-3 py-2">
-                  <p className="text-xs text-red-600">{photoError}</p>
+              <div className="min-w-0 flex-1">
+                <p className="text-center text-sm font-bold text-[#0F172A] sm:text-left">
+                  {photoPreview ? "Worker photo selected" : "Add worker photo"}
+                </p>
+
+                <p className="mt-1 text-center text-xs text-[#64748B] sm:text-left">
+                  Use camera or choose an image from your device.
+                </p>
+
+                <div className="mt-3 grid grid-cols-1 gap-2 sm:flex sm:flex-wrap">
+                  <PhotoButton
+                    onClick={() => cameraRef.current?.click()}
+                    disabled={disabled}
+                    icon={Camera}
+                  >
+                    Take Photo
+                  </PhotoButton>
+
+                  <PhotoButton
+                    onClick={() => fileRef.current?.click()}
+                    disabled={disabled}
+                    icon={ImagePlus}
+                    light
+                  >
+                    Choose File
+                  </PhotoButton>
+
+                  {photoPreview && (
+                    <PhotoButton
+                      onClick={removePhoto}
+                      disabled={disabled}
+                      icon={X}
+                      danger
+                    >
+                      Remove
+                    </PhotoButton>
+                  )}
                 </div>
-              )}
+
+                <p className="mt-2 text-center text-[10px] text-[#94A3B8] sm:text-left">
+                  JPG, PNG or WebP • Maximum 5 MB
+                </p>
+
+                {photoFile && (
+                  <p className="mt-1 truncate text-center text-[10px] font-medium text-emerald-600 sm:text-left">
+                    {photoFile.name}
+                  </p>
+                )}
+              </div>
             </div>
-          </section>
 
-          {/* =================================================
-              PROFESSIONAL INFORMATION
-          ================================================= */}
+            {photoError && <Message error>{photoError}</Message>}
+          </Section>
 
-          <section className="overflow-hidden rounded-xl border border-gray-100 bg-white sm:rounded-2xl">
-            <SectionHeader
-              title="Professional Information"
-              description="Experience, skills and services."
-            />
-
-            <div className="space-y-4 p-4 sm:space-y-5 sm:p-6">
-              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 sm:gap-5">
-                <InputField
+          {/* PROFESSIONAL */}
+          <Section
+            title="Professional Information"
+            description="Experience, skills and services."
+          >
+            <div className="space-y-4">
+              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 sm:gap-4">
+                <Input
                   label="Years of Experience"
                   icon={BriefcaseBusiness}
                   value={yearsExperience}
@@ -796,7 +555,7 @@ export default function WorkerOnboardForm({
                   inputMode="numeric"
                 />
 
-                <InputField
+                <Input
                   label="Response Time"
                   icon={CheckCircle2}
                   value={responseTime}
@@ -805,218 +564,186 @@ export default function WorkerOnboardForm({
                 />
               </div>
 
-              <div>
-                <label className="mb-2 block text-xs font-semibold text-[#0F172A] sm:text-sm">
+              <div className="min-w-0">
+                <label className="mb-1.5 block text-xs font-semibold text-[#0F172A] sm:text-sm">
                   Worker Bio
                 </label>
 
                 <textarea
                   value={bio}
-                  onChange={(event) => setBio(event.target.value)}
+                  onChange={(e) => setBio(e.target.value)}
                   placeholder="Write a short description about the worker..."
                   rows={4}
-                  className="w-full resize-none rounded-xl border border-gray-200 bg-[#F8FAFC] px-3 py-3 text-xs text-[#0F172A] outline-none focus:border-[#FF5C39] focus:ring-2 focus:ring-orange-100 sm:px-4 sm:text-sm"
+                  className="min-h-24 w-full resize-y rounded-xl border border-gray-200 bg-[#F8FAFC] px-3 py-3 text-xs text-[#0F172A] outline-none focus:border-[#FF5C39] focus:bg-white focus:ring-2 focus:ring-orange-100 sm:px-4 sm:text-sm"
                 />
               </div>
 
-              <TagInput
+              <Tags
                 label="Skills"
-                placeholder="Add a skill and press Enter"
+                placeholder="Add a skill"
                 value={skillInput}
                 setValue={setSkillInput}
                 items={skills}
                 setItems={setSkills}
               />
 
-              <TagInput
+              <Tags
                 label="Services"
-                placeholder="Add a service and press Enter"
+                placeholder="Add a service"
                 value={serviceInput}
                 setValue={setServiceInput}
                 items={services}
                 setItems={setServices}
               />
 
-              <TagInput
+              <Tags
                 label="Certifications"
-                placeholder="Add certification and press Enter"
+                placeholder="Add certification"
                 value={certificationInput}
                 setValue={setCertificationInput}
                 items={certifications}
                 setItems={setCertifications}
               />
             </div>
-          </section>
+          </Section>
 
-          {/* =================================================
-              PRICING
-          ================================================= */}
-
-          <section className="overflow-hidden rounded-xl border border-gray-100 bg-white sm:rounded-2xl">
-            <SectionHeader
-              title="Pricing"
-              description="Set the worker's marketplace pricing."
-            />
-
-            <div className="space-y-4 p-4 sm:space-y-5 sm:p-6">
+          {/* PRICING */}
+          <Section
+            title="Pricing"
+            description="Set the worker's marketplace pricing."
+          >
+            <div className="space-y-4">
               <div>
-                <label className="mb-2 block text-xs font-semibold text-[#0F172A] sm:text-sm">
+                <label className="mb-1.5 block text-xs font-semibold text-[#0F172A] sm:text-sm">
                   Pricing Type
                 </label>
 
                 <div className="relative">
                   <select
                     value={pricingType}
-                    onChange={(event) =>
-                      setPricingType(event.target.value as PricingType)
+                    onChange={(e) =>
+                      setPricingType(e.target.value as PricingType)
                     }
-                    className="h-10 w-full appearance-none rounded-xl border border-gray-200 bg-[#F8FAFC] px-3 pr-10 text-xs text-[#0F172A] outline-none focus:border-[#FF5C39] focus:ring-2 focus:ring-orange-100 sm:h-11 sm:px-4 sm:text-sm"
+                    className="h-10 w-full min-w-0 appearance-none rounded-xl border border-gray-200 bg-[#F8FAFC] px-3 pr-10 text-xs font-semibold text-[#0F172A] outline-none focus:border-[#FF5C39] focus:bg-white focus:ring-2 focus:ring-orange-100 sm:h-11 sm:px-4 sm:text-sm"
                   >
                     <option value="custom">Custom</option>
-
                     <option value="per_job">Per Job</option>
-
                     <option value="daily">Daily</option>
-
                     <option value="monthly">Monthly</option>
-
                     <option value="per_service">Per Service</option>
-
                     <option value="visit_charge">Visit Charge</option>
                   </select>
 
-                  <ChevronDown className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[#94A3B8] sm:right-4" />
+                  <ChevronDown className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[#94A3B8]" />
                 </div>
               </div>
 
-              <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 sm:gap-4 lg:grid-cols-5">
-                <PriceInput
+              <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-3 sm:gap-3 lg:grid-cols-5">
+                <Price
                   label="Starting Price"
                   value={startingPrice}
-                  onChange={setStartingPrice}
+                  set={setStartingPrice}
                 />
-
-                <PriceInput
+                <Price
                   label="Half Day"
                   value={halfDayPrice}
-                  onChange={setHalfDayPrice}
+                  set={setHalfDayPrice}
                 />
-
-                <PriceInput
+                <Price
                   label="Full Day"
                   value={fullDayPrice}
-                  onChange={setFullDayPrice}
+                  set={setFullDayPrice}
                 />
-
-                <PriceInput
+                <Price
                   label="Monthly"
                   value={monthlyPrice}
-                  onChange={setMonthlyPrice}
+                  set={setMonthlyPrice}
                 />
-
-                <PriceInput
+                <Price
                   label="Visit Charge"
                   value={visitCharge}
-                  onChange={setVisitCharge}
+                  set={setVisitCharge}
                 />
               </div>
             </div>
-          </section>
+          </Section>
 
-          {/* =================================================
-              AVAILABILITY
-          ================================================= */}
-
-          <section className="overflow-hidden rounded-xl border border-gray-100 bg-white sm:rounded-2xl">
-            <SectionHeader
-              title="Availability"
-              description="Control whether this worker is currently available."
-            />
-
-            <div className="p-4 sm:p-6">
-              <button
-                type="button"
-                onClick={() => setAvailable((value) => !value)}
-                className="flex w-full items-center gap-3 text-left sm:w-auto sm:gap-4"
-              >
-                <div
-                  className={`flex h-7 w-12 shrink-0 items-center rounded-full p-1 transition ${
-                    available ? "bg-emerald-500" : "bg-gray-300"
-                  }`}
-                >
-                  <div
-                    className={`h-5 w-5 rounded-full bg-white shadow-sm transition-transform ${
-                      available ? "translate-x-5" : "translate-x-0"
-                    }`}
-                  />
-                </div>
-
-                <div>
-                  <p className="text-xs font-bold text-[#0F172A] sm:text-sm">
-                    {available ? "Available Now" : "Currently Unavailable"}
-                  </p>
-
-                  <p className="mt-1 text-[10px] text-[#64748B] sm:text-xs">
-                    {available
-                      ? "Worker can receive bookings."
-                      : "Worker will not appear as available."}
-                  </p>
-                </div>
-              </button>
-            </div>
-          </section>
-
-          {/* =================================================
-              MESSAGES
-          ================================================= */}
-
-          {error && (
-            <div className="rounded-xl border border-red-200 bg-red-50 px-3 py-2.5 sm:px-4 sm:py-3">
-              <p className="text-xs leading-5 text-red-600 sm:text-sm">
-                {error}
-              </p>
-            </div>
-          )}
-
-          {success && (
-            <div className="flex items-center gap-2 rounded-xl border border-emerald-200 bg-emerald-50 px-3 py-2.5 sm:px-4 sm:py-3">
-              <CheckCircle2 className="h-4 w-4 shrink-0 text-emerald-600" />
-
-              <p className="text-xs text-emerald-700 sm:text-sm">{success}</p>
-            </div>
-          )}
-
-          {/* =================================================
-              ACTIONS
-          ================================================= */}
-
-          <div className="sticky bottom-0 z-30 -mx-3 flex items-center justify-end gap-2 border-t border-gray-100 bg-[#F8FAFC]/95 px-3 py-3 backdrop-blur sm:static sm:mx-0 sm:border-0 sm:bg-transparent sm:px-0 sm:py-0">
+          {/* AVAILABILITY */}
+          <Section
+            title="Availability"
+            description="Control whether this worker is currently available."
+          >
             <button
               type="button"
-              onClick={onBack}
-              disabled={loading || photoUploading}
-              className="h-10 rounded-xl border border-gray-200 bg-white px-4 text-xs font-bold text-[#64748B] hover:bg-gray-50 disabled:opacity-50 sm:h-11 sm:px-6 sm:text-sm"
+              onClick={() => setAvailable((v) => !v)}
+              className="flex w-full min-w-0 items-center gap-3 text-left sm:max-w-md sm:gap-4"
             >
-              Cancel
-            </button>
+              <div
+                className={`flex h-7 w-12 shrink-0 items-center rounded-full p-1 ${
+                  available ? "bg-emerald-500" : "bg-gray-300"
+                }`}
+              >
+                <div
+                  className={`h-5 w-5 rounded-full bg-white shadow-sm transition-transform ${
+                    available ? "translate-x-5" : ""
+                  }`}
+                />
+              </div>
 
-            <button
-              type="submit"
-              disabled={loading || photoUploading}
-              className="flex h-10 items-center gap-2 rounded-xl bg-[#FF5C39] px-4 text-xs font-bold text-white shadow-sm hover:bg-[#e54e2e] disabled:opacity-60 sm:h-11 sm:px-7 sm:text-sm"
-            >
-              {loading || photoUploading ? (
-                <Loader2 className="h-4 w-4 animate-spin" />
-              ) : (
-                <Save className="h-4 w-4" />
-              )}
+              <div className="min-w-0">
+                <p className="truncate text-xs font-bold text-[#0F172A] sm:text-sm">
+                  {available ? "Available Now" : "Currently Unavailable"}
+                </p>
 
-              {photoUploading
-                ? "Uploading Photo..."
-                : loading
-                  ? "Creating Worker..."
-                  : "Create Worker"}
+                <p className="mt-1 text-[10px] text-[#64748B] sm:text-xs">
+                  {available
+                    ? "Worker can receive bookings."
+                    : "Worker will not appear as available."}
+                </p>
+              </div>
             </button>
+          </Section>
+
+          {/* MESSAGES */}
+          {error && <Message error>{error}</Message>}
+
+          {success && (
+            <Message success>
+              <CheckCircle2 className="h-4 w-4 shrink-0" />
+              {success}
+            </Message>
+          )}
+
+          {/* ACTIONS */}
+          <div className="fixed inset-x-0 bottom-0 z-30 border-t border-gray-200 bg-white/95 p-3 pb-[calc(12px+env(safe-area-inset-bottom))] backdrop-blur sm:static sm:border-0 sm:bg-transparent sm:p-0">
+            <div className="mx-auto flex w-full max-w-7xl flex-col-reverse gap-2 sm:flex-row sm:justify-end">
+              <button
+                type="button"
+                onClick={onBack}
+                disabled={disabled}
+                className="h-10 w-full rounded-xl border border-gray-200 bg-white px-5 text-xs font-bold text-[#64748B] hover:bg-gray-50 disabled:opacity-50 sm:w-auto sm:h-11 sm:text-sm"
+              >
+                Close
+              </button>
+
+              <button
+                type="submit"
+                disabled={disabled}
+                className="flex h-10 w-full items-center justify-center gap-2 rounded-xl bg-[#FF5C39] px-5 text-xs font-bold text-white shadow-sm hover:bg-[#e54e2e] disabled:opacity-60 sm:h-11 sm:w-auto sm:px-7 sm:text-sm"
+              >
+                {disabled ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  <Save className="h-4 w-4" />
+                )}
+
+                {photoUploading
+                  ? "Uploading Photo..."
+                  : loading
+                    ? "Creating Worker..."
+                    : "Create Worker"}
+              </button>
+            </div>
           </div>
         </form>
       </main>
@@ -1024,533 +751,37 @@ export default function WorkerOnboardForm({
   );
 }
 
-/* =====================================================
-   SECTION HEADER
-===================================================== */
+/* ========================= SECTION ========================= */
 
-function SectionHeader({
+function Section({
   title,
   description,
+  children,
 }: {
   title: string;
   description: string;
+  children: React.ReactNode;
 }) {
   return (
-    <div className="border-b border-gray-100 px-4 py-4 sm:px-6 sm:py-5">
-      <h2 className="text-sm font-black text-[#0F172A] sm:text-base">
-        {title}
-      </h2>
+    <section className="min-w-0 overflow-hidden rounded-xl border border-gray-100 bg-white sm:rounded-2xl">
+      <div className="border-b border-gray-100 px-4 py-3.5 sm:px-6 sm:py-4">
+        <h2 className="text-sm font-black text-[#0F172A] sm:text-base">
+          {title}
+        </h2>
 
-      <p className="mt-1 text-[10px] text-[#64748B] sm:text-xs">
-        {description}
-      </p>
-    </div>
+        <p className="mt-1 text-[10px] text-[#64748B] sm:text-xs">
+          {description}
+        </p>
+      </div>
+
+      <div className="min-w-0 p-3.5 sm:p-6">{children}</div>
+    </section>
   );
 }
 
-/* =====================================================
-   CUSTOM CATEGORY DROPDOWN
-===================================================== */
+/* ========================= INPUT ========================= */
 
-function CategoryDropdown({
-  value,
-  onChange,
-}: {
-  value: WorkerCategory | "";
-  onChange: (value: WorkerCategory) => void;
-}) {
-  const [open, setOpen] = useState(false);
-
-  const [search, setSearch] = useState("");
-
-  const wrapperRef = useRef<HTMLDivElement | null>(null);
-
-  useEffect(() => {
-    const handleOutsideClick = (event: MouseEvent) => {
-      if (
-        wrapperRef.current &&
-        !wrapperRef.current.contains(event.target as Node)
-      ) {
-        setOpen(false);
-        setSearch("");
-      }
-    };
-
-    document.addEventListener("mousedown", handleOutsideClick);
-
-    return () => {
-      document.removeEventListener("mousedown", handleOutsideClick);
-    };
-  }, []);
-
-  const categories = Object.keys(WORKER_CATEGORIES) as WorkerCategory[];
-
-  const filteredCategories = categories.filter((item) =>
-    item.toLowerCase().includes(search.trim().toLowerCase()),
-  );
-
-  return (
-    <div ref={wrapperRef} className="relative">
-      <label className="mb-1.5 block text-xs font-semibold text-[#0F172A] sm:mb-2 sm:text-sm">
-        Worker Category
-        <span className="ml-1 text-[#FF5C39]">*</span>
-      </label>
-
-      {/* INPUT */}
-
-      <button
-        type="button"
-        onClick={() => {
-          setOpen((current) => !current);
-
-          setSearch("");
-        }}
-        className={`
-          flex
-          h-10
-          w-full
-          items-center
-          justify-between
-          rounded-xl
-          border
-          bg-[#F8FAFC]
-          px-3
-          text-left
-          outline-none
-          transition
-          sm:h-11
-          sm:px-4
-          ${
-            open
-              ? "border-[#FF5C39] bg-white ring-2 ring-orange-100"
-              : "border-gray-200 hover:border-gray-300"
-          }
-        `}
-      >
-        <div className="flex min-w-0 items-center gap-2.5">
-          <BriefcaseBusiness className="h-4 w-4 shrink-0 text-[#94A3B8]" />
-
-          <span
-            className={`truncate text-xs font-semibold sm:text-sm ${
-              value ? "text-[#0F172A]" : "text-[#94A3B8]"
-            }`}
-          >
-            {value || "Select worker category"}
-          </span>
-        </div>
-
-        <ChevronDown
-          className={`h-4 w-4 shrink-0 text-[#94A3B8] transition-transform ${
-            open ? "rotate-180" : ""
-          }`}
-        />
-      </button>
-
-      {/* DROPDOWN */}
-
-      {open && (
-        <div
-          className="
-            absolute
-            left-0
-            right-0
-            top-full
-            z-50
-            mt-2
-            overflow-hidden
-            rounded-2xl
-            border
-            border-gray-200
-            bg-white
-            shadow-[0_12px_35px_rgba(15,23,42,0.12)]
-          "
-        >
-          {/* SEARCH */}
-
-          <div className="border-b border-gray-100 p-2.5">
-            <div className="relative">
-              <Search className="absolute left-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-[#94A3B8]" />
-
-              <input
-                autoFocus
-                value={search}
-                onChange={(event) => setSearch(event.target.value)}
-                placeholder="Search category..."
-                className="
-                  h-9
-                  w-full
-                  rounded-xl
-                  border
-                  border-gray-200
-                  bg-[#F8FAFC]
-                  pl-9
-                  pr-3
-                  text-xs
-                  text-[#0F172A]
-                  outline-none
-                  focus:border-[#FF5C39]
-                  focus:bg-white
-                  focus:ring-2
-                  focus:ring-orange-100
-                "
-              />
-            </div>
-          </div>
-
-          {/* OPTIONS */}
-
-          <div className="max-h-64 overflow-y-auto p-1.5">
-            {filteredCategories.length > 0 ? (
-              filteredCategories.map((item) => {
-                const selected = value === item;
-
-                return (
-                  <button
-                    key={item}
-                    type="button"
-                    onClick={() => {
-                      onChange(item);
-
-                      setOpen(false);
-
-                      setSearch("");
-                    }}
-                    className={`
-                        flex
-                        w-full
-                        items-center
-                        justify-between
-                        rounded-xl
-                        px-3
-                        py-2.5
-                        text-left
-                        transition
-                        ${
-                          selected
-                            ? "bg-orange-50 text-[#C2410C]"
-                            : "text-[#334155] hover:bg-[#F8FAFC]"
-                        }
-                      `}
-                  >
-                    <div className="flex min-w-0 items-center gap-2.5">
-                      <div
-                        className={`
-                            flex
-                            h-8
-                            w-8
-                            shrink-0
-                            items-center
-                            justify-center
-                            rounded-lg
-                            ${selected ? "bg-orange-100" : "bg-gray-100"}
-                          `}
-                      >
-                        <BriefcaseBusiness
-                          className={`h-3.5 w-3.5 ${
-                            selected ? "text-[#FF5C39]" : "text-[#64748B]"
-                          }`}
-                        />
-                      </div>
-
-                      <span className="truncate text-xs font-semibold sm:text-sm">
-                        {item}
-                      </span>
-                    </div>
-
-                    {selected && (
-                      <Check className="h-4 w-4 shrink-0 text-[#FF5C39]" />
-                    )}
-                  </button>
-                );
-              })
-            ) : (
-              <div className="px-3 py-8 text-center">
-                <Search className="mx-auto h-5 w-5 text-[#CBD5E1]" />
-
-                <p className="mt-2 text-xs font-semibold text-[#64748B]">
-                  No category found
-                </p>
-              </div>
-            )}
-          </div>
-        </div>
-      )}
-
-      {value && (
-        <div className="mt-2 flex items-center gap-1.5">
-          <span className="h-1.5 w-1.5 rounded-full bg-[#FF5C39]" />
-
-          <span className="text-[10px] font-semibold text-[#64748B] sm:text-xs">
-            {WORKER_CATEGORIES[value].length} subcategories available
-          </span>
-        </div>
-      )}
-    </div>
-  );
-}
-
-/* =====================================================
-   CUSTOM SUBCATEGORY DROPDOWN
-===================================================== */
-
-function SubcategoryDropdown({
-  category,
-  value,
-  onChange,
-}: {
-  category: WorkerCategory | "";
-  value: string;
-  onChange: (value: string) => void;
-}) {
-  const [open, setOpen] = useState(false);
-
-  const [search, setSearch] = useState("");
-
-  const wrapperRef = useRef<HTMLDivElement | null>(null);
-
-  const disabled = !category;
-
-  useEffect(() => {
-    const handleOutsideClick = (event: MouseEvent) => {
-      if (
-        wrapperRef.current &&
-        !wrapperRef.current.contains(event.target as Node)
-      ) {
-        setOpen(false);
-        setSearch("");
-      }
-    };
-
-    document.addEventListener("mousedown", handleOutsideClick);
-
-    return () => {
-      document.removeEventListener("mousedown", handleOutsideClick);
-    };
-  }, []);
-
-  const subcategories = category ? [...WORKER_CATEGORIES[category]] : [];
-
-  const filteredSubcategories = subcategories.filter((item) =>
-    item.toLowerCase().includes(search.trim().toLowerCase()),
-  );
-
-  return (
-    <div ref={wrapperRef} className="relative">
-      <label className="mb-1.5 block text-xs font-semibold text-[#0F172A] sm:mb-2 sm:text-sm">
-        Worker Subcategory
-        <span className="ml-1 text-[#FF5C39]">*</span>
-      </label>
-
-      {/* INPUT */}
-
-      <button
-        type="button"
-        disabled={disabled}
-        onClick={() => {
-          if (disabled) {
-            return;
-          }
-
-          setOpen((current) => !current);
-
-          setSearch("");
-        }}
-        className={`
-          flex
-          h-10
-          w-full
-          items-center
-          justify-between
-          rounded-xl
-          border
-          px-3
-          text-left
-          outline-none
-          transition
-          sm:h-11
-          sm:px-4
-          ${
-            disabled
-              ? "cursor-not-allowed border-gray-100 bg-gray-50"
-              : open
-                ? "border-[#FF5C39] bg-white ring-2 ring-orange-100"
-                : "border-gray-200 bg-[#F8FAFC] hover:border-gray-300"
-          }
-        `}
-      >
-        <div className="flex min-w-0 items-center gap-2.5">
-          <Tag
-            className={`h-4 w-4 shrink-0 ${
-              disabled ? "text-[#CBD5E1]" : "text-[#94A3B8]"
-            }`}
-          />
-
-          <span
-            className={`truncate text-xs font-semibold sm:text-sm ${
-              disabled
-                ? "text-[#CBD5E1]"
-                : value
-                  ? "text-[#0F172A]"
-                  : "text-[#94A3B8]"
-            }`}
-          >
-            {disabled ? "Select category first" : value || "Select subcategory"}
-          </span>
-        </div>
-
-        <ChevronDown
-          className={`h-4 w-4 shrink-0 transition-transform ${
-            disabled ? "text-[#CBD5E1]" : "text-[#94A3B8]"
-          } ${open ? "rotate-180" : ""}`}
-        />
-      </button>
-
-      {/* DROPDOWN */}
-
-      {open && !disabled && (
-        <div
-          className="
-              absolute
-              left-0
-              right-0
-              top-full
-              z-50
-              mt-2
-              overflow-hidden
-              rounded-2xl
-              border
-              border-gray-200
-              bg-white
-              shadow-[0_12px_35px_rgba(15,23,42,0.12)]
-            "
-        >
-          {/* SEARCH */}
-
-          <div className="border-b border-gray-100 p-2.5">
-            <div className="relative">
-              <Search className="absolute left-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-[#94A3B8]" />
-
-              <input
-                autoFocus
-                value={search}
-                onChange={(event) => setSearch(event.target.value)}
-                placeholder="Search subcategory..."
-                className="
-                    h-9
-                    w-full
-                    rounded-xl
-                    border
-                    border-gray-200
-                    bg-[#F8FAFC]
-                    pl-9
-                    pr-3
-                    text-xs
-                    text-[#0F172A]
-                    outline-none
-                    focus:border-[#FF5C39]
-                    focus:bg-white
-                    focus:ring-2
-                    focus:ring-orange-100
-                  "
-              />
-            </div>
-          </div>
-
-          {/* OPTIONS */}
-
-          <div className="max-h-64 overflow-y-auto p-1.5">
-            {filteredSubcategories.length > 0 ? (
-              filteredSubcategories.map((item) => {
-                const selected = value === item;
-
-                return (
-                  <button
-                    key={item}
-                    type="button"
-                    onClick={() => {
-                      onChange(item);
-
-                      setOpen(false);
-
-                      setSearch("");
-                    }}
-                    className={`
-                          flex
-                          w-full
-                          items-center
-                          justify-between
-                          rounded-xl
-                          px-3
-                          py-2.5
-                          text-left
-                          transition
-                          ${
-                            selected
-                              ? "bg-orange-50 text-[#C2410C]"
-                              : "text-[#334155] hover:bg-[#F8FAFC]"
-                          }
-                        `}
-                  >
-                    <div className="flex min-w-0 items-center gap-2.5">
-                      <div
-                        className={`
-                              flex
-                              h-8
-                              w-8
-                              shrink-0
-                              items-center
-                              justify-center
-                              rounded-lg
-                              ${selected ? "bg-orange-100" : "bg-gray-100"}
-                            `}
-                      >
-                        <Tag
-                          className={`h-3.5 w-3.5 ${
-                            selected ? "text-[#FF5C39]" : "text-[#64748B]"
-                          }`}
-                        />
-                      </div>
-
-                      <span className="truncate text-xs font-semibold sm:text-sm">
-                        {item}
-                      </span>
-                    </div>
-
-                    {selected && (
-                      <Check className="h-4 w-4 shrink-0 text-[#FF5C39]" />
-                    )}
-                  </button>
-                );
-              })
-            ) : (
-              <div className="px-3 py-8 text-center">
-                <Search className="mx-auto h-5 w-5 text-[#CBD5E1]" />
-
-                <p className="mt-2 text-xs font-semibold text-[#64748B]">
-                  No subcategory found
-                </p>
-              </div>
-            )}
-          </div>
-        </div>
-      )}
-
-      {value && (
-        <div className="mt-2">
-          <span className="inline-flex max-w-full items-center rounded-lg bg-orange-50 px-2.5 py-1 text-[10px] font-bold text-[#C2410C] sm:text-xs">
-            <span className="truncate">{value}</span>
-          </span>
-        </div>
-      )}
-    </div>
-  );
-}
-
-/* =====================================================
-   INPUT FIELD
-===================================================== */
-
-function InputField({
+function Input({
   label,
   icon: Icon,
   value,
@@ -1567,82 +798,177 @@ function InputField({
   placeholder: string;
   type?: string;
   required?: boolean;
-  inputMode?:
-    | "none"
-    | "text"
-    | "tel"
-    | "url"
-    | "email"
-    | "numeric"
-    | "decimal"
-    | "search";
+  inputMode?: React.HTMLAttributes<HTMLInputElement>["inputMode"];
 }) {
   return (
-    <div>
-      <label className="mb-1.5 block text-xs font-semibold text-[#0F172A] sm:mb-2 sm:text-sm">
+    <div className="min-w-0">
+      <label className="mb-1.5 block text-xs font-semibold text-[#0F172A] sm:text-sm">
         {label}
-
         {required && <span className="ml-1 text-[#FF5C39]">*</span>}
       </label>
 
-      <div className="relative">
-        <Icon className="absolute left-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-[#94A3B8] sm:left-3.5 sm:h-4 sm:w-4" />
+      <div className="relative min-w-0">
+        <Icon className="pointer-events-none absolute left-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-[#94A3B8] sm:left-3.5 sm:h-4 sm:w-4" />
 
         <input
           type={type}
           value={value}
-          onChange={(event) => onChange(event.target.value)}
+          onChange={(e) => onChange(e.target.value)}
           placeholder={placeholder}
           required={required}
           inputMode={inputMode}
           min={type === "number" ? "0" : undefined}
-          className="h-10 w-full rounded-xl border border-gray-200 bg-[#F8FAFC] pl-9 pr-3 text-xs text-[#0F172A] outline-none transition placeholder:text-[#A8B2C1] focus:border-[#FF5C39] focus:bg-white focus:ring-2 focus:ring-orange-100 sm:h-11 sm:pl-10 sm:pr-4 sm:text-sm"
+          className="box-border h-10 w-full min-w-0 rounded-xl border border-gray-200 bg-[#F8FAFC] pl-9 pr-3 text-xs text-[#0F172A] outline-none placeholder:text-[#A8B2C1] focus:border-[#FF5C39] focus:bg-white focus:ring-2 focus:ring-orange-100 sm:h-11 sm:pl-10 sm:pr-4 sm:text-sm"
         />
       </div>
     </div>
   );
 }
 
-/* =====================================================
-   PRICE INPUT
-===================================================== */
+/* ========================= CATEGORY ========================= */
 
-function PriceInput({
-  label,
+function CategorySelect({
   value,
   onChange,
 }: {
-  label: string;
+  value: Category | "";
+  onChange: (value: Category) => void;
+}) {
+  return (
+    <div className="min-w-0">
+      <label className="mb-1.5 block text-xs font-semibold text-[#0F172A] sm:text-sm">
+        Worker Category
+        <span className="ml-1 text-[#FF5C39]">*</span>
+      </label>
+
+      <div className="relative min-w-0">
+        <BriefcaseBusiness className="pointer-events-none absolute left-3 top-1/2 z-10 h-4 w-4 -translate-y-1/2 text-[#94A3B8]" />
+
+        <select
+          value={value}
+          required
+          onChange={(e) => onChange(e.target.value as Category)}
+          className={`box-border h-10 w-full min-w-0 appearance-none rounded-xl border bg-[#F8FAFC] pl-9 pr-10 text-xs font-semibold outline-none sm:h-11 sm:pl-10 sm:text-sm ${
+            value
+              ? "border-orange-200 text-[#0F172A]"
+              : "border-gray-200 text-[#94A3B8]"
+          } focus:border-[#FF5C39] focus:bg-white focus:ring-2 focus:ring-orange-100`}
+        >
+          <option value="">Select worker category</option>
+
+          {Object.keys(CATEGORIES).map((item) => (
+            <option key={item} value={item}>
+              {item}
+            </option>
+          ))}
+        </select>
+
+        <ChevronDown className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[#94A3B8]" />
+      </div>
+
+      {value && (
+        <p className="mt-1.5 text-[10px] font-semibold text-[#64748B]">
+          {CATEGORIES[value].length} subcategories available
+        </p>
+      )}
+    </div>
+  );
+}
+
+/* ========================= SUBCATEGORY ========================= */
+
+function SubcategorySelect({
+  category,
+  value,
+  onChange,
+}: {
+  category: Category | "";
   value: string;
   onChange: (value: string) => void;
 }) {
+  const items = category ? CATEGORIES[category] : [];
+  const disabled = !category;
+
   return (
-    <div>
-      <label className="mb-1.5 block text-[10px] font-semibold text-[#64748B] sm:mb-2 sm:text-xs">
+    <div className="min-w-0">
+      <label className="mb-1.5 block text-xs font-semibold text-[#0F172A] sm:text-sm">
+        Worker Subcategory
+        <span className="ml-1 text-[#FF5C39]">*</span>
+      </label>
+
+      <div className="relative min-w-0">
+        <Tag className="pointer-events-none absolute left-3 top-1/2 z-10 h-4 w-4 -translate-y-1/2 text-[#94A3B8]" />
+
+        <select
+          value={value}
+          disabled={disabled}
+          required
+          onChange={(e) => onChange(e.target.value)}
+          className={`box-border h-10 w-full min-w-0 appearance-none rounded-xl border pl-9 pr-10 text-xs font-semibold outline-none sm:h-11 sm:pl-10 sm:text-sm ${
+            disabled
+              ? "border-gray-100 bg-gray-50 text-[#CBD5E1]"
+              : "border-gray-200 bg-[#F8FAFC] text-[#0F172A]"
+          } focus:border-[#FF5C39] focus:bg-white focus:ring-2 focus:ring-orange-100`}
+        >
+          <option value="">
+            {category ? "Select subcategory" : "Select category first"}
+          </option>
+
+          {items.map((item) => (
+            <option key={item} value={item}>
+              {item}
+            </option>
+          ))}
+        </select>
+
+        <ChevronDown className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[#94A3B8]" />
+      </div>
+
+      {value && (
+        <span className="mt-1.5 inline-flex max-w-full rounded-lg bg-orange-50 px-2.5 py-1 text-[10px] font-bold text-[#C2410C]">
+          <span className="truncate">{value}</span>
+        </span>
+      )}
+    </div>
+  );
+}
+
+/* ========================= PRICE ========================= */
+
+function Price({
+  label,
+  value,
+  set,
+}: {
+  label: string;
+  value: string;
+  set: (value: string) => void;
+}) {
+  return (
+    <div className="min-w-0">
+      <label className="mb-1.5 block truncate text-[10px] font-semibold text-[#64748B] sm:text-xs">
         {label}
       </label>
 
-      <div className="relative">
-        <IndianRupee className="absolute left-2.5 top-1/2 h-3 w-3 -translate-y-1/2 text-[#94A3B8] sm:left-3 sm:h-3.5 sm:w-3.5" />
+      <div className="relative min-w-0">
+        <IndianRupee className="absolute left-2.5 top-1/2 h-3 w-3 -translate-y-1/2 text-[#94A3B8]" />
 
         <input
           type="number"
           min="0"
-          value={value}
-          onChange={(event) => onChange(event.target.value)}
           inputMode="numeric"
-          className="h-10 w-full rounded-xl border border-gray-200 bg-[#F8FAFC] pl-7 pr-2 text-xs font-semibold text-[#0F172A] outline-none focus:border-[#FF5C39] focus:ring-2 focus:ring-orange-100 sm:pl-8 sm:pr-3 sm:text-sm"
+          value={value}
+          onChange={(e) => set(e.target.value)}
+          className="box-border h-10 w-full min-w-0 rounded-xl border border-gray-200 bg-[#F8FAFC] pl-7 pr-2 text-xs font-semibold text-[#0F172A] outline-none focus:border-[#FF5C39] focus:ring-2 focus:ring-orange-100 sm:h-11 sm:pl-8 sm:pr-3 sm:text-sm"
         />
       </div>
     </div>
   );
 }
 
-/* =====================================================
-   TAG INPUT
-===================================================== */
+/* ========================= TAGS ========================= */
 
-function TagInput({
+function Tags({
   label,
   placeholder,
   value,
@@ -1658,43 +984,36 @@ function TagInput({
   setItems: React.Dispatch<React.SetStateAction<string[]>>;
 }) {
   const add = () => {
-    const clean = value.trim();
+    const item = value.trim();
 
-    if (!clean) {
-      return;
+    if (!item) return;
+
+    if (!items.some((x) => x.toLowerCase() === item.toLowerCase())) {
+      setItems([...items, item]);
     }
-
-    if (items.some((item) => item.toLowerCase() === clean.toLowerCase())) {
-      setValue("");
-
-      return;
-    }
-
-    setItems([...items, clean]);
 
     setValue("");
   };
 
   return (
-    <div>
-      <label className="mb-1.5 block text-xs font-semibold text-[#0F172A] sm:mb-2 sm:text-sm">
+    <div className="min-w-0">
+      <label className="mb-1.5 block text-xs font-semibold text-[#0F172A] sm:text-sm">
         {label}
       </label>
 
-      <div className="flex gap-2">
+      <div className="flex min-w-0 gap-2">
         <input
           type="text"
           value={value}
-          onChange={(event) => setValue(event.target.value)}
-          onKeyDown={(event) => {
-            if (event.key === "Enter") {
-              event.preventDefault();
-
+          onChange={(e) => setValue(e.target.value)}
+          onKeyDown={(e) => {
+            if (e.key === "Enter") {
+              e.preventDefault();
               add();
             }
           }}
           placeholder={placeholder}
-          className="h-10 min-w-0 flex-1 rounded-xl border border-gray-200 bg-[#F8FAFC] px-3 text-xs text-[#0F172A] outline-none focus:border-[#FF5C39] focus:ring-2 focus:ring-orange-100 sm:h-11 sm:px-4 sm:text-sm"
+          className="box-border h-10 min-w-0 flex-1 rounded-xl border border-gray-200 bg-[#F8FAFC] px-3 text-xs text-[#0F172A] outline-none focus:border-[#FF5C39] focus:ring-2 focus:ring-orange-100 sm:h-11 sm:px-4 sm:text-sm"
         />
 
         <button
@@ -1707,20 +1026,22 @@ function TagInput({
       </div>
 
       {items.length > 0 && (
-        <div className="mt-2.5 flex flex-wrap gap-1.5 sm:mt-3 sm:gap-2">
-          {items.map((item, index) => (
+        <div className="mt-2 flex min-w-0 flex-wrap gap-1.5">
+          {items.map((item, i) => (
             <span
-              key={`${item}-${index}`}
-              className="inline-flex max-w-full items-center gap-1.5 rounded-lg bg-orange-50 px-2.5 py-1.5 text-[10px] font-semibold text-[#C2410C] sm:px-3 sm:text-xs"
+              key={`${item}-${i}`}
+              className="inline-flex max-w-full items-center gap-1.5 rounded-lg bg-orange-50 px-2.5 py-1.5 text-[10px] font-semibold text-[#C2410C] sm:text-xs"
             >
-              <span className="max-w-[200px] truncate">{item}</span>
+              <span className="max-w-[calc(100vw-110px)] truncate sm:max-w-xs">
+                {item}
+              </span>
 
               <button
                 type="button"
                 onClick={() =>
-                  setItems(items.filter((_, itemIndex) => itemIndex !== index))
+                  setItems(items.filter((_, index) => index !== i))
                 }
-                className="shrink-0 hover:text-red-600"
+                className="shrink-0"
               >
                 <X className="h-3 w-3" />
               </button>
@@ -1728,6 +1049,68 @@ function TagInput({
           ))}
         </div>
       )}
+    </div>
+  );
+}
+
+/* ========================= PHOTO BUTTON ========================= */
+
+function PhotoButton({
+  children,
+  onClick,
+  disabled,
+  icon: Icon,
+  light = false,
+  danger = false,
+}: {
+  children: React.ReactNode;
+  onClick: () => void;
+  disabled: boolean;
+  icon: typeof Camera;
+  light?: boolean;
+  danger?: boolean;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      disabled={disabled}
+      className={`flex h-10 w-full items-center justify-center gap-2 rounded-xl px-4 text-xs font-bold disabled:opacity-50 sm:w-auto sm:text-sm ${
+        danger
+          ? "border border-red-200 bg-white text-red-500 hover:bg-red-50"
+          : light
+            ? "border border-gray-200 bg-white text-[#475569] hover:bg-gray-50"
+            : "bg-[#FF5C39] text-white hover:bg-[#e54e2e]"
+      }`}
+    >
+      <Icon className="h-4 w-4" />
+      {children}
+    </button>
+  );
+}
+
+/* ========================= MESSAGE ========================= */
+
+function Message({
+  children,
+  error = false,
+  success = false,
+}: {
+  children: React.ReactNode;
+  error?: boolean;
+  success?: boolean;
+}) {
+  return (
+    <div
+      className={`flex min-w-0 items-center gap-2 rounded-xl border px-3 py-2.5 text-xs sm:px-4 sm:py-3 sm:text-sm ${
+        error
+          ? "border-red-200 bg-red-50 text-red-600"
+          : success
+            ? "border-emerald-200 bg-emerald-50 text-emerald-700"
+            : ""
+      }`}
+    >
+      {children}
     </div>
   );
 }

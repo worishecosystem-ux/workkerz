@@ -1,12 +1,12 @@
 "use client";
 
 import {
-  ShoppingBag,
-  Clock3,
-  Truck,
-  CheckCircle2,
-  IndianRupee,
   Activity,
+  CheckCircle2,
+  Clock3,
+  IndianRupee,
+  ShoppingBag,
+  Truck,
 } from "lucide-react";
 
 type Props = {
@@ -14,18 +14,11 @@ type Props = {
 };
 
 export default function OperationsDashboard({ orders }: Props) {
-  const pending = orders.filter(
-    (o) => o.status === "Pending"
-  ).length;
-
-  const confirmed = orders.filter(
-    (o) => o.status === "Confirmed"
-  ).length;
-
+  const pending = orders.filter((o) => o.status === "Pending").length;
+  const confirmed = orders.filter((o) => o.status === "Confirmed").length;
   const delivery = orders.filter(
     (o) => o.status === "Out For Delivery"
   ).length;
-
   const delivered = orders.filter(
     (o) => o.status === "Delivered"
   ).length;
@@ -35,94 +28,64 @@ export default function OperationsDashboard({ orders }: Props) {
     .reduce((sum, o) => sum + Number(o.total || 0), 0);
 
   const cards = [
-    {
-      title: "New Orders",
-      value: pending,
-      icon: ShoppingBag,
-      bg: "bg-red-50",
-      color: "text-red-600",
-    },
-    {
-      title: "Confirmed",
-      value: confirmed,
-      icon: Clock3,
-      bg: "bg-blue-50",
-      color: "text-blue-600",
-    },
-    {
-      title: "On Delivery",
-      value: delivery,
-      icon: Truck,
-      bg: "bg-orange-50",
-      color: "text-orange-600",
-    },
-    {
-      title: "Delivered",
-      value: delivered,
-      icon: CheckCircle2,
-      bg: "bg-green-50",
-      color: "text-green-600",
-    },
-    {
-      title: "Revenue",
-      value: `₹${revenue.toLocaleString()}`,
-      icon: IndianRupee,
-      bg: "bg-emerald-50",
-      color: "text-emerald-600",
-    },
-  ];
+    ["New Orders", pending, ShoppingBag, "bg-red-50", "text-red-600"],
+    ["Confirmed", confirmed, Clock3, "bg-blue-50", "text-blue-600"],
+    ["On Delivery", delivery, Truck, "bg-orange-50", "text-orange-600"],
+    ["Delivered", delivered, CheckCircle2, "bg-green-50", "text-green-600"],
+    [
+      "Revenue",
+      `₹${revenue.toLocaleString("en-IN")}`,
+      IndianRupee,
+      "bg-emerald-50",
+      "text-emerald-600",
+    ],
+  ] as const;
 
- return (
-  <div className="mb-3 rounded-xl border border-slate-200 bg-white p-3 shadow-sm">
-    {/* Header */}
-    <div className="mb-3 flex items-center justify-between">
-      <div>
-        <h2 className="text-base font-semibold text-slate-900">
-          Operations
-        </h2>
+  return (
+    <section className="mb-4 w-full rounded-lg border border-slate-100 bg-white p-2 shadow-sm sm:p-2.5">
+      {/* HEADER */}
+      <div className="mb-2 flex items-center justify-between px-0.5">
+        <div>
+          <p className="text-[10px] font-bold text-slate-800 sm:text-xs">
+            Operations Dashboard
+          </p>
 
-        <p className="text-[10px] text-slate-500">
-          Live Order Overview
-        </p>
-      </div>
+          <p className="text-[8px] text-slate-400 sm:text-[9px]">
+            Live Order Overview
+          </p>
+        </div>
 
-      <div className="flex items-center gap-1 rounded-full bg-green-100 px-2 py-1">
-        <Activity className="h-3 w-3 animate-pulse text-green-600" />
-        <span className="text-[10px] font-semibold text-green-700">
+        <span className="flex shrink-0 items-center gap-1 rounded-full bg-green-50 px-1.5 py-0.5 text-[8px] font-bold text-green-600">
+          <Activity className="h-2.5 w-2.5 animate-pulse" />
           LIVE
         </span>
       </div>
-    </div>
 
-    {/* Cards */}
-    <div className="grid grid-cols-2 gap-2 lg:grid-cols-5">
-      {cards.map((card) => {
-        const Icon = card.icon;
-
-        return (
+      {/* CARDS */}
+      <div className="grid grid-cols-3 gap-1.5 sm:grid-cols-3 lg:grid-cols-5">
+        {cards.map(([title, value, Icon, bg, color]) => (
           <div
-            key={card.title}
-            className="flex items-center gap-2 rounded-md border border-slate-100 bg-slate-50 px-2 py-2 transition hover:border-slate-200"
+            key={title}
+            className="flex min-w-0 items-center gap-1.5 rounded-md border border-slate-100 bg-slate-50/60 px-1.5 py-1.5"
           >
             <div
-              className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-md ${card.bg}`}
+              className={`flex h-6 w-6 shrink-0 items-center justify-center rounded-md ${bg}`}
             >
-              <Icon className={`h-3.5 w-3.5 ${card.color}`} />
+              <Icon className={`h-3 w-3 ${color}`} />
             </div>
 
-            <div className="min-w-0">
-              <p className="truncate text-[9px] font-medium leading-none text-slate-500">
-                {card.title}
+            <div className="min-w-0 flex-1">
+              <p className="whitespace-nowrap text-[8px] font-medium leading-tight text-slate-500 sm:text-[9px]">
+                {title}
               </p>
 
-              <p className="mt-1 text-sm font-bold leading-none text-slate-900">
-                {card.value}
+              <p className="mt-0.5 whitespace-nowrap text-[10px] font-bold leading-tight text-slate-800 sm:text-xs">
+                {value}
               </p>
             </div>
           </div>
-        );
-      })}
-    </div>
-  </div>
-);
+        ))}
+      </div>
+    </section>
+  );
 }

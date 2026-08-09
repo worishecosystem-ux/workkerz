@@ -2,11 +2,11 @@
 
 import { useEffect, useRef, useState } from "react";
 import {
-  Clock3,
   CheckCircle2,
-  XCircle,
-  RotateCcw,
   ChevronDown,
+  Clock3,
+  RotateCcw,
+  XCircle,
 } from "lucide-react";
 
 type Props = {
@@ -54,58 +54,70 @@ export default function PaymentStatusSelect({
   onChange,
 }: Props) {
   const [open, setOpen] = useState(false);
-
   const ref = useRef<HTMLDivElement>(null);
 
   const current =
-    paymentStatuses.find((s) => s.value === value) ||
+    paymentStatuses.find((item) => item.value === value) ||
     paymentStatuses[0];
 
+  const Icon = current.icon;
+
   useEffect(() => {
-    const close = (e: MouseEvent) => {
-      if (!ref.current?.contains(e.target as Node)) {
+    const close = (event: MouseEvent) => {
+      if (
+        ref.current &&
+        !ref.current.contains(event.target as Node)
+      ) {
         setOpen(false);
       }
     };
 
-    window.addEventListener("mousedown", close);
+    const escape = (event: KeyboardEvent) => {
+      if (event.key === "Escape") setOpen(false);
+    };
 
-    return () =>
-      window.removeEventListener("mousedown", close);
+    document.addEventListener("mousedown", close);
+    document.addEventListener("keydown", escape);
+
+    return () => {
+      document.removeEventListener("mousedown", close);
+      document.removeEventListener("keydown", escape);
+    };
   }, []);
 
-  const Icon = current.icon;
-
   return (
-    <div ref={ref} className="relative w-48">
-      {/* Button */}
-
+    <div ref={ref} className="relative w-full min-w-[120px] sm:min-w-[135px]">
+      {/* SELECT BUTTON */}
       <button
         type="button"
-        onClick={() => setOpen(!open)}
-        className={`flex h-11 w-full items-center justify-between rounded-xl border border-slate-200 px-3 shadow-sm transition hover:border-slate-300 ${current.bg}`}
+        onClick={() => setOpen((prev) => !prev)}
+        aria-expanded={open}
+        className={`flex h-9 w-full items-center justify-between gap-2 rounded-lg border px-2.5 text-[10px] font-semibold shadow-sm transition sm:h-10 sm:px-3 sm:text-xs ${current.bg} ${current.color} ${
+          open
+            ? "border-slate-300 ring-2 ring-slate-100"
+            : "border-slate-200 hover:border-slate-300"
+        }`}
       >
-        <div
-          className={`flex items-center gap-2 font-semibold ${current.color}`}
-        >
-          <Icon className="h-4 w-4" />
-          {current.label}
-        </div>
+        <span className="flex min-w-0 items-center gap-1.5">
+          <Icon className="h-3.5 w-3.5 shrink-0" />
+
+          <span className="whitespace-nowrap">
+            {current.label}
+          </span>
+        </span>
 
         <ChevronDown
-          className={`h-4 w-4 text-slate-500 transition ${
+          className={`h-3.5 w-3.5 shrink-0 text-slate-400 transition-transform ${
             open ? "rotate-180" : ""
           }`}
         />
       </button>
 
-      {/* Dropdown */}
-
+      {/* DROPDOWN */}
       {open && (
-        <div className="absolute left-0 top-full z-50 mt-2 w-full overflow-hidden rounded-xl border border-slate-200 bg-white shadow-xl">
+        <div className="absolute left-0 top-full z-[100] mt-1.5 w-full min-w-[150px] overflow-hidden rounded-lg border border-slate-200 bg-white p-1 shadow-xl">
           {paymentStatuses.map((status) => {
             const ItemIcon = status.icon;
-
             const active = value === status.value;
 
             return (
@@ -116,24 +128,22 @@ export default function PaymentStatusSelect({
                   onChange(status.value);
                   setOpen(false);
                 }}
-                className={`flex w-full items-center justify-between px-4 py-3 text-left transition
-                  ${status.hover}
-                  ${
-                    active
-                      ? `${status.bg} ${status.color}`
-                      : "text-slate-700"
-                  }`}
+                className={`flex w-full items-center justify-between gap-2 rounded-md px-2.5 py-2 text-left transition ${
+                  active
+                    ? `${status.bg} ${status.color}`
+                    : `text-slate-600 ${status.hover}`
+                }`}
               >
-                <div className="flex items-center gap-3">
-                  <ItemIcon className="h-4 w-4" />
+                <span className="flex items-center gap-2">
+                  <ItemIcon className="h-3.5 w-3.5 shrink-0" />
 
-                  <span className="font-medium">
+                  <span className="whitespace-nowrap text-[10px] font-semibold sm:text-xs">
                     {status.label}
                   </span>
-                </div>
+                </span>
 
                 {active && (
-                  <CheckCircle2 className="h-4 w-4 text-emerald-600" />
+                  <CheckCircle2 className="h-3.5 w-3.5 shrink-0 text-emerald-600" />
                 )}
               </button>
             );

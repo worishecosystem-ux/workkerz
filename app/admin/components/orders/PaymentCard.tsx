@@ -1,95 +1,141 @@
-import { CreditCard, Receipt, Truck, Wallet } from "lucide-react";
+"use client";
+
+import {
+  CreditCard,
+  Receipt,
+  Truck,
+  Wallet,
+} from "lucide-react";
 
 type Props = {
   order: any;
-  onStatusChange: (id: string, status: string) => void;
-  onPaymentStatusChange: (id: string, status: string) => void;
+  onStatusChange?: (id: string, status: string) => void;
+  onPaymentStatusChange?: (id: string, status: string) => void;
 };
 
 const statusStyle = (status: string) => {
   switch (status) {
     case "Paid":
-      return " text-emerald-700";
+      return "text-emerald-700 bg-emerald-50";
 
     case "Pending":
-      return " text-amber-700";
+      return "text-amber-700 bg-amber-50";
 
     case "Failed":
-      return " text-red-700";
+      return "text-red-700 bg-red-50";
 
     case "Refunded":
-      return " text-blue-700";
+      return "text-blue-700 bg-blue-50";
 
     default:
-      return " text-slate-700";
+      return "text-slate-700 bg-slate-50";
   }
 };
 
-const Item = ({
+function Item({
   icon,
   label,
   value,
-  valueClass = "",
-  labelClass = "text-slate-500",
+  valueClass = "text-slate-900",
+  iconClass = "text-slate-500",
 }: {
   icon: React.ReactNode;
   label: string;
   value: React.ReactNode;
   valueClass?: string;
-  labelClass?: string;
-}) => (
-  <div className="flex h-10 items-center justify-between rounded-xl border border-slate-200 bg-white px-3 shadow-sm">
-    <div className={`flex items-center gap-1.5 ${labelClass}`}>
-      {icon}
+  iconClass?: string;
+}) {
+  return (
+    <div className="flex min-w-0 items-center gap-2 rounded-lg border border-slate-100 bg-slate-50/60 px-2.5 py-2">
+      <div
+        className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-md bg-white ${iconClass}`}
+      >
+        {icon}
+      </div>
 
-      <span className="text-[11px] font-semibold uppercase tracking-wide">
-        {label}
-      </span>
+      <div className="min-w-0 flex-1">
+        <p className="text-[8px] font-bold uppercase tracking-wide text-slate-400 sm:text-[9px]">
+          {label}
+        </p>
+
+        <div
+          className={`mt-0.5 whitespace-nowrap text-[11px] font-bold sm:text-xs ${valueClass}`}
+        >
+          {value}
+        </div>
+      </div>
     </div>
-
-    <div className={`truncate text-sm font-bold ${valueClass}`}>{value}</div>
-  </div>
-);
+  );
+}
 
 export default function PaymentCard({ order }: Props) {
+  const paymentStatus = order.payment_status || "Pending";
+
   return (
-    <div className="grid grid-cols-5 gap-2">
-      <Item
-        labelClass="text-blue-600"
-        icon={<CreditCard className="h-4 w-4" />}
-        label="Method"
-        value={order.payment_method || "COD"}
-      />
+    <section className="w-full rounded-xl border border-slate-100 bg-white p-2.5 shadow-sm sm:p-3">
+      {/* HEADER */}
+      <div className="mb-2 flex items-center gap-2">
+        <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-emerald-50">
+          <CreditCard className="h-3.5 w-3.5 text-emerald-600" />
+        </div>
 
-      <Item
-        labelClass="text-orange-600"
-        icon={<Wallet className="h-4 w-4" />}
-        label="Status"
-        value={order.payment_status || "Pending"}
-        valueClass={statusStyle(order.payment_status || "Pending")}
-      />
+        <div>
+          <h3 className="text-xs font-bold text-slate-900 sm:text-sm">
+            Payment Summary
+          </h3>
 
-      <Item
-        labelClass="text-red-600"
-        icon={<Receipt className="h-4 w-4" />}
-        label="Items"
-        value={`₹${Number(order.subtotal || 0).toLocaleString()}`}
-      />
+          <p className="text-[9px] text-slate-400">
+            Order payment details
+          </p>
+        </div>
+      </div>
 
-      <Item
-        labelClass="text-violet-600"
-        icon={<Truck className="h-4 w-4" />}
-        label="Delivery"
-        value={`₹${Number(order.delivery || 0).toLocaleString()}`}
-      />
+      {/* ITEMS */}
+      <div className="grid grid-cols-2 gap-1.5 sm:grid-cols-3 lg:grid-cols-5">
+        <Item
+          icon={<CreditCard className="h-3.5 w-3.5" />}
+          iconClass="text-blue-600"
+          label="Method"
+          value={order.payment_method || "COD"}
+        />
 
-      <Item
-        labelClass="text-emerald-700"
-        icon={<Wallet className="h-4 w-4" />}
-        label="Total"
-        value={`₹${Number(order.total || 0).toLocaleString()}`}
-        valueClass="text-emerald-700"
-      />
-    </div>
+        <Item
+          icon={<Wallet className="h-3.5 w-3.5" />}
+          iconClass="text-orange-600"
+          label="Status"
+          value={
+            <span
+              className={`inline-flex rounded-full px-1.5 py-0.5 text-[9px] ${statusStyle(
+                paymentStatus
+              )}`}
+            >
+              {paymentStatus}
+            </span>
+          }
+        />
+
+        <Item
+          icon={<Receipt className="h-3.5 w-3.5" />}
+          iconClass="text-red-600"
+          label="Items"
+          value={`₹${Number(order.subtotal || 0).toLocaleString("en-IN")}`}
+        />
+
+        <Item
+          icon={<Truck className="h-3.5 w-3.5" />}
+          iconClass="text-violet-600"
+          label="Delivery"
+          value={`₹${Number(order.delivery || 0).toLocaleString("en-IN")}`}
+        />
+
+        <Item
+          icon={<Wallet className="h-3.5 w-3.5" />}
+          iconClass="text-emerald-600"
+          label="Total"
+          value={`₹${Number(order.total || 0).toLocaleString("en-IN")}`}
+          valueClass="text-emerald-700"
+        />
+      </div>
+    </section>
   );
 }

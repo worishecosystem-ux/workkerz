@@ -318,7 +318,7 @@ export default function AdminSidebar({
             transition-all
           "
         >
-          <Sparkles className="w-[18px] h-[18px] shrink-0" />
+          <Sparkles className="w-4.5 h-4.5 shrink-0" />
           <span>E-Aurix</span>
         </Link>
 

@@ -1,12 +1,8 @@
 "use client";
 
-import {
-  useCallback,
-  useEffect,
-  useRef,
-  useState,
-} from "react";
-
+import { useCallback, useEffect, useRef, useState } from "react";
+import { App } from "@capacitor/app";
+import { Capacitor } from "@capacitor/core";
 import {
   LayoutDashboard,
   Users,
@@ -19,9 +15,7 @@ import {
   Menu,
   X,
 } from "lucide-react";
-
 import { supabase } from "@/lib/supabase";
-
 import DashboardTab from "./components/dashboard/DashboardTab";
 import WorkersTab from "./components/workers/WorkersTab";
 import OrdersTab from "./components/OrdersTab";
@@ -29,17 +23,12 @@ import ShopsTab from "./components/ShopsTab";
 import BookingsTab from "./components/BookingsTab";
 import AdminsTab from "./components/AdminsTab";
 import NewOrderNotification from "./components/orders/NewOrderNotification";
-
 import {
   canAccessModule,
   type AdminModule,
   type AdminRole,
   type AdminSubRole,
 } from "./lib/adminPermissions";
-
-/* =====================================================
-   TYPES
-===================================================== */
 
 type AdminProfile = {
   id: string;
@@ -76,17 +65,9 @@ type NotificationOrder = {
   [key: string]: any;
 };
 
-type NotificationAction =
-  | "view"
-  | "accept"
-  | "reject"
-  | null;
+type NotificationAction = "view" | "accept" | "reject" | null;
 
-/* =====================================================
-   NOTIFICATION REMOVE STATUSES
-===================================================== */
-
-const NOTIFICATION_REMOVE_STATUSES = [
+const REMOVE = [
   "accepted",
   "confirmed",
   "approved",
@@ -95,216 +76,111 @@ const NOTIFICATION_REMOVE_STATUSES = [
   "canceled",
 ];
 
-/* =====================================================
-   NAVIGATION
-===================================================== */
-
-const NAVIGATION: {
+const NAV: {
   id: AdminModule;
   label: string;
   icon: typeof LayoutDashboard;
 }[] = [
-  {
-    id: "dashboard",
-    label: "Dashboard",
-    icon: LayoutDashboard,
-  },
-  {
-    id: "workers",
-    label: "Workers",
-    icon: Users,
-  },
-  {
-    id: "orders",
-    label: "Orders",
-    icon: ShoppingBag,
-  },
-  {
-    id: "shops",
-    label: "Shops",
-    icon: Store,
-  },
-  {
-    id: "bookings",
-    label: "Bookings",
-    icon: CalendarCheck,
-  },
-  {
-    id: "admins",
-    label: "Admins",
-    icon: ShieldCheck,
-  },
+  { id: "dashboard", label: "Dashboard", icon: LayoutDashboard },
+  { id: "workers", label: "Workers", icon: Users },
+  { id: "orders", label: "Orders", icon: ShoppingBag },
+  { id: "shops", label: "Shops", icon: Store },
+  { id: "bookings", label: "Bookings", icon: CalendarCheck },
+  { id: "admins", label: "Admins", icon: ShieldCheck },
 ];
 
-/* =====================================================
-   COMPONENT
-===================================================== */
-
 export default function AdminPanel() {
-  /* ===================================================
-     ADMIN
-  =================================================== */
+  const [admin, setAdmin] = useState<AdminProfile | null>(null);
+  const [roles, setRoles] = useState<AdminSubRole[]>([]);
+  const [superAdmin, setSuperAdmin] = useState(false);
+  const [tab, setTab] = useState<AdminModule>("dashboard");
+  const [drawer, setDrawer] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+  const [android, setAndroid] = useState(false);
 
-  const [admin, setAdmin] =
-    useState<AdminProfile | null>(null);
+  const [notifications, setNotifications] = useState<NotificationOrder[]>([]);
+  const notificationsRef = useRef<NotificationOrder[]>([]);
+  const [viewOrder, setViewOrder] = useState<NotificationOrder | null>(null);
+  const [action, setAction] = useState<NotificationAction>(null);
+  const [openKey, setOpenKey] = useState(0);
 
-  const [assignedRoles, setAssignedRoles] =
-    useState<AdminSubRole[]>([]);
+  const audioRef = useRef<HTMLAudioElement | null>(null);
+  const audioUnlocked = useRef(false);
+  const channelRef = useRef<ReturnType<typeof supabase.channel> | null>(null);
+  const realtimeStarted = useRef(false);
+  const [workerFormOpen, setWorkerFormOpen] = useState(false);
+  const hasAccess = useCallback(
+    (module: AdminModule) =>
+      !!admin &&
+      (superAdmin ||
+        (module !== "admins" && canAccessModule(admin.role, roles, module))),
+    [admin, roles, superAdmin],
+  );
 
-  const [isSuperAdmin, setIsSuperAdmin] =
-    useState(false);
-
-  /* ===================================================
-     NAVIGATION
-  =================================================== */
-
-  const [activeTab, setActiveTab] =
-    useState<AdminModule>("dashboard");
-
-  /* ===================================================
-     MOBILE SIDEBAR
-  =================================================== */
-
-  const [
-    mobileSidebarOpen,
-    setMobileSidebarOpen,
-  ] = useState(false);
-
-  /* ===================================================
-     PAGE
-  =================================================== */
-
-  const [loading, setLoading] =
-    useState(true);
-
-  const [error, setError] =
-    useState("");
-
-  /* ===================================================
-     NOTIFICATIONS
-  =================================================== */
-
-  const [
-    notificationOrders,
-    setNotificationOrders,
-  ] = useState<NotificationOrder[]>([]);
-
-  const notificationOrdersRef =
-    useRef<NotificationOrder[]>([]);
-
-  /* ===================================================
-     NOTIFICATION ACTION
-  =================================================== */
-
-  const [
-    notificationOrderToView,
-    setNotificationOrderToView,
-  ] = useState<NotificationOrder | null>(null);
-
-  const [
-    notificationAction,
-    setNotificationAction,
-  ] = useState<NotificationAction>(null);
-
-  const [
-    notificationOpenKey,
-    setNotificationOpenKey,
-  ] = useState(0);
-
-  /* ===================================================
-     AUDIO
-  =================================================== */
-
-  const notificationAudioRef =
-    useRef<HTMLAudioElement | null>(null);
-
-  const audioUnlockedRef =
-    useRef(false);
-
-  /* ===================================================
-     REALTIME
-  =================================================== */
-
-  const orderChannelRef =
-    useRef<ReturnType<typeof supabase.channel> | null>(
-      null,
+  const removeNotification = useCallback((id: string | number) => {
+    const next = notificationsRef.current.filter(
+      (x) => String(x.id) !== String(id),
     );
+    notificationsRef.current = next;
+    setNotifications(next);
+    setViewOrder((x) => (x && String(x.id) === String(id) ? null : x));
+  }, []);
 
-  const realtimeStartedRef =
-    useRef(false);
-
-  /* ===================================================
-     SYNC NOTIFICATION REF
-  =================================================== */
-
-  useEffect(() => {
-    notificationOrdersRef.current =
-      notificationOrders;
-  }, [notificationOrders]);
-
-  /* ===================================================
-     CLOSE MOBILE DRAWER ON TAB CHANGE
-  =================================================== */
-
-  useEffect(() => {
-    setMobileSidebarOpen(false);
-  }, [activeTab]);
-
-  /* ===================================================
-     ESC CLOSE MOBILE DRAWER
-  =================================================== */
-
-  useEffect(() => {
-    if (!mobileSidebarOpen) {
+  const addNotification = useCallback((order: NotificationOrder) => {
+    if (
+      order?.id == null ||
+      REMOVE.includes(
+        String(order.status ?? "")
+          .trim()
+          .toLowerCase(),
+      ) ||
+      notificationsRef.current.some((x) => String(x.id) === String(order.id))
+    )
       return;
-    }
 
-    const handleKeyDown = (
-      event: KeyboardEvent,
-    ) => {
-      if (event.key === "Escape") {
-        setMobileSidebarOpen(false);
-      }
-    };
+    const next = [order, ...notificationsRef.current];
+    notificationsRef.current = next;
+    setNotifications(next);
+  }, []);
 
-    document.addEventListener(
-      "keydown",
-      handleKeyDown,
+  const openOrder = useCallback(
+    (order: NotificationOrder, type: NotificationAction) => {
+      if (order?.id == null) return;
+      setViewOrder(order);
+      setAction(type);
+      setOpenKey((x) => x + 1);
+      setTab("orders");
+      setDrawer(false);
+    },
+    [],
+  );
+
+  useEffect(() => {
+    setAndroid(
+      Capacitor.isNativePlatform() && Capacitor.getPlatform() === "android",
     );
-
-    return () => {
-      document.removeEventListener(
-        "keydown",
-        handleKeyDown,
-      );
-    };
-  }, [mobileSidebarOpen]);
-
-  /* ===================================================
-     PREVENT BODY SCROLL WHEN DRAWER OPEN
-  =================================================== */
+  }, []);
 
   useEffect(() => {
-    if (!mobileSidebarOpen) {
-      document.body.style.overflow = "";
-      return;
-    }
+    notificationsRef.current = notifications;
+  }, [notifications]);
 
-    document.body.style.overflow = "hidden";
+  useEffect(() => {
+    setDrawer(false);
+  }, [tab]);
 
+  useEffect(() => {
+    document.body.style.overflow = drawer ? "hidden" : "";
     return () => {
       document.body.style.overflow = "";
     };
-  }, [mobileSidebarOpen]);
-
-  /* ===================================================
-     LOAD ADMIN
-  =================================================== */
+  }, [drawer]);
 
   useEffect(() => {
     let mounted = true;
 
-    const loadAdmin = async () => {
+    (async () => {
       try {
         setLoading(true);
         setError("");
@@ -312,186 +188,82 @@ export default function AdminPanel() {
         const {
           data: { session },
         } = await supabase.auth.getSession();
-
-        if (!mounted) {
-          return;
-        }
+        if (!mounted) return;
 
         if (!session?.access_token) {
-          setError(
-            "Your admin session has expired.",
-          );
-
+          setError("Your admin session has expired.");
           return;
         }
 
-        const response = await fetch(
-          "/api/admin/me",
-          {
-            method: "GET",
-            headers: {
-              Authorization: `Bearer ${session.access_token}`,
-            },
-            cache: "no-store",
-          },
-        );
+        const res = await fetch("/api/admin/me", {
+          headers: { Authorization: `Bearer ${session.access_token}` },
+          cache: "no-store",
+        });
 
-        const data:
-          | AdminMeResponse
-          | { error: string } =
-          await response.json();
+        const data: AdminMeResponse | { error: string } = await res.json();
+        if (!mounted) return;
 
-        if (!mounted) {
-          return;
-        }
-
-        if (!response.ok) {
+        if (!res.ok)
           throw new Error(
-            "error" in data
-              ? data.error
-              : "Unable to load admin profile.",
+            "error" in data ? data.error : "Unable to load admin profile.",
           );
-        }
+        if (!("admin" in data)) throw new Error("Invalid admin response.");
 
-        if (!("admin" in data)) {
-          throw new Error(
-            "Invalid admin response.",
-          );
-        }
+        const roleNames = Array.isArray(data.assignedRoles)
+          ? data.assignedRoles.map((x) => x.name).filter(Boolean)
+          : [];
 
         setAdmin(data.admin);
+        setSuperAdmin(!!data.isSuperAdmin);
+        setRoles(roleNames);
 
-        setIsSuperAdmin(
-          Boolean(data.isSuperAdmin),
-        );
-
-        const roleNames: AdminSubRole[] =
-          Array.isArray(
-            data.assignedRoles,
-          )
-            ? data.assignedRoles
-                .map(
-                  (role) => role.name,
-                )
-                .filter(Boolean)
-            : [];
-
-        setAssignedRoles(roleNames);
-
-        /*
-         * Super admin starts on dashboard.
-         */
         if (data.isSuperAdmin) {
-          setActiveTab("dashboard");
-          return;
+          setTab("dashboard");
+        } else {
+          const first = (
+            [
+              "dashboard",
+              "workers",
+              "orders",
+              "shops",
+              "bookings",
+            ] as AdminModule[]
+          ).find((x) => canAccessModule(data.admin.role, roleNames, x));
+          if (first) setTab(first);
         }
-
-        /*
-         * Find first module this admin can access.
-         */
-        const firstAllowedTabs: AdminModule[] =
-          [
-            "dashboard",
-            "workers",
-            "orders",
-            "shops",
-            "bookings",
-          ];
-
-        const firstAllowed =
-          firstAllowedTabs.find(
-            (module) =>
-              canAccessModule(
-                data.admin.role,
-                roleNames,
-                module,
-              ),
-          );
-
-        if (firstAllowed) {
-          setActiveTab(
-            firstAllowed,
-          );
-        }
-      } catch (err) {
-        console.error(
-          "[Admin] Load error:",
-          err,
-        );
-
-        if (!mounted) {
-          return;
-        }
-
-        setError(
-          err instanceof Error
-            ? err.message
-            : "Unable to load admin.",
-        );
+      } catch (e) {
+        console.error("[Admin]", e);
+        if (mounted)
+          setError(e instanceof Error ? e.message : "Unable to load admin.");
       } finally {
-        if (mounted) {
-          setLoading(false);
-        }
+        if (mounted) setLoading(false);
       }
-    };
-
-    loadAdmin();
+    })();
 
     return () => {
       mounted = false;
     };
   }, []);
 
-  /* ===================================================
-     REALTIME AUTH
-  =================================================== */
-
   useEffect(() => {
     let mounted = true;
 
-    const syncRealtimeAuth =
-      async () => {
-        try {
-          const {
-            data: { session },
-          } =
-            await supabase.auth.getSession();
+    const auth = async () => {
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
+      if (mounted && session?.access_token)
+        supabase.realtime.setAuth(session.access_token);
+    };
 
-          if (!mounted) {
-            return;
-          }
-
-          if (session?.access_token) {
-            supabase.realtime.setAuth(
-              session.access_token,
-            );
-          }
-        } catch (err) {
-          console.error(
-            "[Realtime] Auth error:",
-            err,
-          );
-        }
-      };
-
-    syncRealtimeAuth();
+    auth();
 
     const {
       data: { subscription },
-    } = supabase.auth.onAuthStateChange(
-      (event, session) => {
-        console.log(
-          "[Auth] Event:",
-          event,
-        );
-
-        if (session?.access_token) {
-          supabase.realtime.setAuth(
-            session.access_token,
-          );
-        }
-      },
-    );
+    } = supabase.auth.onAuthStateChange((_, session) => {
+      if (session?.access_token)
+        supabase.realtime.setAuth(session.access_token);
+    });
 
     return () => {
       mounted = false;
@@ -499,1743 +271,534 @@ export default function AdminPanel() {
     };
   }, []);
 
-  /* ===================================================
-     AUDIO INITIALIZATION
-  =================================================== */
-
   useEffect(() => {
-    const audio = new Audio(
-      "/sounds/new-order.mp3",
-    );
-
+    const audio = new Audio("/sounds/new-order.mp3");
     audio.preload = "auto";
     audio.volume = 1;
+    audioRef.current = audio;
 
-    notificationAudioRef.current =
-      audio;
+    const unlock = async () => {
+      if (audioUnlocked.current) return;
+      try {
+        audio.muted = true;
+        await audio.play();
+        audio.pause();
+        audio.currentTime = 0;
+        audio.muted = false;
+        audioUnlocked.current = true;
+      } catch {}
+      window.removeEventListener("click", unlock);
+      window.removeEventListener("touchstart", unlock);
+      window.removeEventListener("keydown", unlock);
+    };
 
-    const unlockAudio =
-      async () => {
-        if (audioUnlockedRef.current) {
-          return;
-        }
-
-        try {
-          audio.muted = true;
-          audio.currentTime = 0;
-
-          await audio.play();
-
-          audio.pause();
-          audio.currentTime = 0;
-          audio.muted = false;
-
-          audioUnlockedRef.current =
-            true;
-
-          console.log(
-            "[Audio] Unlocked",
-          );
-        } catch {
-          console.log(
-            "[Audio] Waiting for user interaction.",
-          );
-        }
-
-        window.removeEventListener(
-          "click",
-          unlockAudio,
-        );
-
-        window.removeEventListener(
-          "keydown",
-          unlockAudio,
-        );
-
-        window.removeEventListener(
-          "touchstart",
-          unlockAudio,
-        );
-      };
-
-    window.addEventListener(
-      "click",
-      unlockAudio,
-    );
-
-    window.addEventListener(
-      "keydown",
-      unlockAudio,
-    );
-
-    window.addEventListener(
-      "touchstart",
-      unlockAudio,
+    ["click", "touchstart", "keydown"].forEach((e) =>
+      window.addEventListener(e, unlock),
     );
 
     return () => {
-      window.removeEventListener(
-        "click",
-        unlockAudio,
+      ["click", "touchstart", "keydown"].forEach((e) =>
+        window.removeEventListener(e, unlock),
       );
-
-      window.removeEventListener(
-        "keydown",
-        unlockAudio,
-      );
-
-      window.removeEventListener(
-        "touchstart",
-        unlockAudio,
-      );
-
       audio.pause();
-
-      notificationAudioRef.current =
-        null;
-
-      audioUnlockedRef.current =
-        false;
+      audioRef.current = null;
+      audioUnlocked.current = false;
     };
   }, []);
 
-  /* ===================================================
-     PLAY NEW ORDER SOUND
-  =================================================== */
-
-  const playNewOrderSound =
-    useCallback(async () => {
-      const audio =
-        notificationAudioRef.current;
-
-      if (
-        !audio ||
-        !audioUnlockedRef.current
-      ) {
-        return;
-      }
-
-      try {
-        audio.pause();
-        audio.currentTime = 0;
-        audio.volume = 1;
-        audio.muted = false;
-
-        await audio.play();
-      } catch (err) {
-        console.warn(
-          "[Audio] Notification sound unavailable:",
-          err,
-        );
-      }
-    }, []);
-
-  /* ===================================================
-     CHECK REMOVE STATUS
-  =================================================== */
-
-  const shouldRemoveNotification =
-    useCallback(
-      (
-        status:
-          | string
-          | null
-          | undefined,
-      ) => {
-        const normalized =
-          String(status ?? "")
-            .trim()
-            .toLowerCase();
-
-        return NOTIFICATION_REMOVE_STATUSES.includes(
-          normalized,
-        );
-      },
-      [],
-    );
-
-  /* ===================================================
-     ADD NOTIFICATION
-  =================================================== */
-
-  const addOrderNotification =
-    useCallback(
-      (order: NotificationOrder) => {
-        if (
-          order?.id === undefined ||
-          order?.id === null
-        ) {
-          return;
-        }
-
-        const orderId =
-          String(order.id);
-
-        /*
-         * Do not show notifications for
-         * already completed orders.
-         */
-        if (
-          shouldRemoveNotification(
-            order.status,
-          )
-        ) {
-          return;
-        }
-
-        /*
-         * Prevent duplicate notifications.
-         */
-        const exists =
-          notificationOrdersRef.current.some(
-            (item) =>
-              String(item.id) ===
-              orderId,
-          );
-
-        if (exists) {
-          return;
-        }
-
-        const nextNotifications = [
-          order,
-          ...notificationOrdersRef.current,
-        ];
-
-        notificationOrdersRef.current =
-          nextNotifications;
-
-        setNotificationOrders(
-          nextNotifications,
-        );
-
-        console.log(
-          "[Notification] Added:",
-          orderId,
-        );
-      },
-      [shouldRemoveNotification],
-    );
-
-  /* ===================================================
-     REMOVE NOTIFICATION
-  =================================================== */
-
-  const removeOrderNotification =
-    useCallback(
-      (
-        orderId: string | number,
-      ) => {
-        const id = String(orderId);
-
-        const nextNotifications =
-          notificationOrdersRef.current.filter(
-            (order) =>
-              String(order.id) !== id,
-          );
-
-        notificationOrdersRef.current =
-          nextNotifications;
-
-        setNotificationOrders(
-          nextNotifications,
-        );
-
-        setNotificationOrderToView(
-          (current) => {
-            if (
-              current &&
-              String(current.id) ===
-                id
-            ) {
-              return null;
-            }
-
-            return current;
-          },
-        );
-
-        console.log(
-          "[Notification] Removed:",
-          id,
-        );
-      },
-      [],
-    );
-
-  /* ===================================================
-     VIEW ORDER
-  =================================================== */
-
-  const handleNotificationView =
-    useCallback(
-      (order: NotificationOrder) => {
-        if (
-          order?.id === undefined ||
-          order?.id === null
-        ) {
-          return;
-        }
-
-        console.log(
-          "[Notification] VIEW:",
-          order.id,
-        );
-
-        setNotificationOrderToView(
-          order,
-        );
-
-        setNotificationAction(
-          "view",
-        );
-
-        setNotificationOpenKey(
-          (previous) =>
-            previous + 1,
-        );
-
-        /*
-         * Only switches to Orders
-         * when user clicks View.
-         */
-        setActiveTab("orders");
-      },
-      [],
-    );
-
-  /* ===================================================
-     ACCEPT ORDER
-  =================================================== */
-
-  const handleNotificationAccept =
-    useCallback(
-      (order: NotificationOrder) => {
-        if (
-          order?.id === undefined ||
-          order?.id === null
-        ) {
-          return;
-        }
-
-        console.log(
-          "[Notification] ACCEPT:",
-          order.id,
-        );
-
-        setNotificationOrderToView(
-          order,
-        );
-
-        setNotificationAction(
-          "accept",
-        );
-
-        setNotificationOpenKey(
-          (previous) =>
-            previous + 1,
-        );
-
-        /*
-         * Only switches to Orders
-         * when user clicks Accept.
-         */
-        setActiveTab("orders");
-      },
-      [],
-    );
-
-  /* ===================================================
-     REJECT ORDER
-  =================================================== */
-
-  const handleNotificationReject =
-    useCallback(
-      (order: NotificationOrder) => {
-        if (
-          order?.id === undefined ||
-          order?.id === null
-        ) {
-          return;
-        }
-
-        console.log(
-          "[Notification] REJECT:",
-          order.id,
-        );
-
-        setNotificationOrderToView(
-          order,
-        );
-
-        setNotificationAction(
-          "reject",
-        );
-
-        setNotificationOpenKey(
-          (previous) =>
-            previous + 1,
-        );
-
-        /*
-         * Only switches to Orders
-         * when user clicks Reject.
-         */
-        setActiveTab("orders");
-      },
-      [],
-    );
-
-  /* ===================================================
-     CLOSE NOTIFICATION
-  =================================================== */
-
-  const handleNotificationClose =
-    useCallback(
-      (orderId: string | number) => {
-        removeOrderNotification(
-          orderId,
-        );
-      },
-      [removeOrderNotification],
-    );
-
-  /* ===================================================
-     ACCESS
-  =================================================== */
-
-  const hasAccess = (
-    module: AdminModule,
-  ) => {
-    if (!admin) {
-      return false;
-    }
-
-    if (isSuperAdmin) {
-      return true;
-    }
-
-    /*
-     * Normal admins cannot access
-     * Admin Management.
-     */
-    if (module === "admins") {
-      return false;
-    }
-
-    return canAccessModule(
-      admin.role,
-      assignedRoles,
-      module,
-    );
-  };
-
-  /* ===================================================
-     REALTIME ORDERS
-  =================================================== */
+  const playSound = useCallback(async () => {
+    const audio = audioRef.current;
+    if (!audio || !audioUnlocked.current) return;
+    try {
+      audio.pause();
+      audio.currentTime = 0;
+      await audio.play();
+    } catch {}
+  }, []);
 
   useEffect(() => {
-    /*
-     * Do not start realtime before
-     * admin authentication is ready.
-     */
-    if (
-      loading ||
-      !admin ||
-      !hasAccess("orders")
-    ) {
-      return;
-    }
+    if (!android) return;
+
+    let listener: any;
+
+    (async () => {
+      listener = await App.addListener("backButton", ({ canGoBack }) => {
+        if (drawer) {
+          setDrawer(false);
+          return;
+        }
+        if (viewOrder) {
+          setViewOrder(null);
+          setAction(null);
+          return;
+        }
+        if (tab !== "dashboard" && hasAccess("dashboard")) {
+          setTab("dashboard");
+          return;
+        }
+        if (canGoBack) window.history.back();
+      });
+    })();
+
+    return () => {
+      listener?.remove();
+    };
+  }, [android, drawer, viewOrder, tab, hasAccess]);
+
+  useEffect(() => {
+    if (loading || !admin || !hasAccess("orders")) return;
 
     let cancelled = false;
 
-    const setupOrderRealtime =
-      async () => {
-        try {
-          /*
-           * Prevent duplicate channels.
-           */
-          if (
-            realtimeStartedRef.current
-          ) {
-            return;
-          }
+    (async () => {
+      try {
+        if (realtimeStarted.current) return;
 
-          const {
-            data: { session },
-            error: sessionError,
-          } =
-            await supabase.auth.getSession();
+        const {
+          data: { session },
+        } = await supabase.auth.getSession();
+        if (!session?.access_token || cancelled) return;
 
-          if (
-            sessionError ||
-            !session?.access_token
-          ) {
-            console.error(
-              "[Realtime] No valid session.",
-              sessionError,
-            );
+        supabase.realtime.setAuth(session.access_token);
 
-            return;
-          }
+        if (channelRef.current)
+          await supabase.removeChannel(channelRef.current);
 
-          if (cancelled) {
-            return;
-          }
+        realtimeStarted.current = true;
 
-          /*
-           * Authenticate Supabase Realtime.
-           */
-          supabase.realtime.setAuth(
-            session.access_token,
-          );
-
-          /*
-           * Remove any old channel.
-           */
-          if (
-            orderChannelRef.current
-          ) {
-            await supabase.removeChannel(
-              orderChannelRef.current,
-            );
-
-            orderChannelRef.current =
-              null;
-          }
-
-          if (cancelled) {
-            return;
-          }
-
-          realtimeStartedRef.current =
-            true;
-
-          const channel =
-            supabase
-              .channel(
-                "admin-orders-realtime",
-              )
-
-              /* =========================================
-                 INSERT
-              ========================================= */
-
-              .on(
-                "postgres_changes",
-                {
-                  event: "INSERT",
-                  schema: "public",
-                  table: "orders",
-                },
-                async (payload) => {
-                  if (cancelled) {
-                    return;
-                  }
-
-                  const order =
-                    payload.new as NotificationOrder;
-
-                  console.log(
-                    "[Realtime] NEW ORDER:",
-                    order,
-                  );
-
-                  /*
-                   * Add compact notification.
-                   */
-                  addOrderNotification(
-                    order,
-                  );
-
-                  /*
-                   * Play sound.
-                   */
-                  await playNewOrderSound();
-                },
-              )
-
-              /* =========================================
-                 UPDATE
-              ========================================= */
-
-              .on(
-                "postgres_changes",
-                {
-                  event: "UPDATE",
-                  schema: "public",
-                  table: "orders",
-                },
-                (payload) => {
-                  if (cancelled) {
-                    return;
-                  }
-
-                  const order =
-                    payload.new as NotificationOrder;
-
-                  console.log(
-                    "[Realtime] ORDER UPDATE:",
-                    order,
-                  );
-
-                  /*
-                   * Remove notification when
-                   * order is no longer pending.
-                   */
-                  if (
-                    shouldRemoveNotification(
-                      order.status,
-                    )
-                  ) {
-                    removeOrderNotification(
-                      order.id,
-                    );
-                  }
-                },
-              );
-
-          orderChannelRef.current =
-            channel;
-
-          /* =============================================
-             SUBSCRIBE
-          ============================================= */
-
-          channel.subscribe(
-            (
-              status,
-              realtimeError,
-            ) => {
-              console.log(
-                "[Realtime] STATUS:",
-                status,
-              );
-
-              if (
-                status ===
-                "SUBSCRIBED"
-              ) {
-                console.log(
-                  "[Realtime] CONNECTED",
-                );
-              }
-
-              if (
-                status ===
-                "CHANNEL_ERROR"
-              ) {
-                console.error(
-                  "[Realtime] CHANNEL_ERROR:",
-                  realtimeError,
-                );
-
-                realtimeStartedRef.current =
-                  false;
-              }
-
-              if (
-                status ===
-                "TIMED_OUT"
-              ) {
-                console.error(
-                  "[Realtime] TIMED_OUT:",
-                  realtimeError,
-                );
-
-                realtimeStartedRef.current =
-                  false;
-              }
-
-              if (
-                status === "CLOSED"
-              ) {
-                realtimeStartedRef.current =
-                  false;
-              }
+        const channel = supabase
+          .channel("admin-orders-realtime")
+          .on(
+            "postgres_changes",
+            { event: "INSERT", schema: "public", table: "orders" },
+            async (payload) => {
+              if (cancelled) return;
+              addNotification(payload.new as NotificationOrder);
+              await playSound();
+            },
+          )
+          .on(
+            "postgres_changes",
+            { event: "UPDATE", schema: "public", table: "orders" },
+            (payload) => {
+              if (cancelled) return;
+              const order = payload.new as NotificationOrder;
+              if (REMOVE.includes(String(order.status ?? "").toLowerCase()))
+                removeNotification(order.id);
             },
           );
-        } catch (err) {
-          console.error(
-            "[Realtime] Setup failed:",
-            err,
-          );
 
-          realtimeStartedRef.current =
-            false;
-        }
-      };
+        channelRef.current = channel;
 
-    setupOrderRealtime();
+        channel.subscribe((status) => {
+          if (["CHANNEL_ERROR", "TIMED_OUT", "CLOSED"].includes(status))
+            realtimeStarted.current = false;
+        });
+      } catch (e) {
+        console.error("[Realtime]", e);
+        realtimeStarted.current = false;
+      }
+    })();
 
     return () => {
       cancelled = true;
-
-      const channel =
-        orderChannelRef.current;
-
-      if (channel) {
-        supabase.removeChannel(
-          channel,
-        );
-
-        orderChannelRef.current =
-          null;
+      if (channelRef.current) {
+        supabase.removeChannel(channelRef.current);
+        channelRef.current = null;
       }
-
-      realtimeStartedRef.current =
-        false;
+      realtimeStarted.current = false;
     };
   }, [
     loading,
     admin,
-    assignedRoles,
-    isSuperAdmin,
-    addOrderNotification,
-    removeOrderNotification,
-    playNewOrderSound,
-    shouldRemoveNotification,
+    roles,
+    superAdmin,
+    hasAccess,
+    addNotification,
+    playSound,
+    removeNotification,
   ]);
 
-  /* ===================================================
-     LOADING
-  =================================================== */
-
-  if (loading) {
+  if (loading)
     return (
-      <div
-        className="
-          flex
-          min-h-screen
-          items-center
-          justify-center
-          bg-[#F8FAFC]
-          px-4
-        "
-      >
-        <div className="flex flex-col items-center">
-          <Loader2
-            className="
-              h-8
-              w-8
-              animate-spin
-              text-[#FF5C39]
-            "
-          />
-
-          <p
-            className="
-              mt-3
-              text-sm
-              text-[#64748B]
-            "
-          >
-            Loading admin panel...
-          </p>
+      <div className="min-h-screen animate-pulse bg-[#F8FAFC]">
+        <div className="hidden fixed inset-y-0 left-0 w-64 border-r border-gray-100 bg-white p-4 lg:block">
+          <div className="h-8 w-32 rounded-lg bg-gray-200" />
+          <div className="mt-8 h-16 rounded-xl bg-gray-100" />
+          <div className="mt-6 space-y-2">
+            {[1, 2, 3, 4, 5, 6].map((i) => (
+              <div key={i} className="h-11 rounded-xl bg-gray-100" />
+            ))}
+          </div>
         </div>
+
+        <div className="lg:ml-64">
+          <header className="h-16 border-b border-gray-100 bg-white px-4 lg:h-20">
+            <div className="flex h-full items-center justify-between">
+              <div>
+                <div className="h-5 w-28 rounded bg-gray-200" />
+                <div className="mt-2 h-3 w-20 rounded bg-gray-100" />
+              </div>
+              <div className="h-9 w-9 rounded-full bg-gray-200" />
+            </div>
+          </header>
+
+          <main className="space-y-5 p-4 sm:p-6 lg:p-7">
+            <div>
+              <div className="h-7 w-40 rounded-lg bg-gray-200" />
+              <div className="mt-2 h-4 w-56 rounded bg-gray-100" />
+            </div>
+
+            <div className="grid grid-cols-2 gap-3 sm:grid-cols-2 lg:grid-cols-4">
+              {[1, 2, 3, 4].map((i) => (
+                <div
+                  key={i}
+                  className="rounded-2xl border border-gray-100 bg-white p-4"
+                >
+                  <div className="h-9 w-9 rounded-xl bg-gray-100" />
+                  <div className="mt-4 h-6 w-20 rounded bg-gray-200" />
+                  <div className="mt-2 h-3 w-28 rounded bg-gray-100" />
+                </div>
+              ))}
+            </div>
+
+            <div className="grid gap-5 lg:grid-cols-2">
+              {[1, 2].map((i) => (
+                <div
+                  key={i}
+                  className="rounded-2xl border border-gray-100 bg-white p-5"
+                >
+                  <div className="h-5 w-32 rounded bg-gray-200" />
+                  <div className="mt-5 space-y-4">
+                    {[1, 2, 3, 4].map((j) => (
+                      <div key={j} className="flex items-center gap-3">
+                        <div className="h-10 w-10 rounded-xl bg-gray-100" />
+                        <div className="flex-1">
+                          <div className="h-3 w-32 rounded bg-gray-200" />
+                          <div className="mt-2 h-2.5 w-20 rounded bg-gray-100" />
+                        </div>
+                        <div className="h-6 w-14 rounded-full bg-gray-100" />
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            <div className="h-64 rounded-2xl border border-gray-100 bg-white p-5">
+              <div className="h-5 w-36 rounded bg-gray-200" />
+              <div className="mt-6 h-44 rounded-xl bg-gray-100" />
+            </div>
+          </main>
+        </div>
+
+        <div className="fixed bottom-0 left-0 right-0 h-16 border-t border-gray-100 bg-white lg:hidden" />
       </div>
     );
-  }
 
-  /* ===================================================
-     ERROR
-  =================================================== */
-
-  if (error || !admin) {
+  if (error || !admin)
     return (
-      <div
-        className="
-          flex
-          min-h-screen
-          items-center
-          justify-center
-          bg-[#F8FAFC]
-          px-4
-        "
-      >
-        <div
-          className="
-            w-full
-            max-w-md
-            rounded-2xl
-            border
-            border-gray-100
-            bg-white
-            p-6
-            text-center
-            shadow-sm
-            sm:p-7
-          "
-        >
-          <div
-            className="
-              mx-auto
-              flex
-              h-12
-              w-12
-              items-center
-              justify-center
-              rounded-xl
-              bg-red-50
-            "
-          >
-            <AlertCircle
-              className="
-                h-6
-                w-6
-                text-red-500
-              "
-            />
+      <div className="flex min-h-screen items-center justify-center bg-[#F8FAFC] px-4">
+        <div className="w-full max-w-md rounded-2xl border border-gray-100 bg-white p-6 text-center shadow-sm">
+          <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-xl bg-red-50">
+            <AlertCircle className="h-6 w-6 text-red-500" />
           </div>
-
-          <h1
-            className="
-              mt-4
-              text-lg
-              font-black
-              text-[#0F172A]
-            "
-          >
+          <h1 className="mt-4 text-lg font-black text-[#0F172A]">
             Unable to load Admin Panel
           </h1>
-
-          <p
-            className="
-              mt-2
-              text-sm
-              text-[#64748B]
-            "
-          >
-            {error ||
-              "Admin profile could not be found."}
+          <p className="mt-2 text-sm text-[#64748B]">
+            {error || "Admin profile could not be found."}
           </p>
         </div>
       </div>
     );
-  }
 
-  /* ===================================================
-     VISIBLE NAVIGATION
-  =================================================== */
+  const visible = NAV.filter((x) => hasAccess(x.id));
+  const current = visible.find((x) => x.id === tab);
 
-  const visibleNavigation =
-    NAVIGATION.filter((item) =>
-      hasAccess(item.id),
+  const navButton = (item: (typeof NAV)[number], mobile = false) => {
+    const Icon = item.icon;
+    const active = tab === item.id;
+
+    return (
+      <button
+        key={item.id}
+        type="button"
+        onClick={() => {
+          setTab(item.id);
+          setDrawer(false);
+        }}
+        className={
+          mobile
+            ? `flex flex-col items-center justify-center gap-1 text-[10px] font-semibold ${
+                active ? "text-[#FF5C39]" : "text-[#94A3B8]"
+              }`
+            : `flex min-h-10.5 w-full items-center gap-3 rounded-xl px-3 py-2.5 text-left text-sm font-semibold ${
+                active
+                  ? "bg-[#FF5C39] text-white shadow-sm"
+                  : "text-[#64748B] hover:bg-[#F8FAFC] hover:text-[#0F172A]"
+              }`
+        }
+      >
+        <div
+          className={
+            mobile
+              ? `flex h-8 w-12 items-center justify-center rounded-2xl ${
+                  active ? "bg-orange-50" : ""
+                }`
+              : ""
+          }
+        >
+          <Icon className={mobile ? "h-5 w-5" : "h-5 w-5"} />
+        </div>
+        <span>
+          {mobile
+            ? item.label === "Dashboard"
+              ? "Home"
+              : item.label
+            : item.label}
+        </span>
+      </button>
     );
-
-  const currentNavigation =
-    visibleNavigation.find(
-      (item) =>
-        item.id === activeTab,
-    );
-
-  /* ===================================================
-     MOBILE TAB CHANGE
-  =================================================== */
-
-  const handleMobileTabChange = (
-    tab: AdminModule,
-  ) => {
-    setActiveTab(tab);
-    setMobileSidebarOpen(false);
   };
 
-  /* ===================================================
-     RENDER
-  =================================================== */
-
   return (
-    <div
-      className="
-        min-h-screen
-        w-full
-        bg-[#F8FAFC]
-      "
-    >
-      {/* =================================================
-          NEW ORDER NOTIFICATIONS
-      ================================================= */}
-
-      {notificationOrders.length > 0 && (
-        <div
-          className="
-            fixed
-            right-3
-            top-3
-            z-[100]
-            flex
-            w-[calc(100%-1.5rem)]
-            max-w-[380px]
-            flex-col
-            gap-2
-            sm:right-5
-            sm:top-5
-          "
-        >
-          {notificationOrders.map(
-            (order) => (
-              <NewOrderNotification
-                key={String(order.id)}
-                order={order}
-                onClose={() => {
-                  handleNotificationClose(
-                    order.id,
-                  );
-                }}
-                onView={() => {
-                  handleNotificationView(
-                    order,
-                  );
-                }}
-                onAccept={() => {
-                  handleNotificationAccept(
-                    order,
-                  );
-                }}
-                onReject={() => {
-                  handleNotificationReject(
-                    order,
-                  );
-                }}
-              />
-            ),
-          )}
+    <div className="min-h-screen w-full bg-[#F8FAFC]">
+      {notifications.length > 0 && (
+        <div className="fixed right-3 top-3 z-100 flex w-[calc(100%-1.5rem)] max-w-95 flex-col gap-2 pt-10 sm:right-5 sm:top-5">
+          {notifications.map((order) => (
+            <NewOrderNotification
+              key={String(order.id)}
+              order={order}
+              onClose={() => removeNotification(order.id)}
+              onView={() => openOrder(order, "view")}
+              onAccept={() => openOrder(order, "accept")}
+              onReject={() => openOrder(order, "reject")}
+            />
+          ))}
         </div>
       )}
 
-      {/* =================================================
-          MOBILE TOP BAR
-      ================================================= */}
+      {/* ANDROID HEADER */}
+      {android && (
+        <header className="fixed left-0 right-0 top-0 z-40 border-b border-gray-100 bg-white/95 pt-[env(safe-area-inset-top)] backdrop-blur-xl">
+          <div className="flex h-14 items-center justify-between px-4 pt-2">
+            <div>
+              <p className="text-base font-black text-[#0F172A]">Workkerz</p>
+              <p className="text-[10px] text-[#94A3B8]">Admin</p>
+            </div>
 
-      <header
-        className="
-          fixed
-          left-0
-          right-0
-          top-0
-          z-40
-          flex
-          h-16
-          items-center
-          justify-between
-          border-b
-          border-gray-100
-          bg-white
-          px-3
-          sm:px-5
-          lg:hidden
-        "
-      >
-        {/* BRAND */}
+            <div className="flex items-center gap-2">
+              {notifications.length > 0 && (
+                <button
+                  onClick={() => openOrder(notifications[0], "view")}
+                  className="relative flex h-9 w-9 items-center justify-center rounded-full bg-orange-50 text-[#FF5C39]"
+                >
+                  <ShoppingBag className="h-4 w-4" />
+                  <span className="absolute -right-1 -top-1 flex h-4 min-w-4 items-center justify-center rounded-full bg-[#FF5C39] px-1 text-[9px] font-bold text-white">
+                    {notifications.length > 9 ? "9+" : notifications.length}
+                  </span>
+                </button>
+              )}
 
+              <div className="flex h-9 w-9 items-center justify-center rounded-full bg-orange-50">
+                <ShieldCheck className="h-4 w-4 text-[#FF5C39]" />
+              </div>
+
+              <button
+                onClick={() => setDrawer(true)}
+                className="flex h-9 w-9 items-center justify-center rounded-xl bg-[#F8FAFC]"
+              >
+                <Menu className="h-5 w-5" />
+              </button>
+            </div>
+          </div>
+        </header>
+      )}
+
+      {/* NORMAL MOBILE HEADER */}
+      {!android && (
+        <header className="fixed left-0 right-0 top-0 z-40 flex h-16 items-center justify-between border-b border-gray-100 bg-white px-3 lg:hidden">
+          <div className="flex items-center gap-2.5">
+            <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-orange-50">
+              <ShieldCheck className="h-4 w-4 text-[#FF5C39]" />
+            </div>
+            <div>
+              <p className="text-sm font-black text-[#0F172A]">Workkerz</p>
+              <p className="text-[10px] text-[#94A3B8]">Admin Panel</p>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-2">
+            <div className="hidden text-right sm:block">
+              <p className="max-w-37.5 truncate text-xs font-bold">
+                {admin.full_name}
+              </p>
+              <p className="text-[10px] text-[#64748B]">
+                {superAdmin ? "Super Admin" : "Admin"}
+              </p>
+            </div>
+
+            <div className="flex h-9 w-9 items-center justify-center rounded-full bg-orange-50">
+              <ShieldCheck className="h-4 w-4 text-[#FF5C39]" />
+            </div>
+
+            <button
+              onClick={() => setDrawer(true)}
+              className="flex h-9 w-9 items-center justify-center rounded-xl bg-[#F8FAFC]"
+            >
+              <Menu className="h-5 w-5" />
+            </button>
+          </div>
+        </header>
+      )}
+
+      {/* DRAWER */}
+      {drawer && (
         <div
-          className="
-            flex
-            min-w-0
-            items-center
-            gap-2.5
-          "
-        >
-          <div
-            className="
-              flex
-              h-9
-              w-9
-              shrink-0
-              items-center
-              justify-center
-              rounded-xl
-              bg-orange-50
-            "
-          >
-            <ShieldCheck
-              className="
-                h-4
-                w-4
-                text-[#FF5C39]
-              "
-            />
-          </div>
-
-          <div className="min-w-0">
-            <p
-              className="
-                truncate
-                text-sm
-                font-black
-                text-[#0F172A]
-              "
-            >
-              Workkerz
-            </p>
-
-            <p
-              className="
-                truncate
-                text-[10px]
-                text-[#94A3B8]
-              "
-            >
-              Admin Panel
-            </p>
-          </div>
-        </div>
-
-        {/* CURRENT PAGE */}
-
-        <div
-          className="
-            hidden
-            min-w-0
-            flex-1
-            justify-center
-            px-4
-            sm:flex
-          "
-        >
-          <div className="min-w-0">
-            <p
-              className="
-                truncate
-                text-xs
-                font-bold
-                text-[#64748B]
-              "
-            >
-              {currentNavigation?.label ||
-                "Dashboard"}
-            </p>
-          </div>
-        </div>
-
-        {/* RIGHT */}
-
-        <div
-          className="
-            flex
-            items-center
-            gap-2
-            sm:gap-3
-          "
-        >
-          {/* ADMIN INFO */}
-
-          <div
-            className="
-              hidden
-              text-right
-              sm:block
-            "
-          >
-            <p
-              className="
-                max-w-[150px]
-                truncate
-                text-xs
-                font-bold
-                text-[#0F172A]
-              "
-            >
-              {admin.full_name}
-            </p>
-
-            <p
-              className="
-                text-[10px]
-                text-[#64748B]
-              "
-            >
-              {isSuperAdmin
-                ? "Super Admin"
-                : "Admin"}
-            </p>
-          </div>
-
-          {/* ADMIN ICON */}
-
-          <div
-            className="
-              flex
-              h-9
-              w-9
-              shrink-0
-              items-center
-              justify-center
-              rounded-full
-              bg-orange-50
-            "
-          >
-            <ShieldCheck
-              className="
-                h-4
-                w-4
-                text-[#FF5C39]
-              "
-            />
-          </div>
-
-          {/* MENU */}
-
-          <button
-            type="button"
-            aria-label="Open admin menu"
-            onClick={() =>
-              setMobileSidebarOpen(true)
-            }
-            className="
-              flex
-              h-9
-              w-9
-              shrink-0
-              items-center
-              justify-center
-              rounded-xl
-              bg-[#F8FAFC]
-              text-[#0F172A]
-              transition
-              hover:bg-gray-100
-              active:scale-95
-            "
-          >
-            <Menu className="h-5 w-5" />
-          </button>
-        </div>
-      </header>
-
-      {/* =================================================
-          MOBILE OVERLAY
-      ================================================= */}
-
-      {mobileSidebarOpen && (
-        <div
-          className="
-            fixed
-            inset-0
-            z-50
-            bg-black/40
-            backdrop-blur-[2px]
-            lg:hidden
-          "
-          onClick={() =>
-            setMobileSidebarOpen(false)
-          }
+          onClick={() => setDrawer(false)}
+          className="fixed inset-0 z-50 bg-black/40 backdrop-blur-[2px] lg:hidden"
         />
       )}
 
-      {/* =================================================
-          MOBILE DRAWER
-      ================================================= */}
-
       <aside
-        className={`
-          fixed
-          inset-y-0
-          left-0
-          z-[60]
-          flex
-          w-[min(86vw,320px)]
-          flex-col
-          border-r
-          border-gray-100
-          bg-white
-          shadow-2xl
-          transition-transform
-          duration-300
-          ease-out
-          lg:hidden
-
-          ${
-            mobileSidebarOpen
-              ? "translate-x-0"
-              : "-translate-x-full"
-          }
-        `}
+        className={`fixed inset-y-0 left-0 z-60 flex w-[min(86vw,320px)] pt-10 flex-col border-r border-gray-100 bg-white shadow-2xl transition-transform duration-300 lg:hidden ${
+          drawer ? "translate-x-0" : "-translate-x-full"
+        }`}
       >
-        {/* DRAWER HEADER */}
-
-        <div
-          className="
-            flex
-            h-16
-            shrink-0
-            items-center
-            justify-between
-            border-b
-            border-gray-100
-            px-4
-          "
-        >
+        <div className="flex h-16 shrink-0 items-center justify-between border-b border-gray-100 px-4 pt-2">
           <div>
-            <p
-              className="
-                text-base
-                font-black
-                text-[#0F172A]
-              "
-            >
-              Workkerz
-            </p>
-
-            <p
-              className="
-                text-[10px]
-                text-[#94A3B8]
-              "
-            >
-              Admin Panel
-            </p>
+            <p className="text-base font-black text-[#0F172A]">Workkerz</p>
+            <p className="text-[10px] text-[#94A3B8]">Admin Panel</p>
           </div>
 
           <button
-            type="button"
-            aria-label="Close admin menu"
-            onClick={() =>
-              setMobileSidebarOpen(false)
-            }
-            className="
-              flex
-              h-9
-              w-9
-              items-center
-              justify-center
-              rounded-xl
-              bg-[#F8FAFC]
-              text-[#64748B]
-              transition
-              hover:bg-gray-100
-              hover:text-[#0F172A]
-              active:scale-95
-            "
+            onClick={() => setDrawer(false)}
+            className="flex h-9 w-9 items-center justify-center rounded-xl bg-[#F8FAFC]"
           >
             <X className="h-5 w-5" />
           </button>
         </div>
 
-        {/* ADMIN PROFILE */}
-
-        <div className="shrink-0 px-3 pt-3">
-          <div
-            className="
-              rounded-xl
-              border
-              border-gray-100
-              bg-[#F8FAFC]
-              p-3
-            "
-          >
+        <div className="px-3 pt-3">
+          <div className="rounded-xl border border-gray-100 bg-[#F8FAFC] p-3">
             <div className="flex items-center gap-3">
-              <div
-                className="
-                  flex
-                  h-10
-                  w-10
-                  shrink-0
-                  items-center
-                  justify-center
-                  rounded-full
-                  bg-orange-50
-                "
-              >
-                <ShieldCheck
-                  className="
-                    h-5
-                    w-5
-                    text-[#FF5C39]
-                  "
-                />
+              <div className="flex h-10 w-10 items-center justify-center rounded-full bg-orange-50">
+                <ShieldCheck className="h-5 w-5 text-[#FF5C39]" />
               </div>
-
-              <div className="min-w-0 flex-1">
-                <p
-                  className="
-                    truncate
-                    text-sm
-                    font-bold
-                    text-[#0F172A]
-                  "
-                >
-                  {admin.full_name}
-                </p>
-
-                <p
-                  className="
-                    truncate
-                    text-xs
-                    text-[#64748B]
-                  "
-                >
-                  {admin.email}
-                </p>
+              <div className="min-w-0">
+                <p className="truncate text-sm font-bold">{admin.full_name}</p>
+                <p className="truncate text-xs text-[#64748B]">{admin.email}</p>
               </div>
             </div>
 
-            <div className="mt-3">
-              <span
-                className={
-                  isSuperAdmin
-                    ? `
-                      inline-flex
-                      rounded-full
-                      bg-purple-50
-                      px-2.5
-                      py-1
-                      text-[10px]
-                      font-bold
-                      text-purple-700
-                    `
-                    : `
-                      inline-flex
-                      rounded-full
-                      bg-blue-50
-                      px-2.5
-                      py-1
-                      text-[10px]
-                      font-bold
-                      text-blue-700
-                    `
-                }
-              >
-                {isSuperAdmin
-                  ? "Super Admin"
-                  : "Admin"}
-              </span>
-            </div>
+            <span
+              className={`mt-3 inline-flex rounded-full px-2.5 py-1 text-[10px] font-bold ${
+                superAdmin
+                  ? "bg-purple-50 text-purple-700"
+                  : "bg-blue-50 text-blue-700"
+              }`}
+            >
+              {superAdmin ? "Super Admin" : "Admin"}
+            </span>
           </div>
         </div>
 
-        {/* MOBILE NAVIGATION */}
-
-        <nav
-          className="
-            flex-1
-            overflow-y-auto
-            overscroll-contain
-            px-3
-            py-4
-          "
-        >
-          <div className="space-y-1">
-            {visibleNavigation.map(
-              (item) => {
-                const Icon =
-                  item.icon;
-
-                const isActive =
-                  activeTab ===
-                  item.id;
-
-                return (
-                  <button
-                    key={item.id}
-                    type="button"
-                    onClick={() =>
-                      handleMobileTabChange(
-                        item.id,
-                      )
-                    }
-                    className={`
-                      flex
-                      min-h-[44px]
-                      w-full
-                      items-center
-                      gap-3
-                      rounded-xl
-                      px-3
-                      py-3
-                      text-left
-                      text-sm
-                      transition-all
-                      active:scale-[0.98]
-
-                      ${
-                        isActive
-                          ? "bg-[#FF5C39] text-white shadow-sm"
-                          : "text-[#64748B] hover:bg-[#F8FAFC] hover:text-[#0F172A]"
-                      }
-                    `}
-                  >
-                    <Icon className="h-5 w-5 shrink-0" />
-
-                    <span
-                      className="
-                        min-w-0
-                        flex-1
-                        truncate
-                        font-semibold
-                      "
-                    >
-                      {item.label}
-                    </span>
-                  </button>
-                );
-              },
-            )}
-          </div>
+        <nav className="flex-1 overflow-y-auto px-3 py-4">
+          <div className="space-y-1">{visible.map((x) => navButton(x))}</div>
         </nav>
       </aside>
 
-      {/* =================================================
-          DESKTOP SIDEBAR
-      ================================================= */}
-
-      <aside
-        className="
-          fixed
-          inset-y-0
-          left-0
-          z-40
-          hidden
-          w-64
-          flex-col
-          border-r
-          border-gray-100
-          bg-white
-          lg:flex
-        "
-      >
-        {/* HEADER */}
-
-        <div
-          className="
-            flex
-            h-20
-            shrink-0
-            items-center
-            border-b
-            border-gray-100
-            px-5
-            lg:px-6
-          "
-        >
-          <div className="min-w-0">
-            <h1
-              className="
-                truncate
-                text-xl
-                font-black
-                text-[#0F172A]
-              "
-            >
-              Workkerz
-            </h1>
-
-            <p
-              className="
-                truncate
-                text-xs
-                text-[#94A3B8]
-              "
-            >
-              Admin Panel
-            </p>
+      {/* DESKTOP SIDEBAR */}
+      <aside className="fixed inset-y-0 left-0 z-40 hidden w-64 flex-col border-r border-gray-100 bg-white lg:flex">
+        <div className="flex h-20 items-center border-b border-gray-100 px-6">
+          <div>
+            <h1 className="text-xl font-black text-[#0F172A]">Workkerz</h1>
+            <p className="text-xs text-[#94A3B8]">Admin Panel</p>
           </div>
         </div>
 
-        {/* ADMIN PROFILE */}
-
-        <div
-          className="
-            shrink-0
-            px-3
-            pt-3
-            sm:px-4
-            sm:pt-4
-          "
-        >
-          <div
-            className="
-              rounded-xl
-              border
-              border-gray-100
-              bg-[#F8FAFC]
-              p-3
-            "
-          >
-            <div className="flex items-center gap-2.5 sm:gap-3">
-              <div
-                className="
-                  flex
-                  h-9
-                  w-9
-                  shrink-0
-                  items-center
-                  justify-center
-                  rounded-full
-                  bg-orange-50
-                "
-              >
-                <ShieldCheck
-                  className="
-                    h-4
-                    w-4
-                    text-[#FF5C39]
-                  "
-                />
+        <div className="px-4 pt-4">
+          <div className="rounded-xl border border-gray-100 bg-[#F8FAFC] p-3">
+            <div className="flex items-center gap-3">
+              <div className="flex h-9 w-9 items-center justify-center rounded-full bg-orange-50">
+                <ShieldCheck className="h-4 w-4 text-[#FF5C39]" />
               </div>
-
-              <div className="min-w-0 flex-1">
-                <p
-                  className="
-                    truncate
-                    text-xs
-                    font-bold
-                    text-[#0F172A]
-                    sm:text-sm
-                  "
-                >
-                  {admin.full_name}
-                </p>
-
-                <p
-                  className="
-                    truncate
-                    text-[10px]
-                    text-[#64748B]
-                    sm:text-xs
-                  "
-                >
-                  {admin.email}
-                </p>
+              <div className="min-w-0">
+                <p className="truncate text-sm font-bold">{admin.full_name}</p>
+                <p className="truncate text-xs text-[#64748B]">{admin.email}</p>
               </div>
             </div>
 
-            <div className="mt-2.5 sm:mt-3">
-              <span
-                className={
-                  isSuperAdmin
-                    ? `
-                      inline-flex
-                      rounded-full
-                      bg-purple-50
-                      px-2
-                      py-1
-                      text-[9px]
-                      font-bold
-                      text-purple-700
-                      sm:px-2.5
-                      sm:text-[11px]
-                    `
-                    : `
-                      inline-flex
-                      rounded-full
-                      bg-blue-50
-                      px-2
-                      py-1
-                      text-[9px]
-                      font-bold
-                      text-blue-700
-                      sm:px-2.5
-                      sm:text-[11px]
-                    `
-                }
-              >
-                {isSuperAdmin
-                  ? "Super Admin"
-                  : "Admin"}
-              </span>
-            </div>
+            <span
+              className={`mt-3 inline-flex rounded-full px-2.5 py-1 text-[10px] font-bold ${
+                superAdmin
+                  ? "bg-purple-50 text-purple-700"
+                  : "bg-blue-50 text-blue-700"
+              }`}
+            >
+              {superAdmin ? "Super Admin" : "Admin"}
+            </span>
           </div>
         </div>
 
-        {/* DESKTOP NAVIGATION */}
-
-        <nav
-          className="
-            flex-1
-            overflow-y-auto
-            overscroll-contain
-            px-3
-            py-3
-            sm:p-4
-          "
-        >
-          <div className="space-y-1">
-            {visibleNavigation.map(
-              (item) => {
-                const Icon =
-                  item.icon;
-
-                const isActive =
-                  activeTab ===
-                  item.id;
-
-                return (
-                  <button
-                    key={item.id}
-                    type="button"
-                    onClick={() =>
-                      setActiveTab(
-                        item.id,
-                      )
-                    }
-                    className={`
-                      flex
-                      min-h-[42px]
-                      w-full
-                      items-center
-                      gap-2.5
-                      rounded-xl
-                      px-3
-                      py-2.5
-                      text-left
-                      text-xs
-                      transition-all
-                      active:scale-[0.98]
-                      sm:gap-3
-                      sm:px-4
-                      sm:py-3
-                      sm:text-sm
-
-                      ${
-                        isActive
-                          ? "bg-[#FF5C39] text-white shadow-sm"
-                          : "text-[#64748B] hover:bg-[#F8FAFC] hover:text-[#0F172A]"
-                      }
-                    `}
-                  >
-                    <Icon
-                      className="
-                        h-4
-                        w-4
-                        shrink-0
-                        sm:h-5
-                        sm:w-5
-                      "
-                    />
-
-                    <span
-                      className="
-                        min-w-0
-                        flex-1
-                        truncate
-                        font-semibold
-                      "
-                    >
-                      {item.label}
-                    </span>
-                  </button>
-                );
-              },
-            )}
-          </div>
+        <nav className="flex-1 overflow-y-auto p-4">
+          <div className="space-y-1">{visible.map((x) => navButton(x))}</div>
         </nav>
       </aside>
 
-      {/* =================================================
-          MAIN
-      ================================================= */}
+      {/* MAIN */}
+      <main className="min-h-screen w-full bg-[#F8FAFC] pb-20 lg:ml-64 lg:w-[calc(100%-16rem)] lg:pb-0">
+        {android ? (
+          <div className="h-14.5 pt-26 lg:hidden" />
+        ) : (
+          <div className="h-16 lg:hidden" />
+        )}
 
-      <main
-        className="
-          min-h-screen
-          w-full
-          bg-[#F8FAFC]
-          lg:ml-64
-          lg:w-[calc(100%-16rem)]
-        "
-      >
-        {/* MOBILE TOP BAR SPACE */}
+        {tab === "dashboard" && hasAccess("dashboard") && <DashboardTab />}
+        {tab === "workers" && hasAccess("workers") && (
+          <WorkersTab onFormOpenChange={setWorkerFormOpen} />
+        )}
 
-        <div className="h-16 lg:hidden" />
+        {tab === "orders" && hasAccess("orders") && (
+          <OrdersTab
+            notificationOrder={viewOrder}
+            notificationAction={action}
+            notificationOpenKey={openKey}
+            onNotificationHandled={() => {
+              setViewOrder(null);
+              setAction(null);
+            }}
+            onNotificationStatusChanged={removeNotification}
+          />
+        )}
 
-        {/* =================================================
-            DASHBOARD
-        ================================================= */}
-
-        {activeTab ===
-          "dashboard" &&
-          hasAccess(
-            "dashboard",
-          ) && (
-            <DashboardTab />
-          )}
-
-        {/* =================================================
-            WORKERS
-        ================================================= */}
-
-        {activeTab ===
-          "workers" &&
-          hasAccess(
-            "workers",
-          ) && (
-            <WorkersTab />
-          )}
-
-        {/* =================================================
-            ORDERS
-        ================================================= */}
-
-        {activeTab ===
-          "orders" &&
-          hasAccess(
-            "orders",
-          ) && (
-            <OrdersTab
-              notificationOrder={
-                notificationOrderToView
-              }
-              notificationAction={
-                notificationAction
-              }
-              notificationOpenKey={
-                notificationOpenKey
-              }
-              onNotificationHandled={() => {
-                setNotificationOrderToView(
-                  null,
-                );
-
-                setNotificationAction(
-                  null,
-                );
-              }}
-              onNotificationStatusChanged={(
-                orderId,
-              ) => {
-                removeOrderNotification(
-                  orderId,
-                );
-              }}
-            />
-          )}
-
-        {/* =================================================
-            SHOPS
-        ================================================= */}
-
-        {activeTab ===
-          "shops" &&
-          hasAccess(
-            "shops",
-          ) && (
-            <ShopsTab />
-          )}
-
-        {/* =================================================
-            BOOKINGS
-        ================================================= */}
-
-        {activeTab ===
-          "bookings" &&
-          hasAccess(
-            "bookings",
-          ) && (
-            <BookingsTab />
-          )}
-
-        {/* =================================================
-            ADMINS
-        ================================================= */}
-
-        {activeTab ===
-          "admins" &&
-          hasAccess(
-            "admins",
-          ) && (
-            <AdminsTab />
-          )}
+        {tab === "shops" && hasAccess("shops") && <ShopsTab />}
+        {tab === "bookings" && hasAccess("bookings") && <BookingsTab />}
+        {tab === "admins" && hasAccess("admins") && <AdminsTab />}
       </main>
+
+      {/* ANDROID BOTTOM NAV */}
+     {android && !workerFormOpen && (
+  <nav className="fixed bottom-0 left-0 right-0 z-50 border-t border-gray-100 bg-white/95 pb-[env(safe-area-inset-bottom)] backdrop-blur-xl lg:hidden">
+          <div className="mx-auto grid h-16 max-w-md grid-cols-5">
+            {(["dashboard", "workers", "orders", "bookings"] as AdminModule[])
+              .map((id) => visible.find((x) => x.id === id))
+              .filter(Boolean)
+              .map((x) => navButton(x!, true))}
+
+            <button
+              onClick={() => setDrawer(true)}
+              className="flex flex-col items-center justify-center gap-1 text-[10px] font-semibold text-[#94A3B8]"
+            >
+              <div className="flex h-8 w-12 items-center justify-center rounded-2xl">
+                <Menu className="h-5 w-5" />
+              </div>
+              <span>More</span>
+            </button>
+          </div>
+        </nav>
+      )}
     </div>
   );
 }

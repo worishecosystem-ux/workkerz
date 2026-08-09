@@ -1,11 +1,10 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import { App } from "@capacitor/app";
 import { Capacitor } from "@capacitor/core";
-import { usePathname, useRouter } from "next/navigation";
 import { Toast } from "@capacitor/toast";
-import { useRef } from "react";
+import { usePathname, useRouter } from "next/navigation";
 
 interface Props {
   showForm?: boolean;
@@ -22,73 +21,172 @@ export default function BackButtonHandler({
 }: Props) {
   const pathname = usePathname();
   const router = useRouter();
+
   const lastBackPress = useRef(0);
+
   useEffect(() => {
-    if (
-      !Capacitor.isNativePlatform() ||
-      Capacitor.getPlatform() !== "android"
-    ) {
+    // ==================================================
+    // BROWSER CHECK
+    // ==================================================
+
+    if (typeof window === "undefined") {
       return;
     }
 
-    let listener: Awaited<ReturnType<typeof App.addListener>> | undefined;
+    // ==================================================
+    // ADMIN PANEL
+    // ==================================================
+
+    // Admin panel is web/admin functionality.
+    // Never register the Android back button here.
+    if (pathname.startsWith("/admin")) {
+      return;
+    }
+
+    // ==================================================
+    // ONLY RUN INSIDE NATIVE ANDROID APP
+    // ==================================================
+
+    const isNative = Capacitor.isNativePlatform();
+    const platform = Capacitor.getPlatform();
+
+    if (!isNative || platform !== "android") {
+      return;
+    }
+
+    let listener:
+      | Awaited<ReturnType<typeof App.addListener>>
+      | null = null;
+
+    let mounted = true;
+
+    // ==================================================
+    // SETUP ANDROID BACK BUTTON
+    // ==================================================
 
     const setup = async () => {
-      listener = await App.addListener("backButton", async () => {
-        if (showForm) {
-          onFormBack();
-          return;
-        }
+      try {
+        listener = await App.addListener(
+          "backButton",
+          async () => {
+            if (!mounted) {
+              return;
+            }
 
-        if (showSelector) {
-          onSelectorBack();
-          return;
-        }
+            try {
+              // ========================================
+              // 1. FORM OPEN
+              // ========================================
 
-        // Home page
-        if (pathname === "/") {
-          const now = Date.now();
+              if (showForm) {
+                onFormBack();
+                return;
+              }
 
-          if (now - lastBackPress.current < 2000) {
-            App.exitApp();
-            return;
-          }
+              // ========================================
+              // 2. SELECTOR OPEN
+              // ========================================
 
-          lastBackPress.current = now;
+              if (showSelector) {
+                onSelectorBack();
+                return;
+              }
 
-          await Toast.show({
-            text: "Press back again to exit",
-            duration: "short",
-          });
+              // ========================================
+              // 3. HOME PAGE
+              // ========================================
 
-          return;
-        }
+              if (pathname === "/") {
+                const now = Date.now();
 
-        // Dashboard par pehle previous page par jao
-        if (pathname === "/dashboard") {
-          if (window.history.length > 1) {
-            router.back();
-          } else {
-            router.push("/");
-          }
-          return;
-        }
+                // Double back within 2 seconds
+                if (
+                  now - lastBackPress.current <
+                  2000
+                ) {
+                  await App.exitApp();
+                  return;
+                }
 
-        // Baaki sab pages
-        if (window.history.length > 1) {
-          router.back();
-        } else {
-          router.push("/");
-        }
-      });
+                lastBackPress.current = now;
+
+                await Toast.show({
+                  text: "Press back again to exit",
+                  duration: "short",
+                });
+
+                return;
+              }
+
+              // ========================================
+              // 4. DASHBOARD
+              // ========================================
+
+              if (pathname === "/dashboard") {
+                if (window.history.length > 1) {
+                  router.back();
+                } else {
+                  router.push("/");
+                }
+
+                return;
+              }
+
+              // ========================================
+              // 5. OTHER PAGES
+              // ========================================
+
+              if (window.history.length > 1) {
+                router.back();
+              } else {
+                router.push("/");
+              }
+            } catch (error) {
+              console.error(
+                "Android back button handler error:",
+                error,
+              );
+            }
+          },
+        );
+      } catch (error) {
+        console.error(
+          "Unable to register Android back button listener:",
+          error,
+        );
+      }
     };
 
     setup();
 
+    // ==================================================
+    // CLEANUP
+    // ==================================================
+
     return () => {
-      listener?.remove();
+      mounted = false;
+
+      if (listener) {
+        listener
+          .remove()
+          .catch((error) => {
+            console.error(
+              "Unable to remove Android back button listener:",
+              error,
+            );
+          });
+
+        listener = null;
+      }
     };
-  }, [pathname, router, showForm, showSelector, onFormBack, onSelectorBack]);
+  }, [
+    pathname,
+    router,
+    showForm,
+    showSelector,
+    onFormBack,
+    onSelectorBack,
+  ]);
 
   return null;
 }

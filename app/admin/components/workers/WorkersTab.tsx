@@ -20,7 +20,9 @@ import {
   BriefcaseBusiness,
   ChevronRight,
 } from "lucide-react";
-
+type WorkersTabProps = {
+  onFormOpenChange?: (open: boolean) => void;
+};
 import { useEffect, useMemo, useState } from "react";
 
 import WorkerDrawer from "./WorkerDrawer";
@@ -147,31 +149,19 @@ function normalizeWorker(row: ApiWorker): Worker {
 
     pricingType: pricingValue(row.pricingType ?? row.pricing_type),
 
-    startingPrice: numberValue(
-      row.startingPrice ?? row.starting_price,
-    ),
+    startingPrice: numberValue(row.startingPrice ?? row.starting_price),
 
-    halfDayPrice: numberValue(
-      row.halfDayPrice ?? row.half_day_price,
-    ),
+    halfDayPrice: numberValue(row.halfDayPrice ?? row.half_day_price),
 
-    fullDayPrice: numberValue(
-      row.fullDayPrice ?? row.full_day_price,
-    ),
+    fullDayPrice: numberValue(row.fullDayPrice ?? row.full_day_price),
 
-    monthlyPrice: numberValue(
-      row.monthlyPrice ?? row.monthly_price,
-    ),
+    monthlyPrice: numberValue(row.monthlyPrice ?? row.monthly_price),
 
-    visitCharge: numberValue(
-      row.visitCharge ?? row.visit_charge,
-    ),
+    visitCharge: numberValue(row.visitCharge ?? row.visit_charge),
 
     rating: numberValue(row.rating),
 
-    reviewCount: Number(
-      row.reviewCount ?? row.review_count ?? 0,
-    ),
+    reviewCount: Number(row.reviewCount ?? row.review_count ?? 0),
 
     location: row.location ?? "",
 
@@ -179,13 +169,9 @@ function normalizeWorker(row: ApiWorker): Worker {
 
     available: row.available ?? true,
 
-    yearsExperience: Number(
-      row.yearsExperience ?? row.years_experience ?? 0,
-    ),
+    yearsExperience: Number(row.yearsExperience ?? row.years_experience ?? 0),
 
-    completedJobs: Number(
-      row.completedJobs ?? row.completed_jobs ?? 0,
-    ),
+    completedJobs: Number(row.completedJobs ?? row.completed_jobs ?? 0),
 
     bio: row.bio ?? "",
 
@@ -193,14 +179,9 @@ function normalizeWorker(row: ApiWorker): Worker {
 
     photo: row.photo ?? "",
 
-    responseTime:
-      row.responseTime ??
-      row.response_time ??
-      "Within 1 hour",
+    responseTime: row.responseTime ?? row.response_time ?? "Within 1 hour",
 
-    certifications: Array.isArray(row.certifications)
-      ? row.certifications
-      : [],
+    certifications: Array.isArray(row.certifications) ? row.certifications : [],
 
     createdAt: row.createdAt ?? row.created_at ?? "",
   };
@@ -210,24 +191,20 @@ function normalizeWorker(row: ApiWorker): Worker {
    COMPONENT
 ===================================================== */
 
-export default function WorkersTab() {
+export default function WorkersTab({ onFormOpenChange }: WorkersTabProps) {
   const [workers, setWorkers] = useState<Worker[]>([]);
 
-  const [selectedWorker, setSelectedWorker] =
-    useState<Worker | null>(null);
+  const [selectedWorker, setSelectedWorker] = useState<Worker | null>(null);
 
-  const [editWorker, setEditWorker] =
-    useState<Worker | null>(null);
+  const [editWorker, setEditWorker] = useState<Worker | null>(null);
 
-  const [actionWorker, setActionWorker] =
-    useState<Worker | null>(null);
+  const [actionWorker, setActionWorker] = useState<Worker | null>(null);
 
   const [loading, setLoading] = useState(true);
 
   const [refreshing, setRefreshing] = useState(false);
 
-  const [showOnboardForm, setShowOnboardForm] =
-    useState(false);
+  const [showOnboardForm, setShowOnboardForm] = useState(false);
 
   const [error, setError] = useState("");
 
@@ -235,14 +212,11 @@ export default function WorkersTab() {
 
   const [search, setSearch] = useState("");
 
-  const [actionLoading, setActionLoading] =
-    useState(false);
+  const [actionLoading, setActionLoading] = useState(false);
 
-  const [isSuperAdmin, setIsSuperAdmin] =
-    useState(false);
+  const [isSuperAdmin, setIsSuperAdmin] = useState(false);
 
-  const [selectedCategory, setSelectedCategory] =
-    useState("All");
+  const [selectedCategory, setSelectedCategory] = useState("All");
 
   /* =====================================================
      ADMIN ROLE
@@ -306,41 +280,32 @@ export default function WorkersTab() {
 
       params.set("limit", "100");
 
-      const response = await fetch(
-        `/api/admin/workers?${params.toString()}`,
-        {
-          method: "GET",
-          headers: {
-            Authorization: `Bearer ${session.access_token}`,
-          },
-          cache: "no-store",
+      const response = await fetch(`/api/admin/workers?${params.toString()}`, {
+        method: "GET",
+        headers: {
+          Authorization: `Bearer ${session.access_token}`,
         },
-      );
+        cache: "no-store",
+      });
 
       const data = await response.json();
 
       if (!response.ok) {
-        throw new Error(
-          data.error || "Unable to load workers.",
-        );
+        throw new Error(data.error || "Unable to load workers.");
       }
 
-      const apiWorkers: ApiWorker[] =
-        Array.isArray(data.workers)
-          ? data.workers
-          : [];
+      const apiWorkers: ApiWorker[] = Array.isArray(data.workers)
+        ? data.workers
+        : [];
 
-      const normalizedWorkers =
-        apiWorkers.map(normalizeWorker);
+      const normalizedWorkers = apiWorkers.map(normalizeWorker);
 
       setWorkers(normalizedWorkers);
     } catch (error) {
       console.error("Load workers error:", error);
 
       setError(
-        error instanceof Error
-          ? error.message
-          : "Unable to load workers.",
+        error instanceof Error ? error.message : "Unable to load workers.",
       );
     } finally {
       setLoading(false);
@@ -386,9 +351,7 @@ export default function WorkersTab() {
 
     return [
       "All",
-      ...Array.from(uniqueCategories).sort((a, b) =>
-        a.localeCompare(b),
-      ),
+      ...Array.from(uniqueCategories).sort((a, b) => a.localeCompare(b)),
     ];
   }, [workers]);
 
@@ -400,11 +363,9 @@ export default function WorkersTab() {
     const counts: Record<string, number> = {};
 
     workers.forEach((worker) => {
-      const category =
-        worker.category?.trim() || "Other";
+      const category = worker.category?.trim() || "Other";
 
-      counts[category] =
-        (counts[category] || 0) + 1;
+      counts[category] = (counts[category] || 0) + 1;
     });
 
     return counts;
@@ -430,26 +391,19 @@ export default function WorkersTab() {
      HELPERS
   ===================================================== */
 
-  const getWorkerName = (worker: Worker) =>
-    worker.name || "Unnamed Worker";
+  const getWorkerName = (worker: Worker) => worker.name || "Unnamed Worker";
 
-  const getPhone = (worker: Worker) =>
-    worker.phone || "—";
+  const getPhone = (worker: Worker) => worker.phone || "—";
 
-  const getCategory = (worker: Worker) =>
-    worker.category || "—";
+  const getCategory = (worker: Worker) => worker.category || "—";
 
-  const getSpecialty = (worker: Worker) =>
-    worker.specialty || "—";
+  const getSpecialty = (worker: Worker) => worker.specialty || "—";
 
-  const getLocation = (worker: Worker) =>
-    worker.location || "—";
+  const getLocation = (worker: Worker) => worker.location || "—";
 
-  const getRating = (worker: Worker) =>
-    Number(worker.rating || 0).toFixed(1);
+  const getRating = (worker: Worker) => Number(worker.rating || 0).toFixed(1);
 
-  const isWorkerActive = (worker: Worker) =>
-    worker.available === true;
+  const isWorkerActive = (worker: Worker) => worker.available === true;
 
   /* =====================================================
      STATS
@@ -467,9 +421,7 @@ export default function WorkersTab() {
 
     const total = source.length;
 
-    const active = source.filter(
-      (worker) => worker.available === true,
-    ).length;
+    const active = source.filter((worker) => worker.available === true).length;
 
     const inactive = total - active;
 
@@ -483,8 +435,7 @@ export default function WorkersTab() {
       const created = new Date(worker.createdAt);
 
       return (
-        created.getFullYear() ===
-          today.getFullYear() &&
+        created.getFullYear() === today.getFullYear() &&
         created.getMonth() === today.getMonth() &&
         created.getDate() === today.getDate()
       );
@@ -520,27 +471,20 @@ export default function WorkersTab() {
       } = await supabase.auth.getSession();
 
       if (!session?.access_token) {
-        throw new Error(
-          "Your admin session has expired.",
-        );
+        throw new Error("Your admin session has expired.");
       }
 
-      const response = await fetch(
-        `/api/admin/workers/${worker.id}`,
-        {
-          method: "DELETE",
-          headers: {
-            Authorization: `Bearer ${session.access_token}`,
-          },
+      const response = await fetch(`/api/admin/workers/${worker.id}`, {
+        method: "DELETE",
+        headers: {
+          Authorization: `Bearer ${session.access_token}`,
         },
-      );
+      });
 
       const data = await response.json();
 
       if (!response.ok) {
-        throw new Error(
-          data.error || "Unable to delete worker.",
-        );
+        throw new Error(data.error || "Unable to delete worker.");
       }
 
       setActionWorker(null);
@@ -550,9 +494,7 @@ export default function WorkersTab() {
       console.error("Delete worker error:", error);
 
       setActionError(
-        error instanceof Error
-          ? error.message
-          : "Unable to delete worker.",
+        error instanceof Error ? error.message : "Unable to delete worker.",
       );
     } finally {
       setActionLoading(false);
@@ -563,9 +505,7 @@ export default function WorkersTab() {
      TOGGLE AVAILABILITY
   ===================================================== */
 
-  const toggleWorkerStatus = async (
-    worker: Worker,
-  ) => {
+  const toggleWorkerStatus = async (worker: Worker) => {
     try {
       setActionLoading(true);
       setActionError("");
@@ -575,26 +515,21 @@ export default function WorkersTab() {
       } = await supabase.auth.getSession();
 
       if (!session?.access_token) {
-        throw new Error(
-          "Your admin session has expired.",
-        );
+        throw new Error("Your admin session has expired.");
       }
 
       const nextAvailable = !worker.available;
 
-      const response = await fetch(
-        `/api/admin/workers/${worker.id}`,
-        {
-          method: "PATCH",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${session.access_token}`,
-          },
-          body: JSON.stringify({
-            available: nextAvailable,
-          }),
+      const response = await fetch(`/api/admin/workers/${worker.id}`, {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${session.access_token}`,
         },
-      );
+        body: JSON.stringify({
+          available: nextAvailable,
+        }),
+      });
 
       const responseText = await response.text();
 
@@ -605,9 +540,7 @@ export default function WorkersTab() {
       } = {};
 
       try {
-        data = responseText
-          ? JSON.parse(responseText)
-          : {};
+        data = responseText ? JSON.parse(responseText) : {};
       } catch {
         throw new Error(
           `API error (${response.status}). The server returned an invalid response.`,
@@ -616,9 +549,7 @@ export default function WorkersTab() {
 
       if (!response.ok) {
         throw new Error(
-          data.error ||
-            data.message ||
-            "Unable to update worker availability.",
+          data.error || data.message || "Unable to update worker availability.",
         );
       }
 
@@ -626,15 +557,10 @@ export default function WorkersTab() {
 
       await loadWorkers(true);
     } catch (error) {
-      console.error(
-        "Worker availability error:",
-        error,
-      );
+      console.error("Worker availability error:", error);
 
       setActionError(
-        error instanceof Error
-          ? error.message
-          : "Unable to update worker.",
+        error instanceof Error ? error.message : "Unable to update worker.",
       );
     } finally {
       setActionLoading(false);
@@ -644,13 +570,16 @@ export default function WorkersTab() {
   /* =====================================================
      ONBOARD FORM
   ===================================================== */
-
   if (showOnboardForm) {
     return (
       <WorkerOnboardForm
-        onBack={() => setShowOnboardForm(false)}
+        onBack={() => {
+          setShowOnboardForm(false);
+          onFormOpenChange?.(false);
+        }}
         onCreated={() => {
           setShowOnboardForm(false);
+          onFormOpenChange?.(false);
           loadWorkers(true);
         }}
       />
@@ -677,9 +606,7 @@ export default function WorkersTab() {
 
               {selectedCategory !== "All" && (
                 <>
-                  <span className="text-[#CBD5E1]">
-                    /
-                  </span>
+                  <span className="text-[#CBD5E1]">/</span>
 
                   <span className="max-w-[180px] truncate rounded-lg bg-orange-50 px-2.5 py-1 text-xs font-bold text-[#FF5C39] sm:px-3 sm:text-sm">
                     {selectedCategory}
@@ -697,9 +624,10 @@ export default function WorkersTab() {
 
           <button
             type="button"
-            onClick={() =>
-              setShowOnboardForm(true)
-            }
+            onClick={() => {
+              setShowOnboardForm(true);
+              onFormOpenChange?.(true);
+            }}
             className="flex h-11 w-full items-center justify-center gap-2 rounded-xl bg-[#FF5C39] px-5 text-sm font-bold text-white shadow-sm transition hover:bg-[#e54e2e] sm:w-auto"
           >
             <UserPlus className="h-4 w-4" />
@@ -719,9 +647,7 @@ export default function WorkersTab() {
 
         {error && (
           <div className="mb-4 flex flex-col gap-2 rounded-xl border border-red-200 bg-red-50 px-3 py-3 sm:flex-row sm:items-center sm:justify-between sm:px-4">
-            <p className="text-xs text-red-600 sm:text-sm">
-              {error}
-            </p>
+            <p className="text-xs text-red-600 sm:text-sm">{error}</p>
 
             <button
               type="button"
@@ -738,11 +664,7 @@ export default function WorkersTab() {
         ================================================= */}
 
         <div className="mb-4 grid grid-cols-2 gap-2.5 sm:mb-6 sm:grid-cols-2 sm:gap-4 lg:grid-cols-4 lg:gap-5">
-          <WorkerStat
-            label="Total Workers"
-            value={stats.total}
-            icon={Users}
-          />
+          <WorkerStat label="Total Workers" value={stats.total} icon={Users} />
 
           <WorkerStat
             label="Available"
@@ -782,9 +704,7 @@ export default function WorkersTab() {
                 <input
                   type="text"
                   value={search}
-                  onChange={(event) =>
-                    setSearch(event.target.value)
-                  }
+                  onChange={(event) => setSearch(event.target.value)}
                   placeholder="Search worker, phone, specialty..."
                   className="h-10 w-full rounded-xl border border-gray-200 bg-[#F8FAFC] pl-9 pr-10 text-xs text-[#0F172A] outline-none transition focus:border-[#FF5C39] focus:bg-white focus:ring-2 focus:ring-orange-100 sm:h-11 sm:pl-10 sm:text-sm"
                 />
@@ -814,18 +734,14 @@ export default function WorkersTab() {
 
                 <button
                   type="button"
-                  onClick={() =>
-                    loadWorkers(true)
-                  }
+                  onClick={() => loadWorkers(true)}
                   disabled={refreshing}
                   className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-gray-200 bg-white hover:bg-[#F8FAFC] disabled:opacity-50 sm:h-11 sm:w-11"
                   title="Refresh"
                 >
                   <RefreshCw
                     className={`h-4 w-4 text-[#64748B] ${
-                      refreshing
-                        ? "animate-spin"
-                        : ""
+                      refreshing ? "animate-spin" : ""
                     }`}
                   />
                 </button>
@@ -839,26 +755,18 @@ export default function WorkersTab() {
             <div className="overflow-x-auto px-3 pb-3 sm:px-5 sm:pb-4">
               <div className="flex min-w-max items-center gap-1.5 sm:gap-2">
                 {categories.map((category) => {
-                  const active =
-                    selectedCategory ===
-                    category;
+                  const active = selectedCategory === category;
 
                   const count =
                     category === "All"
                       ? workers.length
-                      : categoryCounts[
-                          category
-                        ] || 0;
+                      : categoryCounts[category] || 0;
 
                   return (
                     <button
                       key={category}
                       type="button"
-                      onClick={() =>
-                        setSelectedCategory(
-                          category,
-                        )
-                      }
+                      onClick={() => setSelectedCategory(category)}
                       className={`group flex h-9 items-center gap-1.5 rounded-lg px-3 text-xs font-bold transition sm:h-10 sm:gap-2 sm:rounded-xl sm:px-4 sm:text-sm ${
                         active
                           ? "bg-[#FF5C39] text-white shadow-sm"
@@ -891,9 +799,7 @@ export default function WorkersTab() {
             <div className="flex min-h-[320px] flex-col items-center justify-center px-4">
               <Loader2 className="h-7 w-7 animate-spin text-[#FF5C39]" />
 
-              <p className="mt-3 text-sm text-[#64748B]">
-                Loading workers...
-              </p>
+              <p className="mt-3 text-sm text-[#64748B]">Loading workers...</p>
             </div>
           ) : filteredWorkers.length === 0 ? (
             /* =================================================
@@ -914,22 +820,17 @@ export default function WorkersTab() {
               <p className="mt-1 max-w-sm text-xs text-[#94A3B8]">
                 {search
                   ? `No workers match "${search}". Try a different search.`
-                  : selectedCategory ===
-                      "All"
+                  : selectedCategory === "All"
                     ? "Add your first worker to get started."
                     : `There are currently no workers in the ${selectedCategory} category.`}
               </p>
 
-              {(search ||
-                selectedCategory !==
-                  "All") && (
+              {(search || selectedCategory !== "All") && (
                 <button
                   type="button"
                   onClick={() => {
                     setSearch("");
-                    setSelectedCategory(
-                      "All",
-                    );
+                    setSelectedCategory("All");
                   }}
                   className="mt-4 rounded-xl bg-[#FF5C39] px-4 py-2 text-xs font-bold text-white hover:bg-[#e54e2e]"
                 >
@@ -978,161 +879,119 @@ export default function WorkersTab() {
                   </thead>
 
                   <tbody className="divide-y divide-gray-100">
-                    {filteredWorkers.map(
-                      (worker) => {
-                        const active =
-                          isWorkerActive(
-                            worker,
-                          );
+                    {filteredWorkers.map((worker) => {
+                      const active = isWorkerActive(worker);
 
-                        return (
-                          <tr
-                            key={worker.id}
-                            className="transition hover:bg-[#FAFAFA]"
-                          >
-                            {/* WORKER */}
+                      return (
+                        <tr
+                          key={worker.id}
+                          className="transition hover:bg-[#FAFAFA]"
+                        >
+                          {/* WORKER */}
 
-                            <td className="px-6 py-4">
-                              <div className="flex items-center gap-3">
-                                <WorkerAvatar
-                                  worker={
-                                    worker
-                                  }
-                                  size="md"
-                                />
+                          <td className="px-6 py-4">
+                            <div className="flex items-center gap-3">
+                              <WorkerAvatar worker={worker} size="md" />
 
-                                <div className="min-w-0">
-                                  <p className="max-w-[190px] truncate text-sm font-bold text-[#0F172A]">
-                                    {getWorkerName(
-                                      worker,
-                                    )}
-                                  </p>
-
-                                  <p className="max-w-[190px] truncate text-xs text-[#64748B]">
-                                    {getSpecialty(
-                                      worker,
-                                    )}
-                                  </p>
-                                </div>
-                              </div>
-                            </td>
-
-                            {/* CONTACT */}
-
-                            <td className="px-6 py-4">
-                              <p className="text-sm text-[#334155]">
-                                {getPhone(
-                                  worker,
-                                )}
-                              </p>
-                            </td>
-
-                            {/* CATEGORY */}
-
-                            <td className="px-6 py-4">
-                              <p className="text-sm font-semibold text-[#334155]">
-                                {getCategory(
-                                  worker,
-                                )}
-                              </p>
-
-                              {worker.subcategory && (
-                                <p className="mt-1 text-xs text-[#94A3B8]">
-                                  {
-                                    worker.subcategory
-                                  }
+                              <div className="min-w-0">
+                                <p className="max-w-[190px] truncate text-sm font-bold text-[#0F172A]">
+                                  {getWorkerName(worker)}
                                 </p>
-                              )}
-                            </td>
 
-                            {/* LOCATION */}
-
-                            <td className="px-6 py-4">
-                              <p className="max-w-[180px] truncate text-sm text-[#334155]">
-                                {getLocation(
-                                  worker,
-                                )}
-                              </p>
-
-                              {worker.labourChauk && (
-                                <p className="mt-1 max-w-[180px] truncate text-xs text-[#94A3B8]">
-                                  Chauk:{" "}
-                                  {
-                                    worker.labourChauk
-                                  }
+                                <p className="max-w-[190px] truncate text-xs text-[#64748B]">
+                                  {getSpecialty(worker)}
                                 </p>
-                              )}
-                            </td>
-
-                            {/* RATING */}
-
-                            <td className="px-6 py-4">
-                              <div className="flex items-center gap-1.5">
-                                <Star className="h-3.5 w-3.5 fill-current text-amber-500" />
-
-                                <span className="text-sm font-semibold text-[#334155]">
-                                  {getRating(
-                                    worker,
-                                  )}
-                                </span>
-
-                                <span className="text-xs text-[#94A3B8]">
-                                  (
-                                  {worker.reviewCount ??
-                                    0}
-                                  )
-                                </span>
                               </div>
-                            </td>
+                            </div>
+                          </td>
 
-                            {/* STATUS */}
+                          {/* CONTACT */}
 
-                            <td className="px-6 py-4">
-                              <WorkerStatus
-                                active={
-                                  active
-                                }
-                              />
-                            </td>
+                          <td className="px-6 py-4">
+                            <p className="text-sm text-[#334155]">
+                              {getPhone(worker)}
+                            </p>
+                          </td>
 
-                            {/* ACTION */}
+                          {/* CATEGORY */}
 
-                            <td className="px-6 py-4">
-                              <div className="flex items-center justify-end gap-1">
-                                <button
-                                  type="button"
-                                  onClick={() =>
-                                    setSelectedWorker(
-                                      worker,
-                                    )
-                                  }
-                                  className="flex h-9 w-9 items-center justify-center rounded-lg hover:bg-gray-100"
-                                  title="View worker"
-                                >
-                                  <Eye className="h-4 w-4 text-[#64748B]" />
-                                </button>
+                          <td className="px-6 py-4">
+                            <p className="text-sm font-semibold text-[#334155]">
+                              {getCategory(worker)}
+                            </p>
 
-                                <button
-                                  type="button"
-                                  onClick={() => {
-                                    setActionError(
-                                      "",
-                                    );
-                                    setActionWorker(
-                                      worker,
-                                    );
-                                  }}
-                                  className="flex h-9 w-9 items-center justify-center rounded-lg hover:bg-gray-100"
-                                  title="Worker actions"
-                                >
-                                  <MoreHorizontal className="h-4 w-4 text-[#64748B]" />
-                                </button>
-                              </div>
-                            </td>
-                          </tr>
-                        );
-                      },
-                    )}
+                            {worker.subcategory && (
+                              <p className="mt-1 text-xs text-[#94A3B8]">
+                                {worker.subcategory}
+                              </p>
+                            )}
+                          </td>
+
+                          {/* LOCATION */}
+
+                          <td className="px-6 py-4">
+                            <p className="max-w-[180px] truncate text-sm text-[#334155]">
+                              {getLocation(worker)}
+                            </p>
+
+                            {worker.labourChauk && (
+                              <p className="mt-1 max-w-[180px] truncate text-xs text-[#94A3B8]">
+                                Chauk: {worker.labourChauk}
+                              </p>
+                            )}
+                          </td>
+
+                          {/* RATING */}
+
+                          <td className="px-6 py-4">
+                            <div className="flex items-center gap-1.5">
+                              <Star className="h-3.5 w-3.5 fill-current text-amber-500" />
+
+                              <span className="text-sm font-semibold text-[#334155]">
+                                {getRating(worker)}
+                              </span>
+
+                              <span className="text-xs text-[#94A3B8]">
+                                ({worker.reviewCount ?? 0})
+                              </span>
+                            </div>
+                          </td>
+
+                          {/* STATUS */}
+
+                          <td className="px-6 py-4">
+                            <WorkerStatus active={active} />
+                          </td>
+
+                          {/* ACTION */}
+
+                          <td className="px-6 py-4">
+                            <div className="flex items-center justify-end gap-1">
+                              <button
+                                type="button"
+                                onClick={() => setSelectedWorker(worker)}
+                                className="flex h-9 w-9 items-center justify-center rounded-lg hover:bg-gray-100"
+                                title="View worker"
+                              >
+                                <Eye className="h-4 w-4 text-[#64748B]" />
+                              </button>
+
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  setActionError("");
+                                  setActionWorker(worker);
+                                }}
+                                className="flex h-9 w-9 items-center justify-center rounded-lg hover:bg-gray-100"
+                                title="Worker actions"
+                              >
+                                <MoreHorizontal className="h-4 w-4 text-[#64748B]" />
+                              </button>
+                            </div>
+                          </td>
+                        </tr>
+                      );
+                    })}
                   </tbody>
                 </table>
               </div>
@@ -1142,186 +1001,125 @@ export default function WorkersTab() {
               ================================================= */}
 
               <div className="divide-y divide-gray-100 lg:hidden">
-                {filteredWorkers.map(
-                  (worker) => {
-                    const active =
-                      isWorkerActive(
-                        worker,
-                      );
+                {filteredWorkers.map((worker) => {
+                  const active = isWorkerActive(worker);
 
-                    return (
-                      <div
-                        key={worker.id}
-                        className="p-3 sm:p-4"
-                      >
-                        <div className="rounded-xl border border-gray-100 bg-white p-3 transition hover:border-gray-200 hover:shadow-sm sm:rounded-2xl sm:p-4">
-                          {/* TOP */}
+                  return (
+                    <div key={worker.id} className="p-3 sm:p-4">
+                      <div className="rounded-xl border border-gray-100 bg-white p-3 transition hover:border-gray-200 hover:shadow-sm sm:rounded-2xl sm:p-4">
+                        {/* TOP */}
 
-                          <div className="flex items-start gap-3">
-                            <WorkerAvatar
-                              worker={
-                                worker
-                              }
-                              size="lg"
-                            />
+                        <div className="flex items-start gap-3">
+                          <WorkerAvatar worker={worker} size="lg" />
 
-                            <div className="min-w-0 flex-1">
-                              <div className="flex items-start justify-between gap-2">
-                                <div className="min-w-0">
-                                  <h3 className="truncate text-sm font-bold text-[#0F172A] sm:text-base">
-                                    {getWorkerName(
-                                      worker,
-                                    )}
-                                  </h3>
+                          <div className="min-w-0 flex-1">
+                            <div className="flex items-start justify-between gap-2">
+                              <div className="min-w-0">
+                                <h3 className="truncate text-sm font-bold text-[#0F172A] sm:text-base">
+                                  {getWorkerName(worker)}
+                                </h3>
 
-                                  <p className="mt-0.5 truncate text-xs text-[#64748B]">
-                                    {getSpecialty(
-                                      worker,
-                                    )}
-                                  </p>
-                                </div>
-
-                                <WorkerStatus
-                                  active={
-                                    active
-                                  }
-                                  compact
-                                />
+                                <p className="mt-0.5 truncate text-xs text-[#64748B]">
+                                  {getSpecialty(worker)}
+                                </p>
                               </div>
 
-                              {/* CATEGORY */}
-
-                              <div className="mt-2 flex flex-wrap items-center gap-1.5">
-                                <span className="rounded-md bg-orange-50 px-2 py-1 text-[10px] font-bold text-[#FF5C39] sm:text-[11px]">
-                                  {getCategory(
-                                    worker,
-                                  )}
-                                </span>
-
-                                {worker.subcategory && (
-                                  <span className="max-w-[150px] truncate rounded-md bg-gray-50 px-2 py-1 text-[10px] font-medium text-[#64748B] sm:text-[11px]">
-                                    {
-                                      worker.subcategory
-                                    }
-                                  </span>
-                                )}
-                              </div>
-                            </div>
-                          </div>
-
-                          {/* INFO GRID */}
-
-                          <div className="mt-3 grid grid-cols-2 gap-2 border-t border-gray-100 pt-3 sm:grid-cols-4">
-                            <MobileInfo
-                              icon={
-                                Phone
-                              }
-                              label="Phone"
-                              value={
-                                getPhone(
-                                  worker,
-                                )
-                              }
-                            />
-
-                            <MobileInfo
-                              icon={
-                                MapPin
-                              }
-                              label="Location"
-                              value={
-                                getLocation(
-                                  worker,
-                                )
-                              }
-                            />
-
-                            <MobileInfo
-                              icon={
-                                Star
-                              }
-                              label="Rating"
-                              value={`${getRating(
-                                worker,
-                              )} (${
-                                worker.reviewCount ??
-                                0
-                              })`}
-                              rating
-                            />
-
-                            <MobileInfo
-                              icon={
-                                BriefcaseBusiness
-                              }
-                              label="Jobs"
-                              value={String(
-                                worker.completedJobs ??
-                                  0,
-                              )}
-                            />
-                          </div>
-
-                          {/* BOTTOM */}
-
-                          <div className="mt-3 flex items-center justify-between gap-2 border-t border-gray-100 pt-3">
-                            <div className="min-w-0">
-                              {worker.labourChauk ? (
-                                <p className="truncate text-[11px] text-[#94A3B8] sm:text-xs">
-                                  Chauk:{" "}
-                                  {
-                                    worker.labourChauk
-                                  }
-                                </p>
-                              ) : (
-                                <p className="text-[11px] text-[#94A3B8] sm:text-xs">
-                                  Worker ID:{" "}
-                                  {worker.workerCode ||
-                                    "—"}
-                                </p>
-                              )}
+                              <WorkerStatus active={active} compact />
                             </div>
 
-                            <div className="flex shrink-0 items-center gap-1.5">
-                              <button
-                                type="button"
-                                onClick={() =>
-                                  setSelectedWorker(
-                                    worker,
-                                  )
-                                }
-                                className="flex h-9 items-center gap-1.5 rounded-lg border border-gray-200 px-2.5 text-xs font-semibold text-[#64748B] transition hover:border-orange-200 hover:bg-orange-50 hover:text-[#FF5C39] sm:h-10 sm:px-3"
-                              >
-                                <Eye className="h-3.5 w-3.5" />
-                                <span className="hidden xs:inline sm:inline">
-                                  View
+                            {/* CATEGORY */}
+
+                            <div className="mt-2 flex flex-wrap items-center gap-1.5">
+                              <span className="rounded-md bg-orange-50 px-2 py-1 text-[10px] font-bold text-[#FF5C39] sm:text-[11px]">
+                                {getCategory(worker)}
+                              </span>
+
+                              {worker.subcategory && (
+                                <span className="max-w-[150px] truncate rounded-md bg-gray-50 px-2 py-1 text-[10px] font-medium text-[#64748B] sm:text-[11px]">
+                                  {worker.subcategory}
                                 </span>
-                              </button>
-
-                              <button
-                                type="button"
-                                onClick={() => {
-                                  setActionError(
-                                    "",
-                                  );
-                                  setActionWorker(
-                                    worker,
-                                  );
-                                }}
-                                className="flex h-9 w-9 items-center justify-center rounded-lg border border-gray-200 text-[#64748B] transition hover:border-gray-300 hover:bg-gray-50 sm:h-10 sm:w-10"
-                                title="More actions"
-                              >
-                                <MoreHorizontal className="h-4 w-4" />
-                              </button>
-
-                              <ChevronRight className="hidden h-4 w-4 text-[#CBD5E1] sm:block" />
+                              )}
                             </div>
                           </div>
                         </div>
+
+                        {/* INFO GRID */}
+
+                        <div className="mt-3 grid grid-cols-2 gap-2 border-t border-gray-100 pt-3 sm:grid-cols-4">
+                          <MobileInfo
+                            icon={Phone}
+                            label="Phone"
+                            value={getPhone(worker)}
+                          />
+
+                          <MobileInfo
+                            icon={MapPin}
+                            label="Location"
+                            value={getLocation(worker)}
+                          />
+
+                          <MobileInfo
+                            icon={Star}
+                            label="Rating"
+                            value={`${getRating(worker)} (${
+                              worker.reviewCount ?? 0
+                            })`}
+                            rating
+                          />
+
+                          <MobileInfo
+                            icon={BriefcaseBusiness}
+                            label="Jobs"
+                            value={String(worker.completedJobs ?? 0)}
+                          />
+                        </div>
+
+                        {/* BOTTOM */}
+
+                        <div className="mt-3 flex items-center justify-between gap-2 border-t border-gray-100 pt-3">
+                          <div className="min-w-0">
+                            {worker.labourChauk ? (
+                              <p className="truncate text-[11px] text-[#94A3B8] sm:text-xs">
+                                Chauk: {worker.labourChauk}
+                              </p>
+                            ) : (
+                              <p className="text-[11px] text-[#94A3B8] sm:text-xs">
+                                Worker ID: {worker.workerCode || "—"}
+                              </p>
+                            )}
+                          </div>
+
+                          <div className="flex shrink-0 items-center gap-1.5">
+                            <button
+                              type="button"
+                              onClick={() => setSelectedWorker(worker)}
+                              className="flex h-9 items-center gap-1.5 rounded-lg border border-gray-200 px-2.5 text-xs font-semibold text-[#64748B] transition hover:border-orange-200 hover:bg-orange-50 hover:text-[#FF5C39] sm:h-10 sm:px-3"
+                            >
+                              <Eye className="h-3.5 w-3.5" />
+                              <span className="hidden xs:inline sm:inline">
+                                View
+                              </span>
+                            </button>
+
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setActionError("");
+                                setActionWorker(worker);
+                              }}
+                              className="flex h-9 w-9 items-center justify-center rounded-lg border border-gray-200 text-[#64748B] transition hover:border-gray-300 hover:bg-gray-50 sm:h-10 sm:w-10"
+                              title="More actions"
+                            >
+                              <MoreHorizontal className="h-4 w-4" />
+                            </button>
+
+                            <ChevronRight className="hidden h-4 w-4 text-[#CBD5E1] sm:block" />
+                          </div>
+                        </div>
                       </div>
-                    );
-                  },
-                )}
+                    </div>
+                  );
+                })}
               </div>
             </>
           )}
@@ -1330,45 +1128,36 @@ export default function WorkersTab() {
               FOOTER
           ================================================= */}
 
-          {!loading &&
-            filteredWorkers.length > 0 && (
-              <div className="flex flex-col gap-1.5 border-t border-gray-100 bg-[#FAFAFA] px-3 py-3 sm:flex-row sm:items-center sm:justify-between sm:px-6">
-                <p className="text-[11px] font-medium text-[#64748B] sm:text-xs">
-                  Showing{" "}
-                  <span className="font-bold text-[#334155]">
-                    {
-                      filteredWorkers.length
-                    }
-                  </span>{" "}
-                  worker
-                  {filteredWorkers.length !==
-                  1
-                    ? "s"
-                    : ""}
-                  {selectedCategory !==
-                    "All" && (
-                    <>
-                      {" "}
-                      in{" "}
-                      <span className="font-bold text-[#FF5C39]">
-                        {
-                          selectedCategory
-                        }
-                      </span>
-                    </>
-                  )}
-                </p>
-
-                {search && (
-                  <p className="truncate text-[11px] text-[#94A3B8] sm:text-xs">
-                    Search:{" "}
-                    <span className="font-semibold text-[#64748B]">
-                      "{search}"
+          {!loading && filteredWorkers.length > 0 && (
+            <div className="flex flex-col gap-1.5 border-t border-gray-100 bg-[#FAFAFA] px-3 py-3 sm:flex-row sm:items-center sm:justify-between sm:px-6">
+              <p className="text-[11px] font-medium text-[#64748B] sm:text-xs">
+                Showing{" "}
+                <span className="font-bold text-[#334155]">
+                  {filteredWorkers.length}
+                </span>{" "}
+                worker
+                {filteredWorkers.length !== 1 ? "s" : ""}
+                {selectedCategory !== "All" && (
+                  <>
+                    {" "}
+                    in{" "}
+                    <span className="font-bold text-[#FF5C39]">
+                      {selectedCategory}
                     </span>
-                  </p>
+                  </>
                 )}
-              </div>
-            )}
+              </p>
+
+              {search && (
+                <p className="truncate text-[11px] text-[#94A3B8] sm:text-xs">
+                  Search:{" "}
+                  <span className="font-semibold text-[#64748B]">
+                    "{search}"
+                  </span>
+                </p>
+              )}
+            </div>
+          )}
         </div>
       </main>
 
@@ -1381,9 +1170,7 @@ export default function WorkersTab() {
           <button
             type="button"
             aria-label="Close actions"
-            onClick={() =>
-              setActionWorker(null)
-            }
+            onClick={() => setActionWorker(null)}
             className="absolute inset-0 bg-black/30 backdrop-blur-[1px]"
           />
 
@@ -1396,22 +1183,12 @@ export default function WorkersTab() {
               actionLoading={actionLoading}
               actionError={actionError}
               onEdit={() => {
-                setEditWorker(
-                  actionWorker,
-                );
+                setEditWorker(actionWorker);
                 setActionWorker(null);
                 setActionError("");
               }}
-              onToggle={() =>
-                toggleWorkerStatus(
-                  actionWorker,
-                )
-              }
-              onDelete={() =>
-                deleteWorker(
-                  actionWorker,
-                )
-              }
+              onToggle={() => toggleWorkerStatus(actionWorker)}
+              onDelete={() => deleteWorker(actionWorker)}
             />
           </div>
 
@@ -1427,22 +1204,12 @@ export default function WorkersTab() {
               actionError={actionError}
               mobile
               onEdit={() => {
-                setEditWorker(
-                  actionWorker,
-                );
+                setEditWorker(actionWorker);
                 setActionWorker(null);
                 setActionError("");
               }}
-              onToggle={() =>
-                toggleWorkerStatus(
-                  actionWorker,
-                )
-              }
-              onDelete={() =>
-                deleteWorker(
-                  actionWorker,
-                )
-              }
+              onToggle={() => toggleWorkerStatus(actionWorker)}
+              onDelete={() => deleteWorker(actionWorker)}
             />
           </div>
         </div>
@@ -1454,9 +1221,7 @@ export default function WorkersTab() {
 
       <WorkerDrawer
         worker={selectedWorker}
-        onClose={() =>
-          setSelectedWorker(null)
-        }
+        onClose={() => setSelectedWorker(null)}
       />
 
       {/* =====================================================
@@ -1465,16 +1230,11 @@ export default function WorkersTab() {
 
       <EditWorkerModal
         worker={editWorker}
-        onClose={() =>
-          setEditWorker(null)
-        }
+        onClose={() => setEditWorker(null)}
         onUpdated={(updatedWorker) => {
           setWorkers((current) =>
             current.map((worker) =>
-              worker.id ===
-              updatedWorker.id
-                ? updatedWorker
-                : worker,
+              worker.id === updatedWorker.id ? updatedWorker : worker,
             ),
           );
 
@@ -1496,10 +1256,7 @@ function WorkerAvatar({
   worker: Worker;
   size?: "md" | "lg";
 }) {
-  const sizeClass =
-    size === "lg"
-      ? "h-12 w-12 sm:h-14 sm:w-14"
-      : "h-11 w-11";
+  const sizeClass = size === "lg" ? "h-12 w-12 sm:h-14 sm:w-14" : "h-11 w-11";
 
   return (
     <div
@@ -1533,9 +1290,7 @@ function WorkerStatus({
     return (
       <span
         className={`inline-flex shrink-0 items-center gap-1.5 rounded-full bg-emerald-50 font-bold text-emerald-700 ${
-          compact
-            ? "px-2 py-1 text-[10px]"
-            : "px-2.5 py-1 text-xs"
+          compact ? "px-2 py-1 text-[10px]" : "px-2.5 py-1 text-xs"
         }`}
       >
         <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
@@ -1547,9 +1302,7 @@ function WorkerStatus({
   return (
     <span
       className={`inline-flex shrink-0 items-center gap-1.5 rounded-full bg-gray-100 font-bold text-gray-600 ${
-        compact
-          ? "px-2 py-1 text-[10px]"
-          : "px-2.5 py-1 text-xs"
+        compact ? "px-2 py-1 text-[10px]" : "px-2.5 py-1 text-xs"
       }`}
     >
       <span className="h-1.5 w-1.5 rounded-full bg-gray-400" />
@@ -1578,9 +1331,7 @@ function MobileInfo({
       <div className="flex items-center gap-1">
         <Icon
           className={`h-3 w-3 shrink-0 ${
-            rating
-              ? "text-amber-500"
-              : "text-[#94A3B8]"
+            rating ? "text-amber-500" : "text-[#94A3B8]"
           }`}
         />
 
@@ -1631,13 +1382,10 @@ function ActionMenuContent({
         }`}
       >
         <p className="truncate text-sm font-bold text-[#0F172A]">
-          {worker.name ||
-            "Unnamed Worker"}
+          {worker.name || "Unnamed Worker"}
         </p>
 
-        <p className="mt-1 text-xs text-[#64748B]">
-          Worker actions
-        </p>
+        <p className="mt-1 text-xs text-[#64748B]">Worker actions</p>
       </div>
 
       {/* EDIT */}
@@ -1652,13 +1400,9 @@ function ActionMenuContent({
         </div>
 
         <div>
-          <p className="text-sm font-semibold text-[#0F172A]">
-            Edit Worker
-          </p>
+          <p className="text-sm font-semibold text-[#0F172A]">Edit Worker</p>
 
-          <p className="text-xs text-[#94A3B8]">
-            Update worker information
-          </p>
+          <p className="text-xs text-[#94A3B8]">Update worker information</p>
         </div>
       </button>
 
@@ -1676,15 +1420,11 @@ function ActionMenuContent({
 
         <div>
           <p className="text-sm font-semibold text-[#0F172A]">
-            {active
-              ? "Make Unavailable"
-              : "Make Available"}
+            {active ? "Make Unavailable" : "Make Available"}
           </p>
 
           <p className="text-xs text-[#94A3B8]">
-            {active
-              ? "Stop new bookings"
-              : "Allow new bookings"}
+            {active ? "Stop new bookings" : "Allow new bookings"}
           </p>
         </div>
       </button>
@@ -1710,9 +1450,7 @@ function ActionMenuContent({
                 Delete Worker
               </p>
 
-              <p className="text-xs text-red-400">
-                Permanently remove worker
-              </p>
+              <p className="text-xs text-red-400">Permanently remove worker</p>
             </div>
           </button>
         </>
@@ -1722,9 +1460,7 @@ function ActionMenuContent({
 
       {actionError && (
         <div className="mx-2 mb-2 mt-1 rounded-lg border border-red-100 bg-red-50 px-3 py-2">
-          <p className="text-xs text-red-600">
-            {actionError}
-          </p>
+          <p className="text-xs text-red-600">{actionError}</p>
         </div>
       )}
 
@@ -1742,14 +1478,9 @@ function ActionMenuContent({
           type="button"
           disabled={actionLoading}
           onClick={() => {
-            const event =
-              new CustomEvent(
-                "close-worker-actions",
-              );
+            const event = new CustomEvent("close-worker-actions");
 
-            window.dispatchEvent(
-              event,
-            );
+            window.dispatchEvent(event);
           }}
           className="mt-1 w-full rounded-xl bg-gray-100 py-3 text-sm font-bold text-[#475569]"
         >

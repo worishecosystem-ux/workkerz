@@ -1,11 +1,13 @@
+"use client";
+
 import {
-  Package,
-  Clock3,
-  Truck,
   CheckCircle2,
-  XCircle,
+  Clock3,
   IndianRupee,
+  Package,
   PackageCheck,
+  Truck,
+  XCircle,
 } from "lucide-react";
 
 type Props = {
@@ -20,16 +22,19 @@ export default function OrdersStats({
   onSelectStatus,
 }: Props) {
   const totalOrders = orders.length;
-
   const pending = orders.filter((o) => o.status === "Pending").length;
-
-  const delivery = orders.filter((o) => o.status === "Out For Delivery").length;
-  const readyToDispatch = orders.filter(
-    (o) => o.status === "Ready to Dispatch",
+  const delivery = orders.filter(
+    (o) => o.status === "Out For Delivery"
   ).length;
-  const delivered = orders.filter((o) => o.status === "Delivered").length;
-
-  const cancelled = orders.filter((o) => o.status === "Cancelled").length;
+  const readyToDispatch = orders.filter(
+    (o) => o.status === "Ready to Dispatch"
+  ).length;
+  const delivered = orders.filter(
+    (o) => o.status === "Delivered"
+  ).length;
+  const cancelled = orders.filter(
+    (o) => o.status === "Cancelled"
+  ).length;
 
   const revenue = orders
     .filter((o) => o.status === "Delivered")
@@ -86,7 +91,7 @@ export default function OrdersStats({
     },
     {
       title: "Revenue",
-      value: `₹${revenue.toLocaleString()}`,
+      value: `₹${revenue.toLocaleString("en-IN")}`,
       icon: IndianRupee,
       color: "text-emerald-600",
       bg: "bg-emerald-50",
@@ -95,38 +100,44 @@ export default function OrdersStats({
   ];
 
   return (
-    <div className="mb-2 grid grid-cols-2 gap-1.5 md:grid-cols-4 xl:grid-cols-7">
-  {cards.map((card) => {
-    const Icon = card.icon;
+    <div className="grid w-full grid-cols-3 gap-1.5 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-7">
+      {cards.map((card) => {
+        const Icon = card.icon;
+        const active =
+          card.status !== "" && selectedStatus === card.status;
 
-    return (
-      <button
-        key={card.title}
-        onClick={() => card.status && onSelectStatus(card.status)}
-        className={`flex items-center gap-2 rounded-md border bg-white px-2 py-1.5 transition-all hover:border-orange-300 ${
-          selectedStatus === card.status
-            ? "border-orange-500 bg-orange-50"
-            : "border-slate-200"
-        }`}
-      >
-        <div
-          className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-md ${card.bg}`}
-        >
-          <Icon className={`h-3.5 w-3.5 ${card.color}`} />
-        </div>
+        return (
+          <button
+            key={card.title}
+            type="button"
+            disabled={!card.status}
+            onClick={() =>
+              card.status && onSelectStatus(card.status)
+            }
+            className={`flex min-w-0 items-center gap-1.5 rounded-lg border bg-white px-2 py-2 text-left transition ${
+              active
+                ? "border-orange-400 bg-orange-50"
+                : "border-slate-100 hover:border-orange-200 hover:bg-slate-50"
+            } ${!card.status ? "cursor-default" : "cursor-pointer"}`}
+          >
+            <div
+              className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-md ${card.bg}`}
+            >
+              <Icon className={`h-3.5 w-3.5 ${card.color}`} />
+            </div>
 
-        <div className="min-w-0 flex-1 text-left">
-          <p className="truncate text-[9px] font-medium leading-none text-slate-500">
-            {card.title}
-          </p>
+            <div className="min-w-0 flex-1">
+              <p className="whitespace-normal text-[8px] font-medium leading-tight text-slate-500 sm:text-[9px]">
+                {card.title}
+              </p>
 
-          <p className="mt-1 text-sm font-bold leading-none text-slate-900">
-            {card.value}
-          </p>
-        </div>
-      </button>
-    );
-  })}
-</div>
+              <p className="mt-0.5 whitespace-nowrap text-xs font-bold leading-tight text-slate-900 sm:text-sm">
+                {card.value}
+              </p>
+            </div>
+          </button>
+        );
+      })}
+    </div>
   );
 }

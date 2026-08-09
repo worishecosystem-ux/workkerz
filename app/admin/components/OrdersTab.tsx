@@ -1,12 +1,6 @@
 "use client";
 
-import {
-  useCallback,
-  useEffect,
-  useMemo,
-  useState,
-} from "react";
-
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { supabase } from "@/lib/supabase";
 
 import OrdersTable from "./orders/OrdersTable";
@@ -19,27 +13,16 @@ import OutForDeliveryBoard from "./orders/OutForDeliveryBoard";
 import DeliveredBoard from "./orders/DeliveredBoard";
 import OperationsDashboard from "./orders/OperationsDashboard";
 import NewOrderNotification from "./orders/NewOrderNotification";
-/* =====================================================
-   TYPES
-===================================================== */
 
 type Order = {
   id: string | number;
-
   order_number?: string | null;
-
   customer_name?: string | null;
-
   customer_phone?: string | null;
-
   status?: string | null;
-
   payment_status?: string | null;
-
   rejection_reason?: string | null;
-
   created_at?: string | null;
-
   [key: string]: any;
 };
 
@@ -48,38 +31,17 @@ type Props = {
   notificationAction?: "view" | "accept" | "reject" | null;
   notificationOpenKey?: number;
   onNotificationHandled?: () => void;
-  onNotificationStatusChanged?: (
-    orderId: string | number,
-  ) => void;
+  onNotificationStatusChanged?: (id: string | number) => void;
 };
 
-/* =====================================================
-   STATUS MESSAGES
-===================================================== */
-
-const statusMessages: Record<string, string> = {
-  Pending:
-    "Your order has been placed successfully.",
-
-  Confirmed:
-    "Your order has been confirmed.",
-
-  "Ready to Dispatch":
-    "Your order is being prepared.",
-
-  "Out For Delivery":
-    "Your order is out for delivery.",
-
-  Delivered:
-    "Your order has been delivered successfully.",
-
-  Cancelled:
-    "Your order has been cancelled.",
+const STATUS_MESSAGES: Record<string, string> = {
+  Pending: "Your order has been placed successfully.",
+  Confirmed: "Your order has been confirmed.",
+  "Ready to Dispatch": "Your order is being prepared.",
+  "Out For Delivery": "Your order is out for delivery.",
+  Delivered: "Your order has been delivered successfully.",
+  Cancelled: "Your order has been cancelled.",
 };
-
-/* =====================================================
-   REJECTION REASONS
-===================================================== */
 
 const REJECTION_REASONS = [
   "Product unavailable",
@@ -92,10 +54,6 @@ const REJECTION_REASONS = [
   "Other",
 ];
 
-/* =====================================================
-   COMPONENT
-===================================================== */
-
 export default function OrdersTab({
   notificationOrder,
   notificationAction,
@@ -103,575 +61,407 @@ export default function OrdersTab({
   onNotificationHandled,
   onNotificationStatusChanged,
 }: Props) {
-  /* ===================================================
-     ORDERS
-  =================================================== */
+  const [orders, setOrders] = useState<Order[]>([]);
+  const [loading, setLoading] = useState(true);
 
-  const [orders, setOrders] =
-    useState<Order[]>([]);
+  const [search, setSearch] = useState("");
+  const [statusFilter, setStatusFilter] = useState("All");
+  const [paymentFilter, setPaymentFilter] = useState("All");
 
-  const [loading, setLoading] =
-    useState(true);
+  const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
+  const [orderItems, setOrderItems] = useState<any[]>([]);
+  const [showOrder, setShowOrder] = useState(false);
 
-  /* ===================================================
-     SEARCH / FILTER
-  =================================================== */
+  const [showMore, setShowMore] = useState(false);
+  const [highlightOrderId, setHighlightOrderId] = useState<string | null>(null);
+  const [selectedOrders, setSelectedOrders] = useState<string[]>([]);
 
-  const [search, setSearch] =
-    useState("");
+  const [rejectingOrder, setRejectingOrder] = useState<Order | null>(null);
+  const [bulkRejecting, setBulkRejecting] = useState(false);
+  const [rejectReason, setRejectReason] = useState("");
+  const [customRejectReason, setCustomRejectReason] = useState("");
+  const [rejectLoading, setRejectLoading] = useState(false);
 
-  const [statusFilter, setStatusFilter] =
-    useState("All");
-
-  const [paymentFilter, setPaymentFilter] =
-    useState("All");
-
-  /* ===================================================
-     ORDER DRAWER
-  =================================================== */
-
-  const [selectedOrder, setSelectedOrder] =
-    useState<Order | null>(null);
-
-  const [orderItems, setOrderItems] =
-    useState<any[]>([]);
-
-  const [showOrder, setShowOrder] =
-    useState(false);
-
-  /* ===================================================
-     UI
-  =================================================== */
-
-  const [showMore, setShowMore] =
-    useState(false);
-
-  const [highlightOrderId, setHighlightOrderId] =
-    useState<string | null>(null);
-
-  /* ===================================================
-     BULK SELECTION
-  =================================================== */
-
-  const [selectedOrders, setSelectedOrders] =
-    useState<string[]>([]);
-
-  /* ===================================================
-     SINGLE REJECTION
-  =================================================== */
-
-  const [rejectingOrder, setRejectingOrder] =
-    useState<Order | null>(null);
-
-  const [rejectReason, setRejectReason] =
-    useState("");
-
-  const [customRejectReason, setCustomRejectReason] =
-    useState("");
-
-  const [rejectLoading, setRejectLoading] =
-    useState(false);
-
-  /* ===================================================
-     BULK REJECTION
-  =================================================== */
-
-  const [bulkRejecting, setBulkRejecting] =
-    useState(false);
-
-  /* ===================================================
-     FILTERED ORDERS
-  =================================================== */
+  /* ---------------- FILTER ---------------- */
 
   const filtered = useMemo(() => {
-    const q =
-      search
-        .trim()
-        .toLowerCase();
+    const q = search.trim().toLowerCase();
 
-    return orders.filter(
-      (order) => {
-        const orderNumber =
-          String(
-            order.order_number ?? "",
-          ).toLowerCase();
+    return orders.filter((order) => {
+      const number = String(order.order_number ?? "").toLowerCase();
+      const name = String(order.customer_name ?? "").toLowerCase();
+      const phone = String(order.customer_phone ?? "").toLowerCase();
 
-        const customerName =
-          String(
-            order.customer_name ?? "",
-          ).toLowerCase();
+      return (
+        (!q || number.includes(q) || name.includes(q) || phone.includes(q)) &&
+        (statusFilter === "All" || order.status === statusFilter) &&
+        (paymentFilter === "All" || order.payment_status === paymentFilter)
+      );
+    });
+  }, [orders, search, statusFilter, paymentFilter]);
 
-        const customerPhone =
-          String(
-            order.customer_phone ?? "",
-          ).toLowerCase();
+  /* ---------------- FETCH ---------------- */
 
-        const matchesSearch =
-          !q ||
-          orderNumber.includes(q) ||
-          customerName.includes(q) ||
-          customerPhone.includes(q);
+  const fetchOrders = useCallback(async () => {
+    try {
+      setLoading(true);
 
-        const matchesStatus =
-          statusFilter === "All" ||
-          order.status ===
-            statusFilter;
+      const { data, error } = await supabase
+        .from("orders")
+        .select("*")
+        .order("created_at", { ascending: false });
 
-        const matchesPayment =
-          paymentFilter === "All" ||
-          order.payment_status ===
-            paymentFilter;
+      if (error) {
+        console.error("[Orders] Fetch error:", error);
+        return;
+      }
 
-        return (
-          matchesSearch &&
-          matchesStatus &&
-          matchesPayment
-        );
-      },
-    );
-  }, [
-    orders,
-    search,
-    statusFilter,
-    paymentFilter,
-  ]);
-
-  /* ===================================================
-     FETCH ORDERS
-  =================================================== */
-
-  const fetchOrders =
-    useCallback(
-      async () => {
-        try {
-          setLoading(true);
-
-          const {
-            data,
-            error,
-          } =
-            await supabase
-              .from("orders")
-              .select("*")
-              .order(
-                "created_at",
-                {
-                  ascending: false,
-                },
-              );
-
-          if (error) {
-            console.error(
-              "[Orders] Fetch error:",
-              error,
-            );
-
-            return;
-          }
-
-          setOrders(
-            (data ?? []) as Order[],
-          );
-        } catch (error) {
-          console.error(
-            "[Orders] Unexpected fetch error:",
-            error,
-          );
-        } finally {
-          setLoading(false);
-        }
-      },
-      [],
-    );
-
-  /* ===================================================
-     INITIAL LOAD
-  =================================================== */
+      setOrders((data ?? []) as Order[]);
+    } catch (error) {
+      console.error("[Orders] Unexpected fetch error:", error);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
 
   useEffect(() => {
     fetchOrders();
-  }, [
-    fetchOrders,
-  ]);
+  }, [fetchOrders]);
 
-  /* ===================================================
-     OPEN ORDER
-  =================================================== */
+  /* ---------------- OPEN ORDER ---------------- */
 
-  const openOrder =
-    useCallback(
-      async (
-        order: Order,
-      ) => {
-        if (
-          order?.id ===
-            undefined ||
-          order?.id ===
-            null
-        ) {
-          return;
-        }
+  const openOrder = useCallback(async (order: Order) => {
+    if (order?.id == null) return;
 
-        console.log(
-          "[Orders] Opening order:",
-          order.id,
+    setSelectedOrder(order);
+    setHighlightOrderId(String(order.id));
+    setShowOrder(true);
+
+    const { data, error } = await supabase
+      .from("order_items")
+      .select("*")
+      .eq("order_id", order.id);
+
+    if (error) {
+      console.error("[Orders] Items error:", error);
+      setOrderItems([]);
+      return;
+    }
+
+    setOrderItems(data ?? []);
+  }, []);
+
+  /* ---------------- STATUS ---------------- */
+
+  const updateOrderStatus = useCallback(
+    async (id: string | number, status: string): Promise<boolean> => {
+      const current = orders.find((o) => String(o.id) === String(id));
+
+      if (!current) return false;
+
+      const currentStatus = current.status;
+
+      if (["Delivered", "Cancelled"].includes(currentStatus ?? "")) {
+        alert(`Order is already ${currentStatus}. Status cannot be changed.`);
+        return false;
+      }
+
+      if (
+        currentStatus === "Out For Delivery" &&
+        ["Pending", "Confirmed"].includes(status)
+      ) {
+        alert("Out For Delivery orders cannot be moved back.");
+        return false;
+      }
+
+      const { error } = await supabase
+        .from("orders")
+        .update({ status })
+        .eq("id", id);
+
+      if (error) {
+        console.error("[Orders] Status error:", error);
+        alert(error.message || "Unable to update order status.");
+        return false;
+      }
+
+      await supabase.from("order_status_history").insert({
+        order_id: id,
+        status,
+        note: STATUS_MESSAGES[status] ?? status,
+      });
+
+      setOrders((prev) =>
+        prev.map((o) => (String(o.id) === String(id) ? { ...o, status } : o)),
+      );
+
+      setSelectedOrder((prev) =>
+        prev && String(prev.id) === String(id) ? { ...prev, status } : prev,
+      );
+
+      return true;
+    },
+    [orders],
+  );
+
+  /* ---------------- PAYMENT ---------------- */
+
+  const updatePaymentStatus = useCallback(
+    async (id: string | number, paymentStatus: string) => {
+      const { error } = await supabase
+        .from("orders")
+        .update({ payment_status: paymentStatus })
+        .eq("id", id);
+
+      if (error) {
+        alert(error.message || "Unable to update payment status.");
+        return;
+      }
+
+      setOrders((prev) =>
+        prev.map((o) =>
+          String(o.id) === String(id)
+            ? { ...o, payment_status: paymentStatus }
+            : o,
+        ),
+      );
+
+      setSelectedOrder((prev) =>
+        prev && String(prev.id) === String(id)
+          ? { ...prev, payment_status: paymentStatus }
+          : prev,
+      );
+    },
+    [],
+  );
+
+  /* ---------------- REJECTION ---------------- */
+
+  const getFinalReason = useCallback(
+    () =>
+      rejectReason === "Other"
+        ? customRejectReason.trim()
+        : rejectReason.trim(),
+    [rejectReason, customRejectReason],
+  );
+
+  const resetReject = useCallback(() => {
+    if (rejectLoading) return;
+
+    setRejectingOrder(null);
+    setBulkRejecting(false);
+    setRejectReason("");
+    setCustomRejectReason("");
+  }, [rejectLoading]);
+
+  const openReject = useCallback((order: Order) => {
+    if (!order || ["Delivered", "Cancelled"].includes(order.status ?? "")) {
+      alert(`Order is already ${order.status}.`);
+      return;
+    }
+
+    setRejectingOrder(order);
+    setRejectReason("");
+    setCustomRejectReason("");
+  }, []);
+
+  const rejectOrders = useCallback(
+    async (ids: (string | number)[]) => {
+      const reason = getFinalReason();
+
+      if (!reason) {
+        alert(
+          rejectReason === "Other"
+            ? "Please enter the rejection reason."
+            : "Please select a rejection reason.",
         );
+        return;
+      }
 
-        /*
-         * Set order immediately.
-         */
-        setSelectedOrder(
-          order,
-        );
+      if (!ids.length) return;
 
-        /*
-         * Highlight order.
-         */
-        setHighlightOrderId(
-          String(order.id),
-        );
+      setRejectLoading(true);
 
-        /*
-         * Open drawer immediately.
-         *
-         * This makes notification View Order
-         * work even if order_items takes time.
-         */
-        setShowOrder(
-          true,
-        );
-
-        /*
-         * Fetch order items.
-         */
-        const {
-          data,
-          error,
-        } =
-          await supabase
-            .from(
-              "order_items",
-            )
-            .select("*")
-            .eq(
-              "order_id",
-              order.id,
-            );
+      try {
+        const { error } = await supabase
+          .from("orders")
+          .update({
+            status: "Cancelled",
+            rejection_reason: reason,
+          })
+          .in("id", ids);
 
         if (error) {
-          console.error(
-            "[Orders] Order items error:",
-            error,
-          );
-
-          setOrderItems(
-            [],
-          );
-
+          alert(error.message || "Unable to reject orders.");
           return;
         }
 
-        setOrderItems(
-          data ?? [],
-        );
-      },
-      [],
-    );
-
-
-  /* ===================================================
-     UPDATE ORDER STATUS
-  =================================================== */
-
-  const updateOrderStatus =
-    useCallback(
-      async (
-        id: string,
-        status: string,
-      ): Promise<boolean> => {
-        const currentOrder =
-          orders.find(
-            (
-              order,
-            ) =>
-              String(
-                order.id,
-              ) ===
-              String(id),
-          );
-
-        if (
-          !currentOrder
-        ) {
-          return false;
-        }
-
-        const currentStatus =
-          currentOrder.status;
-
-        /* ---------------------------------------------
-           FINAL STATUS
-        --------------------------------------------- */
-
-        if (
-          currentStatus ===
-            "Delivered" ||
-          currentStatus ===
-            "Cancelled"
-        ) {
-          alert(
-            `Order is already ${currentStatus}. Status cannot be changed.`,
-          );
-
-          return false;
-        }
-
-        /* ---------------------------------------------
-           PREVENT BACKWARD MOVEMENT
-        --------------------------------------------- */
-
-        if (
-          currentStatus ===
-            "Out For Delivery" &&
-          (
-            status ===
-              "Pending" ||
-            status ===
-              "Confirmed"
-          )
-        ) {
-          alert(
-            "Out For Delivery orders cannot be moved back.",
-          );
-
-          return false;
-        }
-
-        /* ---------------------------------------------
-           UPDATE ORDER
-        --------------------------------------------- */
-
-        const {
-          error,
-        } =
-          await supabase
-            .from(
-              "orders",
-            )
-            .update({
-              status,
-            })
-            .eq(
-              "id",
-              id,
-            );
-
-        if (
-          error
-        ) {
-          console.error(
-            "[Orders] Status update error:",
-            error,
-          );
-
-          alert(
-            error.message ||
-              "Unable to update order status.",
-          );
-
-          return false;
-        }
-
-        /* ---------------------------------------------
-           STATUS HISTORY
-        --------------------------------------------- */
-
-        const {
-          error:
-            timelineError,
-        } =
-          await supabase
-            .from(
-              "order_status_history",
-            )
-            .insert({
-              order_id:
-                id,
-
-              status,
-
-              note:
-                statusMessages[
-                  status
-                ] ??
-                status,
-            });
-
-        if (
-          timelineError
-        ) {
-          console.error(
-            "[Orders] Timeline error:",
-            timelineError,
-          );
-        }
-
-        /* ---------------------------------------------
-           LOCAL STATE
-        --------------------------------------------- */
-
-        setOrders(
-          (
-            prev,
-          ) =>
-            prev.map(
-              (
-                order,
-              ) =>
-                String(
-                  order.id,
-                ) ===
-                String(id)
-                  ? {
-                      ...order,
-                      status,
-                    }
-                  : order,
-            ),
+        await supabase.from("order_status_history").insert(
+          ids.map((id) => ({
+            order_id: id,
+            status: "Cancelled",
+            note: `Order rejected. Reason: ${reason}`,
+          })),
         );
 
-        /* ---------------------------------------------
-           DRAWER
-        --------------------------------------------- */
+        const idSet = new Set(ids.map(String));
 
-        setSelectedOrder(
-          (
-            prev,
-          ) =>
-            prev &&
-            String(
-              prev.id,
-            ) ===
-              String(id)
+        setOrders((prev) =>
+          prev.map((o) =>
+            idSet.has(String(o.id))
               ? {
-                  ...prev,
-                  status,
+                  ...o,
+                  status: "Cancelled",
+                  rejection_reason: reason,
                 }
-              : prev,
+              : o,
+          ),
         );
-        return true;
-      },
-      [
-        orders,
-      ],
+
+        setSelectedOrder((prev) =>
+          prev && idSet.has(String(prev.id))
+            ? {
+                ...prev,
+                status: "Cancelled",
+                rejection_reason: reason,
+              }
+            : prev,
+        );
+
+        setSelectedOrders([]);
+        setRejectingOrder(null);
+        setBulkRejecting(false);
+        setRejectReason("");
+        setCustomRejectReason("");
+
+        ids.forEach((id) => onNotificationStatusChanged?.(id));
+      } catch (error) {
+        console.error("[Orders] Reject error:", error);
+        alert("Unable to reject orders.");
+      } finally {
+        setRejectLoading(false);
+      }
+    },
+    [getFinalReason, rejectReason, onNotificationStatusChanged],
+  );
+
+  const rejectSingle = useCallback(async () => {
+    if (!rejectingOrder) return;
+    await rejectOrders([rejectingOrder.id]);
+  }, [rejectingOrder, rejectOrders]);
+
+  const openBulkReject = useCallback(() => {
+    if (!selectedOrders.length) return;
+
+    setRejectReason("");
+    setCustomRejectReason("");
+    setBulkRejecting(true);
+  }, [selectedOrders.length]);
+
+  /* ---------------- SELECTION ---------------- */
+
+  const toggleOrder = useCallback((id: string) => {
+    setSelectedOrders((prev) =>
+      prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id],
     );
+  }, []);
 
-  /* ===================================================
-     OPEN REJECT MODAL
-  =================================================== */
+  const toggleSelectAll = useCallback(() => {
+    const ids = filtered.map((o) => String(o.id));
 
-  const openRejectModal =
-    useCallback(
-      (
-        order: Order,
-      ) => {
-        if (
-          !order
-        ) {
-          return;
-        }
+    if (ids.length && ids.every((id) => selectedOrders.includes(id))) {
+      setSelectedOrders([]);
+    } else {
+      setSelectedOrders(ids);
+    }
+  }, [filtered, selectedOrders]);
 
-        if (
-          order.status ===
-            "Delivered" ||
-          order.status ===
-            "Cancelled"
-        ) {
-          alert(
-            `Order is already ${order.status}.`,
-          );
+  /* ---------------- BULK STATUS ---------------- */
 
-          return;
-        }
+  const bulkUpdateStatus = useCallback(
+    async (status: string) => {
+      if (!selectedOrders.length) return;
 
-        setRejectingOrder(
-          order,
+      const invalid = orders.some((order) => {
+        if (!selectedOrders.includes(String(order.id))) return false;
+
+        if (["Delivered", "Cancelled"].includes(order.status ?? ""))
+          return true;
+
+        return (
+          order.status === "Out For Delivery" &&
+          ["Pending", "Confirmed"].includes(status)
         );
+      });
 
-        setRejectReason(
-          "",
-        );
+      if (invalid) {
+        alert("Some selected orders cannot be moved to this status.");
+        return;
+      }
 
-        setCustomRejectReason(
-          "",
-        );
-      },
-      [],
-    );
+      const { error } = await supabase
+        .from("orders")
+        .update({ status })
+        .in("id", selectedOrders);
 
-  /* ===================================================
-     HANDLE NOTIFICATION ACTION
-  =================================================== */
+      if (error) {
+        alert(error.message || "Unable to update selected orders.");
+        return;
+      }
+
+      await supabase.from("order_status_history").insert(
+        selectedOrders.map((id) => ({
+          order_id: id,
+          status,
+          note: STATUS_MESSAGES[status] ?? status,
+        })),
+      );
+
+      const ids = new Set(selectedOrders);
+
+      setOrders((prev) =>
+        prev.map((o) => (ids.has(String(o.id)) ? { ...o, status } : o)),
+      );
+
+      setSelectedOrders([]);
+    },
+    [orders, selectedOrders],
+  );
+
+  /* ---------------- NOTIFICATION ACTION ---------------- */
 
   useEffect(() => {
-    if (!notificationOrder) {
-      return;
-    }
-
-    if (
-      notificationOrder.id === undefined ||
-      notificationOrder.id === null
-    ) {
-      return;
-    }
+    if (!notificationOrder?.id) return;
 
     let cancelled = false;
 
-    const handleAction = async () => {
-      console.log(
-        "[Orders] Notification action:",
-        notificationAction,
-        notificationOrder.id,
-      );
-
+    const run = async () => {
       if (notificationAction === "reject") {
-        openRejectModal(notificationOrder);
-
+        openReject(notificationOrder);
         onNotificationHandled?.();
         return;
       }
 
       if (notificationAction === "accept") {
-        const success =
-          await updateOrderStatus(
-            String(notificationOrder.id),
-            "Confirmed",
-          );
+        const success = await updateOrderStatus(
+          notificationOrder.id,
+          "Confirmed",
+        );
 
-        if (cancelled) {
-          return;
+        if (!cancelled && success) {
+          onNotificationStatusChanged?.(notificationOrder.id);
         }
 
-        if (success) {
-          onNotificationStatusChanged?.(
-            notificationOrder.id,
-          );
-        }
-
-        onNotificationHandled?.();
+        if (!cancelled) onNotificationHandled?.();
         return;
       }
 
-      await openOrder(
-        notificationOrder,
-      );
+      await openOrder(notificationOrder);
 
-      if (!cancelled) {
-        onNotificationHandled?.();
-      }
+      if (!cancelled) onNotificationHandled?.();
     };
 
-    handleAction();
+    run();
 
     return () => {
       cancelled = true;
@@ -681,2048 +471,414 @@ export default function OrdersTab({
     notificationAction,
     notificationOpenKey,
     openOrder,
-    openRejectModal,
+    openReject,
     updateOrderStatus,
     onNotificationHandled,
     onNotificationStatusChanged,
   ]);
 
-  /* ===================================================
-     CLOSE REJECT MODAL
-  =================================================== */
+  /* ---------------- LOADING ---------------- */
 
-  const closeRejectModal =
-    useCallback(
-      () => {
-        if (
-          rejectLoading
-        ) {
-          return;
-        }
-
-        setRejectingOrder(
-          null,
-        );
-
-        setRejectReason(
-          "",
-        );
-
-        setCustomRejectReason(
-          "",
-        );
-      },
-      [
-        rejectLoading,
-      ],
-    );
-
-  /* ===================================================
-     FINAL REJECTION REASON
-  =================================================== */
-
-  const getFinalRejectReason =
-    useCallback(
-      () => {
-        if (
-          rejectReason ===
-          "Other"
-        ) {
-          return customRejectReason
-            .trim();
-        }
-
-        return rejectReason
-          .trim();
-      },
-      [
-        rejectReason,
-        customRejectReason,
-      ],
-    );
-
-  /* ===================================================
-     REJECT ONE ORDER
-  =================================================== */
-
-  const rejectOrder =
-    useCallback(
-      async () => {
-        if (
-          !rejectingOrder
-        ) {
-          return;
-        }
-
-        const reason =
-          getFinalRejectReason();
-
-        if (
-          !reason
-        ) {
-          alert(
-            rejectReason ===
-              "Other"
-              ? "Please enter the rejection reason."
-              : "Please select a rejection reason.",
-          );
-
-          return;
-        }
-
-        setRejectLoading(
-          true,
-        );
-
-        try {
-          /* -------------------------------------------
-             UPDATE ORDER
-          -------------------------------------------- */
-
-          const {
-            error,
-          } =
-            await supabase
-              .from(
-                "orders",
-              )
-              .update({
-                status:
-                  "Cancelled",
-
-                rejection_reason:
-                  reason,
-              })
-              .eq(
-                "id",
-                rejectingOrder.id,
-              );
-
-          if (
-            error
-          ) {
-            console.error(
-              "[Orders] Reject error:",
-              error,
-            );
-
-            alert(
-              error.message ||
-                "Unable to reject order.",
-            );
-
-            return;
-          }
-
-          /* -------------------------------------------
-             TIMELINE
-          -------------------------------------------- */
-
-          const {
-            error:
-              timelineError,
-          } =
-            await supabase
-              .from(
-                "order_status_history",
-              )
-              .insert({
-                order_id:
-                  rejectingOrder.id,
-
-                status:
-                  "Cancelled",
-
-                note:
-                  `Order rejected. Reason: ${reason}`,
-              });
-
-          if (
-            timelineError
-          ) {
-            console.error(
-              "[Orders] Rejection timeline error:",
-              timelineError,
-            );
-          }
-
-          /* -------------------------------------------
-             LOCAL STATE
-          -------------------------------------------- */
-
-          setOrders(
-            (
-              prev,
-            ) =>
-              prev.map(
-                (
-                  order,
-                ) =>
-                  String(
-                    order.id,
-                  ) ===
-                  String(
-                    rejectingOrder.id,
-                  )
-                    ? {
-                        ...order,
-                        status:
-                          "Cancelled",
-                        rejection_reason:
-                          reason,
-                      }
-                    : order,
-              ),
-          );
-
-          /* -------------------------------------------
-             UPDATE DRAWER
-          -------------------------------------------- */
-
-          setSelectedOrder(
-            (
-              prev,
-            ) =>
-              prev &&
-              String(
-                prev.id,
-              ) ===
-                String(
-                  rejectingOrder.id,
-                )
-                ? {
-                    ...prev,
-                    status:
-                      "Cancelled",
-                    rejection_reason:
-                      reason,
-                  }
-                : prev,
-          );
-
-          /* -------------------------------------------
-             REMOVE FROM SELECTION
-          -------------------------------------------- */
-
-          setSelectedOrders(
-            (
-              prev,
-            ) =>
-              prev.filter(
-                (
-                  id,
-                ) =>
-                  String(
-                    id,
-                  ) !==
-                  String(
-                    rejectingOrder.id,
-                  ),
-              ),
-          );
-
-          /* -------------------------------------------
-             NOTIFICATION
-          -------------------------------------------- */
-
-          onNotificationStatusChanged?.(
-            rejectingOrder.id,
-          );
-
-          /* -------------------------------------------
-             CLOSE
-          -------------------------------------------- */
-
-          setRejectingOrder(
-            null,
-          );
-
-          setRejectReason(
-            "",
-          );
-
-          setCustomRejectReason(
-            "",
-          );
-        } catch (
-          error
-        ) {
-          console.error(
-            "[Orders] Reject unexpected error:",
-            error,
-          );
-
-          alert(
-            "Unable to reject order.",
-          );
-        } finally {
-          setRejectLoading(
-            false,
-          );
-        }
-      },
-      [
-        rejectingOrder,
-        getFinalRejectReason,
-        rejectReason,
-        onNotificationStatusChanged,
-      ],
-    );
-
-  /* ===================================================
-     UPDATE PAYMENT STATUS
-  =================================================== */
-
-  const updatePaymentStatus =
-    useCallback(
-      async (
-        id: string,
-        paymentStatus: string,
-      ) => {
-        const {
-          error,
-        } =
-          await supabase
-            .from(
-              "orders",
-            )
-            .update({
-              payment_status:
-                paymentStatus,
-            })
-            .eq(
-              "id",
-              id,
-            );
-
-        if (
-          error
-        ) {
-          console.error(
-            "[Orders] Payment update error:",
-            error,
-          );
-
-          alert(
-            error.message ||
-              "Unable to update payment status.",
-          );
-
-          return;
-        }
-
-        setOrders(
-          (
-            prev,
-          ) =>
-            prev.map(
-              (
-                order,
-              ) =>
-                String(
-                  order.id,
-                ) ===
-                String(id)
-                  ? {
-                      ...order,
-                      payment_status:
-                        paymentStatus,
-                    }
-                  : order,
-            ),
-        );
-
-        setSelectedOrder(
-          (
-            prev,
-          ) =>
-            prev &&
-            String(
-              prev.id,
-            ) ===
-              String(id)
-              ? {
-                  ...prev,
-                  payment_status:
-                    paymentStatus,
-                }
-              : prev,
-        );
-      },
-      [],
-    );
-
-  /* ===================================================
-     TOGGLE ORDER
-  =================================================== */
-
-  const toggleOrder =
-    useCallback(
-      (
-        id: string,
-      ) => {
-        setSelectedOrders(
-          (
-            prev,
-          ) =>
-            prev.includes(
-              id,
-            )
-              ? prev.filter(
-                  (
-                    item,
-                  ) =>
-                    item !==
-                    id,
-                )
-              : [
-                  ...prev,
-                  id,
-                ],
-        );
-      },
-      [],
-    );
-
-  /* ===================================================
-     SELECT ALL
-  =================================================== */
-
-  const toggleSelectAll =
-    useCallback(
-      () => {
-        const filteredIds =
-          filtered.map(
-            (
-              order,
-            ) =>
-              String(
-                order.id,
-              ),
-          );
-
-        const allSelected =
-          filteredIds.length >
-            0 &&
-          filteredIds.every(
-            (
-              id,
-            ) =>
-              selectedOrders.includes(
-                id,
-              ),
-          );
-
-        if (
-          allSelected
-        ) {
-          setSelectedOrders(
-            [],
-          );
-        } else {
-          setSelectedOrders(
-            filteredIds,
-          );
-        }
-      },
-      [
-        filtered,
-        selectedOrders,
-      ],
-    );
-
-  /* ===================================================
-     BULK UPDATE STATUS
-  =================================================== */
-
-  const bulkUpdateStatus =
-    useCallback(
-      async (
-        status: string,
-      ) => {
-        if (
-          selectedOrders.length ===
-          0
-        ) {
-          return;
-        }
-
-        const invalidOrders =
-          orders.filter(
-            (
-              order,
-            ) => {
-              const id =
-                String(
-                  order.id,
-                );
-
-              return (
-                selectedOrders.includes(
-                  id,
-                ) &&
-                (
-                  order.status ===
-                    "Delivered" ||
-                  order.status ===
-                    "Cancelled" ||
-                  (
-                    order.status ===
-                      "Out For Delivery" &&
-                    (
-                      status ===
-                        "Pending" ||
-                      status ===
-                        "Confirmed"
-                    )
-                  )
-                )
-              );
-            },
-          );
-
-        if (
-          invalidOrders.length >
-          0
-        ) {
-          alert(
-            "Some selected orders cannot be moved to this status.",
-          );
-
-          return;
-        }
-
-        const {
-          error,
-        } =
-          await supabase
-            .from(
-              "orders",
-            )
-            .update({
-              status,
-            })
-            .in(
-              "id",
-              selectedOrders,
-            );
-
-        if (
-          error
-        ) {
-          console.error(
-            "[Orders] Bulk update error:",
-            error,
-          );
-
-          alert(
-            error.message ||
-              "Unable to update selected orders.",
-          );
-
-          return;
-        }
-
-        setOrders(
-          (
-            prev,
-          ) =>
-            prev.map(
-              (
-                order,
-              ) =>
-                selectedOrders.includes(
-                  String(
-                    order.id,
-                  ),
-                )
-                  ? {
-                      ...order,
-                      status,
-                    }
-                  : order,
-            ),
-        );
-
-        const {
-          error:
-            timelineError,
-        } =
-          await supabase
-            .from(
-              "order_status_history",
-            )
-            .insert(
-              selectedOrders.map(
-                (
-                  id,
-                ) => ({
-                  order_id:
-                    id,
-
-                  status,
-
-                  note:
-                    statusMessages[
-                      status
-                    ] ??
-                    status,
-                }),
-              ),
-            );
-
-        if (
-          timelineError
-        ) {
-          console.error(
-            "[Orders] Bulk timeline error:",
-            timelineError,
-          );
-        }
-
-        setSelectedOrders(
-          [],
-        );
-      },
-      [
-        orders,
-        selectedOrders,
-      ],
-    );
-
-  /* ===================================================
-     OPEN BULK REJECT
-  =================================================== */
-
-  const openBulkReject =
-    useCallback(
-      () => {
-        if (
-          selectedOrders.length ===
-          0
-        ) {
-          return;
-        }
-
-        setBulkRejecting(
-          true,
-        );
-
-        setRejectReason(
-          "",
-        );
-
-        setCustomRejectReason(
-          "",
-        );
-      },
-      [
-        selectedOrders.length,
-      ],
-    );
-
-  /* ===================================================
-     CLOSE BULK REJECT
-  =================================================== */
-
-  const closeBulkReject =
-    useCallback(
-      () => {
-        if (
-          rejectLoading
-        ) {
-          return;
-        }
-
-        setBulkRejecting(
-          false,
-        );
-
-        setRejectReason(
-          "",
-        );
-
-        setCustomRejectReason(
-          "",
-        );
-      },
-      [
-        rejectLoading,
-      ],
-    );
-
-  /* ===================================================
-     REJECT SELECTED ORDERS
-  =================================================== */
-
-  const rejectSelectedOrders =
-    useCallback(
-      async () => {
-        const reason =
-          getFinalRejectReason();
-
-        if (
-          !reason
-        ) {
-          alert(
-            rejectReason ===
-              "Other"
-              ? "Please enter the rejection reason."
-              : "Please select a rejection reason.",
-          );
-
-          return;
-        }
-
-        if (
-          selectedOrders.length ===
-          0
-        ) {
-          return;
-        }
-
-        setRejectLoading(
-          true,
-        );
-
-        try {
-          const eligibleOrders =
-            orders.filter(
-              (
-                order,
-              ) =>
-                selectedOrders.includes(
-                  String(
-                    order.id,
-                  ),
-                ) &&
-                order.status !==
-                  "Delivered" &&
-                order.status !==
-                  "Cancelled",
-            );
-
-          if (
-            eligibleOrders.length ===
-            0
-          ) {
-            alert(
-              "No eligible orders selected.",
-            );
-
-            return;
-          }
-
-          const eligibleIds =
-            eligibleOrders.map(
-              (
-                order,
-              ) =>
-                order.id,
-            );
-
-          /* -------------------------------------------
-             UPDATE
-          -------------------------------------------- */
-
-          const {
-            error,
-          } =
-            await supabase
-              .from(
-                "orders",
-              )
-              .update({
-                status:
-                  "Cancelled",
-
-                rejection_reason:
-                  reason,
-              })
-              .in(
-                "id",
-                eligibleIds,
-              );
-
-          if (
-            error
-          ) {
-            console.error(
-              "[Orders] Bulk rejection error:",
-              error,
-            );
-
-            alert(
-              error.message ||
-                "Unable to reject selected orders.",
-            );
-
-            return;
-          }
-
-          /* -------------------------------------------
-             TIMELINE
-          -------------------------------------------- */
-
-          const {
-            error:
-              timelineError,
-          } =
-            await supabase
-              .from(
-                "order_status_history",
-              )
-              .insert(
-                eligibleIds.map(
-                  (
-                    id,
-                  ) => ({
-                    order_id:
-                      id,
-
-                    status:
-                      "Cancelled",
-
-                    note:
-                      `Order rejected. Reason: ${reason}`,
-                  }),
-                ),
-              );
-
-          if (
-            timelineError
-          ) {
-            console.error(
-              "[Orders] Bulk rejection timeline error:",
-              timelineError,
-            );
-          }
-
-          /* -------------------------------------------
-             LOCAL
-          -------------------------------------------- */
-
-          const eligibleIdStrings =
-            eligibleIds.map(
-              (
-                id,
-              ) =>
-                String(
-                  id,
-                ),
-            );
-
-          setOrders(
-            (
-              prev,
-            ) =>
-              prev.map(
-                (
-                  order,
-                ) =>
-                  eligibleIdStrings.includes(
-                    String(
-                      order.id,
-                    ),
-                  )
-                    ? {
-                        ...order,
-                        status:
-                          "Cancelled",
-                        rejection_reason:
-                          reason,
-                      }
-                    : order,
-              ),
-          );
-
-          setSelectedOrder(
-            (
-              prev,
-            ) => {
-              if (
-                !prev
-              ) {
-                return prev;
-              }
-
-              if (
-                eligibleIdStrings.includes(
-                  String(
-                    prev.id,
-                  ),
-                )
-              ) {
-                return {
-                  ...prev,
-                  status:
-                    "Cancelled",
-                  rejection_reason:
-                    reason,
-                };
-              }
-
-              return prev;
-            },
-          );
-
-          setSelectedOrders(
-            [],
-          );
-
-          setBulkRejecting(
-            false,
-          );
-
-          setRejectReason(
-            "",
-          );
-
-          setCustomRejectReason(
-            "",
-          );
-        } catch (
-          error
-        ) {
-          console.error(
-            "[Orders] Bulk rejection unexpected error:",
-            error,
-          );
-
-          alert(
-            "Unable to reject selected orders.",
-          );
-        } finally {
-          setRejectLoading(
-            false,
-          );
-        }
-      },
-      [
-        orders,
-        selectedOrders,
-        getFinalRejectReason,
-        rejectReason,
-      ],
-    );
-
-  /* ===================================================
-     LOADING
-  =================================================== */
-
-  if (
-    loading
-  ) {
+  if (loading) {
     return (
-      <div className="flex h-96 items-center justify-center">
-
-        <div className="text-sm font-medium text-slate-500">
+      <div className="flex min-h-[50vh] items-center justify-center px-4">
+        <div className="flex items-center gap-3 text-sm font-medium text-slate-500">
+          <span className="h-5 w-5 animate-spin rounded-full border-2 border-slate-200 border-t-orange-500" />
           Loading orders...
         </div>
-
       </div>
     );
   }
 
-  /* ===================================================
-     RENDER
-  =================================================== */
+  const allSelected =
+    filtered.length > 0 &&
+    filtered.every((o) => selectedOrders.includes(String(o.id)));
 
   return (
-    <div className="p-8">
-
-      {/* =================================================
-          HEADER
-      ================================================= */}
-
-      <div className="mb-6 flex items-center justify-between">
-
-        <div>
-
-          <h1 className="text-3xl font-bold text-slate-900">
+    <div className="min-h-screen w-full overflow-x-hidden bg-slate-50/50 px-3 py-4 sm:px-5 sm:py-6 lg:px-8 lg:py-8">
+      {/* HEADER */}
+      <header className="mb-5 flex flex-col gap-4 sm:mb-6 sm:flex-row sm:items-center sm:justify-between">
+        <div className="min-w-0">
+          <h1 className="text-xl font-bold tracking-tight text-slate-900 sm:text-2xl lg:text-3xl">
             Orders Management
           </h1>
 
-          <p className="mt-1 text-sm text-slate-500">
+          <p className="mt-1 text-xs text-slate-500 sm:text-sm">
             {orders.length} total orders
           </p>
-
         </div>
 
         <button
           type="button"
-          onClick={() =>
-            setShowMore(
-              (
-                prev,
-              ) =>
-                !prev,
-            )
-          }
-          className="flex items-center gap-2 rounded-xl border border-slate-300 bg-white px-5 py-2.5 text-sm font-semibold text-slate-700 shadow-sm transition hover:border-orange-500 hover:bg-orange-50 hover:text-orange-600"
+          onClick={() => setShowMore(true)}
+          className="w-full rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-semibold text-slate-700 shadow-sm transition hover:border-orange-300 hover:bg-orange-50 hover:text-orange-600 sm:w-auto"
         >
-          {showMore ? (
-            <>
-              <span>
-                ✕
-              </span>
-
-              Hide Details
-            </>
-          ) : (
-            <>
-              <span>
-                ☰
-              </span>
-
-              More
-            </>
-          )}
+          ☰ More Details
         </button>
+      </header>
 
+      {/* OPERATIONS */}
+      <OperationsDashboard orders={orders} />
+
+      {/* BOARDS */}
+      <div className="space-y-4 sm:space-y-5">
+        <NewOrdersBoard
+          orders={orders}
+          onView={openOrder}
+          onConfirm={updateOrderStatus}
+          onReject={openReject}
+        />
+
+        <ConfirmedOrdersBoard
+          orders={orders}
+          onView={openOrder}
+          onDispatch={updateOrderStatus}
+        />
+
+        <OutForDeliveryBoard
+          orders={orders}
+          onView={openOrder}
+          onDelivered={updateOrderStatus}
+        />
+
+        <DeliveredBoard orders={orders} onView={openOrder} />
       </div>
 
-      {/* =================================================
-          OPERATIONS
-      ================================================= */}
-
-      <OperationsDashboard
-        orders={
-          orders
-        }
-      />
-
-      {/* =================================================
-          NEW ORDERS
-      ================================================= */}
-
-      <NewOrdersBoard
-        orders={
-          orders
-        }
-        onView={
-          openOrder
-        }
-        onConfirm={
-          updateOrderStatus
-        }
-        onReject={
-          openRejectModal
-        }
-      />
-
-      {/* =================================================
-          CONFIRMED
-      ================================================= */}
-
-      <ConfirmedOrdersBoard
-        orders={
-          orders
-        }
-        onView={
-          openOrder
-        }
-        onDispatch={
-          updateOrderStatus
-        }
-      />
-
-      {/* =================================================
-          OUT FOR DELIVERY
-      ================================================= */}
-
-      <OutForDeliveryBoard
-        orders={
-          orders
-        }
-        onView={
-          openOrder
-        }
-        onDelivered={
-          updateOrderStatus
-        }
-      />
-
-      {/* =================================================
-          DELIVERED
-      ================================================= */}
-
-      <DeliveredBoard
-        orders={
-          orders
-        }
-        onView={
-          openOrder
-        }
-      />
-
-      {/* =================================================
-          MORE DETAILS
-      ================================================= */}
-
+      {/* MORE DETAILS */}
       {showMore && (
         <div
-          className="
-            fixed
-            inset-0
-            z-9999
-            flex
-            items-center
-            justify-center
-            bg-black/50
-            p-6
-            backdrop-blur-sm
-          "
-          onClick={() =>
-            setShowMore(
-              false,
-            )
-          }
+          className="fixed inset-0 z-9999 flex items-end justify-center bg-black/50 p-0 backdrop-blur-sm sm:items-center sm:p-4 lg:p-6"
+          onClick={() => setShowMore(false)}
         >
-
-          <div
-            className="
-              relative
-              h-[90vh]
-              w-[98vw]
-              max-w-7xl
-              overflow-hidden
-              rounded-3xl
-              bg-white
-              shadow-2xl
-            "
-            onClick={(
-              event,
-            ) =>
-              event.stopPropagation()
-            }
+          <section
+            className="flex h-[96vh] w-full flex-col overflow-hidden rounded-t-3xl bg-white shadow-2xl sm:h-[92vh] sm:max-w-7xl sm:rounded-3xl"
+            onClick={(e) => e.stopPropagation()}
           >
-
-            {/* HEADER */}
-
-            <div
-              className="
-                sticky
-                top-0
-                z-20
-                flex
-                items-center
-                justify-between
-                border-b
-                bg-white
-                px-8
-                py-5
-              "
-            >
-
-              <div>
-
-                <h2 className="text-2xl font-bold text-slate-900">
+            {/* MODAL HEADER */}
+            <div className="flex shrink-0 items-center justify-between gap-3 border-b border-slate-100 px-4 py-4 sm:px-6 lg:px-8 lg:py-5">
+              <div className="min-w-0">
+                <h2 className="truncate text-lg font-bold text-slate-900 sm:text-xl lg:text-2xl">
                   Order Management
                 </h2>
-
-                <p className="text-sm text-slate-500">
-                  Search, Filter & Manage All Orders
+                <p className="mt-0.5 hidden text-sm text-slate-500 sm:block">
+                  Search, filter and manage all orders
                 </p>
-
               </div>
 
               <button
                 type="button"
-                onClick={() =>
-                  setShowMore(
-                    false,
-                  )
-                }
-                className="
-                  rounded-xl
-                  border
-                  border-slate-300
-                  px-4
-                  py-2
-                  font-semibold
-                  transition
-                  hover:bg-slate-100
-                "
+                onClick={() => setShowMore(false)}
+                className="shrink-0 rounded-xl border border-slate-200 px-3 py-2 text-sm font-semibold text-slate-600 hover:bg-slate-50"
               >
-                ✕ Close
+                ✕<span className="ml-1 hidden sm:inline">Close</span>
               </button>
-
             </div>
 
-            {/* CONTENT */}
-
-            <div
-              className="
-                h-[calc(90vh-80px)]
-                overflow-y-auto
-                p-8
-              "
-            >
-
+            {/* MODAL CONTENT */}
+            <div className="min-h-0 flex-1 overflow-y-auto px-3 py-4 sm:px-5 sm:py-5 lg:px-8 lg:py-7">
               <OrdersSearch
-                search={
-                  search
-                }
-                status={
-                  statusFilter
-                }
-                payment={
-                  paymentFilter
-                }
-                onSearch={
-                  setSearch
-                }
-                onStatus={
-                  setStatusFilter
-                }
-                onPayment={
-                  setPaymentFilter
-                }
-                onRefresh={
-                  fetchOrders
-                }
+                search={search}
+                status={statusFilter}
+                payment={paymentFilter}
+                onSearch={setSearch}
+                onStatus={setStatusFilter}
+                onPayment={setPaymentFilter}
+                onRefresh={fetchOrders}
               />
 
-              <OrdersStats
-                orders={
-                  orders
-                }
-                selectedStatus={
-                  statusFilter
-                }
-                onSelectStatus={
-                  setStatusFilter
-                }
-              />
-
-              <div className="mt-6">
-
-                <OrdersTable
-                  orders={
-                    filtered
-                  }
-                  onView={
-                    openOrder
-                  }
-                  highlightOrderId={
-                    highlightOrderId
-                  }
-                  selectedOrders={
-                    selectedOrders
-                  }
-                  onSelect={
-                    toggleOrder
-                  }
-                  allSelected={
-                    filtered.length >
-                      0 &&
-                    filtered.every(
-                      (
-                        order,
-                      ) =>
-                        selectedOrders.includes(
-                          String(
-                            order.id,
-                          ),
-                        ),
-                    )
-                  }
-                  onSelectAll={
-                    toggleSelectAll
-                  }
+              <div className="mt-4 sm:mt-5">
+                <OrdersStats
+                  orders={orders}
+                  selectedStatus={statusFilter}
+                  onSelectStatus={setStatusFilter}
                 />
-
               </div>
 
+              <div className="mt-4 overflow-x-auto sm:mt-6">
+                <OrdersTable
+                  orders={filtered}
+                  onView={openOrder}
+                  highlightOrderId={highlightOrderId}
+                  selectedOrders={selectedOrders}
+                  onSelect={toggleOrder}
+                  allSelected={allSelected}
+                  onSelectAll={toggleSelectAll}
+                />
+              </div>
             </div>
-
-          </div>
-
+          </section>
         </div>
       )}
-{/* =================================================
-    NEW ORDER NOTIFICATION
-================================================= */}
 
-{notificationOrder && (
-  <div
-    className="
-      fixed
-      right-5
-      top-5
-      z-[10002]
-      w-[min(420px,calc(100vw-2rem))]
-    "
-  >
-    <NewOrderNotification
-      order={notificationOrder}
+      {/* NEW ORDER NOTIFICATION */}
+      {notificationOrder && (
+        <div className="fixed left-3 right-3 top-3 z-10002 sm:left-auto sm:right-5 sm:top-5 sm:w-105">
+          <NewOrderNotification
+            order={notificationOrder}
+            onClose={() => onNotificationHandled?.()}
+            onView={async () => {
+              await openOrder(notificationOrder);
+              onNotificationHandled?.();
+            }}
+            onAccept={async () => {
+              const success = await updateOrderStatus(
+                notificationOrder.id,
+                "Confirmed",
+              );
 
-      onClose={() => {
-        onNotificationHandled?.();
-      }}
+              if (success) {
+                onNotificationStatusChanged?.(notificationOrder.id);
+                onNotificationHandled?.();
+              }
+            }}
+            onReject={() => {
+              openReject(notificationOrder);
+              onNotificationHandled?.();
+            }}
+          />
+        </div>
+      )}
 
-      onView={async () => {
-        await openOrder(notificationOrder);
-        onNotificationHandled?.();
-      }}
-
-      onAccept={async () => {
-        const success = await updateOrderStatus(
-          String(notificationOrder.id),
-          "Confirmed",
-        );
-
-        if (success) {
-          onNotificationStatusChanged?.(
-            notificationOrder.id,
-          );
-
-          onNotificationHandled?.();
-        }
-      }}
-
-      onReject={() => {
-        openRejectModal(notificationOrder);
-        onNotificationHandled?.();
-      }}
-    />
-  </div>
-)}
-      {/* =================================================
-          ORDER DRAWER
-      ================================================= */}
-
+      {/* ORDER DRAWER */}
       <OrderViewDrawer
-        open={
-          showOrder
-        }
-        order={
-          selectedOrder
-        }
-        items={
-          orderItems
-        }
-        onClose={() =>
-          setShowOrder(
-            false,
-          )
-        }
-        onStatusChange={
-          updateOrderStatus
-        }
-        onPaymentStatusChange={
-          updatePaymentStatus
-        }
+        open={showOrder}
+        order={selectedOrder}
+        items={orderItems}
+        onClose={() => setShowOrder(false)}
+        onStatusChange={updateOrderStatus}
+        onPaymentStatusChange={updatePaymentStatus}
       />
 
-      {/* =================================================
-          SINGLE REJECT MODAL
-      ================================================= */}
-
-      {rejectingOrder && (
-        <div
-          className="
-            fixed
-            inset-0
-            z-[10000]
-            flex
-            items-center
-            justify-center
-            bg-black/50
-            p-4
-            backdrop-blur-sm
-          "
-          onClick={
-            closeRejectModal
+      {/* REJECT MODAL */}
+      {(rejectingOrder || bulkRejecting) && (
+        <RejectModal
+          bulk={bulkRejecting}
+          order={rejectingOrder}
+          count={selectedOrders.length}
+          reason={rejectReason}
+          customReason={customRejectReason}
+          loading={rejectLoading}
+          onReasonChange={(value) => {
+            setRejectReason(value);
+            if (value !== "Other") setCustomRejectReason("");
+          }}
+          onCustomReasonChange={setCustomRejectReason}
+          onClose={resetReject}
+          onSubmit={
+            rejectingOrder ? rejectSingle : () => rejectOrders(selectedOrders)
           }
-        >
-
-          <div
-            className="
-              w-full
-              max-w-md
-              rounded-2xl
-              bg-white
-              p-6
-              shadow-2xl
-            "
-            onClick={(
-              event,
-            ) =>
-              event.stopPropagation()
-            }
-          >
-
-            {/* HEADER */}
-
-            <div className="flex items-center justify-between">
-
-              <div>
-
-                <h2 className="text-xl font-bold text-slate-900">
-                  Reject Order
-                </h2>
-
-                <p className="mt-1 text-sm text-slate-500">
-                  {rejectingOrder.order_number
-                    ? `Order #${rejectingOrder.order_number}`
-                    : "Reject this order"}
-                </p>
-
-              </div>
-
-              <button
-                type="button"
-                disabled={
-                  rejectLoading
-                }
-                onClick={
-                  closeRejectModal
-                }
-                className="
-                  rounded-lg
-                  p-2
-                  text-slate-400
-                  transition
-                  hover:bg-slate-100
-                  hover:text-slate-700
-                  disabled:opacity-50
-                "
-              >
-                ✕
-              </button>
-
-            </div>
-
-            {/* REASON */}
-
-            <div className="mt-5">
-
-              <label className="text-sm font-semibold text-slate-700">
-                Rejection Reason
-              </label>
-
-              <select
-                value={
-                  rejectReason
-                }
-                onChange={(
-                  event,
-                ) => {
-                  setRejectReason(
-                    event.target.value,
-                  );
-
-                  if (
-                    event.target.value !==
-                    "Other"
-                  ) {
-                    setCustomRejectReason(
-                      "",
-                    );
-                  }
-                }}
-                disabled={
-                  rejectLoading
-                }
-                className="
-                  mt-2
-                  w-full
-                  rounded-xl
-                  border
-                  border-slate-300
-                  bg-white
-                  px-4
-                  py-3
-                  text-sm
-                  text-slate-700
-                  outline-none
-                  transition
-                  focus:border-red-500
-                  focus:ring-2
-                  focus:ring-red-100
-                  disabled:bg-slate-100
-                "
-              >
-
-                <option value="">
-                  Select a reason
-                </option>
-
-                {REJECTION_REASONS.map(
-                  (
-                    reason,
-                  ) => (
-                    <option
-                      key={
-                        reason
-                      }
-                      value={
-                        reason
-                      }
-                    >
-                      {reason}
-                    </option>
-                  ),
-                )}
-
-              </select>
-
-            </div>
-
-            {/* CUSTOM */}
-
-            {rejectReason ===
-              "Other" && (
-              <div className="mt-4">
-
-                <label className="text-sm font-semibold text-slate-700">
-                  Enter Reason
-                </label>
-
-                <textarea
-                  value={
-                    customRejectReason
-                  }
-                  onChange={(
-                    event,
-                  ) =>
-                    setCustomRejectReason(
-                      event.target.value,
-                    )
-                  }
-                  disabled={
-                    rejectLoading
-                  }
-                  rows={4}
-                  placeholder="Enter the reason for rejecting this order..."
-                  className="
-                    mt-2
-                    w-full
-                    resize-none
-                    rounded-xl
-                    border
-                    border-slate-300
-                    px-4
-                    py-3
-                    text-sm
-                    outline-none
-                    transition
-                    focus:border-red-500
-                    focus:ring-2
-                    focus:ring-red-100
-                    disabled:bg-slate-100
-                  "
-                />
-
-              </div>
-            )}
-
-            {/* PREVIEW */}
-
-            {getFinalRejectReason() && (
-              <div
-                className="
-                  mt-4
-                  rounded-xl
-                  border
-                  border-red-100
-                  bg-red-50
-                  p-3
-                "
-              >
-
-                <p className="text-xs font-semibold uppercase tracking-wide text-red-500">
-                  Rejection Reason
-                </p>
-
-                <p className="mt-1 text-sm font-medium text-red-700">
-                  {
-                    getFinalRejectReason()
-                  }
-                </p>
-
-              </div>
-            )}
-
-            {/* ACTIONS */}
-
-            <div className="mt-6 flex gap-3">
-
-              <button
-                type="button"
-                disabled={
-                  rejectLoading
-                }
-                onClick={
-                  closeRejectModal
-                }
-                className="
-                  flex-1
-                  rounded-xl
-                  border
-                  border-slate-300
-                  px-4
-                  py-3
-                  text-sm
-                  font-bold
-                  text-slate-700
-                  transition
-                  hover:bg-slate-50
-                  disabled:cursor-not-allowed
-                  disabled:opacity-50
-                "
-              >
-                Cancel
-              </button>
-
-              <button
-                type="button"
-                disabled={
-                  rejectLoading ||
-                  !getFinalRejectReason()
-                }
-                onClick={
-                  rejectOrder
-                }
-                className="
-                  flex-1
-                  rounded-xl
-                  bg-red-500
-                  px-4
-                  py-3
-                  text-sm
-                  font-bold
-                  text-white
-                  transition
-                  hover:bg-red-600
-                  disabled:cursor-not-allowed
-                  disabled:opacity-50
-                "
-              >
-                {rejectLoading
-                  ? "Rejecting..."
-                  : "Confirm Reject"}
-              </button>
-
-            </div>
-
-          </div>
-
-        </div>
+          finalReason={getFinalReason()}
+        />
       )}
 
-      {/* =================================================
-          BULK ACTION BAR
-      ================================================= */}
-
-      {selectedOrders.length >
-        0 && (
-        <div
-          className="
-            fixed
-            bottom-6
-            left-1/2
-            z-[999]
-            -translate-x-1/2
-          "
-        >
-
-          <div
-            className="
-              flex
-              items-center
-              gap-5
-              rounded-2xl
-              border
-              border-orange-200
-              bg-white
-              px-6
-              py-4
-              shadow-2xl
-            "
-          >
-
-            <div>
-
-              <p className="text-sm text-slate-500">
-                Selected Orders
-              </p>
-
-              <p className="text-lg font-bold text-slate-900">
-                {
-                  selectedOrders.length
-                }{" "}
-                Selected
-              </p>
-
+      {/* BULK ACTION BAR */}
+      {selectedOrders.length > 0 && (
+        <div className="fixed inset-x-3 bottom-3 z-[999] sm:inset-x-auto sm:bottom-5 sm:left-1/2 sm:-translate-x-1/2">
+          <div className="flex flex-col gap-3 rounded-2xl border border-orange-100 bg-white p-3 shadow-2xl sm:flex-row sm:items-center sm:gap-4 sm:px-5 sm:py-3">
+            <div className="flex items-center justify-between sm:block">
+              <div>
+                <p className="text-[11px] text-slate-500">Selected Orders</p>
+                <p className="text-sm font-bold text-slate-900">
+                  {selectedOrders.length} Selected
+                </p>
+              </div>
             </div>
 
-            <div className="h-10 w-px bg-slate-200" />
+            <div className="grid grid-cols-2 gap-2 sm:flex">
+              <ActionButton
+                label="Confirm"
+                className="bg-blue-600 hover:bg-blue-700"
+                onClick={() => bulkUpdateStatus("Confirmed")}
+              />
 
-            <div className="flex items-center gap-3">
+              <ActionButton
+                label="Dispatch"
+                className="bg-orange-600 hover:bg-orange-700"
+                onClick={() => bulkUpdateStatus("Ready to Dispatch")}
+              />
 
-              <button
-                type="button"
-                onClick={() =>
-                  bulkUpdateStatus(
-                    "Confirmed",
-                  )
-                }
-                className="
-                  rounded-xl
-                  bg-blue-600
-                  px-4
-                  py-2
-                  text-sm
-                  font-semibold
-                  text-white
-                  transition
-                  hover:bg-blue-700
-                "
-              >
-                Confirm
-              </button>
+              <ActionButton
+                label="Delivered"
+                className="bg-green-600 hover:bg-green-700"
+                onClick={() => bulkUpdateStatus("Delivered")}
+              />
 
-              <button
-                type="button"
-                onClick={() =>
-                  bulkUpdateStatus(
-                    "Ready to Dispatch",
-                  )
-                }
-                className="
-                  rounded-xl
-                  bg-orange-600
-                  px-4
-                  py-2
-                  text-sm
-                  font-semibold
-                  text-white
-                  transition
-                  hover:bg-orange-700
-                "
-              >
-                Dispatch
-              </button>
+              <ActionButton
+                label="Reject"
+                className="bg-red-600 hover:bg-red-700"
+                onClick={openBulkReject}
+              />
 
               <button
                 type="button"
-                onClick={() =>
-                  bulkUpdateStatus(
-                    "Delivered",
-                  )
-                }
-                className="
-                  rounded-xl
-                  bg-green-600
-                  px-4
-                  py-2
-                  text-sm
-                  font-semibold
-                  text-white
-                  transition
-                  hover:bg-green-700
-                "
-              >
-                Delivered
-              </button>
-
-              <button
-                type="button"
-                onClick={
-                  openBulkReject
-                }
-                className="
-                  rounded-xl
-                  bg-red-600
-                  px-4
-                  py-2
-                  text-sm
-                  font-semibold
-                  text-white
-                  transition
-                  hover:bg-red-700
-                "
-              >
-                Reject
-              </button>
-
-              <button
-                type="button"
-                onClick={() =>
-                  setSelectedOrders(
-                    [],
-                  )
-                }
-                className="
-                  rounded-xl
-                  border
-                  border-slate-300
-                  px-4
-                  py-2
-                  text-sm
-                  font-semibold
-                  text-slate-700
-                  transition
-                  hover:bg-slate-100
-                "
+                onClick={() => setSelectedOrders([])}
+                className="rounded-xl border border-slate-200 px-3 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-50 sm:px-4 sm:text-sm"
               >
                 Clear
               </button>
-
             </div>
-
           </div>
-
         </div>
       )}
+    </div>
+  );
+}
 
-      {/* =================================================
-          BULK REJECT MODAL
-      ================================================= */}
+/* =========================================================
+   ACTION BUTTON
+========================================================= */
 
-      {bulkRejecting && (
-        <div
-          className="
-            fixed
-            inset-0
-            z-[10001]
-            flex
-            items-center
-            justify-center
-            bg-black/50
-            p-4
-            backdrop-blur-sm
-          "
-          onClick={
-            closeBulkReject
-          }
-        >
+function ActionButton({
+  label,
+  onClick,
+  className,
+}: {
+  label: string;
+  onClick: () => void;
+  className: string;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className={`rounded-xl px-3 py-2 text-xs font-semibold text-white transition sm:px-4 sm:text-sm ${className}`}
+    >
+      {label}
+    </button>
+  );
+}
 
-          <div
-            className="
-              w-full
-              max-w-md
-              rounded-2xl
-              bg-white
-              p-6
-              shadow-2xl
-            "
-            onClick={(
-              event,
-            ) =>
-              event.stopPropagation()
-            }
+/* =========================================================
+   REJECT MODAL
+========================================================= */
+
+function RejectModal({
+  bulk,
+  order,
+  count,
+  reason,
+  customReason,
+  loading,
+  onReasonChange,
+  onCustomReasonChange,
+  onClose,
+  onSubmit,
+  finalReason,
+}: {
+  bulk: boolean;
+  order: Order | null;
+  count: number;
+  reason: string;
+  customReason: string;
+  loading: boolean;
+  onReasonChange: (value: string) => void;
+  onCustomReasonChange: (value: string) => void;
+  onClose: () => void;
+  onSubmit: () => void;
+  finalReason: string;
+}) {
+  return (
+    <div
+      className="fixed inset-0 z-10000 flex items-end justify-center bg-black/50 p-0 backdrop-blur-sm sm:items-center sm:p-4"
+      onClick={onClose}
+    >
+      <div
+        className="max-h-[92vh] w-full overflow-y-auto rounded-t-3xl bg-white p-4 shadow-2xl sm:max-w-md sm:rounded-2xl sm:p-6"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="flex items-start justify-between gap-3">
+          <div className="min-w-0">
+            <h2 className="text-lg font-bold text-slate-900 sm:text-xl">
+              {bulk ? "Reject Selected Orders" : "Reject Order"}
+            </h2>
+
+            <p className="mt-1 text-xs text-slate-500 sm:text-sm">
+              {bulk
+                ? `${count} orders selected`
+                : order?.order_number
+                  ? `Order #${order.order_number}`
+                  : "Reject this order"}
+            </p>
+          </div>
+
+          <button
+            type="button"
+            disabled={loading}
+            onClick={onClose}
+            className="shrink-0 rounded-lg p-2 text-slate-400 hover:bg-slate-100"
           >
-
-            <div className="flex items-center justify-between">
-
-              <div>
-
-                <h2 className="text-xl font-bold text-slate-900">
-                  Reject Selected Orders
-                </h2>
-
-                <p className="mt-1 text-sm text-slate-500">
-                  {
-                    selectedOrders.length
-                  }{" "}
-                  orders selected
-                </p>
-
-              </div>
-
-              <button
-                type="button"
-                disabled={
-                  rejectLoading
-                }
-                onClick={
-                  closeBulkReject
-                }
-                className="
-                  rounded-lg
-                  p-2
-                  text-slate-400
-                  transition
-                  hover:bg-slate-100
-                "
-              >
-                ✕
-              </button>
-
-            </div>
-
-            <div className="mt-5">
-
-              <label className="text-sm font-semibold text-slate-700">
-                Rejection Reason
-              </label>
-
-              <select
-                value={
-                  rejectReason
-                }
-                onChange={(
-                  event,
-                ) => {
-                  setRejectReason(
-                    event.target.value,
-                  );
-
-                  if (
-                    event.target.value !==
-                    "Other"
-                  ) {
-                    setCustomRejectReason(
-                      "",
-                    );
-                  }
-                }}
-                disabled={
-                  rejectLoading
-                }
-                className="
-                  mt-2
-                  w-full
-                  rounded-xl
-                  border
-                  border-slate-300
-                  bg-white
-                  px-4
-                  py-3
-                  text-sm
-                  outline-none
-                  focus:border-red-500
-                  focus:ring-2
-                  focus:ring-red-100
-                "
-              >
-
-                <option value="">
-                  Select a reason
-                </option>
-
-                {REJECTION_REASONS.map(
-                  (
-                    reason,
-                  ) => (
-                    <option
-                      key={
-                        reason
-                      }
-                      value={
-                        reason
-                      }
-                    >
-                      {reason}
-                    </option>
-                  ),
-                )}
-
-              </select>
-
-            </div>
-
-            {rejectReason ===
-              "Other" && (
-              <textarea
-                value={
-                  customRejectReason
-                }
-                onChange={(
-                  event,
-                ) =>
-                  setCustomRejectReason(
-                    event.target.value,
-                  )
-                }
-                disabled={
-                  rejectLoading
-                }
-                rows={4}
-                placeholder="Enter rejection reason..."
-                className="
-                  mt-4
-                  w-full
-                  resize-none
-                  rounded-xl
-                  border
-                  border-slate-300
-                  px-4
-                  py-3
-                  text-sm
-                  outline-none
-                  focus:border-red-500
-                  focus:ring-2
-                  focus:ring-red-100
-                "
-              />
-            )}
-
-            <div className="mt-6 flex gap-3">
-
-              <button
-                type="button"
-                disabled={
-                  rejectLoading
-                }
-                onClick={
-                  closeBulkReject
-                }
-                className="
-                  flex-1
-                  rounded-xl
-                  border
-                  border-slate-300
-                  px-4
-                  py-3
-                  text-sm
-                  font-bold
-                  text-slate-700
-                  hover:bg-slate-50
-                "
-              >
-                Cancel
-              </button>
-
-              <button
-                type="button"
-                disabled={
-                  rejectLoading ||
-                  !getFinalRejectReason()
-                }
-                onClick={
-                  rejectSelectedOrders
-                }
-                className="
-                  flex-1
-                  rounded-xl
-                  bg-red-600
-                  px-4
-                  py-3
-                  text-sm
-                  font-bold
-                  text-white
-                  hover:bg-red-700
-                  disabled:cursor-not-allowed
-                  disabled:opacity-50
-                "
-              >
-                {rejectLoading
-                  ? "Rejecting..."
-                  : `Reject ${selectedOrders.length} Orders`}
-              </button>
-
-            </div>
-
-          </div>
-
+            ✕
+          </button>
         </div>
-      )}
 
+        <div className="mt-5">
+          <label className="text-sm font-semibold text-slate-700">
+            Rejection Reason
+          </label>
+
+          <select
+            value={reason}
+            disabled={loading}
+            onChange={(e) => onReasonChange(e.target.value)}
+            className="mt-2 h-11 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm outline-none focus:border-red-500 focus:ring-2 focus:ring-red-100"
+          >
+            <option value="">Select a reason</option>
+
+            {REJECTION_REASONS.map((item) => (
+              <option key={item} value={item}>
+                {item}
+              </option>
+            ))}
+          </select>
+        </div>
+
+        {reason === "Other" && (
+          <textarea
+            value={customReason}
+            disabled={loading}
+            onChange={(e) => onCustomReasonChange(e.target.value)}
+            rows={4}
+            placeholder="Enter rejection reason..."
+            className="mt-4 w-full resize-none rounded-xl border border-slate-200 px-3 py-3 text-sm outline-none focus:border-red-500 focus:ring-2 focus:ring-red-100"
+          />
+        )}
+
+        {finalReason && (
+          <div className="mt-4 rounded-xl border border-red-100 bg-red-50 p-3">
+            <p className="text-[10px] font-bold uppercase tracking-wide text-red-500">
+              Rejection Reason
+            </p>
+
+            <p className="mt-1 wrap-break-word text-sm font-medium text-red-700">
+              {finalReason}
+            </p>
+          </div>
+        )}
+
+        <div className="mt-5 grid grid-cols-2 gap-2 sm:gap-3">
+          <button
+            type="button"
+            disabled={loading}
+            onClick={onClose}
+            className="rounded-xl border border-slate-200 px-3 py-3 text-sm font-bold text-slate-700 hover:bg-slate-50 disabled:opacity-50"
+          >
+            Cancel
+          </button>
+
+          <button
+            type="button"
+            disabled={loading || !finalReason}
+            onClick={onSubmit}
+            className="rounded-xl bg-red-600 px-3 py-3 text-sm font-bold text-white hover:bg-red-700 disabled:cursor-not-allowed disabled:opacity-50"
+          >
+            {loading
+              ? "Rejecting..."
+              : bulk
+                ? `Reject ${count}`
+                : "Confirm Reject"}
+          </button>
+        </div>
+      </div>
     </div>
   );
 }
