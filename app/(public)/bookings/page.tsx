@@ -12,6 +12,7 @@ import {
 } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import { useRouter } from "next/navigation";
+import Orders from "@/app/components/Orders";
 interface Booking {
   id: string;
   booking_id: string;
@@ -91,17 +92,17 @@ export default function MyBookingsPage() {
     search.trim().length === 0
       ? []
       : bookings
-        .filter((b) => {
-          const q = search.toLowerCase();
+          .filter((b) => {
+            const q = search.toLowerCase();
 
-          return (
-            b.booking_id?.toLowerCase().includes(q) ||
-            b.worker_name?.toLowerCase().includes(q) ||
-            b.service_type?.toLowerCase().includes(q) ||
-            b.booking_status?.toLowerCase().includes(q)
-          );
-        })
-        .slice(0, 5);
+            return (
+              b.booking_id?.toLowerCase().includes(q) ||
+              b.worker_name?.toLowerCase().includes(q) ||
+              b.service_type?.toLowerCase().includes(q) ||
+              b.booking_status?.toLowerCase().includes(q)
+            );
+          })
+          .slice(0, 5);
 
   const statusColor = (status: string) => {
     switch (status) {
@@ -215,10 +216,11 @@ export default function MyBookingsPage() {
                     setTab("bookings");
                     router.replace("/bookings?tab=bookings");
                   }}
-                  className={`h-9 rounded-lg text-[13px] font-medium transition-all ${tab === "bookings"
-                    ? "bg-white text-emerald-700 shadow-sm"
-                    : "text-white hover:bg-white/10"
-                    }`}
+                  className={`h-9 rounded-lg text-[13px] font-medium transition-all ${
+                    tab === "bookings"
+                      ? "bg-white text-emerald-700 shadow-sm"
+                      : "text-white hover:bg-white/10"
+                  }`}
                 >
                   Bookings
                 </button>
@@ -228,10 +230,11 @@ export default function MyBookingsPage() {
                     setTab("orders");
                     router.replace("/bookings?tab=orders");
                   }}
-                  className={`h-9 rounded-lg text-[13px] font-medium transition-all ${tab === "orders"
-                    ? "bg-white text-emerald-700 shadow-sm"
-                    : "text-white hover:bg-white/10"
-                    }`}
+                  className={`h-9 rounded-lg text-[13px] font-medium transition-all ${
+                    tab === "orders"
+                      ? "bg-white text-emerald-700 shadow-sm"
+                      : "text-white hover:bg-white/10"
+                  }`}
                 >
                   Orders
                 </button>
@@ -241,28 +244,29 @@ export default function MyBookingsPage() {
         </div>
       </div>
       <div className="pt-58 h-full overflow-y-auto">
-        {loading ? (
+        {tab === "orders" ? (
+          <Orders search={search} />
+        ) : loading ? (
           <div className="p-4 flex flex-col gap-3 animate-pulse">
             {Array.from({ length: 6 }).map((_, i) => (
               <div
                 key={i}
                 className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm"
               >
-                {/* Top Accent */}
                 <div className="h-1 bg-slate-200" />
 
                 <div className="p-4">
-                  {/* Header */}
                   <div className="flex items-start gap-3">
                     <div className="h-11 w-11 rounded-xl bg-slate-200" />
+
                     <div className="flex-1">
                       <div className="h-4 w-36 rounded-md bg-slate-200" />
                       <div className="mt-2 h-3 w-24 rounded-md bg-slate-200" />
                     </div>
+
                     <div className="h-6 w-20 rounded-full bg-slate-200" />
                   </div>
 
-                  {/* Worker */}
                   <div className="mt-4 rounded-2xl border border-slate-200 p-3">
                     <div className="flex gap-3">
                       <div className="h-16 w-16 rounded-2xl bg-slate-200" />
@@ -285,7 +289,6 @@ export default function MyBookingsPage() {
                     </div>
                   </div>
 
-                  {/* Footer */}
                   <div className="mt-4 flex items-center justify-between">
                     <div className="h-3 w-28 rounded-md bg-slate-200" />
                     <div className="h-4 w-24 rounded-md bg-slate-200" />
@@ -302,18 +305,15 @@ export default function MyBookingsPage() {
                 href={`/my-bookings/${booking.booking_id}`}
               >
                 <div className="overflow-hidden rounded-2xl border border-emerald-100 bg-white shadow-sm transition-all hover:-translate-y-0.5 hover:shadow-lg">
-                  {/* Top Accent */}
                   <div className="h-1 bg-linear-to-r from-emerald-500 via-green-500 to-lime-400" />
 
                   <div className="p-4">
                     {/* Header */}
                     <div className="flex items-center gap-2">
-                      {/* Icon */}
                       <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-emerald-50">
                         <CheckCircle className="h-4 w-4 text-emerald-600" />
                       </div>
 
-                      {/* Content */}
                       <div className="min-w-0 flex-1">
                         <div className="flex items-center justify-between gap-2">
                           <p className="truncate text-[11px] text-slate-600">
@@ -321,14 +321,15 @@ export default function MyBookingsPage() {
                           </p>
 
                           <span
-                            className={`shrink-0 rounded-full px-2 py-0.5 text-[9px] font-semibold ${booking.booking_status === "confirmed"
-                              ? "bg-blue-100 text-blue-700"
-                              : booking.booking_status === "completed"
-                                ? "bg-emerald-100 text-emerald-700"
-                                : booking.booking_status === "rejected"
-                                  ? "bg-red-100 text-red-700"
-                                  : "bg-amber-100 text-amber-700"
-                              }`}
+                            className={`shrink-0 rounded-full px-2 py-0.5 text-[9px] font-semibold ${
+                              booking.booking_status === "confirmed"
+                                ? "bg-blue-100 text-blue-700"
+                                : booking.booking_status === "completed"
+                                  ? "bg-emerald-100 text-emerald-700"
+                                  : booking.booking_status === "rejected"
+                                    ? "bg-red-100 text-red-700"
+                                    : "bg-amber-100 text-amber-700"
+                            }`}
                           >
                             {booking.booking_status.toUpperCase()}
                           </span>
@@ -386,6 +387,7 @@ export default function MyBookingsPage() {
                         </div>
                       </div>
                     </div>
+
                     {/* Bottom */}
                     <div className="mt-3 flex items-center justify-between">
                       <div className="flex items-center gap-2">

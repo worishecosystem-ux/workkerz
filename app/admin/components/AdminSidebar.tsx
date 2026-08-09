@@ -1,7 +1,15 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Briefcase, Sparkles, Lock, User } from "lucide-react";
+import {
+  Briefcase,
+  Sparkles,
+  Lock,
+  User,
+  Menu,
+  X,
+  LogOut,
+} from "lucide-react";
 
 import Link from "next/link";
 
@@ -9,16 +17,21 @@ import Link from "next/link";
 const ADMIN_ID = "admin";
 const ADMIN_PASS = "1234";
 
+type AdminSidebarProps = {
+  tab: string;
+  setTab: (tab: string) => void;
+  sidebarItems: any[];
+};
+
 export default function AdminSidebar({
   tab,
   setTab,
   sidebarItems,
-}: any) {
-
+}: AdminSidebarProps) {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
-
   const [adminId, setAdminId] = useState("");
   const [password, setPassword] = useState("");
+  const [mobileOpen, setMobileOpen] = useState(false);
 
   // CHECK LOGIN
   useEffect(() => {
@@ -33,7 +46,6 @@ export default function AdminSidebar({
   const handleLogin = () => {
     if (adminId === ADMIN_ID && password === ADMIN_PASS) {
       localStorage.setItem("workkerz-admin-login", "true");
-
       setIsLoggedIn(true);
     } else {
       alert("Invalid ID or Password");
@@ -43,99 +55,156 @@ export default function AdminSidebar({
   // LOGOUT
   const handleLogout = () => {
     localStorage.removeItem("workkerz-admin-login");
-
     setIsLoggedIn(false);
+    setMobileOpen(false);
+  };
+
+  // CHANGE TAB
+  const handleTabChange = (id: string) => {
+    setTab(id);
+    setMobileOpen(false);
   };
 
   // LOGIN SCREEN
   if (!isLoggedIn) {
     return (
-      <div className="fixed inset-0 bg-[#07132B] flex items-center justify-center p-5 overflow-hidden">
-        <div className="relative z-10 w-full max-w-md bg-white rounded-[38px] p-8 sm:p-10 shadow-[0_20px_80px_rgba(0,0,0,0.35)] border border-white/20">
-          {/* LOGO */}
-          <div className="flex flex-col items-center text-center mb-8">
-            <div className="w-24 h-24 rounded-[30px] bg-linear-to-br from-[#FF5C39] to-[#0EA5E9] flex items-center justify-center shadow-lg">
-              <Briefcase className="w-11 h-11 text-white" />
+      <div className="min-h-screen w-full bg-[#F8FAFC] flex items-center justify-center px-4 py-6 sm:px-6">
+        <div className="w-full max-w-[430px]">
+          {/* LOGIN CARD */}
+          <div className="bg-white rounded-3xl border border-gray-200 shadow-xl shadow-slate-200/60 p-5 sm:p-7 md:p-8">
+            {/* LOGO */}
+            <div className="text-center">
+              <div className="mx-auto w-16 h-16 sm:w-20 sm:h-20 rounded-2xl bg-[#0F172A] flex items-center justify-center shadow-lg">
+                <Briefcase className="w-7 h-7 sm:w-9 sm:h-9 text-white" />
+              </div>
+
+              <h1 className="text-3xl sm:text-4xl font-black text-[#0F172A] mt-5 sm:mt-6 leading-none">
+                Admin Login
+              </h1>
+
+              <p className="text-xs sm:text-sm text-[#64748B] mt-3">
+                Workkerz + E-Aurix Panel
+              </p>
             </div>
 
-            <h1 className="text-4xl font-black text-[#0F172A] mt-6 leading-none">
-              Admin Login
-            </h1>
+            {/* ADMIN ID */}
+            <div className="mt-7 sm:mt-8 mb-5">
+              <label className="block text-sm font-bold text-[#0F172A] mb-2">
+                Admin ID
+              </label>
 
-            <p className="text-sm text-[#64748B] mt-3">
-              Workkerz + E-Aurix Panel
-            </p>
+              <div className="relative">
+                <User className="w-5 h-5 text-[#94A3B8] absolute left-4 top-1/2 -translate-y-1/2 pointer-events-none" />
+
+                <input
+                  type="text"
+                  value={adminId}
+                  onChange={(e) => setAdminId(e.target.value)}
+                  placeholder="Enter admin ID"
+                  autoComplete="username"
+                  className="
+                    w-full
+                    h-13 sm:h-14
+                    rounded-2xl
+                    border border-gray-200
+                    bg-[#F8FAFC]
+                    pl-12 pr-4
+                    text-sm
+                    text-[#0F172A]
+                    outline-none
+                    transition-all
+                    focus:border-[#FF5C39]
+                    focus:bg-white
+                    focus:ring-4
+                    focus:ring-[#FF5C39]/10
+                  "
+                />
+              </div>
+            </div>
+
+            {/* PASSWORD */}
+            <div className="mb-6 sm:mb-7">
+              <label className="block text-sm font-bold text-[#0F172A] mb-2">
+                Password
+              </label>
+
+              <div className="relative">
+                <Lock className="w-5 h-5 text-[#94A3B8] absolute left-4 top-1/2 -translate-y-1/2 pointer-events-none" />
+
+                <input
+                  type="password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  placeholder="Enter password"
+                  autoComplete="current-password"
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") {
+                      handleLogin();
+                    }
+                  }}
+                  className="
+                    w-full
+                    h-13 sm:h-14
+                    rounded-2xl
+                    border border-gray-200
+                    bg-[#F8FAFC]
+                    pl-12 pr-4
+                    text-sm
+                    text-[#0F172A]
+                    outline-none
+                    transition-all
+                    focus:border-[#FF5C39]
+                    focus:bg-white
+                    focus:ring-4
+                    focus:ring-[#FF5C39]/10
+                  "
+                />
+              </div>
+            </div>
+
+            {/* BUTTON */}
+            <button
+              onClick={handleLogin}
+              className="
+                w-full
+                h-13 sm:h-14
+                rounded-2xl
+                bg-[#0F172A]
+                hover:bg-black
+                active:scale-[0.98]
+                text-white
+                text-sm
+                font-black
+                transition-all
+                shadow-lg
+                shadow-slate-900/15
+              "
+            >
+              Login to Admin Panel
+            </button>
           </div>
-
-          {/* ADMIN ID */}
-          <div className="mb-5">
-            <div className="text-sm font-bold text-[#0F172A] mb-2">
-              Admin ID
-            </div>
-
-            <div className="relative">
-              <User className="w-5 h-5 text-[#94A3B8] absolute left-4 top-1/2 -translate-y-1/2" />
-
-              <input
-                type="text"
-                value={adminId}
-                onChange={(e) => setAdminId(e.target.value)}
-                placeholder="Enter admin ID"
-                className="w-full h-14 rounded-2xl border border-gray-200 bg-[#F8FAFC] pl-12 pr-4 text-sm outline-none transition-all focus:border-[#FF5C39] focus:bg-white"
-              />
-            </div>
-          </div>
-
-          {/* PASSWORD */}
-          <div className="mb-7">
-            <div className="text-sm font-bold text-[#0F172A] mb-2">
-              Password
-            </div>
-
-            <div className="relative">
-              <Lock className="w-5 h-5 text-[#94A3B8] absolute left-4 top-1/2 -translate-y-1/2" />
-
-              <input
-                type="password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                placeholder="Enter password"
-                className="w-full h-14 rounded-2xl border border-gray-200 bg-[#F8FAFC] pl-12 pr-4 text-sm outline-none transition-all focus:border-[#FF5C39] focus:bg-white"
-              />
-            </div>
-          </div>
-
-          {/* BUTTON */}
-          <button
-            onClick={handleLogin}
-            className="w-full h-14 rounded-2xl bg-[#0F172A] hover:bg-black active:scale-[0.98] text-white text-sm font-black transition-all shadow-lg"
-          >
-            Login to Admin Panel
-          </button>
         </div>
       </div>
     );
   }
 
-  // SIDEBAR
-  return (
-    <aside className="w-56 bg-[#0F172A] flex flex-col shrink-0 fixed left-0 top-0 bottom-0 z-40">
-      {/* LOGO */}
-      <div className="p-5 border-b border-white/10">
-        <div className="flex items-center gap-2">
-          <div className="w-8 h-8 bg-linear-to-br from-[#FF5C39] to-[#0EA5E9] rounded-lg flex items-center justify-center">
-            <Briefcase className="w-4 h-4 text-white" />
+  // SIDEBAR CONTENT
+  const SidebarContent = () => (
+    <div className="h-full flex flex-col">
+      {/* HEADER */}
+      <div className="px-4 sm:px-5 pt-5 pb-4">
+        <div className="flex items-center gap-3">
+          {/* LOGO */}
+          <div className="w-10 h-10 rounded-xl bg-white/10 border border-white/10 flex items-center justify-center shrink-0">
+            <Briefcase className="w-5 h-5 text-white" />
           </div>
 
-          <div>
-            <div className="text-white text-sm" style={{ fontWeight: 800 }}>
+          <div className="min-w-0">
+            <div className="text-white text-sm font-extrabold truncate">
               Admin Panel
             </div>
 
-            <div
-              className="text-slate-500 text-[10px]"
-              style={{ fontWeight: 500 }}
-            >
+            <div className="text-slate-500 text-[10px] font-medium truncate">
               Workkerz + E-Aurix
             </div>
           </div>
@@ -143,37 +212,61 @@ export default function AdminSidebar({
       </div>
 
       {/* NAVIGATION */}
-      <nav className="flex-1 p-3 space-y-1 overflow-y-auto">
+      <nav className="flex-1 px-3 py-2 space-y-1 overflow-y-auto overscroll-contain">
         {sidebarItems.map((item: any) => {
           const Icon = item.icon;
-
           const active = tab === item.id;
 
           return (
             <button
               key={item.id}
-              onClick={() => setTab(item.id)}
-              className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm transition-all text-left ${
-                active
-                  ? "bg-white/10 text-white"
-                  : "text-slate-400 hover:text-white hover:bg-white/5"
-              }`}
+              onClick={() => handleTabChange(item.id)}
+              className={`
+                w-full
+                flex
+                items-center
+                gap-3
+                px-3
+                py-3
+                rounded-xl
+                text-sm
+                transition-all
+                text-left
+                ${
+                  active
+                    ? "bg-white/10 text-white shadow-sm"
+                    : "text-slate-400 hover:text-white hover:bg-white/5"
+                }
+              `}
               style={{
                 fontWeight: active ? 600 : 400,
               }}
             >
-              <Icon className="w-4 h-4 shrink-0" />
+              <Icon className="w-[18px] h-[18px] shrink-0" />
 
-              <span className="flex-1">{item.label}</span>
+              <span className="flex-1 min-w-0 truncate">
+                {item.label}
+              </span>
 
               {item.badge !== undefined && (
                 <span
-                  className={`text-xs px-1.5 py-0.5 rounded-full ${
-                    active
-                      ? "bg-white/20 text-white"
-                      : "bg-white/10 text-slate-400"
-                  }`}
-                  style={{ fontWeight: 700 }}
+                  className={`
+                    shrink-0
+                    text-[11px]
+                    px-1.5
+                    py-0.5
+                    min-w-5
+                    text-center
+                    rounded-full
+                    ${
+                      active
+                        ? "bg-white/20 text-white"
+                        : "bg-white/10 text-slate-400"
+                    }
+                  `}
+                  style={{
+                    fontWeight: 700,
+                  }}
                 >
                   {item.badge}
                 </span>
@@ -183,32 +276,236 @@ export default function AdminSidebar({
         })}
       </nav>
 
-      {/* LINKS */}
-      <div className="p-3 border-t border-white/10 space-y-1">
+      {/* BOTTOM LINKS */}
+      <div className="p-3 border-t border-white/10 space-y-1 shrink-0">
+        {/* WORKKERZ */}
         <Link
           href="/"
-          className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm text-slate-400 hover:text-white hover:bg-white/5 transition-all"
+          onClick={() => setMobileOpen(false)}
+          className="
+            flex
+            items-center
+            gap-3
+            px-3
+            py-3
+            rounded-xl
+            text-sm
+            text-slate-400
+            hover:text-white
+            hover:bg-white/5
+            transition-all
+          "
         >
-          <Briefcase className="w-4 h-4" />
+          <Briefcase className="w-[18px] h-[18px] shrink-0" />
           <span>Workkerz</span>
         </Link>
 
+        {/* E-AURIX */}
         <Link
           href="/eaurix"
-          className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm text-slate-400 hover:text-white hover:bg-white/5 transition-all"
+          onClick={() => setMobileOpen(false)}
+          className="
+            flex
+            items-center
+            gap-3
+            px-3
+            py-3
+            rounded-xl
+            text-sm
+            text-slate-400
+            hover:text-white
+            hover:bg-white/5
+            transition-all
+          "
         >
-          <Sparkles className="w-4 h-4" />
+          <Sparkles className="w-[18px] h-[18px] shrink-0" />
           <span>E-Aurix</span>
         </Link>
 
         {/* LOGOUT */}
         <button
           onClick={handleLogout}
-          className="w-full flex items-center justify-center gap-2 mt-3 h-11 rounded-2xl bg-rose-500 hover:bg-rose-600 text-white text-sm font-black transition-all"
+          className="
+            w-full
+            flex
+            items-center
+            justify-center
+            gap-2
+            mt-3
+            h-11
+            rounded-2xl
+            bg-rose-500
+            hover:bg-rose-600
+            active:scale-[0.98]
+            text-white
+            text-sm
+            font-black
+            transition-all
+          "
         >
+          <LogOut className="w-4 h-4" />
           Logout
         </button>
       </div>
-    </aside>
+    </div>
+  );
+
+  return (
+    <>
+      {/* ========================================= */}
+      {/* DESKTOP SIDEBAR                           */}
+      {/* ========================================= */}
+      <aside
+        className="
+          hidden
+          lg:flex
+          fixed
+          left-0
+          top-0
+          bottom-0
+          z-40
+          w-[260px]
+          xl:w-[280px]
+          bg-[#0B1220]
+          border-r
+          border-white/5
+          flex-col
+        "
+      >
+        <SidebarContent />
+      </aside>
+
+      {/* ========================================= */}
+      {/* MOBILE / TABLET TOP BAR                   */}
+      {/* ========================================= */}
+      <header
+        className="
+          lg:hidden
+          fixed
+          top-0
+          left-0
+          right-0
+          z-40
+          h-16
+          bg-[#0B1220]
+          border-b
+          border-white/10
+          flex
+          items-center
+          justify-between
+          px-3
+          sm:px-4
+        "
+      >
+        {/* BRAND */}
+        <div className="flex items-center gap-2.5 min-w-0">
+          <div className="w-9 h-9 rounded-xl bg-white/10 flex items-center justify-center shrink-0">
+            <Briefcase className="w-4 h-4 text-white" />
+          </div>
+
+          <div className="min-w-0">
+            <div className="text-white text-sm font-extrabold truncate">
+              Admin Panel
+            </div>
+
+            <div className="text-slate-500 text-[9px] truncate">
+              Workkerz + E-Aurix
+            </div>
+          </div>
+        </div>
+
+        {/* MENU */}
+        <button
+          onClick={() => setMobileOpen(true)}
+          aria-label="Open admin menu"
+          className="
+            w-10
+            h-10
+            rounded-xl
+            bg-white/10
+            hover:bg-white/15
+            active:scale-95
+            flex
+            items-center
+            justify-center
+            text-white
+            transition-all
+          "
+        >
+          <Menu className="w-5 h-5" />
+        </button>
+      </header>
+
+      {/* ========================================= */}
+      {/* MOBILE OVERLAY                            */}
+      {/* ========================================= */}
+      {mobileOpen && (
+        <div
+          className="
+            lg:hidden
+            fixed
+            inset-0
+            z-50
+            bg-black/60
+            backdrop-blur-[2px]
+          "
+          onClick={() => setMobileOpen(false)}
+        />
+      )}
+
+      {/* ========================================= */}
+      {/* MOBILE DRAWER                             */}
+      {/* ========================================= */}
+      <aside
+        className={`
+          lg:hidden
+          fixed
+          top-0
+          left-0
+          bottom-0
+          z-[60]
+          w-[min(86vw,320px)]
+          bg-[#0B1220]
+          border-r
+          border-white/10
+          shadow-2xl
+          transition-transform
+          duration-300
+          ease-out
+          ${
+            mobileOpen
+              ? "translate-x-0"
+              : "-translate-x-full"
+          }
+        `}
+      >
+        {/* CLOSE BUTTON */}
+        <button
+          onClick={() => setMobileOpen(false)}
+          aria-label="Close admin menu"
+          className="
+            absolute
+            top-4
+            right-4
+            z-10
+            w-9
+            h-9
+            rounded-xl
+            bg-white/10
+            hover:bg-white/15
+            flex
+            items-center
+            justify-center
+            text-slate-300
+            hover:text-white
+            transition-all
+          "
+        >
+          <X className="w-5 h-5" />
+        </button>
+
+        <SidebarContent />
+      </aside>
+    </>
   );
 }

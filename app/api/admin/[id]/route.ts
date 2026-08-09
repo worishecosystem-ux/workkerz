@@ -16,9 +16,7 @@ const supabaseAdmin = createClient(
    TYPES
 ===================================================== */
 
-type AccountRole =
-  | "admin"
-  | "super_admin";
+type AccountRole = "admin" | "super_admin";
 
 const ADMIN_ROLES = [
   "worker_admin",
@@ -30,8 +28,7 @@ const ADMIN_ROLES = [
   "verification_admin",
 ] as const;
 
-type AdminRole =
-  (typeof ADMIN_ROLES)[number];
+type AdminRole = (typeof ADMIN_ROLES)[number];
 
 type RouteContext = {
   params: Promise<{
@@ -43,13 +40,8 @@ type RouteContext = {
    AUTHORIZATION
 ===================================================== */
 
-async function authorizeSuperAdmin(
-  request: NextRequest,
-) {
-  const authorization =
-    request.headers.get(
-      "authorization",
-    );
+async function authorizeSuperAdmin(request: NextRequest) {
+  const authorization = request.headers.get("authorization");
 
   if (!authorization) {
     return {
@@ -72,10 +64,7 @@ async function authorizeSuperAdmin(
   const {
     data: { user },
     error: authError,
-  } =
-    await supabaseAdmin.auth.getUser(
-      token,
-    );
+  } = await supabaseAdmin.auth.getUser(token);
 
   if (authError || !user) {
     return {
@@ -87,14 +76,13 @@ async function authorizeSuperAdmin(
   const {
     data: admin,
     error: adminError,
-  } =
-    await supabaseAdmin
-      .from("admin_profiles")
-      .select(
-        "id, full_name, email, role, is_active",
-      )
-      .eq("id", user.id)
-      .maybeSingle();
+  } = await supabaseAdmin
+    .from("admin_profiles")
+    .select(
+      "id, full_name, email, role, is_active",
+    )
+    .eq("id", user.id)
+    .maybeSingle();
 
   if (adminError) {
     console.error(
@@ -103,32 +91,26 @@ async function authorizeSuperAdmin(
     );
 
     return {
-      error:
-        "Unable to verify admin.",
+      error: "Unable to verify admin.",
       status: 500,
     };
   }
 
   if (!admin) {
     return {
-      error:
-        "Admin profile not found.",
+      error: "Admin profile not found.",
       status: 403,
     };
   }
 
   if (!admin.is_active) {
     return {
-      error:
-        "Admin account is disabled.",
+      error: "Admin account is disabled.",
       status: 403,
     };
   }
 
-  if (
-    admin.role !==
-    "super_admin"
-  ) {
+  if (admin.role !== "super_admin") {
     return {
       error:
         "Only Super Admin can manage admin accounts.",
@@ -146,25 +128,20 @@ async function authorizeSuperAdmin(
    GET TARGET ADMIN
 ===================================================== */
 
-async function getTargetAdmin(
-  id: string,
-) {
+async function getTargetAdmin(id: string) {
   const {
     data: admin,
     error,
-  } =
-    await supabaseAdmin
-      .from("admin_profiles")
-      .select(
-        "id, full_name, email, role, is_active, created_at",
-      )
-      .eq("id", id)
-      .maybeSingle();
+  } = await supabaseAdmin
+    .from("admin_profiles")
+    .select(
+      "id, full_name, email, role, is_active, created_at",
+    )
+    .eq("id", id)
+    .maybeSingle();
 
   if (error) {
-    throw new Error(
-      error.message,
-    );
+    throw new Error(error.message);
   }
 
   return admin;
@@ -174,86 +151,64 @@ async function getTargetAdmin(
    GET ADMIN ROLES
 ===================================================== */
 
-async function getAdminRoles(
-  adminId: string,
-) {
+async function getAdminRoles(adminId: string) {
   const {
     data,
     error,
-  } =
-    await supabaseAdmin
-      .from(
-        "admin_role_assignments",
+  } = await supabaseAdmin
+    .from("admin_role_assignments")
+    .select(
+      `
+      role_id,
+      admin_roles (
+        id,
+        name,
+        label,
+        description,
+        is_active
       )
-      .select(
-        `
-        role_id,
-        admin_roles (
-          id,
-          name,
-          label,
-          description,
-          is_active
-        )
-        `,
-      )
-      .eq(
-        "admin_id",
-        adminId,
-      );
+      `,
+    )
+    .eq("admin_id", adminId);
 
   if (error) {
-    throw new Error(
-      error.message,
-    );
+    throw new Error(error.message);
   }
 
   const roles: AdminRole[] = [];
 
-  for (const assignment of
-    data ?? []) {
-    const role =
-      assignment.admin_roles;
+  for (const assignment of data ?? []) {
+    const role = assignment.admin_roles;
 
     if (
       role &&
       typeof role === "object" &&
       "name" in role &&
-      typeof role.name ===
-        "string" &&
+      typeof role.name === "string" &&
       ADMIN_ROLES.includes(
         role.name as AdminRole,
       )
     ) {
-      roles.push(
-        role.name as AdminRole,
-      );
+      roles.push(role.name as AdminRole);
     }
   }
 
-  return Array.from(
-    new Set(roles),
-  );
+  return Array.from(new Set(roles));
 }
 
 /* =====================================================
    BUILD ADMIN RESPONSE
 ===================================================== */
 
-async function buildAdminResponse(
-  admin: {
-    id: string;
-    full_name: string;
-    email: string;
-    role: AccountRole;
-    is_active: boolean;
-    created_at?: string;
-  },
-) {
-  const admin_roles =
-    await getAdminRoles(
-      admin.id,
-    );
+async function buildAdminResponse(admin: {
+  id: string;
+  full_name: string;
+  email: string;
+  role: AccountRole;
+  is_active: boolean;
+  created_at?: string;
+}) {
+  const admin_roles = await getAdminRoles(admin.id);
 
   return {
     ...admin,
@@ -275,34 +230,25 @@ export async function PATCH(
     ----------------------------------------------- */
 
     const authorization =
-      await authorizeSuperAdmin(
-        request,
-      );
+      await authorizeSuperAdmin(request);
 
-    if (
-      "error" in
-      authorization
-    ) {
+    if ("error" in authorization) {
       return NextResponse.json(
         {
-          error:
-            authorization.error,
+          error: authorization.error,
         },
         {
-          status:
-            authorization.status,
+          status: authorization.status,
         },
       );
     }
 
-    const { id } =
-      await context.params;
+    const { id } = await context.params;
 
     if (!id) {
       return NextResponse.json(
         {
-          error:
-            "Admin ID is required.",
+          error: "Admin ID is required.",
         },
         {
           status: 400,
@@ -314,19 +260,14 @@ export async function PATCH(
        BODY
     ----------------------------------------------- */
 
-    let body: Record<
-      string,
-      unknown
-    >;
+    let body: Record<string, unknown>;
 
     try {
-      body =
-        await request.json();
+      body = await request.json();
     } catch {
       return NextResponse.json(
         {
-          error:
-            "Invalid JSON request.",
+          error: "Invalid JSON request.",
         },
         {
           status: 400,
@@ -334,30 +275,20 @@ export async function PATCH(
       );
     }
 
-    console.log(
-      "PATCH ADMIN ID:",
-      id,
-    );
-
-    console.log(
-      "PATCH ADMIN BODY:",
-      body,
-    );
+    console.log("PATCH ADMIN ID:", id);
+    console.log("PATCH ADMIN BODY:", body);
 
     /* -----------------------------------------------
        TARGET ADMIN
     ----------------------------------------------- */
 
     const targetAdmin =
-      await getTargetAdmin(
-        id,
-      );
+      await getTargetAdmin(id);
 
     if (!targetAdmin) {
       return NextResponse.json(
         {
-          error:
-            "Admin account not found.",
+          error: "Admin account not found.",
         },
         {
           status: 404,
@@ -370,8 +301,7 @@ export async function PATCH(
     ----------------------------------------------- */
 
     if (
-      id ===
-      authorization.admin.id &&
+      id === authorization.admin.id &&
       body.is_active === false
     ) {
       return NextResponse.json(
@@ -390,8 +320,7 @@ export async function PATCH(
     ----------------------------------------------- */
 
     if (
-      id ===
-        authorization.admin.id &&
+      id === authorization.admin.id &&
       body.role === "admin"
     ) {
       return NextResponse.json(
@@ -406,7 +335,37 @@ export async function PATCH(
     }
 
     /* =================================================
-       UPDATE ACCOUNT ROLE
+       CHECK VALID CHANGES FIRST
+    ================================================= */
+
+    const hasChanges =
+      Object.prototype.hasOwnProperty.call(
+        body,
+        "role",
+      ) ||
+      Object.prototype.hasOwnProperty.call(
+        body,
+        "is_active",
+      ) ||
+      Object.prototype.hasOwnProperty.call(
+        body,
+        "admin_roles",
+      );
+
+    if (!hasChanges) {
+      return NextResponse.json(
+        {
+          error:
+            "No valid changes provided.",
+        },
+        {
+          status: 400,
+        },
+      );
+    }
+
+    /* =================================================
+       VALIDATE ACCOUNT ROLE BEFORE UPDATING
     ================================================= */
 
     if (
@@ -415,13 +374,11 @@ export async function PATCH(
         "role",
       )
     ) {
-      const role =
-        body.role;
+      const role = body.role;
 
       if (
         role !== "admin" &&
-        role !==
-          "super_admin"
+        role !== "super_admin"
       ) {
         return NextResponse.json(
           {
@@ -433,42 +390,10 @@ export async function PATCH(
           },
         );
       }
-
-      const {
-        error,
-      } =
-        await supabaseAdmin
-          .from(
-            "admin_profiles",
-          )
-          .update({
-            role,
-          })
-          .eq(
-            "id",
-            id,
-          );
-
-      if (error) {
-        console.error(
-          "Account role update error:",
-          error,
-        );
-
-        return NextResponse.json(
-          {
-            error:
-              error.message,
-          },
-          {
-            status: 500,
-          },
-        );
-      }
     }
 
     /* =================================================
-       UPDATE ACTIVE STATUS
+       VALIDATE ACTIVE STATUS BEFORE UPDATING
     ================================================= */
 
     if (
@@ -491,44 +416,24 @@ export async function PATCH(
           },
         );
       }
-
-      const {
-        error,
-      } =
-        await supabaseAdmin
-          .from(
-            "admin_profiles",
-          )
-          .update({
-            is_active:
-              body.is_active,
-          })
-          .eq(
-            "id",
-            id,
-          );
-
-      if (error) {
-        console.error(
-          "Status update error:",
-          error,
-        );
-
-        return NextResponse.json(
-          {
-            error:
-              error.message,
-          },
-          {
-            status: 500,
-          },
-        );
-      }
     }
 
     /* =================================================
-       UPDATE MULTIPLE DEPARTMENT ROLES
+       VALIDATE DEPARTMENT ROLES
+       
+       IMPORTANT:
+       We validate everything BEFORE deleting
+       existing assignments.
     ================================================= */
+
+    let validatedRoles: {
+      id: string;
+      name: AdminRole;
+      is_active: boolean;
+    }[] = [];
+
+    let requestedRoles: AdminRole[] | null =
+      null;
 
     if (
       Object.prototype.hasOwnProperty.call(
@@ -536,12 +441,9 @@ export async function PATCH(
         "admin_roles",
       )
     ) {
-      const requestedRoles =
-        body.admin_roles;
-
       if (
         !Array.isArray(
-          requestedRoles,
+          body.admin_roles,
         )
       ) {
         return NextResponse.json(
@@ -559,10 +461,16 @@ export async function PATCH(
          CLEAN + UNIQUE
       --------------------------------------------- */
 
-      const uniqueRoles =
+      const cleanedRoles =
         Array.from(
           new Set(
-            requestedRoles,
+            body.admin_roles.filter(
+              (
+                role,
+              ): role is string =>
+                typeof role ===
+                "string",
+            ),
           ),
         );
 
@@ -571,10 +479,8 @@ export async function PATCH(
       --------------------------------------------- */
 
       const invalidRoles =
-        uniqueRoles.filter(
+        cleanedRoles.filter(
           (role) =>
-            typeof role !==
-              "string" ||
             !ADMIN_ROLES.includes(
               role as AdminRole,
             ),
@@ -597,82 +503,35 @@ export async function PATCH(
         );
       }
 
-      /*
-       * If target is already Super Admin,
-       * department roles are not necessary.
-       *
-       * We allow the assignments to be
-       * cleared but don't require them.
-       */
+      requestedRoles =
+        cleanedRoles as AdminRole[];
 
       /* ---------------------------------------------
-         DELETE CURRENT ASSIGNMENTS
-      --------------------------------------------- */
-
-      const {
-        error:
-          deleteError,
-      } =
-        await supabaseAdmin
-          .from(
-            "admin_role_assignments",
-          )
-          .delete()
-          .eq(
-            "admin_id",
-            id,
-          );
-
-      if (deleteError) {
-        console.error(
-          "Delete old role assignments error:",
-          deleteError,
-        );
-
-        return NextResponse.json(
-          {
-            error:
-              deleteError.message,
-          },
-          {
-            status: 500,
-          },
-        );
-      }
-
-      /* ---------------------------------------------
-         NO ROLES
+         EMPTY ROLES = REMOVE ALL
       --------------------------------------------- */
 
       if (
-        uniqueRoles.length ===
+        requestedRoles.length ===
         0
       ) {
-        console.log(
-          "All department roles removed for:",
-          id,
-        );
+        validatedRoles = [];
       } else {
         /* -------------------------------------------
-           GET ROLE IDS
+           LOOKUP ROLES
         ------------------------------------------- */
 
         const {
           data: roles,
-          error:
-            rolesError,
-        } =
-          await supabaseAdmin
-            .from(
-              "admin_roles",
-            )
-            .select(
-              "id, name, is_active",
-            )
-            .in(
-              "name",
-              uniqueRoles,
-            );
+          error: rolesError,
+        } = await supabaseAdmin
+          .from("admin_roles")
+          .select(
+            "id, name, is_active",
+          )
+          .in(
+            "name",
+            requestedRoles,
+          );
 
         if (rolesError) {
           console.error(
@@ -691,18 +550,21 @@ export async function PATCH(
           );
         }
 
-        /* -------------------------------------------
-           CHECK MISSING ROLES
-        ------------------------------------------- */
-
         const foundRoles =
           (roles ?? []).map(
             (role) =>
               role.name,
           );
 
+        /* -------------------------------------------
+           CHECK MISSING ROLES
+
+           Existing assignments are untouched
+           when validation fails.
+        ------------------------------------------- */
+
         const missingRoles =
-          uniqueRoles.filter(
+          requestedRoles.filter(
             (role) =>
               !foundRoles.includes(
                 role,
@@ -756,93 +618,195 @@ export async function PATCH(
           );
         }
 
-        /* -------------------------------------------
-           CREATE ASSIGNMENTS
-        ------------------------------------------- */
-
-        const assignments =
+        validatedRoles =
           (roles ?? []).map(
             (role) => ({
-              admin_id: id,
-              role_id:
-                role.id,
+              id: role.id,
+              name:
+                role.name as AdminRole,
+              is_active:
+                role.is_active,
             }),
           );
-
-        if (
-          assignments.length >
-          0
-        ) {
-          const {
-            error:
-              insertError,
-          } =
-            await supabaseAdmin
-              .from(
-                "admin_role_assignments",
-              )
-              .insert(
-                assignments,
-              );
-
-          if (insertError) {
-            console.error(
-              "Insert role assignments error:",
-              insertError,
-            );
-
-            return NextResponse.json(
-              {
-                error:
-                  insertError.message,
-              },
-              {
-                status: 500,
-              },
-            );
-          }
-        }
       }
     }
 
     /* =================================================
-       CHECK VALID CHANGES
+       UPDATE ACCOUNT ROLE
     ================================================= */
 
-    const hasChanges =
+    if (
       Object.prototype.hasOwnProperty.call(
         body,
         "role",
-      ) ||
+      )
+    ) {
+      const {
+        error,
+      } = await supabaseAdmin
+        .from("admin_profiles")
+        .update({
+          role: body.role as AccountRole,
+        })
+        .eq("id", id);
+
+      if (error) {
+        console.error(
+          "Account role update error:",
+          error,
+        );
+
+        return NextResponse.json(
+          {
+            error: error.message,
+          },
+          {
+            status: 500,
+          },
+        );
+      }
+    }
+
+    /* =================================================
+       UPDATE ACTIVE STATUS
+    ================================================= */
+
+    if (
       Object.prototype.hasOwnProperty.call(
         body,
         "is_active",
-      ) ||
-      Object.prototype.hasOwnProperty.call(
-        body,
-        "admin_roles",
-      );
+      )
+    ) {
+      const {
+        error,
+      } = await supabaseAdmin
+        .from("admin_profiles")
+        .update({
+          is_active:
+            body.is_active as boolean,
+        })
+        .eq("id", id);
 
-    if (!hasChanges) {
-      return NextResponse.json(
+      if (error) {
+        console.error(
+          "Status update error:",
+          error,
+        );
+
+        return NextResponse.json(
+          {
+            error: error.message,
+          },
+          {
+            status: 500,
+          },
+        );
+      }
+    }
+
+    /* =================================================
+       UPDATE DEPARTMENT ROLES
+       
+       IMPORTANT:
+       Old roles are deleted ONLY AFTER all
+       requested roles have passed validation.
+    ================================================= */
+
+    if (
+      requestedRoles !== null
+    ) {
+      /* ---------------------------------------------
+         DELETE CURRENT ASSIGNMENTS
+      --------------------------------------------- */
+
+      const {
+        error: deleteError,
+      } = await supabaseAdmin
+        .from(
+          "admin_role_assignments",
+        )
+        .delete()
+        .eq(
+          "admin_id",
+          id,
+        );
+
+      if (deleteError) {
+        console.error(
+          "Delete old role assignments error:",
+          deleteError,
+        );
+
+        return NextResponse.json(
+          {
+            error:
+              deleteError.message,
+          },
+          {
+            status: 500,
+          },
+        );
+      }
+
+      /* ---------------------------------------------
+         INSERT NEW ASSIGNMENTS
+      --------------------------------------------- */
+
+      if (
+        validatedRoles.length >
+        0
+      ) {
+        const assignments =
+          validatedRoles.map(
+            (role) => ({
+              admin_id: id,
+              role_id: role.id,
+            }),
+          );
+
+        const {
+          error: insertError,
+        } = await supabaseAdmin
+          .from(
+            "admin_role_assignments",
+          )
+          .insert(
+            assignments,
+          );
+
+        if (insertError) {
+          console.error(
+            "Insert role assignments error:",
+            insertError,
+          );
+
+          return NextResponse.json(
+            {
+              error:
+                insertError.message,
+            },
+            {
+              status: 500,
+            },
+          );
+        }
+      }
+
+      console.log(
+        "Department roles updated:",
         {
-          error:
-            "No valid changes provided.",
-        },
-        {
-          status: 400,
+          admin_id: id,
+          roles: requestedRoles,
         },
       );
     }
 
     /* =================================================
-       RETURN UPDATED ADMIN
+       GET FINAL UPDATED ADMIN
     ================================================= */
 
     const updatedBase =
-      await getTargetAdmin(
-        id,
-      );
+      await getTargetAdmin(id);
 
     if (!updatedBase) {
       return NextResponse.json(
@@ -861,15 +825,17 @@ export async function PATCH(
         updatedBase,
       );
 
+    console.log(
+      "UPDATED ADMIN:",
+      updatedAdmin,
+    );
+
     return NextResponse.json(
       {
         success: true,
-
         message:
           "Admin updated successfully.",
-
-        admin:
-          updatedAdmin,
+        admin: updatedAdmin,
       },
       {
         status: 200,
@@ -909,34 +875,25 @@ export async function DELETE(
     ----------------------------------------------- */
 
     const authorization =
-      await authorizeSuperAdmin(
-        request,
-      );
+      await authorizeSuperAdmin(request);
 
-    if (
-      "error" in
-      authorization
-    ) {
+    if ("error" in authorization) {
       return NextResponse.json(
         {
-          error:
-            authorization.error,
+          error: authorization.error,
         },
         {
-          status:
-            authorization.status,
+          status: authorization.status,
         },
       );
     }
 
-    const { id } =
-      await context.params;
+    const { id } = await context.params;
 
     if (!id) {
       return NextResponse.json(
         {
-          error:
-            "Admin ID is required.",
+          error: "Admin ID is required.",
         },
         {
           status: 400,
@@ -949,8 +906,7 @@ export async function DELETE(
     ----------------------------------------------- */
 
     if (
-      id ===
-      authorization.admin.id
+      id === authorization.admin.id
     ) {
       return NextResponse.json(
         {
@@ -968,9 +924,7 @@ export async function DELETE(
     ----------------------------------------------- */
 
     const targetAdmin =
-      await getTargetAdmin(
-        id,
-      );
+      await getTargetAdmin(id);
 
     if (!targetAdmin) {
       return NextResponse.json(
@@ -989,22 +943,18 @@ export async function DELETE(
     ----------------------------------------------- */
 
     const {
-      error:
-        assignmentDeleteError,
-    } =
-      await supabaseAdmin
-        .from(
-          "admin_role_assignments",
-        )
-        .delete()
-        .eq(
-          "admin_id",
-          id,
-        );
+      error: assignmentDeleteError,
+    } = await supabaseAdmin
+      .from(
+        "admin_role_assignments",
+      )
+      .delete()
+      .eq(
+        "admin_id",
+        id,
+      );
 
-    if (
-      assignmentDeleteError
-    ) {
+    if (assignmentDeleteError) {
       console.error(
         "Delete role assignments error:",
         assignmentDeleteError,
@@ -1026,22 +976,13 @@ export async function DELETE(
     ----------------------------------------------- */
 
     const {
-      error:
-        profileDeleteError,
-    } =
-      await supabaseAdmin
-        .from(
-          "admin_profiles",
-        )
-        .delete()
-        .eq(
-          "id",
-          id,
-        );
+      error: profileDeleteError,
+    } = await supabaseAdmin
+      .from("admin_profiles")
+      .delete()
+      .eq("id", id);
 
-    if (
-      profileDeleteError
-    ) {
+    if (profileDeleteError) {
       console.error(
         "Delete admin profile error:",
         profileDeleteError,
@@ -1063,8 +1004,7 @@ export async function DELETE(
     ----------------------------------------------- */
 
     const {
-      error:
-        authDeleteError,
+      error: authDeleteError,
     } =
       await supabaseAdmin.auth.admin.deleteUser(
         id,

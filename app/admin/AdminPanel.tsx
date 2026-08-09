@@ -16,6 +16,8 @@ import {
   ShieldCheck,
   Loader2,
   AlertCircle,
+  Menu,
+  X,
 } from "lucide-react";
 
 import { supabase } from "@/lib/supabase";
@@ -34,6 +36,10 @@ import {
   type AdminRole,
   type AdminSubRole,
 } from "./lib/adminPermissions";
+
+/* =====================================================
+   TYPES
+===================================================== */
 
 type AdminProfile = {
   id: string;
@@ -57,10 +63,87 @@ type AdminMeResponse = {
   isSuperAdmin: boolean;
 };
 
+type NotificationOrder = {
+  id: string | number;
+  status?: string | null;
+  created_at?: string | null;
+  order_number?: string | null;
+  customer_name?: string | null;
+  customer_phone?: string | null;
+  total_amount?: number | string | null;
+  total?: number | string | null;
+  amount?: number | string | null;
+  [key: string]: any;
+};
+
+type NotificationAction =
+  | "view"
+  | "accept"
+  | "reject"
+  | null;
+
+/* =====================================================
+   NOTIFICATION REMOVE STATUSES
+===================================================== */
+
+const NOTIFICATION_REMOVE_STATUSES = [
+  "accepted",
+  "confirmed",
+  "approved",
+  "rejected",
+  "cancelled",
+  "canceled",
+];
+
+/* =====================================================
+   NAVIGATION
+===================================================== */
+
+const NAVIGATION: {
+  id: AdminModule;
+  label: string;
+  icon: typeof LayoutDashboard;
+}[] = [
+  {
+    id: "dashboard",
+    label: "Dashboard",
+    icon: LayoutDashboard,
+  },
+  {
+    id: "workers",
+    label: "Workers",
+    icon: Users,
+  },
+  {
+    id: "orders",
+    label: "Orders",
+    icon: ShoppingBag,
+  },
+  {
+    id: "shops",
+    label: "Shops",
+    icon: Store,
+  },
+  {
+    id: "bookings",
+    label: "Bookings",
+    icon: CalendarCheck,
+  },
+  {
+    id: "admins",
+    label: "Admins",
+    icon: ShieldCheck,
+  },
+];
+
+/* =====================================================
+   COMPONENT
+===================================================== */
+
 export default function AdminPanel() {
-  // =====================================================
-  // ADMIN
-  // =====================================================
+  /* ===================================================
+     ADMIN
+  =================================================== */
 
   const [admin, setAdmin] =
     useState<AdminProfile | null>(null);
@@ -71,16 +154,25 @@ export default function AdminPanel() {
   const [isSuperAdmin, setIsSuperAdmin] =
     useState(false);
 
-  // =====================================================
-  // NAVIGATION
-  // =====================================================
+  /* ===================================================
+     NAVIGATION
+  =================================================== */
 
   const [activeTab, setActiveTab] =
     useState<AdminModule>("dashboard");
 
-  // =====================================================
-  // PAGE STATE
-  // =====================================================
+  /* ===================================================
+     MOBILE SIDEBAR
+  =================================================== */
+
+  const [
+    mobileSidebarOpen,
+    setMobileSidebarOpen,
+  ] = useState(false);
+
+  /* ===================================================
+     PAGE
+  =================================================== */
 
   const [loading, setLoading] =
     useState(true);
@@ -88,16 +180,40 @@ export default function AdminPanel() {
   const [error, setError] =
     useState("");
 
-  // =====================================================
-  // NEW ORDER NOTIFICATION
-  // =====================================================
+  /* ===================================================
+     NOTIFICATIONS
+  =================================================== */
 
-  const [notificationOrder, setNotificationOrder] =
-    useState<any>(null);
+  const [
+    notificationOrders,
+    setNotificationOrders,
+  ] = useState<NotificationOrder[]>([]);
 
-  // =====================================================
-  // AUDIO
-  // =====================================================
+  const notificationOrdersRef =
+    useRef<NotificationOrder[]>([]);
+
+  /* ===================================================
+     NOTIFICATION ACTION
+  =================================================== */
+
+  const [
+    notificationOrderToView,
+    setNotificationOrderToView,
+  ] = useState<NotificationOrder | null>(null);
+
+  const [
+    notificationAction,
+    setNotificationAction,
+  ] = useState<NotificationAction>(null);
+
+  const [
+    notificationOpenKey,
+    setNotificationOpenKey,
+  ] = useState(0);
+
+  /* ===================================================
+     AUDIO
+  =================================================== */
 
   const notificationAudioRef =
     useRef<HTMLAudioElement | null>(null);
@@ -105,9 +221,9 @@ export default function AdminPanel() {
   const audioUnlockedRef =
     useRef(false);
 
-  // =====================================================
-  // REALTIME CHANNEL
-  // =====================================================
+  /* ===================================================
+     REALTIME
+  =================================================== */
 
   const orderChannelRef =
     useRef<ReturnType<typeof supabase.channel> | null>(
@@ -117,9 +233,73 @@ export default function AdminPanel() {
   const realtimeStartedRef =
     useRef(false);
 
-  // =====================================================
-  // LOAD CURRENT ADMIN
-  // =====================================================
+  /* ===================================================
+     SYNC NOTIFICATION REF
+  =================================================== */
+
+  useEffect(() => {
+    notificationOrdersRef.current =
+      notificationOrders;
+  }, [notificationOrders]);
+
+  /* ===================================================
+     CLOSE MOBILE DRAWER ON TAB CHANGE
+  =================================================== */
+
+  useEffect(() => {
+    setMobileSidebarOpen(false);
+  }, [activeTab]);
+
+  /* ===================================================
+     ESC CLOSE MOBILE DRAWER
+  =================================================== */
+
+  useEffect(() => {
+    if (!mobileSidebarOpen) {
+      return;
+    }
+
+    const handleKeyDown = (
+      event: KeyboardEvent,
+    ) => {
+      if (event.key === "Escape") {
+        setMobileSidebarOpen(false);
+      }
+    };
+
+    document.addEventListener(
+      "keydown",
+      handleKeyDown,
+    );
+
+    return () => {
+      document.removeEventListener(
+        "keydown",
+        handleKeyDown,
+      );
+    };
+  }, [mobileSidebarOpen]);
+
+  /* ===================================================
+     PREVENT BODY SCROLL WHEN DRAWER OPEN
+  =================================================== */
+
+  useEffect(() => {
+    if (!mobileSidebarOpen) {
+      document.body.style.overflow = "";
+      return;
+    }
+
+    document.body.style.overflow = "hidden";
+
+    return () => {
+      document.body.style.overflow = "";
+    };
+  }, [mobileSidebarOpen]);
+
+  /* ===================================================
+     LOAD ADMIN
+  =================================================== */
 
   useEffect(() => {
     let mounted = true;
@@ -133,7 +313,9 @@ export default function AdminPanel() {
           data: { session },
         } = await supabase.auth.getSession();
 
-        if (!mounted) return;
+        if (!mounted) {
+          return;
+        }
 
         if (!session?.access_token) {
           setError(
@@ -148,8 +330,7 @@ export default function AdminPanel() {
           {
             method: "GET",
             headers: {
-              Authorization:
-                `Bearer ${session.access_token}`,
+              Authorization: `Bearer ${session.access_token}`,
             },
             cache: "no-store",
           },
@@ -160,7 +341,9 @@ export default function AdminPanel() {
           | { error: string } =
           await response.json();
 
-        if (!mounted) return;
+        if (!mounted) {
+          return;
+        }
 
         if (!response.ok) {
           throw new Error(
@@ -179,60 +362,70 @@ export default function AdminPanel() {
         setAdmin(data.admin);
 
         setIsSuperAdmin(
-          data.isSuperAdmin,
+          Boolean(data.isSuperAdmin),
         );
 
-        setAssignedRoles(
-          data.assignedRoles.map(
-            (role) => role.name,
-          ),
-        );
+        const roleNames: AdminSubRole[] =
+          Array.isArray(
+            data.assignedRoles,
+          )
+            ? data.assignedRoles
+                .map(
+                  (role) => role.name,
+                )
+                .filter(Boolean)
+            : [];
 
-        // =================================================
-        // DEFAULT TAB
-        // =================================================
+        setAssignedRoles(roleNames);
 
+        /*
+         * Super admin starts on dashboard.
+         */
         if (data.isSuperAdmin) {
           setActiveTab("dashboard");
           return;
         }
 
-        const firstAllowedTab: AdminModule[] =
+        /*
+         * Find first module this admin can access.
+         */
+        const firstAllowedTabs: AdminModule[] =
           [
             "dashboard",
             "workers",
             "orders",
             "shops",
             "bookings",
-            "admins",
           ];
 
         const firstAllowed =
-          firstAllowedTab.find(
+          firstAllowedTabs.find(
             (module) =>
               canAccessModule(
                 data.admin.role,
-                data.assignedRoles.map(
-                  (role) => role.name,
-                ),
+                roleNames,
                 module,
               ),
           );
 
         if (firstAllowed) {
-          setActiveTab(firstAllowed);
+          setActiveTab(
+            firstAllowed,
+          );
         }
-      } catch (error) {
+      } catch (err) {
         console.error(
-          "Load admin error:",
-          error,
+          "[Admin] Load error:",
+          err,
         );
 
-        if (!mounted) return;
+        if (!mounted) {
+          return;
+        }
 
         setError(
-          error instanceof Error
-            ? error.message
+          err instanceof Error
+            ? err.message
             : "Unable to load admin.",
         );
       } finally {
@@ -249,13 +442,71 @@ export default function AdminPanel() {
     };
   }, []);
 
-  // =====================================================
-  // INITIALIZE NOTIFICATION AUDIO
-  // =====================================================
+  /* ===================================================
+     REALTIME AUTH
+  =================================================== */
 
   useEffect(() => {
-    const audio =
-      new Audio("/sounds/new-order.mp3");
+    let mounted = true;
+
+    const syncRealtimeAuth =
+      async () => {
+        try {
+          const {
+            data: { session },
+          } =
+            await supabase.auth.getSession();
+
+          if (!mounted) {
+            return;
+          }
+
+          if (session?.access_token) {
+            supabase.realtime.setAuth(
+              session.access_token,
+            );
+          }
+        } catch (err) {
+          console.error(
+            "[Realtime] Auth error:",
+            err,
+          );
+        }
+      };
+
+    syncRealtimeAuth();
+
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange(
+      (event, session) => {
+        console.log(
+          "[Auth] Event:",
+          event,
+        );
+
+        if (session?.access_token) {
+          supabase.realtime.setAuth(
+            session.access_token,
+          );
+        }
+      },
+    );
+
+    return () => {
+      mounted = false;
+      subscription.unsubscribe();
+    };
+  }, []);
+
+  /* ===================================================
+     AUDIO INITIALIZATION
+  =================================================== */
+
+  useEffect(() => {
+    const audio = new Audio(
+      "/sounds/new-order.mp3",
+    );
 
     audio.preload = "auto";
     audio.volume = 1;
@@ -263,53 +514,63 @@ export default function AdminPanel() {
     notificationAudioRef.current =
       audio;
 
-    const unlockAudio = async () => {
-      try {
+    const unlockAudio =
+      async () => {
         if (audioUnlockedRef.current) {
           return;
         }
 
-        /*
-         * Browser autoplay policy:
-         * play muted once after user interaction.
-         */
-        audio.muted = true;
+        try {
+          audio.muted = true;
+          audio.currentTime = 0;
 
-        await audio.play();
+          await audio.play();
 
-        audio.pause();
-        audio.currentTime = 0;
-        audio.muted = false;
+          audio.pause();
+          audio.currentTime = 0;
+          audio.muted = false;
 
-        audioUnlockedRef.current = true;
+          audioUnlockedRef.current =
+            true;
 
-        console.log(
-          "🔊 Notification sound unlocked.",
+          console.log(
+            "[Audio] Unlocked",
+          );
+        } catch {
+          console.log(
+            "[Audio] Waiting for user interaction.",
+          );
+        }
+
+        window.removeEventListener(
+          "click",
+          unlockAudio,
         );
-      } catch (error) {
-        console.log(
-          "Audio unlock waiting for user interaction.",
-          error,
+
+        window.removeEventListener(
+          "keydown",
+          unlockAudio,
         );
-      }
-    };
+
+        window.removeEventListener(
+          "touchstart",
+          unlockAudio,
+        );
+      };
 
     window.addEventListener(
       "click",
       unlockAudio,
-      { once: true },
     );
 
     window.addEventListener(
       "keydown",
       unlockAudio,
-      { once: true },
     );
 
     window.addEventListener(
       "touchstart",
       unlockAudio,
-      { once: true },
     );
 
     return () => {
@@ -338,20 +599,19 @@ export default function AdminPanel() {
     };
   }, []);
 
-  // =====================================================
-  // PLAY NEW ORDER SOUND
-  // =====================================================
+  /* ===================================================
+     PLAY NEW ORDER SOUND
+  =================================================== */
 
   const playNewOrderSound =
     useCallback(async () => {
       const audio =
         notificationAudioRef.current;
 
-      if (!audio) {
-        console.log(
-          "Notification audio is not initialized.",
-        );
-
+      if (
+        !audio ||
+        !audioUnlockedRef.current
+      ) {
         return;
       }
 
@@ -362,305 +622,287 @@ export default function AdminPanel() {
         audio.muted = false;
 
         await audio.play();
-
-        console.log(
-          "🔊 New order notification sound played.",
+      } catch (err) {
+        console.warn(
+          "[Audio] Notification sound unavailable:",
+          err,
         );
-      } catch (error) {
-        console.error(
-          "Unable to play notification sound:",
-          error,
-        );
-
-        /*
-         * Browser may block autoplay if the admin
-         * has not interacted with the page yet.
-         */
-        if (
-          error instanceof DOMException &&
-          error.name === "NotAllowedError"
-        ) {
-          console.log(
-            "Browser blocked autoplay. User interaction is required.",
-          );
-        }
       }
     }, []);
 
-  // =====================================================
-  // REALTIME NEW ORDER LISTENER
-  // =====================================================
+  /* ===================================================
+     CHECK REMOVE STATUS
+  =================================================== */
 
-  useEffect(() => {
-    let cancelled = false;
+  const shouldRemoveNotification =
+    useCallback(
+      (
+        status:
+          | string
+          | null
+          | undefined,
+      ) => {
+        const normalized =
+          String(status ?? "")
+            .trim()
+            .toLowerCase();
 
-    const setupOrderRealtime =
-      async () => {
-        try {
-          // ------------------------------------------------
-          // PREVENT DUPLICATE SUBSCRIPTION
-          // ------------------------------------------------
+        return NOTIFICATION_REMOVE_STATUSES.includes(
+          normalized,
+        );
+      },
+      [],
+    );
 
-          if (realtimeStartedRef.current) {
-            console.log(
-              "Order realtime already started.",
-            );
+  /* ===================================================
+     ADD NOTIFICATION
+  =================================================== */
 
-            return;
-          }
-
-          realtimeStartedRef.current =
-            true;
-
-          // ------------------------------------------------
-          // CHECK SESSION
-          // ------------------------------------------------
-
-          const {
-            data: { session },
-          } =
-            await supabase.auth.getSession();
-
-          if (cancelled) {
-            realtimeStartedRef.current =
-              false;
-
-            return;
-          }
-
-          if (!session?.access_token) {
-            console.log(
-              "No admin session for order realtime.",
-            );
-
-            realtimeStartedRef.current =
-              false;
-
-            return;
-          }
-
-          // ------------------------------------------------
-          // REMOVE OLD CHANNEL
-          // ------------------------------------------------
-
-          if (
-            orderChannelRef.current
-          ) {
-            console.log(
-              "Removing old order realtime channel...",
-            );
-
-            await supabase.removeChannel(
-              orderChannelRef.current,
-            );
-
-            orderChannelRef.current =
-              null;
-          }
-
-          if (cancelled) {
-            realtimeStartedRef.current =
-              false;
-
-            return;
-          }
-
-          // ------------------------------------------------
-          // UNIQUE CHANNEL NAME
-          // ------------------------------------------------
-
-          const channelName =
-            `admin-new-orders-${Date.now()}-${Math.random()
-              .toString(36)
-              .slice(2)}`;
-
-          console.log(
-            "Creating order realtime channel:",
-            channelName,
-          );
-
-          // ------------------------------------------------
-          // CREATE CHANNEL
-          // ------------------------------------------------
-
-          const channel =
-            supabase.channel(
-              channelName,
-            );
-
-          // ------------------------------------------------
-          // ADD CALLBACK BEFORE SUBSCRIBE
-          // ------------------------------------------------
-
-          channel.on(
-            "postgres_changes",
-            {
-              event: "INSERT",
-              schema: "public",
-              table: "orders",
-            },
-            async (payload) => {
-              console.log(
-                "🔔 NEW ORDER RECEIVED:",
-                payload.new,
-              );
-
-              if (cancelled) {
-                return;
-              }
-
-              // --------------------------------------------
-              // SHOW GLOBAL NOTIFICATION
-              // --------------------------------------------
-
-              setNotificationOrder(
-                payload.new,
-              );
-
-              // --------------------------------------------
-              // PLAY SOUND
-              // --------------------------------------------
-
-              await playNewOrderSound();
-            },
-          );
-
-          // ------------------------------------------------
-          // SAVE CHANNEL REF
-          // ------------------------------------------------
-
-          orderChannelRef.current =
-            channel;
-
-          // ------------------------------------------------
-          // SUBSCRIBE
-          // ------------------------------------------------
-
-          channel.subscribe(
-            (status) => {
-              console.log(
-                "Admin order realtime status:",
-                status,
-              );
-
-              if (
-                status === "SUBSCRIBED"
-              ) {
-                console.log(
-                  "✅ Admin order realtime connected.",
-                );
-              }
-
-              if (
-                status === "CHANNEL_ERROR"
-              ) {
-                console.error(
-                  "❌ Admin order realtime channel error.",
-                );
-              }
-
-              if (
-                status === "TIMED_OUT"
-              ) {
-                console.error(
-                  "⏱️ Admin order realtime timed out.",
-                );
-              }
-
-              if (
-                status === "CLOSED"
-              ) {
-                console.log(
-                  "Admin order realtime closed.",
-                );
-              }
-            },
-          );
-        } catch (error) {
-          console.error(
-            "Order realtime setup error:",
-            error,
-          );
-
-          realtimeStartedRef.current =
-            false;
+  const addOrderNotification =
+    useCallback(
+      (order: NotificationOrder) => {
+        if (
+          order?.id === undefined ||
+          order?.id === null
+        ) {
+          return;
         }
-      };
 
-    setupOrderRealtime();
+        const orderId =
+          String(order.id);
 
-    // ===================================================
-    // CLEANUP
-    // ===================================================
+        /*
+         * Do not show notifications for
+         * already completed orders.
+         */
+        if (
+          shouldRemoveNotification(
+            order.status,
+          )
+        ) {
+          return;
+        }
 
-    return () => {
-      cancelled = true;
+        /*
+         * Prevent duplicate notifications.
+         */
+        const exists =
+          notificationOrdersRef.current.some(
+            (item) =>
+              String(item.id) ===
+              orderId,
+          );
 
-      const channel =
-        orderChannelRef.current;
+        if (exists) {
+          return;
+        }
 
-      if (channel) {
+        const nextNotifications = [
+          order,
+          ...notificationOrdersRef.current,
+        ];
+
+        notificationOrdersRef.current =
+          nextNotifications;
+
+        setNotificationOrders(
+          nextNotifications,
+        );
+
         console.log(
-          "Cleaning up order realtime channel...",
+          "[Notification] Added:",
+          orderId,
+        );
+      },
+      [shouldRemoveNotification],
+    );
+
+  /* ===================================================
+     REMOVE NOTIFICATION
+  =================================================== */
+
+  const removeOrderNotification =
+    useCallback(
+      (
+        orderId: string | number,
+      ) => {
+        const id = String(orderId);
+
+        const nextNotifications =
+          notificationOrdersRef.current.filter(
+            (order) =>
+              String(order.id) !== id,
+          );
+
+        notificationOrdersRef.current =
+          nextNotifications;
+
+        setNotificationOrders(
+          nextNotifications,
         );
 
-        supabase.removeChannel(
-          channel,
+        setNotificationOrderToView(
+          (current) => {
+            if (
+              current &&
+              String(current.id) ===
+                id
+            ) {
+              return null;
+            }
+
+            return current;
+          },
         );
 
-        orderChannelRef.current =
-          null;
-      }
+        console.log(
+          "[Notification] Removed:",
+          id,
+        );
+      },
+      [],
+    );
 
-      realtimeStartedRef.current =
-        false;
-    };
-  }, [playNewOrderSound]);
+  /* ===================================================
+     VIEW ORDER
+  =================================================== */
 
-  // =====================================================
-  // NAVIGATION
-  // =====================================================
+  const handleNotificationView =
+    useCallback(
+      (order: NotificationOrder) => {
+        if (
+          order?.id === undefined ||
+          order?.id === null
+        ) {
+          return;
+        }
 
-  const navigation: {
-    id: AdminModule;
-    label: string;
-    icon: typeof LayoutDashboard;
-  }[] = [
-    {
-      id: "dashboard",
-      label: "Dashboard",
-      icon: LayoutDashboard,
-    },
-    {
-      id: "workers",
-      label: "Workers",
-      icon: Users,
-    },
-    {
-      id: "orders",
-      label: "Orders",
-      icon: ShoppingBag,
-    },
-    {
-      id: "shops",
-      label: "Shops",
-      icon: Store,
-    },
-    {
-      id: "bookings",
-      label: "Bookings",
-      icon: CalendarCheck,
-    },
-    {
-      id: "admins",
-      label: "Admins",
-      icon: ShieldCheck,
-    },
-  ];
+        console.log(
+          "[Notification] VIEW:",
+          order.id,
+        );
 
-  // =====================================================
-  // ACCESS CHECK
-  // =====================================================
+        setNotificationOrderToView(
+          order,
+        );
+
+        setNotificationAction(
+          "view",
+        );
+
+        setNotificationOpenKey(
+          (previous) =>
+            previous + 1,
+        );
+
+        /*
+         * Only switches to Orders
+         * when user clicks View.
+         */
+        setActiveTab("orders");
+      },
+      [],
+    );
+
+  /* ===================================================
+     ACCEPT ORDER
+  =================================================== */
+
+  const handleNotificationAccept =
+    useCallback(
+      (order: NotificationOrder) => {
+        if (
+          order?.id === undefined ||
+          order?.id === null
+        ) {
+          return;
+        }
+
+        console.log(
+          "[Notification] ACCEPT:",
+          order.id,
+        );
+
+        setNotificationOrderToView(
+          order,
+        );
+
+        setNotificationAction(
+          "accept",
+        );
+
+        setNotificationOpenKey(
+          (previous) =>
+            previous + 1,
+        );
+
+        /*
+         * Only switches to Orders
+         * when user clicks Accept.
+         */
+        setActiveTab("orders");
+      },
+      [],
+    );
+
+  /* ===================================================
+     REJECT ORDER
+  =================================================== */
+
+  const handleNotificationReject =
+    useCallback(
+      (order: NotificationOrder) => {
+        if (
+          order?.id === undefined ||
+          order?.id === null
+        ) {
+          return;
+        }
+
+        console.log(
+          "[Notification] REJECT:",
+          order.id,
+        );
+
+        setNotificationOrderToView(
+          order,
+        );
+
+        setNotificationAction(
+          "reject",
+        );
+
+        setNotificationOpenKey(
+          (previous) =>
+            previous + 1,
+        );
+
+        /*
+         * Only switches to Orders
+         * when user clicks Reject.
+         */
+        setActiveTab("orders");
+      },
+      [],
+    );
+
+  /* ===================================================
+     CLOSE NOTIFICATION
+  =================================================== */
+
+  const handleNotificationClose =
+    useCallback(
+      (orderId: string | number) => {
+        removeOrderNotification(
+          orderId,
+        );
+      },
+      [removeOrderNotification],
+    );
+
+  /* ===================================================
+     ACCESS
+  =================================================== */
 
   const hasAccess = (
     module: AdminModule,
@@ -673,6 +915,10 @@ export default function AdminPanel() {
       return true;
     }
 
+    /*
+     * Normal admins cannot access
+     * Admin Management.
+     */
     if (module === "admins") {
       return false;
     }
@@ -684,17 +930,306 @@ export default function AdminPanel() {
     );
   };
 
-  // =====================================================
-  // LOADING
-  // =====================================================
+  /* ===================================================
+     REALTIME ORDERS
+  =================================================== */
+
+  useEffect(() => {
+    /*
+     * Do not start realtime before
+     * admin authentication is ready.
+     */
+    if (
+      loading ||
+      !admin ||
+      !hasAccess("orders")
+    ) {
+      return;
+    }
+
+    let cancelled = false;
+
+    const setupOrderRealtime =
+      async () => {
+        try {
+          /*
+           * Prevent duplicate channels.
+           */
+          if (
+            realtimeStartedRef.current
+          ) {
+            return;
+          }
+
+          const {
+            data: { session },
+            error: sessionError,
+          } =
+            await supabase.auth.getSession();
+
+          if (
+            sessionError ||
+            !session?.access_token
+          ) {
+            console.error(
+              "[Realtime] No valid session.",
+              sessionError,
+            );
+
+            return;
+          }
+
+          if (cancelled) {
+            return;
+          }
+
+          /*
+           * Authenticate Supabase Realtime.
+           */
+          supabase.realtime.setAuth(
+            session.access_token,
+          );
+
+          /*
+           * Remove any old channel.
+           */
+          if (
+            orderChannelRef.current
+          ) {
+            await supabase.removeChannel(
+              orderChannelRef.current,
+            );
+
+            orderChannelRef.current =
+              null;
+          }
+
+          if (cancelled) {
+            return;
+          }
+
+          realtimeStartedRef.current =
+            true;
+
+          const channel =
+            supabase
+              .channel(
+                "admin-orders-realtime",
+              )
+
+              /* =========================================
+                 INSERT
+              ========================================= */
+
+              .on(
+                "postgres_changes",
+                {
+                  event: "INSERT",
+                  schema: "public",
+                  table: "orders",
+                },
+                async (payload) => {
+                  if (cancelled) {
+                    return;
+                  }
+
+                  const order =
+                    payload.new as NotificationOrder;
+
+                  console.log(
+                    "[Realtime] NEW ORDER:",
+                    order,
+                  );
+
+                  /*
+                   * Add compact notification.
+                   */
+                  addOrderNotification(
+                    order,
+                  );
+
+                  /*
+                   * Play sound.
+                   */
+                  await playNewOrderSound();
+                },
+              )
+
+              /* =========================================
+                 UPDATE
+              ========================================= */
+
+              .on(
+                "postgres_changes",
+                {
+                  event: "UPDATE",
+                  schema: "public",
+                  table: "orders",
+                },
+                (payload) => {
+                  if (cancelled) {
+                    return;
+                  }
+
+                  const order =
+                    payload.new as NotificationOrder;
+
+                  console.log(
+                    "[Realtime] ORDER UPDATE:",
+                    order,
+                  );
+
+                  /*
+                   * Remove notification when
+                   * order is no longer pending.
+                   */
+                  if (
+                    shouldRemoveNotification(
+                      order.status,
+                    )
+                  ) {
+                    removeOrderNotification(
+                      order.id,
+                    );
+                  }
+                },
+              );
+
+          orderChannelRef.current =
+            channel;
+
+          /* =============================================
+             SUBSCRIBE
+          ============================================= */
+
+          channel.subscribe(
+            (
+              status,
+              realtimeError,
+            ) => {
+              console.log(
+                "[Realtime] STATUS:",
+                status,
+              );
+
+              if (
+                status ===
+                "SUBSCRIBED"
+              ) {
+                console.log(
+                  "[Realtime] CONNECTED",
+                );
+              }
+
+              if (
+                status ===
+                "CHANNEL_ERROR"
+              ) {
+                console.error(
+                  "[Realtime] CHANNEL_ERROR:",
+                  realtimeError,
+                );
+
+                realtimeStartedRef.current =
+                  false;
+              }
+
+              if (
+                status ===
+                "TIMED_OUT"
+              ) {
+                console.error(
+                  "[Realtime] TIMED_OUT:",
+                  realtimeError,
+                );
+
+                realtimeStartedRef.current =
+                  false;
+              }
+
+              if (
+                status === "CLOSED"
+              ) {
+                realtimeStartedRef.current =
+                  false;
+              }
+            },
+          );
+        } catch (err) {
+          console.error(
+            "[Realtime] Setup failed:",
+            err,
+          );
+
+          realtimeStartedRef.current =
+            false;
+        }
+      };
+
+    setupOrderRealtime();
+
+    return () => {
+      cancelled = true;
+
+      const channel =
+        orderChannelRef.current;
+
+      if (channel) {
+        supabase.removeChannel(
+          channel,
+        );
+
+        orderChannelRef.current =
+          null;
+      }
+
+      realtimeStartedRef.current =
+        false;
+    };
+  }, [
+    loading,
+    admin,
+    assignedRoles,
+    isSuperAdmin,
+    addOrderNotification,
+    removeOrderNotification,
+    playNewOrderSound,
+    shouldRemoveNotification,
+  ]);
+
+  /* ===================================================
+     LOADING
+  =================================================== */
 
   if (loading) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-[#F8FAFC]">
+      <div
+        className="
+          flex
+          min-h-screen
+          items-center
+          justify-center
+          bg-[#F8FAFC]
+          px-4
+        "
+      >
         <div className="flex flex-col items-center">
-          <Loader2 className="h-8 w-8 animate-spin text-[#FF5C39]" />
+          <Loader2
+            className="
+              h-8
+              w-8
+              animate-spin
+              text-[#FF5C39]
+            "
+          />
 
-          <p className="mt-3 text-sm text-[#64748B]">
+          <p
+            className="
+              mt-3
+              text-sm
+              text-[#64748B]
+            "
+          >
             Loading admin panel...
           </p>
         </div>
@@ -702,23 +1237,75 @@ export default function AdminPanel() {
     );
   }
 
-  // =====================================================
-  // ERROR
-  // =====================================================
+  /* ===================================================
+     ERROR
+  =================================================== */
 
   if (error || !admin) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-[#F8FAFC] px-4">
-        <div className="w-full max-w-md rounded-2xl border border-gray-100 bg-white p-7 text-center shadow-sm">
-          <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-xl bg-red-50">
-            <AlertCircle className="h-6 w-6 text-red-500" />
+      <div
+        className="
+          flex
+          min-h-screen
+          items-center
+          justify-center
+          bg-[#F8FAFC]
+          px-4
+        "
+      >
+        <div
+          className="
+            w-full
+            max-w-md
+            rounded-2xl
+            border
+            border-gray-100
+            bg-white
+            p-6
+            text-center
+            shadow-sm
+            sm:p-7
+          "
+        >
+          <div
+            className="
+              mx-auto
+              flex
+              h-12
+              w-12
+              items-center
+              justify-center
+              rounded-xl
+              bg-red-50
+            "
+          >
+            <AlertCircle
+              className="
+                h-6
+                w-6
+                text-red-500
+              "
+            />
           </div>
 
-          <h1 className="mt-4 text-lg font-black text-[#0F172A]">
+          <h1
+            className="
+              mt-4
+              text-lg
+              font-black
+              text-[#0F172A]
+            "
+          >
             Unable to load Admin Panel
           </h1>
 
-          <p className="mt-2 text-sm text-[#64748B]">
+          <p
+            className="
+              mt-2
+              text-sm
+              text-[#64748B]
+            "
+          >
             {error ||
               "Admin profile could not be found."}
           </p>
@@ -727,210 +1314,927 @@ export default function AdminPanel() {
     );
   }
 
-  // =====================================================
-  // FILTER NAVIGATION
-  // =====================================================
+  /* ===================================================
+     VISIBLE NAVIGATION
+  =================================================== */
 
   const visibleNavigation =
-    navigation.filter((item) =>
+    NAVIGATION.filter((item) =>
       hasAccess(item.id),
     );
 
-  // =====================================================
-  // RENDER
-  // =====================================================
+  const currentNavigation =
+    visibleNavigation.find(
+      (item) =>
+        item.id === activeTab,
+    );
+
+  /* ===================================================
+     MOBILE TAB CHANGE
+  =================================================== */
+
+  const handleMobileTabChange = (
+    tab: AdminModule,
+  ) => {
+    setActiveTab(tab);
+    setMobileSidebarOpen(false);
+  };
+
+  /* ===================================================
+     RENDER
+  =================================================== */
 
   return (
-    <div className="flex min-h-screen bg-[#F8FAFC]">
+    <div
+      className="
+        min-h-screen
+        w-full
+        bg-[#F8FAFC]
+      "
+    >
+      {/* =================================================
+          NEW ORDER NOTIFICATIONS
+      ================================================= */}
 
-      {/* ================================================= */}
-      {/* GLOBAL NEW ORDER NOTIFICATION */}
-      {/* ================================================= */}
+      {notificationOrders.length > 0 && (
+        <div
+          className="
+            fixed
+            right-3
+            top-3
+            z-[100]
+            flex
+            w-[calc(100%-1.5rem)]
+            max-w-[380px]
+            flex-col
+            gap-2
+            sm:right-5
+            sm:top-5
+          "
+        >
+          {notificationOrders.map(
+            (order) => (
+              <NewOrderNotification
+                key={String(order.id)}
+                order={order}
+                onClose={() => {
+                  handleNotificationClose(
+                    order.id,
+                  );
+                }}
+                onView={() => {
+                  handleNotificationView(
+                    order,
+                  );
+                }}
+                onAccept={() => {
+                  handleNotificationAccept(
+                    order,
+                  );
+                }}
+                onReject={() => {
+                  handleNotificationReject(
+                    order,
+                  );
+                }}
+              />
+            ),
+          )}
+        </div>
+      )}
 
-      <NewOrderNotification
-        order={notificationOrder}
-        onClose={() => {
-          setNotificationOrder(
-            null,
-          );
-        }}
-        onView={() => {
-          setNotificationOrder(
-            null,
-          );
+      {/* =================================================
+          MOBILE TOP BAR
+      ================================================= */}
 
-          setActiveTab("orders");
-        }}
-      />
-
-      {/* ================================================= */}
-      {/* SIDEBAR */}
-      {/* ================================================= */}
-
-      <aside className="fixed bottom-0 left-0 top-0 w-64 border-r border-gray-100 bg-white">
-
+      <header
+        className="
+          fixed
+          left-0
+          right-0
+          top-0
+          z-40
+          flex
+          h-16
+          items-center
+          justify-between
+          border-b
+          border-gray-100
+          bg-white
+          px-3
+          sm:px-5
+          lg:hidden
+        "
+      >
         {/* BRAND */}
 
-        <div className="flex h-20 items-center border-b border-gray-100 px-6">
-          <div>
-            <h1 className="text-xl font-black text-[#0F172A]">
-              Workkerz
-            </h1>
+        <div
+          className="
+            flex
+            min-w-0
+            items-center
+            gap-2.5
+          "
+        >
+          <div
+            className="
+              flex
+              h-9
+              w-9
+              shrink-0
+              items-center
+              justify-center
+              rounded-xl
+              bg-orange-50
+            "
+          >
+            <ShieldCheck
+              className="
+                h-4
+                w-4
+                text-[#FF5C39]
+              "
+            />
+          </div>
 
-            <p className="text-xs text-[#94A3B8]">
+          <div className="min-w-0">
+            <p
+              className="
+                truncate
+                text-sm
+                font-black
+                text-[#0F172A]
+              "
+            >
+              Workkerz
+            </p>
+
+            <p
+              className="
+                truncate
+                text-[10px]
+                text-[#94A3B8]
+              "
+            >
               Admin Panel
             </p>
           </div>
         </div>
 
-        {/* ADMIN INFO */}
+        {/* CURRENT PAGE */}
 
-        <div className="px-4 pt-4">
-          <div className="rounded-xl border border-gray-100 bg-[#F8FAFC] p-3">
+        <div
+          className="
+            hidden
+            min-w-0
+            flex-1
+            justify-center
+            px-4
+            sm:flex
+          "
+        >
+          <div className="min-w-0">
+            <p
+              className="
+                truncate
+                text-xs
+                font-bold
+                text-[#64748B]
+              "
+            >
+              {currentNavigation?.label ||
+                "Dashboard"}
+            </p>
+          </div>
+        </div>
 
+        {/* RIGHT */}
+
+        <div
+          className="
+            flex
+            items-center
+            gap-2
+            sm:gap-3
+          "
+        >
+          {/* ADMIN INFO */}
+
+          <div
+            className="
+              hidden
+              text-right
+              sm:block
+            "
+          >
+            <p
+              className="
+                max-w-[150px]
+                truncate
+                text-xs
+                font-bold
+                text-[#0F172A]
+              "
+            >
+              {admin.full_name}
+            </p>
+
+            <p
+              className="
+                text-[10px]
+                text-[#64748B]
+              "
+            >
+              {isSuperAdmin
+                ? "Super Admin"
+                : "Admin"}
+            </p>
+          </div>
+
+          {/* ADMIN ICON */}
+
+          <div
+            className="
+              flex
+              h-9
+              w-9
+              shrink-0
+              items-center
+              justify-center
+              rounded-full
+              bg-orange-50
+            "
+          >
+            <ShieldCheck
+              className="
+                h-4
+                w-4
+                text-[#FF5C39]
+              "
+            />
+          </div>
+
+          {/* MENU */}
+
+          <button
+            type="button"
+            aria-label="Open admin menu"
+            onClick={() =>
+              setMobileSidebarOpen(true)
+            }
+            className="
+              flex
+              h-9
+              w-9
+              shrink-0
+              items-center
+              justify-center
+              rounded-xl
+              bg-[#F8FAFC]
+              text-[#0F172A]
+              transition
+              hover:bg-gray-100
+              active:scale-95
+            "
+          >
+            <Menu className="h-5 w-5" />
+          </button>
+        </div>
+      </header>
+
+      {/* =================================================
+          MOBILE OVERLAY
+      ================================================= */}
+
+      {mobileSidebarOpen && (
+        <div
+          className="
+            fixed
+            inset-0
+            z-50
+            bg-black/40
+            backdrop-blur-[2px]
+            lg:hidden
+          "
+          onClick={() =>
+            setMobileSidebarOpen(false)
+          }
+        />
+      )}
+
+      {/* =================================================
+          MOBILE DRAWER
+      ================================================= */}
+
+      <aside
+        className={`
+          fixed
+          inset-y-0
+          left-0
+          z-[60]
+          flex
+          w-[min(86vw,320px)]
+          flex-col
+          border-r
+          border-gray-100
+          bg-white
+          shadow-2xl
+          transition-transform
+          duration-300
+          ease-out
+          lg:hidden
+
+          ${
+            mobileSidebarOpen
+              ? "translate-x-0"
+              : "-translate-x-full"
+          }
+        `}
+      >
+        {/* DRAWER HEADER */}
+
+        <div
+          className="
+            flex
+            h-16
+            shrink-0
+            items-center
+            justify-between
+            border-b
+            border-gray-100
+            px-4
+          "
+        >
+          <div>
+            <p
+              className="
+                text-base
+                font-black
+                text-[#0F172A]
+              "
+            >
+              Workkerz
+            </p>
+
+            <p
+              className="
+                text-[10px]
+                text-[#94A3B8]
+              "
+            >
+              Admin Panel
+            </p>
+          </div>
+
+          <button
+            type="button"
+            aria-label="Close admin menu"
+            onClick={() =>
+              setMobileSidebarOpen(false)
+            }
+            className="
+              flex
+              h-9
+              w-9
+              items-center
+              justify-center
+              rounded-xl
+              bg-[#F8FAFC]
+              text-[#64748B]
+              transition
+              hover:bg-gray-100
+              hover:text-[#0F172A]
+              active:scale-95
+            "
+          >
+            <X className="h-5 w-5" />
+          </button>
+        </div>
+
+        {/* ADMIN PROFILE */}
+
+        <div className="shrink-0 px-3 pt-3">
+          <div
+            className="
+              rounded-xl
+              border
+              border-gray-100
+              bg-[#F8FAFC]
+              p-3
+            "
+          >
             <div className="flex items-center gap-3">
-
-              <div className="flex h-9 w-9 items-center justify-center rounded-full bg-orange-50">
-                <ShieldCheck className="h-4 w-4 text-[#FF5C39]" />
+              <div
+                className="
+                  flex
+                  h-10
+                  w-10
+                  shrink-0
+                  items-center
+                  justify-center
+                  rounded-full
+                  bg-orange-50
+                "
+              >
+                <ShieldCheck
+                  className="
+                    h-5
+                    w-5
+                    text-[#FF5C39]
+                  "
+                />
               </div>
 
-              <div className="min-w-0">
-
-                <p className="truncate text-sm font-bold text-[#0F172A]">
+              <div className="min-w-0 flex-1">
+                <p
+                  className="
+                    truncate
+                    text-sm
+                    font-bold
+                    text-[#0F172A]
+                  "
+                >
                   {admin.full_name}
                 </p>
 
-                <p className="truncate text-xs text-[#64748B]">
+                <p
+                  className="
+                    truncate
+                    text-xs
+                    text-[#64748B]
+                  "
+                >
                   {admin.email}
                 </p>
-
               </div>
-
             </div>
 
             <div className="mt-3">
-
               <span
                 className={
                   isSuperAdmin
-                    ? "inline-flex rounded-full bg-purple-50 px-2.5 py-1 text-[11px] font-bold text-purple-700"
-                    : "inline-flex rounded-full bg-blue-50 px-2.5 py-1 text-[11px] font-bold text-blue-700"
+                    ? `
+                      inline-flex
+                      rounded-full
+                      bg-purple-50
+                      px-2.5
+                      py-1
+                      text-[10px]
+                      font-bold
+                      text-purple-700
+                    `
+                    : `
+                      inline-flex
+                      rounded-full
+                      bg-blue-50
+                      px-2.5
+                      py-1
+                      text-[10px]
+                      font-bold
+                      text-blue-700
+                    `
                 }
               >
                 {isSuperAdmin
                   ? "Super Admin"
                   : "Admin"}
               </span>
-
             </div>
-
           </div>
         </div>
 
-        {/* NAVIGATION */}
+        {/* MOBILE NAVIGATION */}
 
-        <nav className="space-y-1 p-4">
+        <nav
+          className="
+            flex-1
+            overflow-y-auto
+            overscroll-contain
+            px-3
+            py-4
+          "
+        >
+          <div className="space-y-1">
+            {visibleNavigation.map(
+              (item) => {
+                const Icon =
+                  item.icon;
 
-          {visibleNavigation.map(
-            (item) => {
-              const Icon =
-                item.icon;
+                const isActive =
+                  activeTab ===
+                  item.id;
 
-              const isActive =
-                activeTab ===
-                item.id;
-
-              return (
-                <button
-                  key={item.id}
-                  type="button"
-                  onClick={() =>
-                    setActiveTab(
-                      item.id,
-                    )
-                  }
-                  className={`
-                    flex
-                    w-full
-                    items-center
-                    gap-3
-                    rounded-xl
-                    px-4
-                    py-3
-                    text-sm
-                    transition-all
-                    ${
-                      isActive
-                        ? "bg-[#FF5C39] text-white"
-                        : "text-[#64748B] hover:bg-[#F8FAFC] hover:text-[#0F172A]"
+                return (
+                  <button
+                    key={item.id}
+                    type="button"
+                    onClick={() =>
+                      handleMobileTabChange(
+                        item.id,
+                      )
                     }
-                  `}
-                >
-                  <Icon className="h-5 w-5" />
+                    className={`
+                      flex
+                      min-h-[44px]
+                      w-full
+                      items-center
+                      gap-3
+                      rounded-xl
+                      px-3
+                      py-3
+                      text-left
+                      text-sm
+                      transition-all
+                      active:scale-[0.98]
 
-                  <span className="font-semibold">
-                    {item.label}
-                  </span>
-                </button>
-              );
-            },
-          )}
+                      ${
+                        isActive
+                          ? "bg-[#FF5C39] text-white shadow-sm"
+                          : "text-[#64748B] hover:bg-[#F8FAFC] hover:text-[#0F172A]"
+                      }
+                    `}
+                  >
+                    <Icon className="h-5 w-5 shrink-0" />
 
+                    <span
+                      className="
+                        min-w-0
+                        flex-1
+                        truncate
+                        font-semibold
+                      "
+                    >
+                      {item.label}
+                    </span>
+                  </button>
+                );
+              },
+            )}
+          </div>
         </nav>
-
       </aside>
 
-      {/* ================================================= */}
-      {/* MAIN CONTENT */}
-      {/* ================================================= */}
+      {/* =================================================
+          DESKTOP SIDEBAR
+      ================================================= */}
 
-      <main className="ml-64 min-h-screen flex-1">
+      <aside
+        className="
+          fixed
+          inset-y-0
+          left-0
+          z-40
+          hidden
+          w-64
+          flex-col
+          border-r
+          border-gray-100
+          bg-white
+          lg:flex
+        "
+      >
+        {/* HEADER */}
+
+        <div
+          className="
+            flex
+            h-20
+            shrink-0
+            items-center
+            border-b
+            border-gray-100
+            px-5
+            lg:px-6
+          "
+        >
+          <div className="min-w-0">
+            <h1
+              className="
+                truncate
+                text-xl
+                font-black
+                text-[#0F172A]
+              "
+            >
+              Workkerz
+            </h1>
+
+            <p
+              className="
+                truncate
+                text-xs
+                text-[#94A3B8]
+              "
+            >
+              Admin Panel
+            </p>
+          </div>
+        </div>
+
+        {/* ADMIN PROFILE */}
+
+        <div
+          className="
+            shrink-0
+            px-3
+            pt-3
+            sm:px-4
+            sm:pt-4
+          "
+        >
+          <div
+            className="
+              rounded-xl
+              border
+              border-gray-100
+              bg-[#F8FAFC]
+              p-3
+            "
+          >
+            <div className="flex items-center gap-2.5 sm:gap-3">
+              <div
+                className="
+                  flex
+                  h-9
+                  w-9
+                  shrink-0
+                  items-center
+                  justify-center
+                  rounded-full
+                  bg-orange-50
+                "
+              >
+                <ShieldCheck
+                  className="
+                    h-4
+                    w-4
+                    text-[#FF5C39]
+                  "
+                />
+              </div>
+
+              <div className="min-w-0 flex-1">
+                <p
+                  className="
+                    truncate
+                    text-xs
+                    font-bold
+                    text-[#0F172A]
+                    sm:text-sm
+                  "
+                >
+                  {admin.full_name}
+                </p>
+
+                <p
+                  className="
+                    truncate
+                    text-[10px]
+                    text-[#64748B]
+                    sm:text-xs
+                  "
+                >
+                  {admin.email}
+                </p>
+              </div>
+            </div>
+
+            <div className="mt-2.5 sm:mt-3">
+              <span
+                className={
+                  isSuperAdmin
+                    ? `
+                      inline-flex
+                      rounded-full
+                      bg-purple-50
+                      px-2
+                      py-1
+                      text-[9px]
+                      font-bold
+                      text-purple-700
+                      sm:px-2.5
+                      sm:text-[11px]
+                    `
+                    : `
+                      inline-flex
+                      rounded-full
+                      bg-blue-50
+                      px-2
+                      py-1
+                      text-[9px]
+                      font-bold
+                      text-blue-700
+                      sm:px-2.5
+                      sm:text-[11px]
+                    `
+                }
+              >
+                {isSuperAdmin
+                  ? "Super Admin"
+                  : "Admin"}
+              </span>
+            </div>
+          </div>
+        </div>
+
+        {/* DESKTOP NAVIGATION */}
+
+        <nav
+          className="
+            flex-1
+            overflow-y-auto
+            overscroll-contain
+            px-3
+            py-3
+            sm:p-4
+          "
+        >
+          <div className="space-y-1">
+            {visibleNavigation.map(
+              (item) => {
+                const Icon =
+                  item.icon;
+
+                const isActive =
+                  activeTab ===
+                  item.id;
+
+                return (
+                  <button
+                    key={item.id}
+                    type="button"
+                    onClick={() =>
+                      setActiveTab(
+                        item.id,
+                      )
+                    }
+                    className={`
+                      flex
+                      min-h-[42px]
+                      w-full
+                      items-center
+                      gap-2.5
+                      rounded-xl
+                      px-3
+                      py-2.5
+                      text-left
+                      text-xs
+                      transition-all
+                      active:scale-[0.98]
+                      sm:gap-3
+                      sm:px-4
+                      sm:py-3
+                      sm:text-sm
+
+                      ${
+                        isActive
+                          ? "bg-[#FF5C39] text-white shadow-sm"
+                          : "text-[#64748B] hover:bg-[#F8FAFC] hover:text-[#0F172A]"
+                      }
+                    `}
+                  >
+                    <Icon
+                      className="
+                        h-4
+                        w-4
+                        shrink-0
+                        sm:h-5
+                        sm:w-5
+                      "
+                    />
+
+                    <span
+                      className="
+                        min-w-0
+                        flex-1
+                        truncate
+                        font-semibold
+                      "
+                    >
+                      {item.label}
+                    </span>
+                  </button>
+                );
+              },
+            )}
+          </div>
+        </nav>
+      </aside>
+
+      {/* =================================================
+          MAIN
+      ================================================= */}
+
+      <main
+        className="
+          min-h-screen
+          w-full
+          bg-[#F8FAFC]
+          lg:ml-64
+          lg:w-[calc(100%-16rem)]
+        "
+      >
+        {/* MOBILE TOP BAR SPACE */}
+
+        <div className="h-16 lg:hidden" />
+
+        {/* =================================================
+            DASHBOARD
+        ================================================= */}
 
         {activeTab ===
           "dashboard" &&
-          hasAccess("dashboard") && (
+          hasAccess(
+            "dashboard",
+          ) && (
             <DashboardTab />
           )}
 
+        {/* =================================================
+            WORKERS
+        ================================================= */}
+
         {activeTab ===
           "workers" &&
-          hasAccess("workers") && (
+          hasAccess(
+            "workers",
+          ) && (
             <WorkersTab />
           )}
 
+        {/* =================================================
+            ORDERS
+        ================================================= */}
+
         {activeTab ===
           "orders" &&
-          hasAccess("orders") && (
+          hasAccess(
+            "orders",
+          ) && (
             <OrdersTab
               notificationOrder={
-                notificationOrder
+                notificationOrderToView
+              }
+              notificationAction={
+                notificationAction
+              }
+              notificationOpenKey={
+                notificationOpenKey
               }
               onNotificationHandled={() => {
-                setNotificationOrder(
+                setNotificationOrderToView(
                   null,
+                );
+
+                setNotificationAction(
+                  null,
+                );
+              }}
+              onNotificationStatusChanged={(
+                orderId,
+              ) => {
+                removeOrderNotification(
+                  orderId,
                 );
               }}
             />
           )}
 
+        {/* =================================================
+            SHOPS
+        ================================================= */}
+
         {activeTab ===
           "shops" &&
-          hasAccess("shops") && (
+          hasAccess(
+            "shops",
+          ) && (
             <ShopsTab />
           )}
 
+        {/* =================================================
+            BOOKINGS
+        ================================================= */}
+
         {activeTab ===
           "bookings" &&
-          hasAccess("bookings") && (
+          hasAccess(
+            "bookings",
+          ) && (
             <BookingsTab />
           )}
 
+        {/* =================================================
+            ADMINS
+        ================================================= */}
+
         {activeTab ===
           "admins" &&
-          hasAccess("admins") && (
+          hasAccess(
+            "admins",
+          ) && (
             <AdminsTab />
           )}
-
       </main>
     </div>
   );

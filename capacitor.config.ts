@@ -8,7 +8,6 @@ const config: CapacitorConfig = {
 
   server: {
     url: "https://workkerz.com",
-    cleartext: false,
   },
 
   android: {

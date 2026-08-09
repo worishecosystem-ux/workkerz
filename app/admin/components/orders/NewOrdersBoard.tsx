@@ -7,6 +7,7 @@ type Props = {
   orders: any[];
   onView: (order: any) => void;
   onConfirm: (id: string, status: string) => void;
+  onReject: (order: any) => void;
 };
 
 export default function NewOrdersBoard({
