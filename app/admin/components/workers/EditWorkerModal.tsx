@@ -20,6 +20,8 @@ import {
   Camera,
   Upload,
   Trash2,
+  Star,
+  Clock3,
 } from "lucide-react";
 
 import type { LucideIcon } from "lucide-react";
@@ -62,20 +64,31 @@ export default function EditWorkerModal({
   onClose,
   onUpdated,
 }: EditWorkerModalProps) {
-  const fileInputRef = useRef<HTMLInputElement | null>(null);
+  const fileInputRef =
+    useRef<HTMLInputElement | null>(null);
+
+  /* =====================================================
+     BASIC
+  ===================================================== */
 
   const [name, setName] = useState("");
   const [phone, setPhone] = useState("");
 
   const [category, setCategory] = useState("");
-  const [subcategory, setSubcategory] = useState("");
-  const [specialty, setSpecialty] = useState("");
+  const [subcategory, setSubcategory] =
+    useState("");
+  const [specialty, setSpecialty] =
+    useState("");
 
-  const [location, setLocation] = useState("");
-  const [labourChauk, setLabourChauk] = useState("");
+  const [location, setLocation] =
+    useState("");
+  const [labourChauk, setLabourChauk] =
+    useState("");
 
-  const [yearsExperience, setYearsExperience] = useState("");
-  const [completedJobs, setCompletedJobs] = useState("");
+  const [yearsExperience, setYearsExperience] =
+    useState("");
+  const [completedJobs, setCompletedJobs] =
+    useState("");
 
   const [bio, setBio] = useState("");
 
@@ -87,16 +100,25 @@ export default function EditWorkerModal({
   const [selectedPhoto, setSelectedPhoto] =
     useState<File | null>(null);
 
-  const [photoPreview, setPhotoPreview] = useState("");
-  const [photoUploading, setPhotoUploading] = useState(false);
-  const [photoError, setPhotoError] = useState("");
+  const [photoPreview, setPhotoPreview] =
+    useState("");
+
+  const [photoUploading, setPhotoUploading] =
+    useState(false);
+
+  const [photoError, setPhotoError] =
+    useState("");
 
   /* =====================================================
      ARRAYS
   ===================================================== */
 
-  const [services, setServices] = useState<string[]>([]);
-  const [skills, setSkills] = useState<string[]>([]);
+  const [services, setServices] =
+    useState<string[]>([]);
+
+  const [skills, setSkills] =
+    useState<string[]>([]);
+
   const [certifications, setCertifications] =
     useState<string[]>([]);
 
@@ -105,13 +127,24 @@ export default function EditWorkerModal({
   ===================================================== */
 
   const [pricingType, setPricingType] =
-    useState<Worker["pricingType"]>("custom");
+    useState<Worker["pricingType"]>(
+      "custom",
+    );
 
-  const [startingPrice, setStartingPrice] = useState("");
-  const [halfDayPrice, setHalfDayPrice] = useState("");
-  const [fullDayPrice, setFullDayPrice] = useState("");
-  const [monthlyPrice, setMonthlyPrice] = useState("");
-  const [visitCharge, setVisitCharge] = useState("");
+  const [startingPrice, setStartingPrice] =
+    useState("");
+
+  const [halfDayPrice, setHalfDayPrice] =
+    useState("");
+
+  const [fullDayPrice, setFullDayPrice] =
+    useState("");
+
+  const [monthlyPrice, setMonthlyPrice] =
+    useState("");
+
+  const [visitCharge, setVisitCharge] =
+    useState("");
 
   /* =====================================================
      OTHER
@@ -121,12 +154,17 @@ export default function EditWorkerModal({
     useState("Within 1 hour");
 
   const [rating, setRating] = useState("");
-  const [reviewCount, setReviewCount] = useState("");
+  const [reviewCount, setReviewCount] =
+    useState("");
 
-  const [available, setAvailable] = useState(true);
+  const [available, setAvailable] =
+    useState(true);
 
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState("");
+  const [loading, setLoading] =
+    useState(false);
+
+  const [error, setError] =
+    useState("");
 
   /* =====================================================
      LOAD WORKER
@@ -135,18 +173,19 @@ export default function EditWorkerModal({
   useEffect(() => {
     if (!worker) return;
 
-    console.log("EDIT WORKER:", worker);
-    console.log("LABOUR CHAUK:", worker.labourChauk);
-
     setName(worker.name ?? "");
     setPhone(worker.phone ?? "");
 
     setCategory(worker.category ?? "");
-    setSubcategory(worker.subcategory ?? "");
+    setSubcategory(
+      worker.subcategory ?? "",
+    );
     setSpecialty(worker.specialty ?? "");
 
     setLocation(worker.location ?? "");
-    setLabourChauk(worker.labourChauk ?? "");
+    setLabourChauk(
+      worker.labourChauk ?? "",
+    );
 
     setYearsExperience(
       worker.yearsExperience != null
@@ -162,11 +201,10 @@ export default function EditWorkerModal({
 
     setBio(worker.bio ?? "");
 
-    /* Existing image */
+    /* Photo */
+
     setPhoto(worker.photo ?? "");
     setPhotoPreview(worker.photo ?? "");
-
-    /* Reset selected image */
     setSelectedPhoto(null);
     setPhotoError("");
 
@@ -175,6 +213,7 @@ export default function EditWorkerModal({
     }
 
     /* Arrays */
+
     setServices(
       Array.isArray(worker.services)
         ? [...worker.services]
@@ -188,12 +227,15 @@ export default function EditWorkerModal({
     );
 
     setCertifications(
-      Array.isArray(worker.certifications)
+      Array.isArray(
+        worker.certifications,
+      )
         ? [...worker.certifications]
         : [],
     );
 
     /* Pricing */
+
     setPricingType(
       worker.pricingType ?? "custom",
     );
@@ -229,7 +271,8 @@ export default function EditWorkerModal({
     );
 
     setResponseTime(
-      worker.responseTime || "Within 1 hour",
+      worker.responseTime ||
+        "Within 1 hour",
     );
 
     setRating(
@@ -252,7 +295,53 @@ export default function EditWorkerModal({
   }, [worker]);
 
   /* =====================================================
-     CLEAN BLOB PREVIEW
+     ESCAPE KEY
+  ===================================================== */
+
+  useEffect(() => {
+    if (!worker) return;
+
+    const handleKeyDown = (
+      event: KeyboardEvent,
+    ) => {
+      if (event.key === "Escape" && !loading) {
+        onClose();
+      }
+    };
+
+    document.addEventListener(
+      "keydown",
+      handleKeyDown,
+    );
+
+    return () => {
+      document.removeEventListener(
+        "keydown",
+        handleKeyDown,
+      );
+    };
+  }, [worker, loading, onClose]);
+
+  /* =====================================================
+     BODY SCROLL LOCK
+  ===================================================== */
+
+  useEffect(() => {
+    if (!worker) return;
+
+    const originalOverflow =
+      document.body.style.overflow;
+
+    document.body.style.overflow = "hidden";
+
+    return () => {
+      document.body.style.overflow =
+        originalOverflow;
+    };
+  }, [worker]);
+
+  /* =====================================================
+     CLEAN BLOB
   ===================================================== */
 
   useEffect(() => {
@@ -261,7 +350,9 @@ export default function EditWorkerModal({
         photoPreview &&
         photoPreview.startsWith("blob:")
       ) {
-        URL.revokeObjectURL(photoPreview);
+        URL.revokeObjectURL(
+          photoPreview,
+        );
       }
     };
   }, [photoPreview]);
@@ -273,7 +364,8 @@ export default function EditWorkerModal({
   const handlePhotoSelect = (
     event: ChangeEvent<HTMLInputElement>,
   ) => {
-    const file = event.target.files?.[0];
+    const file =
+      event.target.files?.[0];
 
     if (!file) return;
 
@@ -285,7 +377,9 @@ export default function EditWorkerModal({
       "image/webp",
     ];
 
-    if (!allowedTypes.includes(file.type)) {
+    if (
+      !allowedTypes.includes(file.type)
+    ) {
       setPhotoError(
         "Only JPG, PNG and WebP images are allowed.",
       );
@@ -305,15 +399,17 @@ export default function EditWorkerModal({
       return;
     }
 
-    /* Remove old blob URL */
     if (
       photoPreview &&
       photoPreview.startsWith("blob:")
     ) {
-      URL.revokeObjectURL(photoPreview);
+      URL.revokeObjectURL(
+        photoPreview,
+      );
     }
 
-    const previewUrl = URL.createObjectURL(file);
+    const previewUrl =
+      URL.createObjectURL(file);
 
     setSelectedPhoto(file);
     setPhotoPreview(previewUrl);
@@ -328,16 +424,12 @@ export default function EditWorkerModal({
       photoPreview &&
       photoPreview.startsWith("blob:")
     ) {
-      URL.revokeObjectURL(photoPreview);
+      URL.revokeObjectURL(
+        photoPreview,
+      );
     }
 
     setSelectedPhoto(null);
-
-    /*
-     * IMPORTANT:
-     * Empty photo means remove existing
-     * image from worker record.
-     */
     setPhoto("");
     setPhotoPreview("");
     setPhotoError("");
@@ -441,7 +533,11 @@ export default function EditWorkerModal({
       return "Mobile number is required.";
     }
 
-    if (!/^[6-9]\d{9}$/.test(phone.trim())) {
+    if (
+      !/^[6-9]\d{9}$/.test(
+        phone.trim(),
+      )
+    ) {
       return "Enter valid 10 digit mobile number.";
     }
 
@@ -475,7 +571,8 @@ export default function EditWorkerModal({
 
     if (!worker || loading) return;
 
-    const validationError = validate();
+    const validationError =
+      validate();
 
     if (validationError) {
       setError(validationError);
@@ -486,11 +583,10 @@ export default function EditWorkerModal({
       setLoading(true);
       setError("");
 
-      /* -----------------------------------------------
-         PHOTO
-      ------------------------------------------------ */
+      /* PHOTO */
 
-      let finalPhoto = photo.trim();
+      let finalPhoto =
+        photo.trim();
 
       if (selectedPhoto) {
         finalPhoto =
@@ -499,96 +595,85 @@ export default function EditWorkerModal({
           );
       }
 
-      /* -----------------------------------------------
-         LABOUR CHAUK
-      ------------------------------------------------ */
+      /* LABOUR CHAUK */
 
       const cleanLabourChauk =
         labourChauk.trim();
 
-      /* -----------------------------------------------
-         WORKER DATA
-      ------------------------------------------------ */
+      /* DATA */
 
-      const workerData: WorkerFormData = {
-        name: name.trim(),
-        phone: phone.trim(),
+      const workerData: WorkerFormData =
+        {
+          name: name.trim(),
+          phone: phone.trim(),
 
-        category: category.trim(),
-        subcategory: subcategory.trim(),
-        specialty: specialty.trim(),
+          category: category.trim(),
+          subcategory:
+            subcategory.trim(),
+          specialty:
+            specialty.trim(),
 
-        services: [...services],
+          services: [...services],
 
-        pricingType,
+          pricingType,
 
-        startingPrice:
-          Number(startingPrice) || 0,
+          startingPrice:
+            Number(startingPrice) ||
+            0,
 
-        halfDayPrice:
-          Number(halfDayPrice) || 0,
+          halfDayPrice:
+            Number(halfDayPrice) ||
+            0,
 
-        fullDayPrice:
-          Number(fullDayPrice) || 0,
+          fullDayPrice:
+            Number(fullDayPrice) ||
+            0,
 
-        monthlyPrice:
-          Number(monthlyPrice) || 0,
+          monthlyPrice:
+            Number(monthlyPrice) ||
+            0,
 
-        visitCharge:
-          Number(visitCharge) || 0,
+          visitCharge:
+            Number(visitCharge) ||
+            0,
 
-        rating:
-          Number(rating) || 0,
+          rating:
+            Number(rating) || 0,
 
-        reviewCount:
-          Number(reviewCount) || 0,
+          reviewCount:
+            Number(reviewCount) ||
+            0,
 
-        location: location.trim(),
+          location:
+            location.trim(),
 
-        labourChauk:
-          cleanLabourChauk,
+          labourChauk:
+            cleanLabourChauk,
 
-        available,
+          available,
 
-        yearsExperience:
-          Number(yearsExperience) || 0,
+          yearsExperience:
+            Number(yearsExperience) ||
+            0,
 
-        completedJobs:
-          Number(completedJobs) || 0,
+          completedJobs:
+            Number(completedJobs) ||
+            0,
 
-        bio: bio.trim(),
+          bio: bio.trim(),
 
-        skills: [...skills],
+          skills: [...skills],
 
-        photo: finalPhoto,
+          photo: finalPhoto,
 
-        responseTime:
-          responseTime.trim() ||
-          "Within 1 hour",
+          responseTime:
+            responseTime.trim() ||
+            "Within 1 hour",
 
-        certifications: [
-          ...certifications,
-        ],
-      };
-
-      console.log(
-        "FINAL WORKER DATA:",
-        workerData,
-      );
-
-      console.log(
-        "FINAL LABOUR CHAUK:",
-        workerData.labourChauk,
-      );
-
-      console.log(
-        "FINAL PHOTO:",
-        workerData.photo,
-      );
-
-      /* -----------------------------------------------
-         DATABASE UPDATE
-      ------------------------------------------------ */
+          certifications: [
+            ...certifications,
+          ],
+        };
 
       const updatedWorker =
         await updateWorker(
@@ -596,21 +681,7 @@ export default function EditWorkerModal({
           workerData,
         );
 
-      console.log(
-        "UPDATED WORKER:",
-        updatedWorker,
-      );
-
-      /* -----------------------------------------------
-         UPDATE PARENT STATE
-      ------------------------------------------------ */
-
       onUpdated(updatedWorker);
-
-      /* -----------------------------------------------
-         CLOSE MODAL
-      ------------------------------------------------ */
-
       onClose();
     } catch (error) {
       console.error(
@@ -647,60 +718,116 @@ export default function EditWorkerModal({
       <button
         type="button"
         aria-label="Close edit worker"
-        onClick={onClose}
-        className="absolute inset-0 bg-black/30"
+        onClick={() => {
+          if (!loading) {
+            onClose();
+          }
+        }}
+        className="absolute inset-0 bg-black/40 backdrop-blur-[2px]"
       />
 
-      {/* MODAL */}
+      {/* =================================================
+          MODAL
+      ================================================= */}
 
-      <div className="absolute left-1/2 top-1/2 w-[620px] max-w-[calc(100%-32px)] -translate-x-1/2 -translate-y-1/2">
-        <div className="flex max-h-[90vh] flex-col overflow-hidden rounded-2xl bg-white shadow-2xl">
+      <div
+        className="
+          absolute
+          inset-x-0
+          bottom-0
+          mx-auto
+          flex
+          h-[94dvh]
+          w-full
+          flex-col
+          overflow-hidden
+          rounded-t-3xl
+          bg-white
+          shadow-2xl
 
-          {/* HEADER */}
+          sm:inset-4
+          sm:bottom-auto
+          sm:h-auto
+          sm:max-h-[calc(100dvh-32px)]
+          sm:w-[calc(100%-32px)]
+          sm:max-w-2xl
+          sm:rounded-2xl
 
-          <div className="flex shrink-0 items-center justify-between border-b border-gray-100 px-6 py-5">
-            <div>
-              <h2 className="text-lg font-black text-[#0F172A]">
-                Edit Worker
-              </h2>
+          lg:inset-x-auto
+          lg:left-1/2
+          lg:top-1/2
+          lg:h-auto
+          lg:max-h-[90dvh]
+          lg:w-[700px]
+          lg:-translate-x-1/2
+          lg:-translate-y-1/2
+        "
+      >
+        {/* MOBILE HANDLE */}
 
-              <p className="mt-1 text-xs text-[#64748B]">
-                Update worker profile and pricing.
-              </p>
-            </div>
+        <div className="flex shrink-0 justify-center pt-2 sm:hidden">
+          <div className="h-1 w-10 rounded-full bg-gray-200" />
+        </div>
 
-            <button
-              type="button"
-              onClick={onClose}
-              disabled={loading}
-              className="flex h-9 w-9 items-center justify-center rounded-xl hover:bg-gray-100 disabled:opacity-50"
-            >
-              <X className="h-5 w-5 text-[#64748B]" />
-            </button>
+        {/* =================================================
+            HEADER
+        ================================================= */}
+
+        <div className="flex shrink-0 items-center justify-between border-b border-gray-100 px-4 py-3 sm:px-5 sm:py-4 lg:px-6">
+          <div className="min-w-0">
+            <h2 className="truncate text-base font-black text-[#0F172A] sm:text-lg">
+              Edit Worker
+            </h2>
+
+            <p className="mt-0.5 truncate text-[11px] text-[#64748B] sm:text-xs">
+              Update worker profile and pricing.
+            </p>
           </div>
 
-          {/* FORM */}
-
-          <form
-            onSubmit={handleSubmit}
-            className="space-y-5 overflow-y-auto p-6"
+          <button
+            type="button"
+            onClick={onClose}
+            disabled={loading}
+            className="ml-3 flex h-9 w-9 shrink-0 items-center justify-center rounded-xl hover:bg-gray-100 disabled:opacity-50"
           >
+            <X className="h-5 w-5 text-[#64748B]" />
+          </button>
+        </div>
+
+        {/* =================================================
+            FORM
+        ================================================= */}
+
+        <form
+          onSubmit={handleSubmit}
+          className="
+            flex-1
+            overflow-y-auto
+            overscroll-contain
+            p-4
+            pb-6
+
+            sm:p-5
+
+            lg:p-6
+          "
+        >
+          <div className="space-y-4 sm:space-y-5">
 
             {/* =================================================
                 PHOTO
             ================================================= */}
 
-            <div>
-              <label className="mb-2 block text-sm font-semibold text-[#0F172A]">
-                Worker Photo
-              </label>
+            <section>
+              <SectionTitle
+                icon={Camera}
+                title="Worker Photo"
+              />
 
-              <div className="flex items-center gap-4 rounded-2xl border border-gray-200 bg-[#F8FAFC] p-4">
-
+              <div className="mt-2 flex flex-col gap-3 rounded-2xl border border-gray-200 bg-[#F8FAFC] p-3 sm:flex-row sm:items-center sm:p-4">
                 {/* PREVIEW */}
 
-                <div className="relative flex h-24 w-24 shrink-0 items-center justify-center overflow-hidden rounded-2xl border border-gray-200 bg-orange-50">
-
+                <div className="relative mx-auto flex h-24 w-24 shrink-0 items-center justify-center overflow-hidden rounded-2xl border border-gray-200 bg-orange-50 sm:mx-0 sm:h-28 sm:w-28">
                   {photoPreview ? (
                     <img
                       src={photoPreview}
@@ -723,8 +850,7 @@ export default function EditWorkerModal({
 
                 {/* ACTIONS */}
 
-                <div className="flex flex-1 flex-col gap-2">
-
+                <div className="min-w-0 flex-1">
                   <input
                     ref={fileInputRef}
                     type="file"
@@ -735,17 +861,16 @@ export default function EditWorkerModal({
                     className="hidden"
                   />
 
-                  <div className="flex flex-wrap gap-2">
-
+                  <div className="flex flex-wrap justify-center gap-2 sm:justify-start">
                     <button
                       type="button"
                       onClick={() =>
                         fileInputRef.current?.click()
                       }
                       disabled={loading}
-                      className="flex h-10 items-center gap-2 rounded-xl bg-[#FF5C39] px-4 text-sm font-bold text-white hover:bg-[#e54e2e] disabled:opacity-50"
+                      className="flex h-9 items-center gap-2 rounded-xl bg-[#FF5C39] px-3 text-xs font-bold text-white hover:bg-[#e54e2e] disabled:opacity-50 sm:h-10 sm:px-4 sm:text-sm"
                     >
-                      <Upload className="h-4 w-4" />
+                      <Upload className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
 
                       {photoPreview
                         ? "Change Photo"
@@ -759,22 +884,20 @@ export default function EditWorkerModal({
                           handleRemovePhoto
                         }
                         disabled={loading}
-                        className="flex h-10 items-center gap-2 rounded-xl border border-red-200 bg-white px-4 text-sm font-bold text-red-500 hover:bg-red-50 disabled:opacity-50"
+                        className="flex h-9 items-center gap-2 rounded-xl border border-red-200 bg-white px-3 text-xs font-bold text-red-500 hover:bg-red-50 disabled:opacity-50 sm:h-10 sm:px-4 sm:text-sm"
                       >
-                        <Trash2 className="h-4 w-4" />
-
+                        <Trash2 className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
                         Remove
                       </button>
                     )}
                   </div>
 
-                  <p className="text-xs text-[#64748B]">
+                  <p className="mt-2 text-center text-[10px] text-[#64748B] sm:text-left sm:text-xs">
                     JPG, PNG or WebP • Maximum 5 MB
                   </p>
 
                   {selectedPhoto && (
-                    <p className="text-xs font-medium text-emerald-600">
-                      New photo selected:{" "}
+                    <p className="mt-1 truncate text-center text-[10px] font-medium text-emerald-600 sm:text-left sm:text-xs">
                       {selectedPhoto.name}
                     </p>
                   )}
@@ -786,160 +909,156 @@ export default function EditWorkerModal({
                   {photoError}
                 </p>
               )}
-            </div>
+            </section>
 
             {/* =================================================
-                NAME
+                BASIC INFORMATION
             ================================================= */}
 
-            <InputField
-              label="Worker Name"
+            <FormSection
+              title="Basic Information"
               icon={User}
-              value={name}
-              onChange={setName}
-              placeholder="Enter worker name"
-              required
-            />
+            >
+              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 sm:gap-4">
+                <InputField
+                  label="Worker Name"
+                  icon={User}
+                  value={name}
+                  onChange={setName}
+                  placeholder="Enter worker name"
+                  required
+                />
 
-            {/* =================================================
-                PHONE
-            ================================================= */}
+                <InputField
+                  label="Phone"
+                  icon={Phone}
+                  value={phone}
+                  onChange={(value) =>
+                    setPhone(
+                      value
+                        .replace(/\D/g, "")
+                        .slice(0, 10),
+                    )
+                  }
+                  placeholder="10 digit mobile number"
+                  required
+                  inputMode="numeric"
+                />
 
-            <InputField
-              label="Phone"
-              icon={Phone}
-              value={phone}
-              onChange={(value) =>
-                setPhone(
-                  value
-                    .replace(/\D/g, "")
-                    .slice(0, 10),
-                )
-              }
-              placeholder="10 digit mobile number"
-              required
-            />
+                <InputField
+                  label="Category"
+                  icon={BriefcaseBusiness}
+                  value={category}
+                  onChange={setCategory}
+                  placeholder="e.g. Labour"
+                  required
+                />
 
-            {/* =================================================
-                CATEGORY
-            ================================================= */}
+                <InputField
+                  label="Subcategory"
+                  icon={BriefcaseBusiness}
+                  value={subcategory}
+                  onChange={setSubcategory}
+                  placeholder="e.g. General Labour"
+                  required
+                />
 
-            <div className="grid grid-cols-2 gap-4">
-              <InputField
-                label="Category"
-                icon={BriefcaseBusiness}
-                value={category}
-                onChange={setCategory}
-                placeholder="e.g. Labour"
-                required
-              />
+                <InputField
+                  label="Specialty"
+                  icon={Wrench}
+                  value={specialty}
+                  onChange={setSpecialty}
+                  placeholder="e.g. Brick Mason"
+                  required
+                  fullOnMobile
+                />
 
-              <InputField
-                label="Subcategory"
-                icon={BriefcaseBusiness}
-                value={subcategory}
-                onChange={setSubcategory}
-                placeholder="e.g. General Labour"
-                required
-              />
-            </div>
+                <InputField
+                  label="Location"
+                  icon={MapPin}
+                  value={location}
+                  onChange={setLocation}
+                  placeholder="Enter location"
+                  required
+                />
 
-            {/* =================================================
-                SPECIALTY
-            ================================================= */}
-
-            <InputField
-              label="Specialty"
-              icon={Wrench}
-              value={specialty}
-              onChange={setSpecialty}
-              placeholder="e.g. Brick Mason"
-              required
-            />
-
-            {/* =================================================
-                LOCATION
-            ================================================= */}
-
-            <div className="grid grid-cols-2 gap-4">
-              <InputField
-                label="Location"
-                icon={MapPin}
-                value={location}
-                onChange={setLocation}
-                placeholder="Enter location"
-                required
-              />
-
-              <InputField
-                label="Labour Chauk"
-                icon={MapPin}
-                value={labourChauk}
-                onChange={setLabourChauk}
-                placeholder="Enter labour chauk"
-              />
-            </div>
+                <InputField
+                  label="Labour Chauk"
+                  icon={MapPin}
+                  value={labourChauk}
+                  onChange={setLabourChauk}
+                  placeholder="Enter labour chauk"
+                />
+              </div>
+            </FormSection>
 
             {/* =================================================
                 EXPERIENCE
             ================================================= */}
 
-            <div className="grid grid-cols-2 gap-4">
-              <InputField
-                label="Years Experience"
-                icon={BriefcaseBusiness}
-                value={yearsExperience}
-                onChange={setYearsExperience}
-                placeholder="e.g. 5"
-                type="number"
-              />
+            <FormSection
+              title="Experience"
+              icon={BriefcaseBusiness}
+            >
+              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 sm:gap-4">
+                <InputField
+                  label="Years Experience"
+                  icon={BriefcaseBusiness}
+                  value={yearsExperience}
+                  onChange={setYearsExperience}
+                  placeholder="e.g. 5"
+                  type="number"
+                  inputMode="numeric"
+                />
 
-              <InputField
-                label="Jobs Completed"
-                icon={BriefcaseBusiness}
-                value={completedJobs}
-                onChange={setCompletedJobs}
-                placeholder="e.g. 100"
-                type="number"
-              />
-            </div>
+                <InputField
+                  label="Jobs Completed"
+                  icon={BriefcaseBusiness}
+                  value={completedJobs}
+                  onChange={setCompletedJobs}
+                  placeholder="e.g. 100"
+                  type="number"
+                  inputMode="numeric"
+                />
+              </div>
+            </FormSection>
 
             {/* =================================================
                 BIO
             ================================================= */}
 
-            <div>
-              <label className="mb-2 block text-sm font-semibold text-[#0F172A]">
-                Bio
-              </label>
+            <FormSection
+              title="About Worker"
+              icon={User}
+            >
+              <div>
+                <label className="mb-1.5 block text-xs font-semibold text-[#0F172A] sm:text-sm">
+                  Bio
+                </label>
 
-              <textarea
-                value={bio}
-                onChange={(event) =>
-                  setBio(
-                    event.target.value,
-                  )
-                }
-                placeholder="Describe worker experience..."
-                rows={4}
-                className="w-full resize-none rounded-xl border border-gray-200 bg-[#F8FAFC] px-4 py-3 text-sm text-[#0F172A] outline-none focus:border-[#FF5C39] focus:ring-2 focus:ring-orange-100"
-              />
-            </div>
+                <textarea
+                  value={bio}
+                  onChange={(event) =>
+                    setBio(
+                      event.target.value,
+                    )
+                  }
+                  placeholder="Describe worker experience..."
+                  rows={4}
+                  className="w-full resize-none rounded-xl border border-gray-200 bg-[#F8FAFC] px-3 py-3 text-xs text-[#0F172A] outline-none transition focus:border-[#FF5C39] focus:bg-white focus:ring-2 focus:ring-orange-100 sm:px-4 sm:text-sm"
+                />
+              </div>
+            </FormSection>
 
             {/* =================================================
                 PRICING
             ================================================= */}
 
-            <div>
-              <div className="mb-3 flex items-center gap-2">
-                <IndianRupee className="h-4 w-4 text-[#FF5C39]" />
-
-                <p className="text-sm font-bold text-[#0F172A]">
-                  Pricing
-                </p>
-              </div>
-
-              <div className="grid grid-cols-2 gap-4">
+            <FormSection
+              title="Pricing"
+              icon={IndianRupee}
+            >
+              <div className="grid grid-cols-2 gap-3 sm:grid-cols-2 sm:gap-4">
                 <InputField
                   label="Starting Price"
                   icon={IndianRupee}
@@ -947,6 +1066,7 @@ export default function EditWorkerModal({
                   onChange={setStartingPrice}
                   placeholder="0"
                   type="number"
+                  inputMode="numeric"
                 />
 
                 <InputField
@@ -956,6 +1076,7 @@ export default function EditWorkerModal({
                   onChange={setHalfDayPrice}
                   placeholder="0"
                   type="number"
+                  inputMode="numeric"
                 />
 
                 <InputField
@@ -965,6 +1086,7 @@ export default function EditWorkerModal({
                   onChange={setFullDayPrice}
                   placeholder="0"
                   type="number"
+                  inputMode="numeric"
                 />
 
                 <InputField
@@ -974,6 +1096,7 @@ export default function EditWorkerModal({
                   onChange={setMonthlyPrice}
                   placeholder="0"
                   type="number"
+                  inputMode="numeric"
                 />
 
                 <InputField
@@ -983,21 +1106,95 @@ export default function EditWorkerModal({
                   onChange={setVisitCharge}
                   placeholder="0"
                   type="number"
+                  inputMode="numeric"
+                  fullOnMobile
                 />
               </div>
-            </div>
+            </FormSection>
+
+            {/* =================================================
+                REVIEWS
+            ================================================= */}
+
+            <FormSection
+              title="Reviews & Response"
+              icon={Star}
+            >
+              <div className="grid grid-cols-1 gap-3 sm:grid-cols-3 sm:gap-4">
+                <InputField
+                  label="Rating"
+                  icon={Star}
+                  value={rating}
+                  onChange={setRating}
+                  placeholder="0"
+                  type="number"
+                  inputMode="decimal"
+                  step="0.1"
+                />
+
+                <InputField
+                  label="Review Count"
+                  icon={Star}
+                  value={reviewCount}
+                  onChange={setReviewCount}
+                  placeholder="0"
+                  type="number"
+                  inputMode="numeric"
+                />
+
+                <div>
+                  <label className="mb-1.5 block text-xs font-semibold text-[#0F172A] sm:text-sm">
+                    Response Time
+                  </label>
+
+                  <div className="relative">
+                    <Clock3 className="absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-[#94A3B8]" />
+
+                    <select
+                      value={responseTime}
+                      onChange={(event) =>
+                        setResponseTime(
+                          event.target.value,
+                        )
+                      }
+                      className="h-10 w-full appearance-none rounded-xl border border-gray-200 bg-[#F8FAFC] pl-10 pr-3 text-xs text-[#0F172A] outline-none focus:border-[#FF5C39] focus:bg-white focus:ring-2 focus:ring-orange-100 sm:h-11 sm:text-sm"
+                    >
+                      <option>
+                        Within 30 minutes
+                      </option>
+
+                      <option>
+                        Within 1 hour
+                      </option>
+
+                      <option>
+                        Within 2 hours
+                      </option>
+
+                      <option>
+                        Within 4 hours
+                      </option>
+
+                      <option>
+                        Within 1 day
+                      </option>
+                    </select>
+                  </div>
+                </div>
+              </div>
+            </FormSection>
 
             {/* =================================================
                 AVAILABILITY
             ================================================= */}
 
-            <div className="flex items-center justify-between rounded-xl border border-gray-200 bg-[#F8FAFC] p-4">
-              <div>
-                <p className="text-sm font-bold text-[#0F172A]">
+            <div className="flex items-center justify-between gap-3 rounded-2xl border border-gray-200 bg-[#F8FAFC] p-3 sm:p-4">
+              <div className="min-w-0">
+                <p className="text-xs font-bold text-[#0F172A] sm:text-sm">
                   Worker Availability
                 </p>
 
-                <p className="mt-1 text-xs text-[#64748B]">
+                <p className="mt-0.5 text-[10px] leading-4 text-[#64748B] sm:text-xs">
                   Allow this worker to receive new bookings.
                 </p>
               </div>
@@ -1009,11 +1206,12 @@ export default function EditWorkerModal({
                     (value) => !value,
                   )
                 }
-                className={`relative h-6 w-11 rounded-full transition ${
+                className={`relative h-6 w-11 shrink-0 rounded-full transition ${
                   available
                     ? "bg-emerald-500"
                     : "bg-gray-300"
                 }`}
+                aria-label="Toggle worker availability"
               >
                 <span
                   className={`absolute top-1 h-4 w-4 rounded-full bg-white shadow transition ${
@@ -1030,50 +1228,110 @@ export default function EditWorkerModal({
             ================================================= */}
 
             {error && (
-              <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-3">
-                <p className="text-sm text-red-600">
+              <div className="rounded-xl border border-red-200 bg-red-50 px-3 py-2.5 sm:px-4 sm:py-3">
+                <p className="text-xs leading-5 text-red-600 sm:text-sm">
                   {error}
                 </p>
               </div>
             )}
+          </div>
 
-            {/* =================================================
-                BUTTONS
-            ================================================= */}
+          {/* =================================================
+              FOOTER
+          ================================================= */}
 
-            <div className="flex items-center justify-end gap-3 pt-2">
-              <button
-                type="button"
-                onClick={onClose}
-                disabled={loading}
-                className="h-11 rounded-xl border border-gray-200 px-5 text-sm font-bold text-[#64748B] hover:bg-[#F8FAFC] disabled:opacity-50"
-              >
-                Cancel
-              </button>
+          <div className="flex shrink-0 items-center justify-end gap-2 border-t border-gray-100 bg-white px-4 py-3 pb-[calc(12px+env(safe-area-inset-bottom))] sm:px-5 sm:py-4 sm:pb-4 lg:px-6">
+            <button
+              type="button"
+              onClick={onClose}
+              disabled={loading}
+              className="h-10 rounded-xl border border-gray-200 px-4 text-xs font-bold text-[#64748B] hover:bg-[#F8FAFC] disabled:opacity-50 sm:h-11 sm:px-5 sm:text-sm"
+            >
+              Cancel
+            </button>
 
-              <button
-                type="submit"
-                disabled={
-                  loading ||
-                  photoUploading
-                }
-                className="flex h-11 items-center gap-2 rounded-xl bg-[#FF5C39] px-6 text-sm font-bold text-white hover:bg-[#e54e2e] disabled:opacity-60"
-              >
-                {(loading ||
-                  photoUploading) && (
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                )}
+            <button
+              type="submit"
+              form="edit-worker-form"
+              disabled={
+                loading ||
+                photoUploading
+              }
+              className="flex h-10 items-center gap-2 rounded-xl bg-[#FF5C39] px-4 text-xs font-bold text-white shadow-sm hover:bg-[#e54e2e] disabled:opacity-60 sm:h-11 sm:px-6 sm:text-sm"
+            >
+              {(loading ||
+                photoUploading) && (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              )}
 
-                {photoUploading
-                  ? "Uploading Photo..."
-                  : loading
-                    ? "Saving..."
-                    : "Save Changes"}
-              </button>
-            </div>
-          </form>
-        </div>
+              {photoUploading
+                ? "Uploading..."
+                : loading
+                  ? "Saving..."
+                  : "Save Changes"}
+            </button>
+          </div>
+        </form>
+
+        {/* 
+          Form submit button above uses form="edit-worker-form".
+          Add id to form using the replacement below if needed.
+        */}
       </div>
+    </div>
+  );
+}
+
+/* =====================================================
+   FORM SECTION
+===================================================== */
+
+function FormSection({
+  title,
+  icon: Icon,
+  children,
+}: {
+  title: string;
+  icon: LucideIcon;
+  children: React.ReactNode;
+}) {
+  return (
+    <section>
+      <div className="mb-2.5 flex items-center gap-2 sm:mb-3">
+        <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-orange-50">
+          <Icon className="h-3.5 w-3.5 text-[#FF5C39]" />
+        </div>
+
+        <h3 className="text-xs font-black text-[#0F172A] sm:text-sm">
+          {title}
+        </h3>
+      </div>
+
+      {children}
+    </section>
+  );
+}
+
+/* =====================================================
+   SECTION TITLE
+===================================================== */
+
+function SectionTitle({
+  icon: Icon,
+  title,
+}: {
+  icon: LucideIcon;
+  title: string;
+}) {
+  return (
+    <div className="flex items-center gap-2">
+      <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-orange-50">
+        <Icon className="h-3.5 w-3.5 text-[#FF5C39]" />
+      </div>
+
+      <p className="text-xs font-black text-[#0F172A] sm:text-sm">
+        {title}
+      </p>
     </div>
   );
 }
@@ -1090,6 +1348,9 @@ function InputField({
   placeholder,
   type = "text",
   required = false,
+  inputMode,
+  step,
+  fullOnMobile = false,
 }: {
   label: string;
   icon: LucideIcon;
@@ -1098,10 +1359,27 @@ function InputField({
   placeholder: string;
   type?: string;
   required?: boolean;
+  inputMode?:
+    | "none"
+    | "text"
+    | "tel"
+    | "url"
+    | "email"
+    | "numeric"
+    | "decimal"
+    | "search";
+  step?: string;
+  fullOnMobile?: boolean;
 }) {
   return (
-    <div>
-      <label className="mb-2 block text-sm font-semibold text-[#0F172A]">
+    <div
+      className={
+        fullOnMobile
+          ? "col-span-1 sm:col-span-2"
+          : ""
+      }
+    >
+      <label className="mb-1.5 block text-xs font-semibold text-[#0F172A] sm:text-sm">
         {label}
 
         {required && (
@@ -1112,7 +1390,7 @@ function InputField({
       </label>
 
       <div className="relative">
-        <Icon className="absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-[#94A3B8]" />
+        <Icon className="absolute left-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-[#94A3B8] sm:left-3.5 sm:h-4 sm:w-4" />
 
         <input
           type={type}
@@ -1124,7 +1402,9 @@ function InputField({
           }
           placeholder={placeholder}
           required={required}
-          className="h-11 w-full rounded-xl border border-gray-200 bg-[#F8FAFC] pl-10 pr-4 text-sm text-[#0F172A] outline-none focus:border-[#FF5C39] focus:ring-2 focus:ring-orange-100"
+          inputMode={inputMode}
+          step={step}
+          className="h-10 w-full rounded-xl border border-gray-200 bg-[#F8FAFC] pl-9 pr-3 text-xs text-[#0F172A] outline-none transition placeholder:text-[#A8B2C1] focus:border-[#FF5C39] focus:bg-white focus:ring-2 focus:ring-orange-100 sm:h-11 sm:pl-10 sm:pr-4 sm:text-sm"
         />
       </div>
     </div>

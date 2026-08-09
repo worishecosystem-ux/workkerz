@@ -15,6 +15,10 @@ import {
   Power,
   Trash2,
   Star,
+  MapPin,
+  Phone,
+  BriefcaseBusiness,
+  ChevronRight,
 } from "lucide-react";
 
 import { useEffect, useMemo, useState } from "react";
@@ -122,18 +126,10 @@ function pricingValue(value: string | null | undefined): PricingType {
    NORMALIZE API WORKER
 ===================================================== */
 
-function normalizeWorker(
-  row: ApiWorker,
-): Worker {
-  const labourChauk =
-    row.labourChauk ??
-    row.labour_chauk ??
-    "";
+function normalizeWorker(row: ApiWorker): Worker {
+  const labourChauk = row.labourChauk ?? row.labour_chauk ?? "";
 
-  const workerCode =
-    row.workerCode ??
-    row.worker_code ??
-    "";
+  const workerCode = row.workerCode ?? row.worker_code ?? "";
 
   return {
     id: row.id,
@@ -143,117 +139,70 @@ function normalizeWorker(
     name: row.name ?? "",
     phone: row.phone ?? "",
 
-    category:
-      row.category ?? "",
+    category: row.category ?? "",
+    subcategory: row.subcategory ?? "",
+    specialty: row.specialty ?? "",
 
-    subcategory:
-      row.subcategory ?? "",
+    services: Array.isArray(row.services) ? row.services : [],
 
-    specialty:
-      row.specialty ?? "",
+    pricingType: pricingValue(row.pricingType ?? row.pricing_type),
 
-    services:
-      Array.isArray(row.services)
-        ? row.services
-        : [],
+    startingPrice: numberValue(
+      row.startingPrice ?? row.starting_price,
+    ),
 
-    pricingType:
-      pricingValue(
-        row.pricingType ??
-          row.pricing_type,
-      ),
+    halfDayPrice: numberValue(
+      row.halfDayPrice ?? row.half_day_price,
+    ),
 
-    startingPrice:
-      numberValue(
-        row.startingPrice ??
-          row.starting_price,
-      ),
+    fullDayPrice: numberValue(
+      row.fullDayPrice ?? row.full_day_price,
+    ),
 
-    halfDayPrice:
-      numberValue(
-        row.halfDayPrice ??
-          row.half_day_price,
-      ),
+    monthlyPrice: numberValue(
+      row.monthlyPrice ?? row.monthly_price,
+    ),
 
-    fullDayPrice:
-      numberValue(
-        row.fullDayPrice ??
-          row.full_day_price,
-      ),
+    visitCharge: numberValue(
+      row.visitCharge ?? row.visit_charge,
+    ),
 
-    monthlyPrice:
-      numberValue(
-        row.monthlyPrice ??
-          row.monthly_price,
-      ),
+    rating: numberValue(row.rating),
 
-    visitCharge:
-      numberValue(
-        row.visitCharge ??
-          row.visit_charge,
-      ),
+    reviewCount: Number(
+      row.reviewCount ?? row.review_count ?? 0,
+    ),
 
-    rating:
-      numberValue(
-        row.rating,
-      ),
-
-    reviewCount:
-      Number(
-        row.reviewCount ??
-          row.review_count ??
-          0,
-      ),
-
-    location:
-      row.location ?? "",
+    location: row.location ?? "",
 
     labourChauk,
 
-    available:
-      row.available ?? true,
+    available: row.available ?? true,
 
-    yearsExperience:
-      Number(
-        row.yearsExperience ??
-          row.years_experience ??
-          0,
-      ),
+    yearsExperience: Number(
+      row.yearsExperience ?? row.years_experience ?? 0,
+    ),
 
-    completedJobs:
-      Number(
-        row.completedJobs ??
-          row.completed_jobs ??
-          0,
-      ),
+    completedJobs: Number(
+      row.completedJobs ?? row.completed_jobs ?? 0,
+    ),
 
-    bio:
-      row.bio ?? "",
+    bio: row.bio ?? "",
 
-    skills:
-      Array.isArray(row.skills)
-        ? row.skills
-        : [],
+    skills: Array.isArray(row.skills) ? row.skills : [],
 
-    photo:
-      row.photo ?? "",
+    photo: row.photo ?? "",
 
     responseTime:
       row.responseTime ??
       row.response_time ??
       "Within 1 hour",
 
-    certifications:
-      Array.isArray(
-        row.certifications,
-      )
-        ? row.certifications
-        : [],
+    certifications: Array.isArray(row.certifications)
+      ? row.certifications
+      : [],
 
-    createdAt:
-      row.createdAt ??
-      row.created_at ??
-      "",
+    createdAt: row.createdAt ?? row.created_at ?? "",
   };
 }
 
@@ -262,23 +211,23 @@ function normalizeWorker(
 ===================================================== */
 
 export default function WorkersTab() {
-  /* =====================================================
-     STATE
-  ===================================================== */
-
   const [workers, setWorkers] = useState<Worker[]>([]);
 
-  const [selectedWorker, setSelectedWorker] = useState<Worker | null>(null);
+  const [selectedWorker, setSelectedWorker] =
+    useState<Worker | null>(null);
 
-  const [editWorker, setEditWorker] = useState<Worker | null>(null);
+  const [editWorker, setEditWorker] =
+    useState<Worker | null>(null);
 
-  const [actionWorker, setActionWorker] = useState<Worker | null>(null);
+  const [actionWorker, setActionWorker] =
+    useState<Worker | null>(null);
 
   const [loading, setLoading] = useState(true);
 
   const [refreshing, setRefreshing] = useState(false);
 
-  const [showOnboardForm, setShowOnboardForm] = useState(false);
+  const [showOnboardForm, setShowOnboardForm] =
+    useState(false);
 
   const [error, setError] = useState("");
 
@@ -286,17 +235,14 @@ export default function WorkersTab() {
 
   const [search, setSearch] = useState("");
 
-  const [actionLoading, setActionLoading] = useState(false);
+  const [actionLoading, setActionLoading] =
+    useState(false);
 
-  const [isSuperAdmin, setIsSuperAdmin] = useState(false);
+  const [isSuperAdmin, setIsSuperAdmin] =
+    useState(false);
 
-  /*
-   * Category tab
-   *
-   * "All" = all workers
-   */
-
-  const [selectedCategory, setSelectedCategory] = useState("All");
+  const [selectedCategory, setSelectedCategory] =
+    useState("All");
 
   /* =====================================================
      ADMIN ROLE
@@ -316,7 +262,6 @@ export default function WorkersTab() {
         headers: {
           Authorization: `Bearer ${session.access_token}`,
         },
-
         cache: "no-store",
       });
 
@@ -350,7 +295,6 @@ export default function WorkersTab() {
 
       if (!session?.access_token) {
         setError("Your admin session has expired.");
-
         return;
       }
 
@@ -360,51 +304,43 @@ export default function WorkersTab() {
         params.set("search", search.trim());
       }
 
-      /*
-       * Current API limit
-       */
-
       params.set("limit", "100");
 
-      const response = await fetch(`/api/admin/workers?${params.toString()}`, {
-        method: "GET",
-
-        headers: {
-          Authorization: `Bearer ${session.access_token}`,
+      const response = await fetch(
+        `/api/admin/workers?${params.toString()}`,
+        {
+          method: "GET",
+          headers: {
+            Authorization: `Bearer ${session.access_token}`,
+          },
+          cache: "no-store",
         },
-
-        cache: "no-store",
-      });
+      );
 
       const data = await response.json();
 
       if (!response.ok) {
-        throw new Error(data.error || "Unable to load workers.");
+        throw new Error(
+          data.error || "Unable to load workers.",
+        );
       }
 
-      const apiWorkers: ApiWorker[] = Array.isArray(data.workers)
-        ? data.workers
-        : [];
+      const apiWorkers: ApiWorker[] =
+        Array.isArray(data.workers)
+          ? data.workers
+          : [];
 
-      const normalizedWorkers = apiWorkers.map(normalizeWorker);
-
-      console.log("ADMIN WORKERS:", normalizedWorkers);
-
-      console.log(
-        "LABOUR CHAUK VALUES:",
-        normalizedWorkers.map((worker) => ({
-          id: worker.id,
-          name: worker.name,
-          labourChauk: worker.labourChauk,
-        })),
-      );
+      const normalizedWorkers =
+        apiWorkers.map(normalizeWorker);
 
       setWorkers(normalizedWorkers);
     } catch (error) {
       console.error("Load workers error:", error);
 
       setError(
-        error instanceof Error ? error.message : "Unable to load workers.",
+        error instanceof Error
+          ? error.message
+          : "Unable to load workers.",
       );
     } finally {
       setLoading(false);
@@ -450,7 +386,9 @@ export default function WorkersTab() {
 
     return [
       "All",
-      ...Array.from(uniqueCategories).sort((a, b) => a.localeCompare(b)),
+      ...Array.from(uniqueCategories).sort((a, b) =>
+        a.localeCompare(b),
+      ),
     ];
   }, [workers]);
 
@@ -462,9 +400,11 @@ export default function WorkersTab() {
     const counts: Record<string, number> = {};
 
     workers.forEach((worker) => {
-      const category = worker.category?.trim() || "Other";
+      const category =
+        worker.category?.trim() || "Other";
 
-      counts[category] = (counts[category] || 0) + 1;
+      counts[category] =
+        (counts[category] || 0) + 1;
     });
 
     return counts;
@@ -490,33 +430,26 @@ export default function WorkersTab() {
      HELPERS
   ===================================================== */
 
-  const getWorkerName = (worker: Worker) => {
-    return worker.name || "Unnamed Worker";
-  };
+  const getWorkerName = (worker: Worker) =>
+    worker.name || "Unnamed Worker";
 
-  const getPhone = (worker: Worker) => {
-    return worker.phone || "—";
-  };
+  const getPhone = (worker: Worker) =>
+    worker.phone || "—";
 
-  const getCategory = (worker: Worker) => {
-    return worker.category || "—";
-  };
+  const getCategory = (worker: Worker) =>
+    worker.category || "—";
 
-  const getSpecialty = (worker: Worker) => {
-    return worker.specialty || "—";
-  };
+  const getSpecialty = (worker: Worker) =>
+    worker.specialty || "—";
 
-  const getLocation = (worker: Worker) => {
-    return worker.location || "—";
-  };
+  const getLocation = (worker: Worker) =>
+    worker.location || "—";
 
-  const getRating = (worker: Worker) => {
-    return Number(worker.rating || 0).toFixed(1);
-  };
+  const getRating = (worker: Worker) =>
+    Number(worker.rating || 0).toFixed(1);
 
-  const isWorkerActive = (worker: Worker) => {
-    return worker.available === true;
-  };
+  const isWorkerActive = (worker: Worker) =>
+    worker.available === true;
 
   /* =====================================================
      STATS
@@ -534,7 +467,9 @@ export default function WorkersTab() {
 
     const total = source.length;
 
-    const active = source.filter((worker) => worker.available === true).length;
+    const active = source.filter(
+      (worker) => worker.available === true,
+    ).length;
 
     const inactive = total - active;
 
@@ -548,7 +483,8 @@ export default function WorkersTab() {
       const created = new Date(worker.createdAt);
 
       return (
-        created.getFullYear() === today.getFullYear() &&
+        created.getFullYear() ===
+          today.getFullYear() &&
         created.getMonth() === today.getMonth() &&
         created.getDate() === today.getDate()
       );
@@ -584,21 +520,27 @@ export default function WorkersTab() {
       } = await supabase.auth.getSession();
 
       if (!session?.access_token) {
-        throw new Error("Your admin session has expired.");
+        throw new Error(
+          "Your admin session has expired.",
+        );
       }
 
-      const response = await fetch(`/api/admin/workers/${worker.id}`, {
-        method: "DELETE",
-
-        headers: {
-          Authorization: `Bearer ${session.access_token}`,
+      const response = await fetch(
+        `/api/admin/workers/${worker.id}`,
+        {
+          method: "DELETE",
+          headers: {
+            Authorization: `Bearer ${session.access_token}`,
+          },
         },
-      });
+      );
 
       const data = await response.json();
 
       if (!response.ok) {
-        throw new Error(data.error || "Unable to delete worker.");
+        throw new Error(
+          data.error || "Unable to delete worker.",
+        );
       }
 
       setActionWorker(null);
@@ -608,7 +550,9 @@ export default function WorkersTab() {
       console.error("Delete worker error:", error);
 
       setActionError(
-        error instanceof Error ? error.message : "Unable to delete worker.",
+        error instanceof Error
+          ? error.message
+          : "Unable to delete worker.",
       );
     } finally {
       setActionLoading(false);
@@ -619,7 +563,9 @@ export default function WorkersTab() {
      TOGGLE AVAILABILITY
   ===================================================== */
 
-  const toggleWorkerStatus = async (worker: Worker) => {
+  const toggleWorkerStatus = async (
+    worker: Worker,
+  ) => {
     try {
       setActionLoading(true);
       setActionError("");
@@ -629,24 +575,26 @@ export default function WorkersTab() {
       } = await supabase.auth.getSession();
 
       if (!session?.access_token) {
-        throw new Error("Your admin session has expired.");
+        throw new Error(
+          "Your admin session has expired.",
+        );
       }
 
       const nextAvailable = !worker.available;
 
-      const response = await fetch(`/api/admin/workers/${worker.id}`, {
-        method: "PATCH",
-
-        headers: {
-          "Content-Type": "application/json",
-
-          Authorization: `Bearer ${session.access_token}`,
+      const response = await fetch(
+        `/api/admin/workers/${worker.id}`,
+        {
+          method: "PATCH",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${session.access_token}`,
+          },
+          body: JSON.stringify({
+            available: nextAvailable,
+          }),
         },
-
-        body: JSON.stringify({
-          available: nextAvailable,
-        }),
-      });
+      );
 
       const responseText = await response.text();
 
@@ -657,10 +605,10 @@ export default function WorkersTab() {
       } = {};
 
       try {
-        data = responseText ? JSON.parse(responseText) : {};
+        data = responseText
+          ? JSON.parse(responseText)
+          : {};
       } catch {
-        console.error("API returned non-JSON response:", responseText);
-
         throw new Error(
           `API error (${response.status}). The server returned an invalid response.`,
         );
@@ -668,7 +616,9 @@ export default function WorkersTab() {
 
       if (!response.ok) {
         throw new Error(
-          data.error || data.message || "Unable to update worker availability.",
+          data.error ||
+            data.message ||
+            "Unable to update worker availability.",
         );
       }
 
@@ -676,10 +626,15 @@ export default function WorkersTab() {
 
       await loadWorkers(true);
     } catch (error) {
-      console.error("Worker availability error:", error);
+      console.error(
+        "Worker availability error:",
+        error,
+      );
 
       setActionError(
-        error instanceof Error ? error.message : "Unable to update worker.",
+        error instanceof Error
+          ? error.message
+          : "Unable to update worker.",
       );
     } finally {
       setActionLoading(false);
@@ -696,7 +651,6 @@ export default function WorkersTab() {
         onBack={() => setShowOnboardForm(false)}
         onCreated={() => {
           setShowOnboardForm(false);
-
           loadWorkers(true);
         }}
       />
@@ -713,56 +667,66 @@ export default function WorkersTab() {
           HEADER
       ================================================= */}
 
-      <header className="flex h-20 items-center justify-between border-b border-gray-100 bg-white px-8">
-        <div>
-          <div className="flex items-center gap-3">
-            <h1 className="text-2xl font-black text-[#0F172A]">Workers</h1>
+      <header className="border-b border-gray-100 bg-white">
+        <div className="flex min-h-20 flex-col gap-4 px-4 py-4 sm:px-6 sm:py-5 lg:flex-row lg:items-center lg:justify-between lg:px-8 lg:py-0">
+          <div className="min-w-0">
+            <div className="flex flex-wrap items-center gap-2 sm:gap-3">
+              <h1 className="text-xl font-black text-[#0F172A] sm:text-2xl">
+                Workers
+              </h1>
 
-            {selectedCategory !== "All" && (
-              <>
-                <span className="text-[#CBD5E1]">/</span>
+              {selectedCategory !== "All" && (
+                <>
+                  <span className="text-[#CBD5E1]">
+                    /
+                  </span>
 
-                <span className="rounded-lg bg-orange-50 px-3 py-1 text-sm font-bold text-[#FF5C39]">
-                  {selectedCategory}
-                </span>
-              </>
-            )}
+                  <span className="max-w-[180px] truncate rounded-lg bg-orange-50 px-2.5 py-1 text-xs font-bold text-[#FF5C39] sm:px-3 sm:text-sm">
+                    {selectedCategory}
+                  </span>
+                </>
+              )}
+            </div>
+
+            <p className="mt-1 line-clamp-2 text-xs text-[#64748B] sm:text-sm">
+              {selectedCategory === "All"
+                ? "Manage all Workkerz workers and their profiles."
+                : `Manage ${selectedCategory} workers and their profiles.`}
+            </p>
           </div>
 
-          <p className="mt-1 text-sm text-[#64748B]">
-            {selectedCategory === "All"
-              ? "Manage all Workkerz workers and their profiles."
-              : `Manage ${selectedCategory} workers and their profiles.`}
-          </p>
+          <button
+            type="button"
+            onClick={() =>
+              setShowOnboardForm(true)
+            }
+            className="flex h-11 w-full items-center justify-center gap-2 rounded-xl bg-[#FF5C39] px-5 text-sm font-bold text-white shadow-sm transition hover:bg-[#e54e2e] sm:w-auto"
+          >
+            <UserPlus className="h-4 w-4" />
+            Add Worker
+          </button>
         </div>
-
-        <button
-          type="button"
-          onClick={() => setShowOnboardForm(true)}
-          className="flex h-11 items-center gap-2 rounded-xl bg-[#FF5C39] px-5 text-sm font-bold text-white shadow-sm hover:bg-[#e54e2e]"
-        >
-          <UserPlus className="h-4 w-4" />
-          Add Worker
-        </button>
       </header>
 
       {/* =================================================
           CONTENT
       ================================================= */}
 
-      <div className="p-8">
+      <main className="p-3 sm:p-5 lg:p-8">
         {/* =================================================
             ERROR
         ================================================= */}
 
         {error && (
-          <div className="mb-5 flex items-center justify-between rounded-xl border border-red-200 bg-red-50 px-4 py-3">
-            <p className="text-sm text-red-600">{error}</p>
+          <div className="mb-4 flex flex-col gap-2 rounded-xl border border-red-200 bg-red-50 px-3 py-3 sm:flex-row sm:items-center sm:justify-between sm:px-4">
+            <p className="text-xs text-red-600 sm:text-sm">
+              {error}
+            </p>
 
             <button
               type="button"
               onClick={() => loadWorkers(true)}
-              className="text-xs font-bold text-red-700 hover:underline"
+              className="self-start text-xs font-bold text-red-700 hover:underline sm:self-auto"
             >
               Try again
             </button>
@@ -773,8 +737,12 @@ export default function WorkersTab() {
             STATS
         ================================================= */}
 
-        <div className="mb-6 grid grid-cols-4 gap-5">
-          <WorkerStat label="Total Workers" value={stats.total} icon={Users} />
+        <div className="mb-4 grid grid-cols-2 gap-2.5 sm:mb-6 sm:grid-cols-2 sm:gap-4 lg:grid-cols-4 lg:gap-5">
+          <WorkerStat
+            label="Total Workers"
+            value={stats.total}
+            icon={Users}
+          />
 
           <WorkerStat
             label="Available"
@@ -799,33 +767,33 @@ export default function WorkersTab() {
             MAIN CARD
         ================================================= */}
 
-        <div className="overflow-hidden rounded-2xl border border-gray-100 bg-white shadow-sm">
+        <div className="overflow-hidden rounded-xl border border-gray-100 bg-white shadow-sm sm:rounded-2xl">
           {/* =================================================
               TOOLBAR
           ================================================= */}
 
           <div className="border-b border-gray-100 bg-white">
-            {/* TOP TOOLBAR */}
-
-            <div className="flex items-center justify-between gap-4 p-5">
+            <div className="flex flex-col gap-3 p-3 sm:p-5 lg:flex-row lg:items-center lg:justify-between">
               {/* SEARCH */}
 
-              <div className="relative w-full max-w-md">
-                <Search className="absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-[#94A3B8]" />
+              <div className="relative w-full lg:max-w-md">
+                <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[#94A3B8]" />
 
                 <input
                   type="text"
                   value={search}
-                  onChange={(event) => setSearch(event.target.value)}
+                  onChange={(event) =>
+                    setSearch(event.target.value)
+                  }
                   placeholder="Search worker, phone, specialty..."
-                  className="h-11 w-full rounded-xl border border-gray-200 bg-[#F8FAFC] pl-10 pr-10 text-sm text-[#0F172A] outline-none transition focus:border-[#FF5C39] focus:bg-white focus:ring-2 focus:ring-orange-100"
+                  className="h-10 w-full rounded-xl border border-gray-200 bg-[#F8FAFC] pl-9 pr-10 text-xs text-[#0F172A] outline-none transition focus:border-[#FF5C39] focus:bg-white focus:ring-2 focus:ring-orange-100 sm:h-11 sm:pl-10 sm:text-sm"
                 />
 
                 {search && (
                   <button
                     type="button"
                     onClick={() => setSearch("")}
-                    className="absolute right-3 top-1/2 flex h-6 w-6 -translate-y-1/2 items-center justify-center rounded-md text-[#94A3B8] hover:bg-gray-100 hover:text-[#334155]"
+                    className="absolute right-2.5 top-1/2 flex h-6 w-6 -translate-y-1/2 items-center justify-center rounded-md text-[#94A3B8] hover:bg-gray-100 hover:text-[#334155]"
                     title="Clear search"
                   >
                     <XCircle className="h-4 w-4" />
@@ -835,25 +803,29 @@ export default function WorkersTab() {
 
               {/* ACTIONS */}
 
-              <div className="flex shrink-0 items-center gap-2">
+              <div className="flex w-full items-center gap-2 lg:w-auto">
                 <button
                   type="button"
-                  className="hidden h-11 items-center gap-2 rounded-xl border border-gray-200 px-4 text-sm font-semibold text-[#64748B] hover:bg-[#F8FAFC] sm:flex"
+                  className="flex h-10 flex-1 items-center justify-center gap-2 rounded-xl border border-gray-200 px-3 text-xs font-semibold text-[#64748B] hover:bg-[#F8FAFC] sm:h-11 sm:flex-none sm:px-4 sm:text-sm"
                 >
                   <SlidersHorizontal className="h-4 w-4" />
-                  Filters
+                  <span>Filters</span>
                 </button>
 
                 <button
                   type="button"
-                  onClick={() => loadWorkers(true)}
+                  onClick={() =>
+                    loadWorkers(true)
+                  }
                   disabled={refreshing}
-                  className="flex h-11 w-11 items-center justify-center rounded-xl border border-gray-200 bg-white hover:bg-[#F8FAFC] disabled:opacity-50"
+                  className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-gray-200 bg-white hover:bg-[#F8FAFC] disabled:opacity-50 sm:h-11 sm:w-11"
                   title="Refresh"
                 >
                   <RefreshCw
                     className={`h-4 w-4 text-[#64748B] ${
-                      refreshing ? "animate-spin" : ""
+                      refreshing
+                        ? "animate-spin"
+                        : ""
                     }`}
                   />
                 </button>
@@ -864,22 +836,30 @@ export default function WorkersTab() {
                 CATEGORY TABS
             ================================================= */}
 
-            <div className="overflow-x-auto px-5 pb-4">
-              <div className="flex min-w-max items-center gap-2">
+            <div className="overflow-x-auto px-3 pb-3 sm:px-5 sm:pb-4">
+              <div className="flex min-w-max items-center gap-1.5 sm:gap-2">
                 {categories.map((category) => {
-                  const active = selectedCategory === category;
+                  const active =
+                    selectedCategory ===
+                    category;
 
                   const count =
                     category === "All"
                       ? workers.length
-                      : categoryCounts[category] || 0;
+                      : categoryCounts[
+                          category
+                        ] || 0;
 
                   return (
                     <button
                       key={category}
                       type="button"
-                      onClick={() => setSelectedCategory(category)}
-                      className={`group flex h-10 items-center gap-2 rounded-xl px-4 text-sm font-bold transition ${
+                      onClick={() =>
+                        setSelectedCategory(
+                          category,
+                        )
+                      }
+                      className={`group flex h-9 items-center gap-1.5 rounded-lg px-3 text-xs font-bold transition sm:h-10 sm:gap-2 sm:rounded-xl sm:px-4 sm:text-sm ${
                         active
                           ? "bg-[#FF5C39] text-white shadow-sm"
                           : "border border-gray-200 bg-white text-[#64748B] hover:border-orange-200 hover:bg-orange-50 hover:text-[#FF5C39]"
@@ -888,7 +868,7 @@ export default function WorkersTab() {
                       <span>{category}</span>
 
                       <span
-                        className={`rounded-lg px-2 py-0.5 text-[11px] font-black ${
+                        className={`rounded-md px-1.5 py-0.5 text-[10px] font-black sm:rounded-lg sm:px-2 sm:text-[11px] ${
                           active
                             ? "bg-white/20 text-white"
                             : "bg-[#F1F5F9] text-[#64748B] group-hover:bg-orange-100 group-hover:text-[#FF5C39]"
@@ -908,17 +888,19 @@ export default function WorkersTab() {
           ================================================= */}
 
           {loading ? (
-            <div className="flex h-80 flex-col items-center justify-center">
+            <div className="flex min-h-[320px] flex-col items-center justify-center px-4">
               <Loader2 className="h-7 w-7 animate-spin text-[#FF5C39]" />
 
-              <p className="mt-3 text-sm text-[#64748B]">Loading workers...</p>
+              <p className="mt-3 text-sm text-[#64748B]">
+                Loading workers...
+              </p>
             </div>
           ) : filteredWorkers.length === 0 ? (
             /* =================================================
                EMPTY
             ================================================= */
 
-            <div className="flex h-80 flex-col items-center justify-center text-center">
+            <div className="flex min-h-[320px] flex-col items-center justify-center px-5 text-center">
               <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-orange-50">
                 <Users className="h-7 w-7 text-[#FF5C39]" />
               </div>
@@ -932,18 +914,22 @@ export default function WorkersTab() {
               <p className="mt-1 max-w-sm text-xs text-[#94A3B8]">
                 {search
                   ? `No workers match "${search}". Try a different search.`
-                  : selectedCategory === "All"
+                  : selectedCategory ===
+                      "All"
                     ? "Add your first worker to get started."
                     : `There are currently no workers in the ${selectedCategory} category.`}
               </p>
 
-              {(search || selectedCategory !== "All") && (
+              {(search ||
+                selectedCategory !==
+                  "All") && (
                 <button
                   type="button"
                   onClick={() => {
                     setSearch("");
-
-                    setSelectedCategory("All");
+                    setSelectedCategory(
+                      "All",
+                    );
                   }}
                   className="mt-4 rounded-xl bg-[#FF5C39] px-4 py-2 text-xs font-bold text-white hover:bg-[#e54e2e]"
                 >
@@ -952,371 +938,512 @@ export default function WorkersTab() {
               )}
             </div>
           ) : (
-            /* =================================================
-               TABLE
-            ================================================= */
+            <>
+              {/* =================================================
+                  DESKTOP TABLE
+              ================================================= */}
 
-            <div className="overflow-x-auto">
-              <table className="w-full min-w-[1050px]">
-                <thead>
-                  <tr className="bg-[#F8FAFC] text-left">
-                    <th className="px-6 py-3 text-xs font-bold text-[#64748B]">
-                      Worker
-                    </th>
+              <div className="hidden overflow-x-auto lg:block">
+                <table className="w-full min-w-[1050px]">
+                  <thead>
+                    <tr className="bg-[#F8FAFC] text-left">
+                      <th className="px-6 py-3 text-xs font-bold text-[#64748B]">
+                        Worker
+                      </th>
 
-                    <th className="px-6 py-3 text-xs font-bold text-[#64748B]">
-                      Contact
-                    </th>
+                      <th className="px-6 py-3 text-xs font-bold text-[#64748B]">
+                        Contact
+                      </th>
 
-                    <th className="px-6 py-3 text-xs font-bold text-[#64748B]">
-                      Category
-                    </th>
+                      <th className="px-6 py-3 text-xs font-bold text-[#64748B]">
+                        Category
+                      </th>
 
-                    <th className="px-6 py-3 text-xs font-bold text-[#64748B]">
-                      Location
-                    </th>
+                      <th className="px-6 py-3 text-xs font-bold text-[#64748B]">
+                        Location
+                      </th>
 
-                    <th className="px-6 py-3 text-xs font-bold text-[#64748B]">
-                      Rating
-                    </th>
+                      <th className="px-6 py-3 text-xs font-bold text-[#64748B]">
+                        Rating
+                      </th>
 
-                    <th className="px-6 py-3 text-xs font-bold text-[#64748B]">
-                      Status
-                    </th>
+                      <th className="px-6 py-3 text-xs font-bold text-[#64748B]">
+                        Status
+                      </th>
 
-                    <th className="px-6 py-3 text-right text-xs font-bold text-[#64748B]">
-                      Action
-                    </th>
-                  </tr>
-                </thead>
+                      <th className="px-6 py-3 text-right text-xs font-bold text-[#64748B]">
+                        Action
+                      </th>
+                    </tr>
+                  </thead>
 
-                <tbody className="divide-y divide-gray-100">
-                  {filteredWorkers.map((worker) => {
-                    const active = isWorkerActive(worker);
+                  <tbody className="divide-y divide-gray-100">
+                    {filteredWorkers.map(
+                      (worker) => {
+                        const active =
+                          isWorkerActive(
+                            worker,
+                          );
+
+                        return (
+                          <tr
+                            key={worker.id}
+                            className="transition hover:bg-[#FAFAFA]"
+                          >
+                            {/* WORKER */}
+
+                            <td className="px-6 py-4">
+                              <div className="flex items-center gap-3">
+                                <WorkerAvatar
+                                  worker={
+                                    worker
+                                  }
+                                  size="md"
+                                />
+
+                                <div className="min-w-0">
+                                  <p className="max-w-[190px] truncate text-sm font-bold text-[#0F172A]">
+                                    {getWorkerName(
+                                      worker,
+                                    )}
+                                  </p>
+
+                                  <p className="max-w-[190px] truncate text-xs text-[#64748B]">
+                                    {getSpecialty(
+                                      worker,
+                                    )}
+                                  </p>
+                                </div>
+                              </div>
+                            </td>
+
+                            {/* CONTACT */}
+
+                            <td className="px-6 py-4">
+                              <p className="text-sm text-[#334155]">
+                                {getPhone(
+                                  worker,
+                                )}
+                              </p>
+                            </td>
+
+                            {/* CATEGORY */}
+
+                            <td className="px-6 py-4">
+                              <p className="text-sm font-semibold text-[#334155]">
+                                {getCategory(
+                                  worker,
+                                )}
+                              </p>
+
+                              {worker.subcategory && (
+                                <p className="mt-1 text-xs text-[#94A3B8]">
+                                  {
+                                    worker.subcategory
+                                  }
+                                </p>
+                              )}
+                            </td>
+
+                            {/* LOCATION */}
+
+                            <td className="px-6 py-4">
+                              <p className="max-w-[180px] truncate text-sm text-[#334155]">
+                                {getLocation(
+                                  worker,
+                                )}
+                              </p>
+
+                              {worker.labourChauk && (
+                                <p className="mt-1 max-w-[180px] truncate text-xs text-[#94A3B8]">
+                                  Chauk:{" "}
+                                  {
+                                    worker.labourChauk
+                                  }
+                                </p>
+                              )}
+                            </td>
+
+                            {/* RATING */}
+
+                            <td className="px-6 py-4">
+                              <div className="flex items-center gap-1.5">
+                                <Star className="h-3.5 w-3.5 fill-current text-amber-500" />
+
+                                <span className="text-sm font-semibold text-[#334155]">
+                                  {getRating(
+                                    worker,
+                                  )}
+                                </span>
+
+                                <span className="text-xs text-[#94A3B8]">
+                                  (
+                                  {worker.reviewCount ??
+                                    0}
+                                  )
+                                </span>
+                              </div>
+                            </td>
+
+                            {/* STATUS */}
+
+                            <td className="px-6 py-4">
+                              <WorkerStatus
+                                active={
+                                  active
+                                }
+                              />
+                            </td>
+
+                            {/* ACTION */}
+
+                            <td className="px-6 py-4">
+                              <div className="flex items-center justify-end gap-1">
+                                <button
+                                  type="button"
+                                  onClick={() =>
+                                    setSelectedWorker(
+                                      worker,
+                                    )
+                                  }
+                                  className="flex h-9 w-9 items-center justify-center rounded-lg hover:bg-gray-100"
+                                  title="View worker"
+                                >
+                                  <Eye className="h-4 w-4 text-[#64748B]" />
+                                </button>
+
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    setActionError(
+                                      "",
+                                    );
+                                    setActionWorker(
+                                      worker,
+                                    );
+                                  }}
+                                  className="flex h-9 w-9 items-center justify-center rounded-lg hover:bg-gray-100"
+                                  title="Worker actions"
+                                >
+                                  <MoreHorizontal className="h-4 w-4 text-[#64748B]" />
+                                </button>
+                              </div>
+                            </td>
+                          </tr>
+                        );
+                      },
+                    )}
+                  </tbody>
+                </table>
+              </div>
+
+              {/* =================================================
+                  MOBILE + TABLET CARDS
+              ================================================= */}
+
+              <div className="divide-y divide-gray-100 lg:hidden">
+                {filteredWorkers.map(
+                  (worker) => {
+                    const active =
+                      isWorkerActive(
+                        worker,
+                      );
 
                     return (
-                      <tr
+                      <div
                         key={worker.id}
-                        className="transition hover:bg-[#FAFAFA]"
+                        className="p-3 sm:p-4"
                       >
-                        {/* =================================================
-                              WORKER
-                          ================================================= */}
+                        <div className="rounded-xl border border-gray-100 bg-white p-3 transition hover:border-gray-200 hover:shadow-sm sm:rounded-2xl sm:p-4">
+                          {/* TOP */}
 
-                        <td className="px-6 py-4">
-                          <div className="flex items-center gap-3">
-                            <div className="flex h-11 w-11 shrink-0 items-center justify-center overflow-hidden rounded-full border border-gray-100 bg-orange-50">
-                              {worker.photo ? (
-                                <img
-                                  src={worker.photo}
-                                  alt={worker.name || "Worker"}
-                                  className="h-full w-full object-cover"
+                          <div className="flex items-start gap-3">
+                            <WorkerAvatar
+                              worker={
+                                worker
+                              }
+                              size="lg"
+                            />
+
+                            <div className="min-w-0 flex-1">
+                              <div className="flex items-start justify-between gap-2">
+                                <div className="min-w-0">
+                                  <h3 className="truncate text-sm font-bold text-[#0F172A] sm:text-base">
+                                    {getWorkerName(
+                                      worker,
+                                    )}
+                                  </h3>
+
+                                  <p className="mt-0.5 truncate text-xs text-[#64748B]">
+                                    {getSpecialty(
+                                      worker,
+                                    )}
+                                  </p>
+                                </div>
+
+                                <WorkerStatus
+                                  active={
+                                    active
+                                  }
+                                  compact
                                 />
+                              </div>
+
+                              {/* CATEGORY */}
+
+                              <div className="mt-2 flex flex-wrap items-center gap-1.5">
+                                <span className="rounded-md bg-orange-50 px-2 py-1 text-[10px] font-bold text-[#FF5C39] sm:text-[11px]">
+                                  {getCategory(
+                                    worker,
+                                  )}
+                                </span>
+
+                                {worker.subcategory && (
+                                  <span className="max-w-[150px] truncate rounded-md bg-gray-50 px-2 py-1 text-[10px] font-medium text-[#64748B] sm:text-[11px]">
+                                    {
+                                      worker.subcategory
+                                    }
+                                  </span>
+                                )}
+                              </div>
+                            </div>
+                          </div>
+
+                          {/* INFO GRID */}
+
+                          <div className="mt-3 grid grid-cols-2 gap-2 border-t border-gray-100 pt-3 sm:grid-cols-4">
+                            <MobileInfo
+                              icon={
+                                Phone
+                              }
+                              label="Phone"
+                              value={
+                                getPhone(
+                                  worker,
+                                )
+                              }
+                            />
+
+                            <MobileInfo
+                              icon={
+                                MapPin
+                              }
+                              label="Location"
+                              value={
+                                getLocation(
+                                  worker,
+                                )
+                              }
+                            />
+
+                            <MobileInfo
+                              icon={
+                                Star
+                              }
+                              label="Rating"
+                              value={`${getRating(
+                                worker,
+                              )} (${
+                                worker.reviewCount ??
+                                0
+                              })`}
+                              rating
+                            />
+
+                            <MobileInfo
+                              icon={
+                                BriefcaseBusiness
+                              }
+                              label="Jobs"
+                              value={String(
+                                worker.completedJobs ??
+                                  0,
+                              )}
+                            />
+                          </div>
+
+                          {/* BOTTOM */}
+
+                          <div className="mt-3 flex items-center justify-between gap-2 border-t border-gray-100 pt-3">
+                            <div className="min-w-0">
+                              {worker.labourChauk ? (
+                                <p className="truncate text-[11px] text-[#94A3B8] sm:text-xs">
+                                  Chauk:{" "}
+                                  {
+                                    worker.labourChauk
+                                  }
+                                </p>
                               ) : (
-                                <Users className="h-5 w-5 text-[#FF5C39]" />
+                                <p className="text-[11px] text-[#94A3B8] sm:text-xs">
+                                  Worker ID:{" "}
+                                  {worker.workerCode ||
+                                    "—"}
+                                </p>
                               )}
                             </div>
 
-                            <div className="min-w-0">
-                              <p className="truncate text-sm font-bold text-[#0F172A]">
-                                {getWorkerName(worker)}
-                              </p>
+                            <div className="flex shrink-0 items-center gap-1.5">
+                              <button
+                                type="button"
+                                onClick={() =>
+                                  setSelectedWorker(
+                                    worker,
+                                  )
+                                }
+                                className="flex h-9 items-center gap-1.5 rounded-lg border border-gray-200 px-2.5 text-xs font-semibold text-[#64748B] transition hover:border-orange-200 hover:bg-orange-50 hover:text-[#FF5C39] sm:h-10 sm:px-3"
+                              >
+                                <Eye className="h-3.5 w-3.5" />
+                                <span className="hidden xs:inline sm:inline">
+                                  View
+                                </span>
+                              </button>
 
-                              <p className="truncate text-xs text-[#64748B]">
-                                {getSpecialty(worker)}
-                              </p>
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  setActionError(
+                                    "",
+                                  );
+                                  setActionWorker(
+                                    worker,
+                                  );
+                                }}
+                                className="flex h-9 w-9 items-center justify-center rounded-lg border border-gray-200 text-[#64748B] transition hover:border-gray-300 hover:bg-gray-50 sm:h-10 sm:w-10"
+                                title="More actions"
+                              >
+                                <MoreHorizontal className="h-4 w-4" />
+                              </button>
+
+                              <ChevronRight className="hidden h-4 w-4 text-[#CBD5E1] sm:block" />
                             </div>
                           </div>
-                        </td>
-
-                        {/* =================================================
-                              CONTACT
-                          ================================================= */}
-
-                        <td className="px-6 py-4">
-                          <p className="text-sm text-[#334155]">
-                            {getPhone(worker)}
-                          </p>
-                        </td>
-
-                        {/* =================================================
-                              CATEGORY
-                          ================================================= */}
-
-                        <td className="px-6 py-4">
-                          <div>
-                            <p className="text-sm font-semibold text-[#334155]">
-                              {getCategory(worker)}
-                            </p>
-
-                            {worker.subcategory && (
-                              <p className="mt-1 text-xs text-[#94A3B8]">
-                                {worker.subcategory}
-                              </p>
-                            )}
-                          </div>
-                        </td>
-
-                        {/* =================================================
-                              LOCATION
-                          ================================================= */}
-
-                        <td className="px-6 py-4">
-                          <div>
-                            <p className="text-sm text-[#334155]">
-                              {getLocation(worker)}
-                            </p>
-
-                            {worker.labourChauk && (
-                              <p className="mt-1 max-w-[180px] truncate text-xs text-[#94A3B8]">
-                                Chauk: {worker.labourChauk}
-                              </p>
-                            )}
-                          </div>
-                        </td>
-
-                        {/* =================================================
-                              RATING
-                          ================================================= */}
-
-                        <td className="px-6 py-4">
-                          <div className="flex items-center gap-1.5">
-                            <Star className="h-3.5 w-3.5 fill-current text-amber-500" />
-
-                            <span className="text-sm font-semibold text-[#334155]">
-                              {getRating(worker)}
-                            </span>
-
-                            <span className="text-xs text-[#94A3B8]">
-                              ({worker.reviewCount ?? 0})
-                            </span>
-                          </div>
-                        </td>
-
-                        {/* =================================================
-                              STATUS
-                          ================================================= */}
-
-                        <td className="px-6 py-4">
-                          {active ? (
-                            <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-50 px-2.5 py-1 text-xs font-bold text-emerald-700">
-                              <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
-                              Available
-                            </span>
-                          ) : (
-                            <span className="inline-flex items-center gap-1.5 rounded-full bg-gray-100 px-2.5 py-1 text-xs font-bold text-gray-600">
-                              <span className="h-1.5 w-1.5 rounded-full bg-gray-400" />
-                              Unavailable
-                            </span>
-                          )}
-                        </td>
-
-                        {/* =================================================
-                              ACTION
-                          ================================================= */}
-
-                        <td className="px-6 py-4">
-                          <div className="flex items-center justify-end gap-1">
-                            <button
-                              type="button"
-                              onClick={() => setSelectedWorker(worker)}
-                              className="flex h-9 w-9 items-center justify-center rounded-lg hover:bg-gray-100"
-                              title="View worker"
-                            >
-                              <Eye className="h-4 w-4 text-[#64748B]" />
-                            </button>
-
-                            <button
-                              type="button"
-                              onClick={() => {
-                                setActionError("");
-
-                                setActionWorker(worker);
-                              }}
-                              className="flex h-9 w-9 items-center justify-center rounded-lg hover:bg-gray-100"
-                              title="Worker actions"
-                            >
-                              <MoreHorizontal className="h-4 w-4 text-[#64748B]" />
-                            </button>
-                          </div>
-                        </td>
-                      </tr>
+                        </div>
+                      </div>
                     );
-                  })}
-                </tbody>
-              </table>
-            </div>
+                  },
+                )}
+              </div>
+            </>
           )}
 
           {/* =================================================
               FOOTER
           ================================================= */}
 
-          {!loading && filteredWorkers.length > 0 && (
-            <div className="flex items-center justify-between border-t border-gray-100 bg-[#FAFAFA] px-6 py-3">
-              <p className="text-xs font-medium text-[#64748B]">
-                Showing{" "}
-                <span className="font-bold text-[#334155]">
-                  {filteredWorkers.length}
-                </span>{" "}
-                worker
-                {filteredWorkers.length !== 1 ? "s" : ""}
-                {selectedCategory !== "All" && (
-                  <>
-                    {" "}
-                    in{" "}
-                    <span className="font-bold text-[#FF5C39]">
-                      {selectedCategory}
-                    </span>
-                  </>
-                )}
-              </p>
-
-              {search && (
-                <p className="text-xs text-[#94A3B8]">
-                  Search:{" "}
-                  <span className="font-semibold text-[#64748B]">
-                    "{search}"
-                  </span>
+          {!loading &&
+            filteredWorkers.length > 0 && (
+              <div className="flex flex-col gap-1.5 border-t border-gray-100 bg-[#FAFAFA] px-3 py-3 sm:flex-row sm:items-center sm:justify-between sm:px-6">
+                <p className="text-[11px] font-medium text-[#64748B] sm:text-xs">
+                  Showing{" "}
+                  <span className="font-bold text-[#334155]">
+                    {
+                      filteredWorkers.length
+                    }
+                  </span>{" "}
+                  worker
+                  {filteredWorkers.length !==
+                  1
+                    ? "s"
+                    : ""}
+                  {selectedCategory !==
+                    "All" && (
+                    <>
+                      {" "}
+                      in{" "}
+                      <span className="font-bold text-[#FF5C39]">
+                        {
+                          selectedCategory
+                        }
+                      </span>
+                    </>
+                  )}
                 </p>
-              )}
-            </div>
-          )}
+
+                {search && (
+                  <p className="truncate text-[11px] text-[#94A3B8] sm:text-xs">
+                    Search:{" "}
+                    <span className="font-semibold text-[#64748B]">
+                      "{search}"
+                    </span>
+                  </p>
+                )}
+              </div>
+            )}
         </div>
-      </div>
+      </main>
 
       {/* =====================================================
           ACTION MENU
       ===================================================== */}
 
       {actionWorker && (
-        <div className="fixed inset-0 z-40">
+        <div className="fixed inset-0 z-50">
           <button
             type="button"
             aria-label="Close actions"
-            onClick={() => setActionWorker(null)}
-            className="absolute inset-0 bg-black/20"
+            onClick={() =>
+              setActionWorker(null)
+            }
+            className="absolute inset-0 bg-black/30 backdrop-blur-[1px]"
           />
 
-          <div className="absolute right-8 top-24 w-72 rounded-2xl border border-gray-100 bg-white p-2 shadow-2xl">
-            {/* HEADER */}
+          {/* DESKTOP MENU */}
 
-            <div className="border-b border-gray-100 px-3 py-3">
-              <p className="text-sm font-bold text-[#0F172A]">
-                {getWorkerName(actionWorker)}
-              </p>
-
-              <p className="mt-1 text-xs text-[#64748B]">Worker actions</p>
-            </div>
-
-            {/* =================================================
-                EDIT
-            ================================================= */}
-
-            <button
-              type="button"
-              onClick={() => {
-                console.log("OPENING EDIT WORKER:", actionWorker);
-
-                console.log("EDIT LABOUR CHAUK:", actionWorker.labourChauk);
-
-                setEditWorker(actionWorker);
-
+          <div className="absolute right-4 top-20 hidden w-72 rounded-2xl border border-gray-100 bg-white p-2 shadow-2xl sm:right-6 sm:top-24 sm:block lg:right-8">
+            <ActionMenuContent
+              worker={actionWorker}
+              isSuperAdmin={isSuperAdmin}
+              actionLoading={actionLoading}
+              actionError={actionError}
+              onEdit={() => {
+                setEditWorker(
+                  actionWorker,
+                );
                 setActionWorker(null);
-
                 setActionError("");
               }}
-              className="flex w-full items-center gap-3 rounded-xl px-3 py-3 text-left hover:bg-[#F8FAFC]"
-            >
-              <Pencil className="h-4 w-4 text-[#64748B]" />
+              onToggle={() =>
+                toggleWorkerStatus(
+                  actionWorker,
+                )
+              }
+              onDelete={() =>
+                deleteWorker(
+                  actionWorker,
+                )
+              }
+            />
+          </div>
 
-              <div>
-                <p className="text-sm font-semibold text-[#0F172A]">
-                  Edit Worker
-                </p>
+          {/* MOBILE BOTTOM SHEET */}
 
-                <p className="text-xs text-[#94A3B8]">
-                  Update worker information
-                </p>
-              </div>
-            </button>
+          <div className="absolute bottom-0 left-0 right-0 rounded-t-3xl border-t border-gray-100 bg-white p-3 pb-[calc(12px+env(safe-area-inset-bottom))] shadow-2xl sm:hidden">
+            <div className="mx-auto mb-3 h-1 w-10 rounded-full bg-gray-200" />
 
-            {/* =================================================
-                AVAILABILITY
-            ================================================= */}
-
-            <button
-              type="button"
-              disabled={actionLoading}
-              onClick={() => toggleWorkerStatus(actionWorker)}
-              className="flex w-full items-center gap-3 rounded-xl px-3 py-3 text-left hover:bg-[#F8FAFC] disabled:opacity-50"
-            >
-              <Power className="h-4 w-4 text-[#64748B]" />
-
-              <div>
-                <p className="text-sm font-semibold text-[#0F172A]">
-                  {isWorkerActive(actionWorker)
-                    ? "Make Unavailable"
-                    : "Make Available"}
-                </p>
-
-                <p className="text-xs text-[#94A3B8]">
-                  {isWorkerActive(actionWorker)
-                    ? "Stop new bookings"
-                    : "Allow new bookings"}
-                </p>
-              </div>
-            </button>
-
-            {/* =================================================
-                DELETE
-            ================================================= */}
-
-            {isSuperAdmin && (
-              <>
-                <div className="my-1 border-t border-gray-100" />
-
-                <button
-                  type="button"
-                  disabled={actionLoading}
-                  onClick={() => deleteWorker(actionWorker)}
-                  className="flex w-full items-center gap-3 rounded-xl px-3 py-3 text-left hover:bg-red-50 disabled:opacity-50"
-                >
-                  <Trash2 className="h-4 w-4 text-red-500" />
-
-                  <div>
-                    <p className="text-sm font-semibold text-red-600">
-                      Delete Worker
-                    </p>
-
-                    <p className="text-xs text-red-400">
-                      Permanently remove worker
-                    </p>
-                  </div>
-                </button>
-              </>
-            )}
-
-            {/* =================================================
-                ERROR
-            ================================================= */}
-
-            {actionError && (
-              <div className="mx-2 mb-2 mt-1 rounded-lg border border-red-100 bg-red-50 px-3 py-2">
-                <p className="text-xs text-red-600">{actionError}</p>
-              </div>
-            )}
-
-            {/* =================================================
-                LOADING
-            ================================================= */}
-
-            {actionLoading && (
-              <div className="flex items-center justify-center gap-2 py-2 text-xs text-[#64748B]">
-                <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                Updating...
-              </div>
-            )}
+            <ActionMenuContent
+              worker={actionWorker}
+              isSuperAdmin={isSuperAdmin}
+              actionLoading={actionLoading}
+              actionError={actionError}
+              mobile
+              onEdit={() => {
+                setEditWorker(
+                  actionWorker,
+                );
+                setActionWorker(null);
+                setActionError("");
+              }}
+              onToggle={() =>
+                toggleWorkerStatus(
+                  actionWorker,
+                )
+              }
+              onDelete={() =>
+                deleteWorker(
+                  actionWorker,
+                )
+              }
+            />
           </div>
         </div>
       )}
@@ -1327,7 +1454,9 @@ export default function WorkersTab() {
 
       <WorkerDrawer
         worker={selectedWorker}
-        onClose={() => setSelectedWorker(null)}
+        onClose={() =>
+          setSelectedWorker(null)
+        }
       />
 
       {/* =====================================================
@@ -1336,15 +1465,16 @@ export default function WorkersTab() {
 
       <EditWorkerModal
         worker={editWorker}
-        onClose={() => setEditWorker(null)}
+        onClose={() =>
+          setEditWorker(null)
+        }
         onUpdated={(updatedWorker) => {
-          console.log("WORKER UPDATED:", updatedWorker);
-
-          console.log("UPDATED LABOUR CHAUK:", updatedWorker.labourChauk);
-
           setWorkers((current) =>
             current.map((worker) =>
-              worker.id === updatedWorker.id ? updatedWorker : worker,
+              worker.id ===
+              updatedWorker.id
+                ? updatedWorker
+                : worker,
             ),
           );
 
@@ -1352,6 +1482,281 @@ export default function WorkersTab() {
         }}
       />
     </div>
+  );
+}
+
+/* =====================================================
+   WORKER AVATAR
+===================================================== */
+
+function WorkerAvatar({
+  worker,
+  size = "md",
+}: {
+  worker: Worker;
+  size?: "md" | "lg";
+}) {
+  const sizeClass =
+    size === "lg"
+      ? "h-12 w-12 sm:h-14 sm:w-14"
+      : "h-11 w-11";
+
+  return (
+    <div
+      className={`flex shrink-0 items-center justify-center overflow-hidden rounded-full border border-gray-100 bg-orange-50 ${sizeClass}`}
+    >
+      {worker.photo ? (
+        <img
+          src={worker.photo}
+          alt={worker.name || "Worker"}
+          className="h-full w-full object-cover"
+        />
+      ) : (
+        <Users className="h-5 w-5 text-[#FF5C39]" />
+      )}
+    </div>
+  );
+}
+
+/* =====================================================
+   WORKER STATUS
+===================================================== */
+
+function WorkerStatus({
+  active,
+  compact = false,
+}: {
+  active: boolean;
+  compact?: boolean;
+}) {
+  if (active) {
+    return (
+      <span
+        className={`inline-flex shrink-0 items-center gap-1.5 rounded-full bg-emerald-50 font-bold text-emerald-700 ${
+          compact
+            ? "px-2 py-1 text-[10px]"
+            : "px-2.5 py-1 text-xs"
+        }`}
+      >
+        <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
+        Available
+      </span>
+    );
+  }
+
+  return (
+    <span
+      className={`inline-flex shrink-0 items-center gap-1.5 rounded-full bg-gray-100 font-bold text-gray-600 ${
+        compact
+          ? "px-2 py-1 text-[10px]"
+          : "px-2.5 py-1 text-xs"
+      }`}
+    >
+      <span className="h-1.5 w-1.5 rounded-full bg-gray-400" />
+      Unavailable
+    </span>
+  );
+}
+
+/* =====================================================
+   MOBILE INFO
+===================================================== */
+
+function MobileInfo({
+  icon: Icon,
+  label,
+  value,
+  rating = false,
+}: {
+  icon: typeof Phone;
+  label: string;
+  value: string;
+  rating?: boolean;
+}) {
+  return (
+    <div className="min-w-0 rounded-lg bg-[#F8FAFC] px-2 py-2">
+      <div className="flex items-center gap-1">
+        <Icon
+          className={`h-3 w-3 shrink-0 ${
+            rating
+              ? "text-amber-500"
+              : "text-[#94A3B8]"
+          }`}
+        />
+
+        <span className="text-[9px] font-semibold uppercase tracking-wide text-[#94A3B8]">
+          {label}
+        </span>
+      </div>
+
+      <p className="mt-1 truncate text-[11px] font-bold text-[#334155]">
+        {value}
+      </p>
+    </div>
+  );
+}
+
+/* =====================================================
+   ACTION MENU CONTENT
+===================================================== */
+
+function ActionMenuContent({
+  worker,
+  isSuperAdmin,
+  actionLoading,
+  actionError,
+  mobile = false,
+  onEdit,
+  onToggle,
+  onDelete,
+}: {
+  worker: Worker;
+  isSuperAdmin: boolean;
+  actionLoading: boolean;
+  actionError: string;
+  mobile?: boolean;
+  onEdit: () => void;
+  onToggle: () => void;
+  onDelete: () => void;
+}) {
+  const active = worker.available === true;
+
+  return (
+    <>
+      {/* HEADER */}
+
+      <div
+        className={`border-b border-gray-100 px-3 ${
+          mobile ? "pb-3 pt-1" : "py-3"
+        }`}
+      >
+        <p className="truncate text-sm font-bold text-[#0F172A]">
+          {worker.name ||
+            "Unnamed Worker"}
+        </p>
+
+        <p className="mt-1 text-xs text-[#64748B]">
+          Worker actions
+        </p>
+      </div>
+
+      {/* EDIT */}
+
+      <button
+        type="button"
+        onClick={onEdit}
+        className="flex w-full items-center gap-3 rounded-xl px-3 py-3 text-left transition hover:bg-[#F8FAFC]"
+      >
+        <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-gray-50">
+          <Pencil className="h-4 w-4 text-[#64748B]" />
+        </div>
+
+        <div>
+          <p className="text-sm font-semibold text-[#0F172A]">
+            Edit Worker
+          </p>
+
+          <p className="text-xs text-[#94A3B8]">
+            Update worker information
+          </p>
+        </div>
+      </button>
+
+      {/* AVAILABILITY */}
+
+      <button
+        type="button"
+        disabled={actionLoading}
+        onClick={onToggle}
+        className="flex w-full items-center gap-3 rounded-xl px-3 py-3 text-left transition hover:bg-[#F8FAFC] disabled:opacity-50"
+      >
+        <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-gray-50">
+          <Power className="h-4 w-4 text-[#64748B]" />
+        </div>
+
+        <div>
+          <p className="text-sm font-semibold text-[#0F172A]">
+            {active
+              ? "Make Unavailable"
+              : "Make Available"}
+          </p>
+
+          <p className="text-xs text-[#94A3B8]">
+            {active
+              ? "Stop new bookings"
+              : "Allow new bookings"}
+          </p>
+        </div>
+      </button>
+
+      {/* DELETE */}
+
+      {isSuperAdmin && (
+        <>
+          <div className="my-1 border-t border-gray-100" />
+
+          <button
+            type="button"
+            disabled={actionLoading}
+            onClick={onDelete}
+            className="flex w-full items-center gap-3 rounded-xl px-3 py-3 text-left transition hover:bg-red-50 disabled:opacity-50"
+          >
+            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-red-50">
+              <Trash2 className="h-4 w-4 text-red-500" />
+            </div>
+
+            <div>
+              <p className="text-sm font-semibold text-red-600">
+                Delete Worker
+              </p>
+
+              <p className="text-xs text-red-400">
+                Permanently remove worker
+              </p>
+            </div>
+          </button>
+        </>
+      )}
+
+      {/* ERROR */}
+
+      {actionError && (
+        <div className="mx-2 mb-2 mt-1 rounded-lg border border-red-100 bg-red-50 px-3 py-2">
+          <p className="text-xs text-red-600">
+            {actionError}
+          </p>
+        </div>
+      )}
+
+      {/* LOADING */}
+
+      {actionLoading && (
+        <div className="flex items-center justify-center gap-2 py-2 text-xs text-[#64748B]">
+          <Loader2 className="h-3.5 w-3.5 animate-spin" />
+          Updating...
+        </div>
+      )}
+
+      {mobile && (
+        <button
+          type="button"
+          disabled={actionLoading}
+          onClick={() => {
+            const event =
+              new CustomEvent(
+                "close-worker-actions",
+              );
+
+            window.dispatchEvent(
+              event,
+            );
+          }}
+          className="mt-1 w-full rounded-xl bg-gray-100 py-3 text-sm font-bold text-[#475569]"
+        >
+          Cancel
+        </button>
+      )}
+    </>
   );
 }
 
@@ -1369,16 +1774,20 @@ function WorkerStat({
   icon: typeof Users;
 }) {
   return (
-    <div className="rounded-2xl border border-gray-100 bg-white p-5 shadow-sm">
-      <div className="flex items-center justify-between">
-        <div>
-          <p className="text-sm font-medium text-[#64748B]">{label}</p>
+    <div className="rounded-xl border border-gray-100 bg-white p-3 shadow-sm sm:rounded-2xl sm:p-5">
+      <div className="flex items-center justify-between gap-2">
+        <div className="min-w-0">
+          <p className="truncate text-[10px] font-medium text-[#64748B] sm:text-sm">
+            {label}
+          </p>
 
-          <p className="mt-2 text-3xl font-black text-[#0F172A]">{value}</p>
+          <p className="mt-1 text-2xl font-black text-[#0F172A] sm:mt-2 sm:text-3xl">
+            {value}
+          </p>
         </div>
 
-        <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-orange-50">
-          <Icon className="h-5 w-5 text-[#FF5C39]" />
+        <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-orange-50 sm:h-11 sm:w-11 sm:rounded-xl">
+          <Icon className="h-4 w-4 text-[#FF5C39] sm:h-5 sm:w-5" />
         </div>
       </div>
     </div>
