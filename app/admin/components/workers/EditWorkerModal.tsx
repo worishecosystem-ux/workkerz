@@ -1,8 +1,10 @@
 "use client";
 
 import {
+  ChangeEvent,
   FormEvent,
   useEffect,
+  useRef,
   useState,
 } from "react";
 
@@ -16,7 +18,11 @@ import {
   Wrench,
   IndianRupee,
   Camera,
+  Upload,
+  Trash2,
 } from "lucide-react";
+
+import type { LucideIcon } from "lucide-react";
 
 import {
   updateWorker,
@@ -24,17 +30,40 @@ import {
   type WorkerFormData,
 } from "@/app/data/workers";
 
+import { createClient } from "@supabase/supabase-js";
+
+/* =====================================================
+   SUPABASE
+===================================================== */
+
+const supabase = createClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL!,
+  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+);
+
+const WORKER_IMAGE_BUCKET = "workers";
+
+/* =====================================================
+   TYPES
+===================================================== */
+
 type EditWorkerModalProps = {
   worker: Worker | null;
   onClose: () => void;
   onUpdated: (worker: Worker) => void;
 };
 
+/* =====================================================
+   COMPONENT
+===================================================== */
+
 export default function EditWorkerModal({
   worker,
   onClose,
   onUpdated,
 }: EditWorkerModalProps) {
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
+
   const [name, setName] = useState("");
   const [phone, setPhone] = useState("");
 
@@ -49,11 +78,31 @@ export default function EditWorkerModal({
   const [completedJobs, setCompletedJobs] = useState("");
 
   const [bio, setBio] = useState("");
+
+  /* =====================================================
+     PHOTO
+  ===================================================== */
+
   const [photo, setPhoto] = useState("");
+  const [selectedPhoto, setSelectedPhoto] =
+    useState<File | null>(null);
+
+  const [photoPreview, setPhotoPreview] = useState("");
+  const [photoUploading, setPhotoUploading] = useState(false);
+  const [photoError, setPhotoError] = useState("");
+
+  /* =====================================================
+     ARRAYS
+  ===================================================== */
 
   const [services, setServices] = useState<string[]>([]);
   const [skills, setSkills] = useState<string[]>([]);
-  const [certifications, setCertifications] = useState<string[]>([]);
+  const [certifications, setCertifications] =
+    useState<string[]>([]);
+
+  /* =====================================================
+     PRICING
+  ===================================================== */
 
   const [pricingType, setPricingType] =
     useState<Worker["pricingType"]>("custom");
@@ -63,6 +112,10 @@ export default function EditWorkerModal({
   const [fullDayPrice, setFullDayPrice] = useState("");
   const [monthlyPrice, setMonthlyPrice] = useState("");
   const [visitCharge, setVisitCharge] = useState("");
+
+  /* =====================================================
+     OTHER
+  ===================================================== */
 
   const [responseTime, setResponseTime] =
     useState("Within 1 hour");
@@ -82,11 +135,8 @@ export default function EditWorkerModal({
   useEffect(() => {
     if (!worker) return;
 
-    console.log("EDIT WORKER DATA:", worker);
-    console.log(
-      "EDIT LABOUR CHAUK:",
-      worker.labourChauk,
-    );
+    console.log("EDIT WORKER:", worker);
+    console.log("LABOUR CHAUK:", worker.labourChauk);
 
     setName(worker.name ?? "");
     setPhone(worker.phone ?? "");
@@ -96,16 +146,6 @@ export default function EditWorkerModal({
     setSpecialty(worker.specialty ?? "");
 
     setLocation(worker.location ?? "");
-
-    /*
-     * IMPORTANT
-     *
-     * Worker type already uses:
-     * labourChauk
-     *
-     * workers.ts mapWorker() converts:
-     * labour_chauk -> labourChauk
-     */
     setLabourChauk(worker.labourChauk ?? "");
 
     setYearsExperience(
@@ -121,8 +161,20 @@ export default function EditWorkerModal({
     );
 
     setBio(worker.bio ?? "");
-    setPhoto(worker.photo ?? "");
 
+    /* Existing image */
+    setPhoto(worker.photo ?? "");
+    setPhotoPreview(worker.photo ?? "");
+
+    /* Reset selected image */
+    setSelectedPhoto(null);
+    setPhotoError("");
+
+    if (fileInputRef.current) {
+      fileInputRef.current.value = "";
+    }
+
+    /* Arrays */
     setServices(
       Array.isArray(worker.services)
         ? [...worker.services]
@@ -141,6 +193,7 @@ export default function EditWorkerModal({
         : [],
     );
 
+    /* Pricing */
     setPricingType(
       worker.pricingType ?? "custom",
     );
@@ -176,8 +229,7 @@ export default function EditWorkerModal({
     );
 
     setResponseTime(
-      worker.responseTime ||
-        "Within 1 hour",
+      worker.responseTime || "Within 1 hour",
     );
 
     setRating(
@@ -198,6 +250,183 @@ export default function EditWorkerModal({
 
     setError("");
   }, [worker]);
+
+  /* =====================================================
+     CLEAN BLOB PREVIEW
+  ===================================================== */
+
+  useEffect(() => {
+    return () => {
+      if (
+        photoPreview &&
+        photoPreview.startsWith("blob:")
+      ) {
+        URL.revokeObjectURL(photoPreview);
+      }
+    };
+  }, [photoPreview]);
+
+  /* =====================================================
+     SELECT PHOTO
+  ===================================================== */
+
+  const handlePhotoSelect = (
+    event: ChangeEvent<HTMLInputElement>,
+  ) => {
+    const file = event.target.files?.[0];
+
+    if (!file) return;
+
+    setPhotoError("");
+
+    const allowedTypes = [
+      "image/jpeg",
+      "image/png",
+      "image/webp",
+    ];
+
+    if (!allowedTypes.includes(file.type)) {
+      setPhotoError(
+        "Only JPG, PNG and WebP images are allowed.",
+      );
+
+      event.target.value = "";
+      return;
+    }
+
+    const maxSize = 5 * 1024 * 1024;
+
+    if (file.size > maxSize) {
+      setPhotoError(
+        "Image size must be less than 5 MB.",
+      );
+
+      event.target.value = "";
+      return;
+    }
+
+    /* Remove old blob URL */
+    if (
+      photoPreview &&
+      photoPreview.startsWith("blob:")
+    ) {
+      URL.revokeObjectURL(photoPreview);
+    }
+
+    const previewUrl = URL.createObjectURL(file);
+
+    setSelectedPhoto(file);
+    setPhotoPreview(previewUrl);
+  };
+
+  /* =====================================================
+     REMOVE PHOTO
+  ===================================================== */
+
+  const handleRemovePhoto = () => {
+    if (
+      photoPreview &&
+      photoPreview.startsWith("blob:")
+    ) {
+      URL.revokeObjectURL(photoPreview);
+    }
+
+    setSelectedPhoto(null);
+
+    /*
+     * IMPORTANT:
+     * Empty photo means remove existing
+     * image from worker record.
+     */
+    setPhoto("");
+    setPhotoPreview("");
+    setPhotoError("");
+
+    if (fileInputRef.current) {
+      fileInputRef.current.value = "";
+    }
+  };
+
+  /* =====================================================
+     UPLOAD PHOTO
+  ===================================================== */
+
+  const uploadWorkerPhoto = async (
+    file: File,
+  ): Promise<string> => {
+    setPhotoUploading(true);
+    setPhotoError("");
+
+    try {
+      const extension =
+        file.name
+          .split(".")
+          .pop()
+          ?.toLowerCase() || "jpg";
+
+      const safeName =
+        name
+          .trim()
+          .toLowerCase()
+          .replace(/[^a-z0-9]+/g, "-")
+          .replace(/^-+|-+$/g, "") ||
+        "worker";
+
+      const fileName =
+        `${safeName}-${Date.now()}.${extension}`;
+
+      const filePath =
+        `workers/${fileName}`;
+
+      const {
+        error: uploadError,
+      } = await supabase.storage
+        .from(WORKER_IMAGE_BUCKET)
+        .upload(
+          filePath,
+          file,
+          {
+            cacheControl: "3600",
+            upsert: false,
+            contentType: file.type,
+          },
+        );
+
+      if (uploadError) {
+        throw uploadError;
+      }
+
+      const {
+        data: publicUrlData,
+      } = supabase.storage
+        .from(WORKER_IMAGE_BUCKET)
+        .getPublicUrl(filePath);
+
+      const publicUrl =
+        publicUrlData?.publicUrl;
+
+      if (!publicUrl) {
+        throw new Error(
+          "Unable to generate image URL.",
+        );
+      }
+
+      return publicUrl;
+    } catch (error) {
+      console.error(
+        "PHOTO UPLOAD ERROR:",
+        error,
+      );
+
+      throw new Error(
+        error instanceof Error
+          ? error.message
+          : "Unable to upload worker photo.",
+      );
+    } finally {
+      setPhotoUploading(false);
+    }
+  };
 
   /* =====================================================
      VALIDATION
@@ -257,8 +486,29 @@ export default function EditWorkerModal({
       setLoading(true);
       setError("");
 
+      /* -----------------------------------------------
+         PHOTO
+      ------------------------------------------------ */
+
+      let finalPhoto = photo.trim();
+
+      if (selectedPhoto) {
+        finalPhoto =
+          await uploadWorkerPhoto(
+            selectedPhoto,
+          );
+      }
+
+      /* -----------------------------------------------
+         LABOUR CHAUK
+      ------------------------------------------------ */
+
       const cleanLabourChauk =
         labourChauk.trim();
+
+      /* -----------------------------------------------
+         WORKER DATA
+      ------------------------------------------------ */
 
       const workerData: WorkerFormData = {
         name: name.trim(),
@@ -295,13 +545,8 @@ export default function EditWorkerModal({
 
         location: location.trim(),
 
-        /*
-         * FRONTEND NAME
-         *
-         * workers.ts converts this to:
-         * labour_chauk
-         */
-        labourChauk: cleanLabourChauk,
+        labourChauk:
+          cleanLabourChauk,
 
         available,
 
@@ -315,7 +560,7 @@ export default function EditWorkerModal({
 
         skills: [...skills],
 
-        photo: photo.trim(),
+        photo: finalPhoto,
 
         responseTime:
           responseTime.trim() ||
@@ -327,9 +572,23 @@ export default function EditWorkerModal({
       };
 
       console.log(
-        "SAVING LABOUR CHAUK:",
+        "FINAL WORKER DATA:",
+        workerData,
+      );
+
+      console.log(
+        "FINAL LABOUR CHAUK:",
         workerData.labourChauk,
       );
+
+      console.log(
+        "FINAL PHOTO:",
+        workerData.photo,
+      );
+
+      /* -----------------------------------------------
+         DATABASE UPDATE
+      ------------------------------------------------ */
 
       const updatedWorker =
         await updateWorker(
@@ -338,21 +597,19 @@ export default function EditWorkerModal({
         );
 
       console.log(
-        "UPDATED WORKER FROM DATABASE:",
+        "UPDATED WORKER:",
         updatedWorker,
       );
 
-      console.log(
-        "UPDATED LABOUR CHAUK:",
-        updatedWorker.labourChauk,
-      );
+      /* -----------------------------------------------
+         UPDATE PARENT STATE
+      ------------------------------------------------ */
 
-      /*
-       * IMPORTANT:
-       * Parent ko complete updated mapped Worker
-       * object mil raha hai.
-       */
       onUpdated(updatedWorker);
+
+      /* -----------------------------------------------
+         CLOSE MODAL
+      ------------------------------------------------ */
 
       onClose();
     } catch (error) {
@@ -371,13 +628,22 @@ export default function EditWorkerModal({
     }
   };
 
+  /* =====================================================
+     NO WORKER
+  ===================================================== */
+
   if (!worker) {
     return null;
   }
 
+  /* =====================================================
+     UI
+  ===================================================== */
+
   return (
     <div className="fixed inset-0 z-50">
       {/* BACKDROP */}
+
       <button
         type="button"
         aria-label="Close edit worker"
@@ -386,10 +652,12 @@ export default function EditWorkerModal({
       />
 
       {/* MODAL */}
+
       <div className="absolute left-1/2 top-1/2 w-[620px] max-w-[calc(100%-32px)] -translate-x-1/2 -translate-y-1/2">
         <div className="flex max-h-[90vh] flex-col overflow-hidden rounded-2xl bg-white shadow-2xl">
 
           {/* HEADER */}
+
           <div className="flex shrink-0 items-center justify-between border-b border-gray-100 px-6 py-5">
             <div>
               <h2 className="text-lg font-black text-[#0F172A]">
@@ -412,36 +680,118 @@ export default function EditWorkerModal({
           </div>
 
           {/* FORM */}
+
           <form
             onSubmit={handleSubmit}
             className="space-y-5 overflow-y-auto p-6"
           >
-            {/* PHOTO */}
-            <div className="flex items-center gap-4">
-              <div className="flex h-16 w-16 shrink-0 items-center justify-center overflow-hidden rounded-full border border-gray-100 bg-orange-50">
-                {photo ? (
-                  <img
-                    src={photo}
-                    alt={name || "Worker"}
-                    className="h-full w-full object-cover"
+
+            {/* =================================================
+                PHOTO
+            ================================================= */}
+
+            <div>
+              <label className="mb-2 block text-sm font-semibold text-[#0F172A]">
+                Worker Photo
+              </label>
+
+              <div className="flex items-center gap-4 rounded-2xl border border-gray-200 bg-[#F8FAFC] p-4">
+
+                {/* PREVIEW */}
+
+                <div className="relative flex h-24 w-24 shrink-0 items-center justify-center overflow-hidden rounded-2xl border border-gray-200 bg-orange-50">
+
+                  {photoPreview ? (
+                    <img
+                      src={photoPreview}
+                      alt={
+                        name ||
+                        "Worker"
+                      }
+                      className="h-full w-full object-cover"
+                    />
+                  ) : (
+                    <Camera className="h-8 w-8 text-[#FF5C39]" />
+                  )}
+
+                  {selectedPhoto && (
+                    <div className="absolute bottom-1 right-1 rounded-full bg-emerald-500 px-2 py-0.5 text-[9px] font-bold text-white">
+                      NEW
+                    </div>
+                  )}
+                </div>
+
+                {/* ACTIONS */}
+
+                <div className="flex flex-1 flex-col gap-2">
+
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    accept="image/jpeg,image/png,image/webp"
+                    onChange={
+                      handlePhotoSelect
+                    }
+                    className="hidden"
                   />
-                ) : (
-                  <Camera className="h-6 w-6 text-[#FF5C39]" />
-                )}
+
+                  <div className="flex flex-wrap gap-2">
+
+                    <button
+                      type="button"
+                      onClick={() =>
+                        fileInputRef.current?.click()
+                      }
+                      disabled={loading}
+                      className="flex h-10 items-center gap-2 rounded-xl bg-[#FF5C39] px-4 text-sm font-bold text-white hover:bg-[#e54e2e] disabled:opacity-50"
+                    >
+                      <Upload className="h-4 w-4" />
+
+                      {photoPreview
+                        ? "Change Photo"
+                        : "Upload Photo"}
+                    </button>
+
+                    {photoPreview && (
+                      <button
+                        type="button"
+                        onClick={
+                          handleRemovePhoto
+                        }
+                        disabled={loading}
+                        className="flex h-10 items-center gap-2 rounded-xl border border-red-200 bg-white px-4 text-sm font-bold text-red-500 hover:bg-red-50 disabled:opacity-50"
+                      >
+                        <Trash2 className="h-4 w-4" />
+
+                        Remove
+                      </button>
+                    )}
+                  </div>
+
+                  <p className="text-xs text-[#64748B]">
+                    JPG, PNG or WebP • Maximum 5 MB
+                  </p>
+
+                  {selectedPhoto && (
+                    <p className="text-xs font-medium text-emerald-600">
+                      New photo selected:{" "}
+                      {selectedPhoto.name}
+                    </p>
+                  )}
+                </div>
               </div>
 
-              <div className="flex-1">
-                <InputField
-                  label="Worker Photo URL"
-                  icon={Camera}
-                  value={photo}
-                  onChange={setPhoto}
-                  placeholder="https://..."
-                />
-              </div>
+              {photoError && (
+                <p className="mt-2 text-xs font-medium text-red-500">
+                  {photoError}
+                </p>
+              )}
             </div>
 
-            {/* NAME */}
+            {/* =================================================
+                NAME
+            ================================================= */}
+
             <InputField
               label="Worker Name"
               icon={User}
@@ -451,7 +801,10 @@ export default function EditWorkerModal({
               required
             />
 
-            {/* PHONE */}
+            {/* =================================================
+                PHONE
+            ================================================= */}
+
             <InputField
               label="Phone"
               icon={Phone}
@@ -467,7 +820,10 @@ export default function EditWorkerModal({
               required
             />
 
-            {/* CATEGORY */}
+            {/* =================================================
+                CATEGORY
+            ================================================= */}
+
             <div className="grid grid-cols-2 gap-4">
               <InputField
                 label="Category"
@@ -488,7 +844,10 @@ export default function EditWorkerModal({
               />
             </div>
 
-            {/* SPECIALTY */}
+            {/* =================================================
+                SPECIALTY
+            ================================================= */}
+
             <InputField
               label="Specialty"
               icon={Wrench}
@@ -498,7 +857,10 @@ export default function EditWorkerModal({
               required
             />
 
-            {/* LOCATION */}
+            {/* =================================================
+                LOCATION
+            ================================================= */}
+
             <div className="grid grid-cols-2 gap-4">
               <InputField
                 label="Location"
@@ -518,7 +880,10 @@ export default function EditWorkerModal({
               />
             </div>
 
-            {/* EXPERIENCE */}
+            {/* =================================================
+                EXPERIENCE
+            ================================================= */}
+
             <div className="grid grid-cols-2 gap-4">
               <InputField
                 label="Years Experience"
@@ -539,7 +904,10 @@ export default function EditWorkerModal({
               />
             </div>
 
-            {/* BIO */}
+            {/* =================================================
+                BIO
+            ================================================= */}
+
             <div>
               <label className="mb-2 block text-sm font-semibold text-[#0F172A]">
                 Bio
@@ -548,7 +916,9 @@ export default function EditWorkerModal({
               <textarea
                 value={bio}
                 onChange={(event) =>
-                  setBio(event.target.value)
+                  setBio(
+                    event.target.value,
+                  )
                 }
                 placeholder="Describe worker experience..."
                 rows={4}
@@ -556,7 +926,10 @@ export default function EditWorkerModal({
               />
             </div>
 
-            {/* PRICING */}
+            {/* =================================================
+                PRICING
+            ================================================= */}
+
             <div>
               <div className="mb-3 flex items-center gap-2">
                 <IndianRupee className="h-4 w-4 text-[#FF5C39]" />
@@ -614,7 +987,10 @@ export default function EditWorkerModal({
               </div>
             </div>
 
-            {/* AVAILABILITY */}
+            {/* =================================================
+                AVAILABILITY
+            ================================================= */}
+
             <div className="flex items-center justify-between rounded-xl border border-gray-200 bg-[#F8FAFC] p-4">
               <div>
                 <p className="text-sm font-bold text-[#0F172A]">
@@ -649,7 +1025,10 @@ export default function EditWorkerModal({
               </button>
             </div>
 
-            {/* ERROR */}
+            {/* =================================================
+                ERROR
+            ================================================= */}
+
             {error && (
               <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-3">
                 <p className="text-sm text-red-600">
@@ -658,7 +1037,10 @@ export default function EditWorkerModal({
               </div>
             )}
 
-            {/* BUTTONS */}
+            {/* =================================================
+                BUTTONS
+            ================================================= */}
+
             <div className="flex items-center justify-end gap-3 pt-2">
               <button
                 type="button"
@@ -671,16 +1053,22 @@ export default function EditWorkerModal({
 
               <button
                 type="submit"
-                disabled={loading}
+                disabled={
+                  loading ||
+                  photoUploading
+                }
                 className="flex h-11 items-center gap-2 rounded-xl bg-[#FF5C39] px-6 text-sm font-bold text-white hover:bg-[#e54e2e] disabled:opacity-60"
               >
-                {loading && (
+                {(loading ||
+                  photoUploading) && (
                   <Loader2 className="h-4 w-4 animate-spin" />
                 )}
 
-                {loading
-                  ? "Saving..."
-                  : "Save Changes"}
+                {photoUploading
+                  ? "Uploading Photo..."
+                  : loading
+                    ? "Saving..."
+                    : "Save Changes"}
               </button>
             </div>
           </form>
@@ -704,7 +1092,7 @@ function InputField({
   required = false,
 }: {
   label: string;
-  icon: typeof User;
+  icon: LucideIcon;
   value: string;
   onChange: (value: string) => void;
   placeholder: string;
@@ -730,7 +1118,9 @@ function InputField({
           type={type}
           value={value}
           onChange={(event) =>
-            onChange(event.target.value)
+            onChange(
+              event.target.value,
+            )
           }
           placeholder={placeholder}
           required={required}

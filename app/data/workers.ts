@@ -38,8 +38,7 @@ export const serviceCategories = [
    SERVICE CATEGORY TYPE
 ========================================================= */
 
-export type ServiceCategory =
-  (typeof serviceCategories)[number];
+export type ServiceCategory = (typeof serviceCategories)[number];
 
 /* =========================================================
    WORKER TYPE
@@ -47,7 +46,7 @@ export type ServiceCategory =
 
 export type Worker = {
   id: string;
-
+  workerCode?: string | null;
   name: string;
   phone: string;
 
@@ -93,10 +92,7 @@ export type Worker = {
    FORM TYPE
 ========================================================= */
 
-export type WorkerFormData = Omit<
-  Worker,
-  "id" | "createdAt"
->;
+export type WorkerFormData = Omit<Worker, "id" | "createdAt">;
 
 /* =========================================================
    SUPABASE ROW TYPE
@@ -183,15 +179,11 @@ const WORKER_SELECT = `
    HELPERS
 ========================================================= */
 
-function numberValue(
-  value: number | string | null | undefined,
-): number {
+function numberValue(value: number | string | null | undefined): number {
   return Number(value ?? 0) || 0;
 }
 
-function pricingValue(
-  value: string | null | undefined,
-): PricingType {
+function pricingValue(value: string | null | undefined): PricingType {
   switch (value) {
     case "per_job":
     case "daily":
@@ -221,72 +213,45 @@ export function mapWorker(row: WorkerRow): Worker {
     subcategory: row.subcategory ?? "",
     specialty: row.specialty ?? "",
 
-    services: Array.isArray(row.services)
-      ? row.services
-      : [],
+    services: Array.isArray(row.services) ? row.services : [],
 
-    pricingType: pricingValue(
-      row.pricing_type,
-    ),
+    pricingType: pricingValue(row.pricing_type),
 
-    startingPrice: numberValue(
-      row.starting_price,
-    ),
+    startingPrice: numberValue(row.starting_price),
 
-    halfDayPrice: numberValue(
-      row.half_day_price,
-    ),
+    halfDayPrice: numberValue(row.half_day_price),
 
-    fullDayPrice: numberValue(
-      row.full_day_price,
-    ),
+    fullDayPrice: numberValue(row.full_day_price),
 
-    monthlyPrice: numberValue(
-      row.monthly_price,
-    ),
+    monthlyPrice: numberValue(row.monthly_price),
 
-    visitCharge: numberValue(
-      row.visit_charge,
-    ),
+    visitCharge: numberValue(row.visit_charge),
 
     rating: numberValue(row.rating),
 
-    reviewCount:
-      Number(row.review_count ?? 0),
+    reviewCount: Number(row.review_count ?? 0),
 
     location: row.location ?? "",
 
-    labourChauk:
-      row.labour_chauk ?? "",
+    labourChauk: row.labour_chauk ?? "",
 
-    available:
-      row.available ?? true,
+    available: row.available ?? true,
 
-    yearsExperience:
-      Number(row.years_experience ?? 0),
+    yearsExperience: Number(row.years_experience ?? 0),
 
-    completedJobs:
-      Number(row.completed_jobs ?? 0),
+    completedJobs: Number(row.completed_jobs ?? 0),
 
     bio: row.bio ?? "",
 
-    skills: Array.isArray(row.skills)
-      ? row.skills
-      : [],
+    skills: Array.isArray(row.skills) ? row.skills : [],
 
     photo: row.photo ?? "",
 
-    responseTime:
-      row.response_time ??
-      "Within 1 hour",
+    responseTime: row.response_time ?? "Within 1 hour",
 
-    certifications:
-      Array.isArray(row.certifications)
-        ? row.certifications
-        : [],
+    certifications: Array.isArray(row.certifications) ? row.certifications : [],
 
-    createdAt:
-      row.created_at ?? "",
+    createdAt: row.created_at ?? "",
   };
 }
 
@@ -303,26 +268,19 @@ export async function getWorkers(): Promise<Worker[]> {
     });
 
   if (error) {
-    console.error(
-      "GET WORKERS ERROR:",
-      error,
-    );
+    console.error("GET WORKERS ERROR:", error);
 
     throw new Error(error.message);
   }
 
-  return (
-    (data ?? []) as unknown as WorkerRow[]
-  ).map(mapWorker);
+  return ((data ?? []) as unknown as WorkerRow[]).map(mapWorker);
 }
 
 /* =========================================================
    GET SINGLE WORKER
 ========================================================= */
 
-export async function getWorkerById(
-  id: string,
-): Promise<Worker | null> {
+export async function getWorkerById(id: string): Promise<Worker | null> {
   if (!id) {
     return null;
   }
@@ -334,10 +292,7 @@ export async function getWorkerById(
     .maybeSingle();
 
   if (error) {
-    console.error(
-      "GET WORKER ERROR:",
-      error,
-    );
+    console.error("GET WORKER ERROR:", error);
 
     throw new Error(error.message);
   }
@@ -346,90 +301,62 @@ export async function getWorkerById(
     return null;
   }
 
-  return mapWorker(
-    data as unknown as WorkerRow,
-  );
+  return mapWorker(data as unknown as WorkerRow);
 }
 
 /* =========================================================
    FRONTEND → DATABASE
 ========================================================= */
 
-function workerPayload(
-  worker: WorkerFormData,
-) {
+function workerPayload(worker: WorkerFormData) {
   return {
     name: worker.name.trim(),
 
-    phone:
-      worker.phone?.trim() || null,
+    phone: worker.phone?.trim() || null,
 
-    category:
-      worker.category,
+    category: worker.category,
 
-    subcategory:
-      worker.subcategory || null,
+    subcategory: worker.subcategory || null,
 
-    specialty:
-      worker.specialty.trim(),
+    specialty: worker.specialty.trim(),
 
-    services:
-      worker.services ?? [],
+    services: worker.services ?? [],
 
-    pricing_type:
-      worker.pricingType,
+    pricing_type: worker.pricingType,
 
-    starting_price:
-      Number(worker.startingPrice) || 0,
+    starting_price: Number(worker.startingPrice) || 0,
 
-    half_day_price:
-      Number(worker.halfDayPrice) || 0,
+    half_day_price: Number(worker.halfDayPrice) || 0,
 
-    full_day_price:
-      Number(worker.fullDayPrice) || 0,
+    full_day_price: Number(worker.fullDayPrice) || 0,
 
-    monthly_price:
-      Number(worker.monthlyPrice) || 0,
+    monthly_price: Number(worker.monthlyPrice) || 0,
 
-    visit_charge:
-      Number(worker.visitCharge) || 0,
+    visit_charge: Number(worker.visitCharge) || 0,
 
-    rating:
-      Number(worker.rating) || 0,
+    rating: Number(worker.rating) || 0,
 
-    review_count:
-      Number(worker.reviewCount) || 0,
+    review_count: Number(worker.reviewCount) || 0,
 
-    location:
-      worker.location.trim(),
+    location: worker.location.trim(),
 
-    labour_chauk:
-      worker.labourChauk || null,
+    labour_chauk: worker.labourChauk || null,
 
-    available:
-      worker.available ?? true,
+    available: worker.available ?? true,
 
-    years_experience:
-      Number(worker.yearsExperience) || 0,
+    years_experience: Number(worker.yearsExperience) || 0,
 
-    completed_jobs:
-      Number(worker.completedJobs) || 0,
+    completed_jobs: Number(worker.completedJobs) || 0,
 
-    bio:
-      worker.bio?.trim() || null,
+    bio: worker.bio?.trim() || null,
 
-    skills:
-      worker.skills ?? [],
+    skills: worker.skills ?? [],
 
-    photo:
-      worker.photo || null,
+    photo: worker.photo || null,
 
-    response_time:
-      worker.responseTime ||
-      "Within 1 hour",
+    response_time: worker.responseTime || "Within 1 hour",
 
-    certifications:
-      worker.certifications ?? [],
+    certifications: worker.certifications ?? [],
   };
 }
 
@@ -437,31 +364,22 @@ function workerPayload(
    CREATE WORKER
 ========================================================= */
 
-export async function createWorker(
-  worker: WorkerFormData,
-): Promise<Worker> {
-  const payload =
-    workerPayload(worker);
+export async function createWorker(worker: WorkerFormData): Promise<Worker> {
+  const payload = workerPayload(worker);
 
-  const { data, error } =
-    await supabase
-      .from("workers")
-      .insert(payload)
-      .select(WORKER_SELECT)
-      .single();
+  const { data, error } = await supabase
+    .from("workers")
+    .insert(payload)
+    .select(WORKER_SELECT)
+    .single();
 
   if (error) {
-    console.error(
-      "CREATE WORKER ERROR:",
-      error,
-    );
+    console.error("CREATE WORKER ERROR:", error);
 
     throw new Error(error.message);
   }
 
-  return mapWorker(
-    data as unknown as WorkerRow,
-  );
+  return mapWorker(data as unknown as WorkerRow);
 }
 
 /* =========================================================
@@ -472,55 +390,37 @@ export async function updateWorker(
   id: string,
   worker: WorkerFormData,
 ): Promise<Worker> {
-  const payload =
-    workerPayload(worker);
+  const payload = workerPayload(worker);
 
-  const { data, error } =
-    await supabase
-      .from("workers")
-      .update(payload)
-      .eq("id", id)
-      .select(WORKER_SELECT)
-      .single();
+  const { data, error } = await supabase
+    .from("workers")
+    .update(payload)
+    .eq("id", id)
+    .select(WORKER_SELECT)
+    .single();
 
   if (error) {
-    console.error(
-      "UPDATE WORKER ERROR:",
-      error,
-    );
+    console.error("UPDATE WORKER ERROR:", error);
 
     throw new Error(error.message);
   }
 
-  return mapWorker(
-    data as unknown as WorkerRow,
-  );
+  return mapWorker(data as unknown as WorkerRow);
 }
 
 /* =========================================================
    DELETE WORKER
 ========================================================= */
 
-export async function deleteWorker(
-  id: string,
-): Promise<void> {
+export async function deleteWorker(id: string): Promise<void> {
   if (!id) {
-    throw new Error(
-      "Worker ID is required.",
-    );
+    throw new Error("Worker ID is required.");
   }
 
-  const { error } =
-    await supabase
-      .from("workers")
-      .delete()
-      .eq("id", id);
+  const { error } = await supabase.from("workers").delete().eq("id", id);
 
   if (error) {
-    console.error(
-      "DELETE WORKER ERROR:",
-      error,
-    );
+    console.error("DELETE WORKER ERROR:", error);
 
     throw new Error(error.message);
   }
@@ -535,24 +435,18 @@ export async function setWorkerAvailability(
   available: boolean,
 ): Promise<void> {
   if (!id) {
-    throw new Error(
-      "Worker ID is required.",
-    );
+    throw new Error("Worker ID is required.");
   }
 
-  const { error } =
-    await supabase
-      .from("workers")
-      .update({
-        available,
-      })
-      .eq("id", id);
+  const { error } = await supabase
+    .from("workers")
+    .update({
+      available,
+    })
+    .eq("id", id);
 
   if (error) {
-    console.error(
-      "UPDATE AVAILABILITY ERROR:",
-      error,
-    );
+    console.error("UPDATE AVAILABILITY ERROR:", error);
 
     throw new Error(error.message);
   }

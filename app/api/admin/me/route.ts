@@ -1,16 +1,37 @@
-import { NextRequest, NextResponse } from "next/server";
+import {
+  NextRequest,
+  NextResponse,
+} from "next/server";
+
 import { createClient } from "@supabase/supabase-js";
 
-const supabaseAdmin = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!,
-  {
-    auth: {
-      autoRefreshToken: false,
-      persistSession: false,
+const supabaseAdmin =
+  createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY!,
+    {
+      auth: {
+        autoRefreshToken: false,
+        persistSession: false,
+      },
     },
-  },
-);
+  );
+
+type AdminRole = {
+  id: string;
+  name: string;
+  label: string | null;
+  description: string | null;
+  is_active: boolean;
+};
+
+type AdminRoleAssignment = {
+  role_id: string;
+  admin_roles:
+    | AdminRole
+    | AdminRole[]
+    | null;
+};
 
 export async function GET(
   request: NextRequest,
@@ -21,12 +42,14 @@ export async function GET(
     // =====================================================
 
     const authorization =
-      request.headers.get("authorization");
+      request.headers.get(
+        "authorization",
+      );
 
     if (!authorization) {
       return NextResponse.json(
         {
-          error: "Unauthorized",
+          error: "Unauthorized.",
         },
         {
           status: 401,
@@ -36,14 +59,14 @@ export async function GET(
 
     const token =
       authorization.replace(
-        "Bearer ",
+        /^Bearer\s+/i,
         "",
-      );
+      ).trim();
 
     if (!token) {
       return NextResponse.json(
         {
-          error: "Unauthorized",
+          error: "Unauthorized.",
         },
         {
           status: 401,
@@ -56,22 +79,18 @@ export async function GET(
     // =====================================================
 
     const {
-      data: {
-        user,
-      },
+      data: { user },
       error: userError,
     } =
       await supabaseAdmin.auth.getUser(
         token,
       );
 
-    if (
-      userError ||
-      !user
-    ) {
+    if (userError || !user) {
       return NextResponse.json(
         {
-          error: "Invalid session.",
+          error:
+            "Invalid session.",
         },
         {
           status: 401,
@@ -86,19 +105,20 @@ export async function GET(
     const {
       data: admin,
       error: adminError,
-    } = await supabaseAdmin
-      .from("admin_profiles")
-      .select(
-        `
-        id,
-        full_name,
-        email,
-        role,
-        is_active
-        `,
-      )
-      .eq("id", user.id)
-      .maybeSingle();
+    } =
+      await supabaseAdmin
+        .from("admin_profiles")
+        .select(
+          `
+            id,
+            full_name,
+            email,
+            role,
+            is_active
+          `,
+        )
+        .eq("id", user.id)
+        .maybeSingle();
 
     if (adminError) {
       console.error(
@@ -150,13 +170,19 @@ export async function GET(
     // =====================================================
 
     if (
-      admin.role === "super_admin"
+      admin.role ===
+      "super_admin"
     ) {
-      return NextResponse.json({
-        admin,
-        assignedRoles: [],
-        isSuperAdmin: true,
-      });
+      return NextResponse.json(
+        {
+          admin,
+          assignedRoles: [],
+          isSuperAdmin: true,
+        },
+        {
+          status: 200,
+        },
+      );
     }
 
     // =====================================================
@@ -164,7 +190,7 @@ export async function GET(
     // =====================================================
 
     const {
-      data: assignments,
+      data: rawAssignments,
       error: assignmentError,
     } =
       await supabaseAdmin
@@ -173,14 +199,14 @@ export async function GET(
         )
         .select(
           `
-          role_id,
-          admin_roles (
-            id,
-            name,
-            label,
-            description,
-            is_active
-          )
+            role_id,
+            admin_roles (
+              id,
+              name,
+              label,
+              description,
+              is_active
+            )
           `,
         )
         .eq(
@@ -205,15 +231,43 @@ export async function GET(
       );
     }
 
+    // =====================================================
+    // TYPE SUPABASE NESTED RESULT
+    // =====================================================
+
+    const assignments =
+      (rawAssignments ??
+        []) as unknown as AdminRoleAssignment[];
+
+    // =====================================================
+    // FORMAT ROLES
+    // =====================================================
+
     const assignedRoles =
-      (assignments ?? [])
-        .map(
-          (assignment: any) =>
-            assignment.admin_roles,
+      assignments
+        .flatMap(
+          (assignment) => {
+            if (
+              Array.isArray(
+                assignment.admin_roles,
+              )
+            ) {
+              return assignment.admin_roles;
+            }
+
+            if (
+              assignment.admin_roles
+            ) {
+              return [
+                assignment.admin_roles,
+              ];
+            }
+
+            return [];
+          },
         )
         .filter(
-          (role: any) =>
-            role &&
+          (role) =>
             role.is_active,
         );
 
@@ -221,11 +275,16 @@ export async function GET(
     // RESPONSE
     // =====================================================
 
-    return NextResponse.json({
-      admin,
-      assignedRoles,
-      isSuperAdmin: false,
-    });
+    return NextResponse.json(
+      {
+        admin,
+        assignedRoles,
+        isSuperAdmin: false,
+      },
+      {
+        status: 200,
+      },
+    );
   } catch (error) {
     console.error(
       "Admin me API error:",
@@ -235,7 +294,9 @@ export async function GET(
     return NextResponse.json(
       {
         error:
-          "Something went wrong.",
+          error instanceof Error
+            ? error.message
+            : "Something went wrong.",
       },
       {
         status: 500,
