@@ -1,33 +1,17 @@
 import type { CapacitorConfig } from "@capacitor/cli";
-import { KeyboardResize } from "@capacitor/keyboard";
 
 const config: CapacitorConfig = {
-  appId: "com.workkerz.admin",
-  appName: "Workkerz Admin",
+  appId: "com.workkerz.app",
+  appName: "Workkerz",
   webDir: "public",
 
   server: {
-    url: "http://10.247.1.137:3000",
-    cleartext: true,
+    url: "https://workkerz.com",
+    cleartext: false,
   },
 
   android: {
-    appendUserAgent: " WorkkerzAdmin",
-  },
-
-  plugins: {
-    SplashScreen: {
-      launchShowDuration: 5000,
-      launchAutoHide: true,
-      backgroundColor: "#ffffff",
-      androidSplashResourceName: "splash",
-      showSpinner: false,
-    },
-
-    Keyboard: {
-      resize: KeyboardResize.Body,
-      resizeOnFullScreen: true,
-    },
+    allowMixedContent: true,
   },
 };
 
