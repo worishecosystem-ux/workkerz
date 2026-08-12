@@ -57,17 +57,13 @@ export default function PaymentStatusSelect({
   const ref = useRef<HTMLDivElement>(null);
 
   const current =
-    paymentStatuses.find((item) => item.value === value) ||
-    paymentStatuses[0];
+    paymentStatuses.find((item) => item.value === value) || paymentStatuses[0];
 
   const Icon = current.icon;
 
   useEffect(() => {
     const close = (event: MouseEvent) => {
-      if (
-        ref.current &&
-        !ref.current.contains(event.target as Node)
-      ) {
+      if (ref.current && !ref.current.contains(event.target as Node)) {
         setOpen(false);
       }
     };
@@ -101,9 +97,7 @@ export default function PaymentStatusSelect({
         <span className="flex min-w-0 items-center gap-1.5">
           <Icon className="h-3.5 w-3.5 shrink-0" />
 
-          <span className="whitespace-nowrap">
-            {current.label}
-          </span>
+          <span className="whitespace-nowrap">{current.label}</span>
         </span>
 
         <ChevronDown

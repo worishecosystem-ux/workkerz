@@ -15,10 +15,7 @@ type Props = {
   onStatusChange: (id: string, status: string) => void;
 };
 
-export default function OrderActions({
-  order,
-  onStatusChange,
-}: Props) {
+export default function OrderActions({ order, onStatusChange }: Props) {
   const [copied, setCopied] = useState("");
 
   const copy = async (text: string, type: string) => {
@@ -35,11 +32,7 @@ export default function OrderActions({
   };
 
   const phone = order?.customer_phone || "";
-  const address = [
-    order?.address,
-    order?.city,
-    order?.pincode,
-  ]
+  const address = [order?.address, order?.city, order?.pincode]
     .filter(Boolean)
     .join(", ");
 
@@ -74,9 +67,7 @@ export default function OrderActions({
         {/* COPY ORDER */}
         <button
           type="button"
-          onClick={() =>
-            copy(order?.order_number || "", "order")
-          }
+          onClick={() => copy(order?.order_number || "", "order")}
           className="flex h-9 items-center justify-center gap-1.5 rounded-lg border border-slate-200 bg-white px-2 text-[10px] font-semibold text-slate-700 transition hover:border-blue-200 hover:bg-blue-50 hover:text-blue-700 sm:h-10 sm:text-xs"
         >
           {copied === "order" ? (
@@ -107,9 +98,7 @@ export default function OrderActions({
         {/* DELIVER */}
         <button
           type="button"
-          onClick={() =>
-            onStatusChange(order.id, "Delivered")
-          }
+          onClick={() => onStatusChange(order.id, "Delivered")}
           className="flex h-9 items-center justify-center gap-1.5 rounded-lg bg-emerald-600 px-2 text-[10px] font-bold text-white transition hover:bg-emerald-700 sm:h-10 sm:text-xs"
         >
           <CheckCircle2 className="h-3.5 w-3.5" />
@@ -119,9 +108,7 @@ export default function OrderActions({
         {/* CANCEL */}
         <button
           type="button"
-          onClick={() =>
-            onStatusChange(order.id, "Cancelled")
-          }
+          onClick={() => onStatusChange(order.id, "Cancelled")}
           className="col-span-2 flex h-9 items-center justify-center gap-1.5 rounded-lg bg-red-50 px-2 text-[10px] font-bold text-red-600 transition hover:bg-red-100 sm:col-span-4 sm:h-10 sm:text-xs"
         >
           <XCircle className="h-3.5 w-3.5" />

@@ -215,7 +215,7 @@ function ProductsGridSkeleton({ count = 8 }: { count?: number }) {
 
 function EAurixPageSkeleton() {
   return (
-    <div className="min-h-screen bg-slate-50">
+    <div className="min-h-screen bg-linear-to-br from-sky-100 via-sky-150 to-cyan-100">
       {/* =========================================
           MOBILE PAGE CONTAINER
       ========================================= */}
@@ -225,7 +225,7 @@ function EAurixPageSkeleton() {
             HEADER / CATEGORIES
         ========================================= */}
 
-        <section className="bg-white">
+        <section className="bg-sky-100">
           <div className="px-3 pt-3">
             {/* Header skeleton */}
 
@@ -250,7 +250,7 @@ function EAurixPageSkeleton() {
             FEATURED PRODUCTS
         ========================================= */}
 
-        <section className="bg-white py-3">
+        <section className="bg-sky-100 py-3">
           <FeaturedProductsSkeleton />
         </section>
 
@@ -258,7 +258,7 @@ function EAurixPageSkeleton() {
             LIVE SHOPS
         ========================================= */}
 
-        <section className="bg-white py-3">
+        <section className="bg-sky-100 py-3">
           <ShopLiveSkeleton />
         </section>
 
@@ -266,7 +266,7 @@ function EAurixPageSkeleton() {
             PRODUCTS HEADER
         ========================================= */}
 
-        <section className="bg-white px-3 py-3">
+        <section className="bg-sky-100 px-3 py-3">
           <div className="flex items-center justify-between">
             <div>
               <SkeletonBox className="h-4 w-32" />

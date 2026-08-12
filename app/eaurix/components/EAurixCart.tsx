@@ -24,7 +24,11 @@ import {
 
 import { usePlatform } from "@/app/components/context/PlatformContext";
 
-export function EAurixCart() {
+type EAurixCartProps = {
+  onClose?: () => void;
+};
+
+export function EAurixCart({ onClose }: EAurixCartProps) {
   const { cart, updateQty, removeFromCart } = usePlatform();
 
   const router = useRouter();
@@ -182,107 +186,129 @@ export function EAurixCart() {
                 <Truck className="h-4 w-4 shrink-0 text-emerald-600" />
 
                 <span className="text-[13px] font-semibold leading-5 text-emerald-700">
-                  🎉 Free Delivery Unlocked
+                  Free Delivery Unlocked
                 </span>
               </div>
             )}
 
             {/* PRODUCTS */}
-
             {cart.map((item) => (
               <div
                 key={item.id}
-                className="flex items-center gap-3 rounded-xl border border-gray-200 bg-sky-50 px-3 py-2"
+                className="group flex min-h-[76px] items-center rounded-2xl border border-slate-200 bg-white px-3 py-2.5 shadow-[0_2px_12px_rgba(15,23,42,0.04)] transition hover:border-sky-200 hover:shadow-[0_5px_20px_rgba(15,23,42,0.07)]"
               >
-                {/* Image */}
-                <div
-                  className="relative flex h-18 w-18 shrink-0 items-center justify-center overflow-hidden rounded-2xl border border-white/30 shadow-[0_8px_24px_rgba(0,0,0,0.08)] backdrop-blur-xl"
-                  style={{
-                    background: `linear-gradient(135deg, ${item.color}20, ${item.color}45)`,
-                  }}
-                >
-                  {/* Glass shine */}
-                  <div className="absolute inset-0 bg-linear-to-br from-white/30 via-white/10 to-transparent" />
+                {/* ================= LEFT : IMAGE ================= */}
+                <div className="flex min-w-0 flex-1 items-center gap-3">
+                  <div
+                    className="relative flex h-14 w-14 shrink-0 items-center justify-center overflow-hidden rounded-xl"
+                    style={{
+                      background: `linear-gradient(135deg, ${item.color}18, ${item.color}40)`,
+                    }}
+                  >
+                    <div className="absolute inset-0 bg-gradient-to-br from-white/50 via-white/10 to-transparent" />
 
-                  {item.icon ? (
-                    <img
-                      src={item.icon}
-                      alt={item.name}
-                      className="relative z-10 h-[82%] w-[82%] object-contain rounded-xl"
-                    />
-                  ) : (
-                    <span className="relative z-10 text-base font-bold text-white">
-                      {item.name.charAt(0)}
-                    </span>
-                  )}
-                </div>
-
-                {/* Details */}
-                <div className="min-w-0 flex-1">
-                  <div className="min-w-0 flex-1">
-                    <div className="flex items-start justify-between gap-2">
-                      <h3 className="min-w-0 flex-1 truncate text-sm font-semibold text-slate-900">
-                        {item.name}
-                      </h3>
-
-                      {item.unit?.trim() && (
-                        <span className="shrink-0 rounded-md bg-slate-100 px-2 py-0.5 text-[11px] font-medium text-slate-600">
-                          ₹{item.price}/{item.unit}
-                        </span>
-                      )}
-                    </div>
-                  </div>
-
-                  <div className="mt-2 flex items-center justify-between">
-                    {/* Qty */}
-                    <div className="flex items-center gap-2">
-                      <button
-                        onClick={() => updateQty(item.id, item.qty - 1)}
-                        className="flex h-6 w-6 items-center justify-center rounded-md border border-gray-200"
-                      >
-                        <Minus className="h-3 w-3" />
-                      </button>
-
-                      <span className="min-w-5 text-center text-xs font-bold">
-                        {item.qty}
+                    {item.icon ? (
+                      <img
+                        src={item.icon}
+                        alt={item.name}
+                        className="relative z-10 h-[82%] w-[82%] rounded-lg object-contain"
+                      />
+                    ) : (
+                      <span className="relative z-10 text-base font-bold text-white">
+                        {item.name.charAt(0)}
                       </span>
+                    )}
+                  </div>
 
-                      <button
-                        onClick={() => updateQty(item.id, item.qty + 1)}
-                        className="flex h-6 w-6 items-center justify-center rounded-md bg-sky-500 text-white"
-                      >
-                        <Plus className="h-3 w-3" />
-                      </button>
-                    </div>
+                  {/* Name + Unit Price */}
+                  <div className="min-w-0">
+                    <h3 className="truncate text-[13px] font-bold leading-5 text-slate-900">
+                      {item.name}
+                    </h3>
 
-                    {/* Price */}
-                    <div className="ml-4 shrink-0 text-right">
-                      <p className="text-sm font-bold text-slate-900">
-                        ₹{(item.price * item.qty).toFixed(2)}
-                      </p>
-                    </div>
+                    <p className="mt-0.5 text-[11px] font-medium text-slate-500">
+                      ₹{item.price.toFixed(2)}
+                      {item.unit?.trim() && (
+                        <span className="text-slate-400"> / {item.unit}</span>
+                      )}
+                    </p>
                   </div>
                 </div>
 
-                {/* Remove */}
+                {/* ================= CENTER : QUANTITY ================= */}
+                <div className="mx-3 flex w-[116px] shrink-0 justify-center">
+                  <div className="inline-flex h-9 items-center overflow-hidden rounded-xl border border-slate-200 bg-slate-50 shadow-sm">
+                    <button
+                      type="button"
+                      onClick={() => updateQty(item.id, item.qty - 1)}
+                      disabled={item.qty <= 1}
+                      aria-label="Decrease quantity"
+                      className="flex h-9 w-9 shrink-0 items-center justify-center text-slate-500 transition hover:bg-white hover:text-slate-900 active:scale-90 disabled:cursor-not-allowed disabled:opacity-30"
+                    >
+                      <Minus className="h-3.5 w-3.5" />
+                    </button>
+
+                    <input
+                      type="number"
+                      inputMode="numeric"
+                      min={1}
+                      value={item.qty}
+                      onChange={(e) => {
+                        const value = e.target.value;
+
+                        if (value === "") return;
+
+                        const qty = Number(value);
+
+                        if (Number.isInteger(qty) && qty >= 1) {
+                          updateQty(item.id, qty);
+                        }
+                      }}
+                      onBlur={(e) => {
+                        const value = Number(e.target.value);
+
+                        if (!value || value < 1 || !Number.isInteger(value)) {
+                          updateQty(item.id, 1);
+                        }
+                      }}
+                      onKeyDown={(e) => {
+                        if (["e", "E", "+", "-", "."].includes(e.key)) {
+                          e.preventDefault();
+                        }
+                      }}
+                      aria-label="Quantity"
+                      className="h-9 w-12 min-w-12 border-x border-slate-200 bg-white px-1 text-center text-[12px] font-extrabold text-slate-900 outline-none focus:bg-sky-50 focus:text-sky-600"
+                    />
+
+                    <button
+                      type="button"
+                      onClick={() => updateQty(item.id, item.qty + 1)}
+                      aria-label="Increase quantity"
+                      className="flex h-9 w-9 shrink-0 items-center justify-center text-sky-600 transition hover:bg-sky-50 hover:text-sky-700 active:scale-90"
+                    >
+                      <Plus className="h-3.5 w-3.5" />
+                    </button>
+                  </div>
+                </div>
+
+                {/* ================= RIGHT : REMOVE ================= */}
                 <button
+                  type="button"
                   onClick={() => removeFromCart(item.id)}
-                  className="ml-1 shrink-0 rounded-full p-1 hover:bg-rose-50"
+                  aria-label={`Remove ${item.name}`}
+                  className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-slate-400 transition hover:bg-rose-50 hover:text-rose-500 active:scale-90"
                 >
-                  <X className="h-4 w-4 text-rose-500" />
+                  <X className="h-4 w-4" />
                 </button>
               </div>
             ))}
-            {/* CONTINUE SHOPPING */}
 
+            {/* CONTINUE SHOPPING */}
             <Link
               href="/eaurix/shop"
-              className="inline-flex items-center gap-2 text-sm text-[#0EA5E9] hover:underline"
-              style={{
-                fontWeight: 600,
-              }}
+              className="inline-flex items-center gap-2 text-sm font-semibold text-[#0EA5E9] transition hover:underline"
             >
-              <Package className="w-4 h-4" />
+              <Package className="h-4 w-4" />
               Continue Shopping
             </Link>
           </div>

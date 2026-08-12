@@ -16,12 +16,8 @@ type Props = {
 export default function OperationsDashboard({ orders }: Props) {
   const pending = orders.filter((o) => o.status === "Pending").length;
   const confirmed = orders.filter((o) => o.status === "Confirmed").length;
-  const delivery = orders.filter(
-    (o) => o.status === "Out For Delivery"
-  ).length;
-  const delivered = orders.filter(
-    (o) => o.status === "Delivered"
-  ).length;
+  const delivery = orders.filter((o) => o.status === "Out For Delivery").length;
+  const delivered = orders.filter((o) => o.status === "Delivered").length;
 
   const revenue = orders
     .filter((o) => o.status === "Delivered")

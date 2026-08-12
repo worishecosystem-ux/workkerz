@@ -1,8 +1,12 @@
+/* =========================================
+   app/data/workers.ts
+========================================= */
+
 import { supabase } from "@/lib/supabase";
 
-/* =========================================================
+/* =========================================
    PRICING TYPE
-========================================================= */
+========================================= */
 
 export type PricingType =
   | "per_job"
@@ -12,9 +16,9 @@ export type PricingType =
   | "visit_charge"
   | "custom";
 
-/* =========================================================
+/* =========================================
    SERVICE CATEGORIES
-========================================================= */
+========================================= */
 
 export const serviceCategories = [
   { id: "all", label: "All" },
@@ -34,19 +38,17 @@ export const serviceCategories = [
   { id: "Event Services", label: "Event Services" },
 ] as const;
 
-/* =========================================================
-   SERVICE CATEGORY TYPE
-========================================================= */
+export type ServiceCategory =
+  (typeof serviceCategories)[number];
 
-export type ServiceCategory = (typeof serviceCategories)[number];
-
-/* =========================================================
-   WORKER TYPE
-========================================================= */
+/* =========================================
+   WORKER
+========================================= */
 
 export type Worker = {
   id: string;
   workerCode?: string | null;
+
   name: string;
   phone: string;
 
@@ -88,15 +90,18 @@ export type Worker = {
   createdAt: string;
 };
 
-/* =========================================================
-   FORM TYPE
-========================================================= */
+/* =========================================
+   FORM
+========================================= */
 
-export type WorkerFormData = Omit<Worker, "id" | "createdAt">;
+export type WorkerFormData = Omit<
+  Worker,
+  "id" | "createdAt"
+>;
 
-/* =========================================================
-   SUPABASE ROW TYPE
-========================================================= */
+/* =========================================
+   DATABASE ROW
+========================================= */
 
 type WorkerRow = {
   id: string;
@@ -119,7 +124,7 @@ type WorkerRow = {
   visit_charge: number | string | null;
 
   rating: number | string | null;
-  review_count: number | null;
+  review_count: number | string | null;
 
   location: string;
   labour_chauk: string | null;
@@ -142,9 +147,9 @@ type WorkerRow = {
   created_at: string;
 };
 
-/* =========================================================
-   SUPABASE SELECT
-========================================================= */
+/* =========================================
+   SELECT
+========================================= */
 
 const WORKER_SELECT = `
   id,
@@ -175,15 +180,30 @@ const WORKER_SELECT = `
   created_at
 `;
 
-/* =========================================================
+/* =========================================
    HELPERS
-========================================================= */
+========================================= */
 
-function numberValue(value: number | string | null | undefined): number {
-  return Number(value ?? 0) || 0;
+function numberValue(
+  value:
+    | number
+    | string
+    | null
+    | undefined,
+): number {
+  const result = Number(value ?? 0);
+
+  return Number.isFinite(result)
+    ? result
+    : 0;
 }
 
-function pricingValue(value: string | null | undefined): PricingType {
+function pricingValue(
+  value:
+    | string
+    | null
+    | undefined,
+): PricingType {
   switch (value) {
     case "per_job":
     case "daily":
@@ -198,263 +218,452 @@ function pricingValue(value: string | null | undefined): PricingType {
   }
 }
 
-/* =========================================================
-   MAP DATABASE → FRONTEND
-========================================================= */
+/* =========================================
+   MAP WORKER
+========================================= */
 
-export function mapWorker(row: WorkerRow): Worker {
+export function mapWorker(
+  row: WorkerRow,
+): Worker {
   return {
     id: row.id,
 
     name: row.name ?? "",
     phone: row.phone ?? "",
 
-    category: row.category ?? "",
-    subcategory: row.subcategory ?? "",
-    specialty: row.specialty ?? "",
+    category:
+      row.category ?? "",
 
-    services: Array.isArray(row.services) ? row.services : [],
+    subcategory:
+      row.subcategory ?? "",
 
-    pricingType: pricingValue(row.pricing_type),
+    specialty:
+      row.specialty ?? "",
 
-    startingPrice: numberValue(row.starting_price),
+    services:
+      Array.isArray(row.services)
+        ? row.services
+        : [],
 
-    halfDayPrice: numberValue(row.half_day_price),
+    pricingType:
+      pricingValue(
+        row.pricing_type,
+      ),
 
-    fullDayPrice: numberValue(row.full_day_price),
+    startingPrice:
+      numberValue(
+        row.starting_price,
+      ),
 
-    monthlyPrice: numberValue(row.monthly_price),
+    halfDayPrice:
+      numberValue(
+        row.half_day_price,
+      ),
 
-    visitCharge: numberValue(row.visit_charge),
+    fullDayPrice:
+      numberValue(
+        row.full_day_price,
+      ),
 
-    rating: numberValue(row.rating),
+    monthlyPrice:
+      numberValue(
+        row.monthly_price,
+      ),
 
-    reviewCount: Number(row.review_count ?? 0),
+    visitCharge:
+      numberValue(
+        row.visit_charge,
+      ),
 
-    location: row.location ?? "",
+    rating:
+      numberValue(row.rating),
 
-    labourChauk: row.labour_chauk ?? "",
+    reviewCount:
+      numberValue(
+        row.review_count,
+      ),
 
-    available: row.available ?? true,
+    location:
+      row.location ?? "",
 
-    yearsExperience: Number(row.years_experience ?? 0),
+    labourChauk:
+      row.labour_chauk ?? "",
 
-    completedJobs: Number(row.completed_jobs ?? 0),
+    available:
+      row.available ?? true,
 
-    bio: row.bio ?? "",
+    yearsExperience:
+      Number(
+        row.years_experience ?? 0,
+      ),
 
-    skills: Array.isArray(row.skills) ? row.skills : [],
+    completedJobs:
+      Number(
+        row.completed_jobs ?? 0,
+      ),
 
-    photo: row.photo ?? "",
+    bio:
+      row.bio ?? "",
 
-    responseTime: row.response_time ?? "Within 1 hour",
+    skills:
+      Array.isArray(row.skills)
+        ? row.skills
+        : [],
 
-    certifications: Array.isArray(row.certifications) ? row.certifications : [],
+    photo:
+      row.photo ?? "",
 
-    createdAt: row.created_at ?? "",
+    responseTime:
+      row.response_time ||
+      "Within 1 hour",
+
+    certifications:
+      Array.isArray(
+        row.certifications,
+      )
+        ? row.certifications
+        : [],
+
+    createdAt:
+      row.created_at ?? "",
   };
 }
 
-/* =========================================================
-   GET ALL WORKERS
-========================================================= */
+/* =========================================
+   GET WORKERS
+========================================= */
 
-export async function getWorkers(): Promise<Worker[]> {
-  const { data, error } = await supabase
-    .from("workers")
-    .select(WORKER_SELECT)
-    .order("created_at", {
-      ascending: false,
-    });
+export async function getWorkers(
+  limit = 100,
+): Promise<Worker[]> {
+  try {
+    const { data, error } =
+      await supabase
+        .from("workers")
+        .select(WORKER_SELECT)
+        .order("created_at", {
+          ascending: false,
+        })
+        .limit(limit);
 
-  if (error) {
-    console.error("GET WORKERS ERROR:", error);
+    if (error) {
+      console.error(
+        "GET WORKERS ERROR:",
+        error.message,
+      );
 
-    throw new Error(error.message);
+      return [];
+    }
+
+    return (
+      (data ?? []) as unknown as WorkerRow[]
+    ).map(mapWorker);
+  } catch (error) {
+    console.error(
+      "GET WORKERS ERROR:",
+      error,
+    );
+
+    return [];
   }
-
-  return ((data ?? []) as unknown as WorkerRow[]).map(mapWorker);
 }
 
-/* =========================================================
+/* =========================================
    GET SINGLE WORKER
-========================================================= */
+========================================= */
 
-export async function getWorkerById(id: string): Promise<Worker | null> {
+export async function getWorkerById(
+  id: string,
+): Promise<Worker | null> {
   if (!id) {
     return null;
   }
 
-  const { data, error } = await supabase
-    .from("workers")
-    .select(WORKER_SELECT)
-    .eq("id", id)
-    .maybeSingle();
+  try {
+    const { data, error } =
+      await supabase
+        .from("workers")
+        .select(WORKER_SELECT)
+        .eq("id", id)
+        .maybeSingle();
 
-  if (error) {
-    console.error("GET WORKER ERROR:", error);
+    if (error) {
+      console.error(
+        "GET WORKER ERROR:",
+        error.message,
+      );
 
-    throw new Error(error.message);
-  }
+      return null;
+    }
 
-  if (!data) {
+    if (!data) {
+      return null;
+    }
+
+    return mapWorker(
+      data as unknown as WorkerRow,
+    );
+  } catch (error) {
+    console.error(
+      "GET WORKER ERROR:",
+      error,
+    );
+
     return null;
   }
-
-  return mapWorker(data as unknown as WorkerRow);
 }
 
-/* =========================================================
-   FRONTEND → DATABASE
-========================================================= */
+/* =========================================
+   WORKER PAYLOAD
+========================================= */
 
-function workerPayload(worker: WorkerFormData) {
+function workerPayload(
+  worker: WorkerFormData,
+) {
   return {
-    name: worker.name.trim(),
+    name:
+      worker.name?.trim() || "",
 
-    phone: worker.phone?.trim() || null,
+    phone:
+      worker.phone?.trim() || null,
 
-    category: worker.category,
+    category:
+      worker.category,
 
-    subcategory: worker.subcategory || null,
+    subcategory:
+      worker.subcategory || null,
 
-    specialty: worker.specialty.trim(),
+    specialty:
+      worker.specialty?.trim() || "",
 
-    services: worker.services ?? [],
+    services:
+      worker.services ?? [],
 
-    pricing_type: worker.pricingType,
+    pricing_type:
+      worker.pricingType,
 
-    starting_price: Number(worker.startingPrice) || 0,
+    starting_price:
+      numberValue(
+        worker.startingPrice,
+      ),
 
-    half_day_price: Number(worker.halfDayPrice) || 0,
+    half_day_price:
+      numberValue(
+        worker.halfDayPrice,
+      ),
 
-    full_day_price: Number(worker.fullDayPrice) || 0,
+    full_day_price:
+      numberValue(
+        worker.fullDayPrice,
+      ),
 
-    monthly_price: Number(worker.monthlyPrice) || 0,
+    monthly_price:
+      numberValue(
+        worker.monthlyPrice,
+      ),
 
-    visit_charge: Number(worker.visitCharge) || 0,
+    visit_charge:
+      numberValue(
+        worker.visitCharge,
+      ),
 
-    rating: Number(worker.rating) || 0,
+    rating:
+      numberValue(worker.rating),
 
-    review_count: Number(worker.reviewCount) || 0,
+    review_count:
+      numberValue(
+        worker.reviewCount,
+      ),
 
-    location: worker.location.trim(),
+    location:
+      worker.location?.trim() || "",
 
-    labour_chauk: worker.labourChauk || null,
+    labour_chauk:
+      worker.labourChauk || null,
 
-    available: worker.available ?? true,
+    available:
+      worker.available ?? true,
 
-    years_experience: Number(worker.yearsExperience) || 0,
+    years_experience:
+      numberValue(
+        worker.yearsExperience,
+      ),
 
-    completed_jobs: Number(worker.completedJobs) || 0,
+    completed_jobs:
+      numberValue(
+        worker.completedJobs,
+      ),
 
-    bio: worker.bio?.trim() || null,
+    bio:
+      worker.bio?.trim() || null,
 
-    skills: worker.skills ?? [],
+    skills:
+      worker.skills ?? [],
 
-    photo: worker.photo || null,
+    photo:
+      worker.photo || null,
 
-    response_time: worker.responseTime || "Within 1 hour",
+    response_time:
+      worker.responseTime ||
+      "Within 1 hour",
 
-    certifications: worker.certifications ?? [],
+    certifications:
+      worker.certifications ?? [],
   };
 }
 
-/* =========================================================
+/* =========================================
    CREATE WORKER
-========================================================= */
+========================================= */
 
-export async function createWorker(worker: WorkerFormData): Promise<Worker> {
-  const payload = workerPayload(worker);
+export async function createWorker(
+  worker: WorkerFormData,
+): Promise<Worker> {
+  const payload =
+    workerPayload(worker);
 
-  const { data, error } = await supabase
-    .from("workers")
-    .insert(payload)
-    .select(WORKER_SELECT)
-    .single();
+  try {
+    const { data, error } =
+      await supabase
+        .from("workers")
+        .insert(payload)
+        .select(WORKER_SELECT)
+        .single();
 
-  if (error) {
-    console.error("CREATE WORKER ERROR:", error);
+    if (error) {
+      console.error(
+        "CREATE WORKER ERROR:",
+        error.message,
+      );
 
-    throw new Error(error.message);
+      throw error;
+    }
+
+    return mapWorker(
+      data as unknown as WorkerRow,
+    );
+  } catch (error) {
+    console.error(
+      "CREATE WORKER ERROR:",
+      error,
+    );
+
+    throw error;
   }
-
-  return mapWorker(data as unknown as WorkerRow);
 }
 
-/* =========================================================
+/* =========================================
    UPDATE WORKER
-========================================================= */
+========================================= */
 
 export async function updateWorker(
   id: string,
   worker: WorkerFormData,
 ): Promise<Worker> {
-  const payload = workerPayload(worker);
-
-  const { data, error } = await supabase
-    .from("workers")
-    .update(payload)
-    .eq("id", id)
-    .select(WORKER_SELECT)
-    .single();
-
-  if (error) {
-    console.error("UPDATE WORKER ERROR:", error);
-
-    throw new Error(error.message);
-  }
-
-  return mapWorker(data as unknown as WorkerRow);
-}
-
-/* =========================================================
-   DELETE WORKER
-========================================================= */
-
-export async function deleteWorker(id: string): Promise<void> {
   if (!id) {
-    throw new Error("Worker ID is required.");
+    throw new Error(
+      "Worker ID is required.",
+    );
   }
 
-  const { error } = await supabase.from("workers").delete().eq("id", id);
+  const payload =
+    workerPayload(worker);
 
-  if (error) {
-    console.error("DELETE WORKER ERROR:", error);
+  try {
+    const { data, error } =
+      await supabase
+        .from("workers")
+        .update(payload)
+        .eq("id", id)
+        .select(WORKER_SELECT)
+        .single();
 
-    throw new Error(error.message);
+    if (error) {
+      console.error(
+        "UPDATE WORKER ERROR:",
+        error.message,
+      );
+
+      throw error;
+    }
+
+    return mapWorker(
+      data as unknown as WorkerRow,
+    );
+  } catch (error) {
+    console.error(
+      "UPDATE WORKER ERROR:",
+      error,
+    );
+
+    throw error;
   }
 }
 
-/* =========================================================
+/* =========================================
+   DELETE WORKER
+========================================= */
+
+export async function deleteWorker(
+  id: string,
+): Promise<void> {
+  if (!id) {
+    throw new Error(
+      "Worker ID is required.",
+    );
+  }
+
+  const { error } =
+    await supabase
+      .from("workers")
+      .delete()
+      .eq("id", id);
+
+  if (error) {
+    console.error(
+      "DELETE WORKER ERROR:",
+      error.message,
+    );
+
+    throw error;
+  }
+}
+
+/* =========================================
    AVAILABILITY
-========================================================= */
+========================================= */
 
 export async function setWorkerAvailability(
   id: string,
   available: boolean,
 ): Promise<void> {
   if (!id) {
-    throw new Error("Worker ID is required.");
+    throw new Error(
+      "Worker ID is required.",
+    );
   }
 
-  const { error } = await supabase
-    .from("workers")
-    .update({
-      available,
-    })
-    .eq("id", id);
+  const { error } =
+    await supabase
+      .from("workers")
+      .update({
+        available,
+      })
+      .eq("id", id);
 
   if (error) {
-    console.error("UPDATE AVAILABILITY ERROR:", error);
+    console.error(
+      "UPDATE AVAILABILITY ERROR:",
+      error.message,
+    );
 
-    throw new Error(error.message);
+    throw error;
   }
 }
 
-/* =========================================================
+/* =========================================
    REVIEWS
-========================================================= */
+========================================= */
 
 export type Review = {
   id: string;

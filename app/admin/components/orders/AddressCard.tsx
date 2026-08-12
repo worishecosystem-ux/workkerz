@@ -1,10 +1,6 @@
 "use client";
 
-import {
-  Clock3,
-  MapPin,
-  Navigation,
-} from "lucide-react";
+import { Clock3, MapPin, Navigation } from "lucide-react";
 
 type Props = {
   order: any;
@@ -20,9 +16,7 @@ export default function AddressCard({ order }: Props) {
         </div>
 
         <div>
-          <h3 className="text-sm font-bold text-slate-900">
-            Delivery Address
-          </h3>
+          <h3 className="text-sm font-bold text-slate-900">Delivery Address</h3>
 
           <p className="text-[10px] text-slate-400">
             Customer delivery details
@@ -91,11 +85,7 @@ function InfoItem({
   return (
     <div className="min-w-0 rounded-lg border border-slate-100 bg-slate-50/60 px-2.5 py-2">
       <div className="flex items-center gap-1">
-        {icon && (
-          <span className="text-slate-400">
-            {icon}
-          </span>
-        )}
+        {icon && <span className="text-slate-400">{icon}</span>}
 
         <p className="text-[8px] font-bold uppercase tracking-wide text-slate-400">
           {label}

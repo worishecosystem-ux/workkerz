@@ -97,36 +97,38 @@ export default function ProductsGrid({
   }, [products, paginatedProducts, activeCategory]);
   return (
     <>
-      <div className="px-4 pt-3 pb-8">
+      <div className="px-4 pb-8">
         {activeCategory && !loading && visibleProducts.length === 0 && (
-          <div className="flex min-h-80 flex-col items-center justify-center rounded-3xl border border-slate-200 bg-white p-8 text-center shadow-sm">
-            <div className="mb-4 flex h-20 w-20 items-center justify-center rounded-full bg-slate-100 text-4xl">
+          <div className="flex items-center gap-3 rounded-xl border border-slate-200 bg-white px-3 py-2.5 shadow-sm">
+            {/* ICON */}
+            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-slate-100 text-lg">
               📦
             </div>
 
-            <h2 className="text-lg font-bold text-slate-900">
-              No Products Found
-            </h2>
+            {/* TEXT */}
+            <div className="min-w-0 flex-1">
+              <h2 className="text-[12px] font-bold leading-4 text-slate-900">
+                No Products Found
+              </h2>
 
-            <p className="mt-2 max-w-xs text-sm leading-6 text-slate-500">
-              Products for the{" "}
-              <span className="font-semibold text-slate-700">
-                {categories.find((c) => c.id === activeCategory)?.name}
-              </span>{" "}
-              category are coming soon. Stay tuned for new arrivals.
-            </p>
+              <p className="truncate text-[9px] leading-3.5 text-slate-500">
+                {categories.find((c) => c.id === activeCategory)?.name} products
+                coming soon.
+              </p>
+            </div>
 
+            {/* BUTTON */}
             <button
               onClick={() => setActiveCategory(null)}
-              className="mt-5 rounded-xl bg-emerald-500 px-5 py-2 text-sm font-semibold text-white hover:bg-emerald-600"
+              className="shrink-0 rounded-lg bg-emerald-500 px-2.5 py-1.5 text-[9px] font-bold text-white active:scale-95"
             >
-              Please Check more products
+              View All
             </button>
           </div>
         )}
         {visibleProducts.length > 0 && (
           <div className="grid grid-cols-2 gap-3 md:grid-cols-4 md:gap-4 pb-10">
-           {mixedTopProducts.map((product) => {
+            {mixedTopProducts.map((product) => {
               const inCart = cart.some((item) => item.productId === product.id);
               return (
                 <div

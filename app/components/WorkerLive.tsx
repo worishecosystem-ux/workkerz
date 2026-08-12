@@ -3,36 +3,31 @@
 import { useEffect, useMemo, useState } from "react";
 import { supabase } from "@/lib/supabase";
 import { useRouter } from "next/navigation";
+
 type Worker = {
   id: string;
-
   name: string;
-
   category: string;
-
   subcategory: string;
-
   specialty: string;
-
   photo: string;
-
   rating: number;
-
   completed_jobs: number;
 };
 
 type Booking = {
   worker_id: string;
-
   booking_status: string;
 };
 
 export default function LiveNewsStrip() {
   const [workers, setWorkers] = useState<Worker[]>([]);
-
   const [bookings, setBookings] = useState<Booking[]>([]);
   const router = useRouter();
-  // FETCH
+
+  // =========================
+  // FETCH DATA
+  // =========================
   useEffect(() => {
     fetchData();
 
@@ -68,38 +63,34 @@ export default function LiveNewsStrip() {
 
     return () => {
       supabase.removeChannel(workersChannel);
-
       supabase.removeChannel(bookingsChannel);
     };
   }, []);
 
-  // FETCH DATA
   const fetchData = async () => {
-    // WORKERS TABLE
-    const { data: workersData, error: workersError } = await supabase.from(
-      "workers",
-    ).select(`
-          id,
-          name,
-          category,
-          subcategory,
-          specialty,
-          photo,
-          rating
-        `);
+    const { data: workersData, error: workersError } = await supabase
+      .from("workers")
+      .select(`
+        id,
+        name,
+        category,
+        subcategory,
+        specialty,
+        photo,
+        rating
+      `);
 
     if (workersError) {
       console.log(workersError);
       return;
     }
 
-    // BOOKINGS TABLE
-    const { data: bookingsData, error: bookingsError } = await supabase.from(
-      "bookings",
-    ).select(`
-          worker_id,
-          booking_status
-        `);
+    const { data: bookingsData, error: bookingsError } = await supabase
+      .from("bookings")
+      .select(`
+        worker_id,
+        booking_status
+      `);
 
     if (bookingsError) {
       console.log(bookingsError);
@@ -107,103 +98,198 @@ export default function LiveNewsStrip() {
     }
 
     setWorkers((workersData || []) as Worker[]);
-
     setBookings((bookingsData || []) as Booking[]);
   };
 
-  // TOP WORKERS
+  // =========================
+  // CATEGORY MIXED WORKERS
+  // =========================
   const topWorkers = useMemo(() => {
-    // ONLY COMPLETED BOOKINGS
-    const completedBookings = bookings.filter(
-      (b) => b.booking_status === "completed",
-    );
-
-    // COUNT COMPLETED JOBS
+    // Completed jobs count
     const completedMap: Record<string, number> = {};
 
-    completedBookings.forEach((booking) => {
-      if (!booking.worker_id) return;
+    bookings
+      .filter((b) => b.booking_status === "completed")
+      .forEach((booking) => {
+        if (!booking.worker_id) return;
 
-      completedMap[booking.worker_id] =
-        (completedMap[booking.worker_id] || 0) + 1;
-    });
+        completedMap[booking.worker_id] =
+          (completedMap[booking.worker_id] || 0) + 1;
+      });
 
-    // MERGE WORKERS + COMPLETED JOBS
+    // Merge completed jobs
     const merged = workers.map((worker) => ({
       ...worker,
       completed_jobs: completedMap[worker.id] || 0,
     }));
 
-    return (
-      merged
-        // ONLY SHOW WORKERS WITH MORE THAN 1 COMPLETED JOB
-        .filter((worker) => worker.completed_jobs > 1)
+    /*
+     * =====================================
+     * GROUP BY CATEGORY
+     * =====================================
+     */
+    const grouped: Record<string, Worker[]> = {};
 
-        // MOST COMPLETED JOBS FIRST
-        .sort((a, b) => b.completed_jobs - a.completed_jobs)
+    merged.forEach((worker) => {
+      const category = worker.category?.trim() || "Other";
 
-        // TOP 10
-        .slice(0, 10)
+      if (!grouped[category]) {
+        grouped[category] = [];
+      }
+
+      grouped[category].push(worker);
+    });
+
+    /*
+     * =====================================
+     * SORT EACH CATEGORY
+     * BEST WORKER FIRST
+     * =====================================
+     */
+    Object.values(grouped).forEach((list) => {
+      list.sort((a, b) => {
+        // Completed jobs priority
+        if (b.completed_jobs !== a.completed_jobs) {
+          return b.completed_jobs - a.completed_jobs;
+        }
+
+        // Rating priority
+        return (b.rating || 0) - (a.rating || 0);
+      });
+    });
+
+    /*
+     * =====================================
+     * TAKE ONE FROM EVERY CATEGORY
+     * =====================================
+     */
+    const categoryWorkers: Worker[] = [];
+
+    Object.values(grouped).forEach((list) => {
+      if (list.length > 0) {
+        categoryWorkers.push(list[0]);
+      }
+    });
+
+    /*
+     * =====================================
+     * RANDOMIZE CATEGORY ORDER
+     * =====================================
+     */
+    categoryWorkers.sort(() => Math.random() - 0.5);
+
+    /*
+     * =====================================
+     * FILL REMAINING WORKERS
+     * =====================================
+     */
+    const selectedIds = new Set(
+      categoryWorkers.map((worker) => worker.id),
     );
+
+    const remainingWorkers = merged
+      .filter((worker) => !selectedIds.has(worker.id))
+      .sort((a, b) => {
+        if (b.completed_jobs !== a.completed_jobs) {
+          return b.completed_jobs - a.completed_jobs;
+        }
+
+        return (b.rating || 0) - (a.rating || 0);
+      });
+
+    /*
+     * Maximum 12 workers
+     */
+    const finalWorkers = [
+      ...categoryWorkers,
+      ...remainingWorkers,
+    ].slice(0, 12);
+
+    return finalWorkers;
   }, [workers, bookings]);
 
-  // LOOP
+  /*
+   * =====================================
+   * DUPLICATE FOR INFINITE MARQUEE
+   * =====================================
+   */
   const cards = [...topWorkers, ...topWorkers];
 
   return (
-    <section className="bg-linear-to-br from-emerald-100 via-green-50 to-white py-4 overflow-hidden border-y border-emerald-200 shadow-[inset_0_2px_0_rgba(255,255,255,0.8),0_10px_30px_rgba(16,185,129,0.18)]">
-      {/* TOP BAR */}
-      <div className="flex items-center mb-2 px-3 md:px-6">
-        <span className="bg-red-500 text-white text-[9px] md:text-xs px-2 py-0.5 rounded-full font-semibold animate-pulse">
+    <section className="overflow-hidden border-y border-emerald-200 bg-gradient-to-br from-emerald-100 via-green-50 to-white py-4 shadow-[inset_0_2px_0_rgba(255,255,255,0.8),0_10px_30px_rgba(16,185,129,0.18)]">
+
+      {/* =========================
+          TOP BAR
+      ========================= */}
+      <div className="mb-2 flex items-center px-3 md:px-6">
+        <span className="animate-pulse rounded-full bg-red-500 px-2 py-0.5 text-[9px] font-semibold text-white md:text-xs">
           🔴 LIVE
         </span>
 
-        <p className="ml-2 md:ml-4 text-[9px] md:text-sm text-gray-900 font-bold">
-          Top Workers • Most Completed Jobs
+        <p className="ml-2 text-[9px] font-bold text-gray-900 md:ml-4 md:text-sm">
+          Workers Near You • Multiple Categories
         </p>
       </div>
 
-      {/* SLIDER */}
+      {/* =========================
+          SLIDER
+      ========================= */}
       <div className="overflow-hidden">
-
-        <div className="flex marquee whitespace-nowrap">
+        <div className="marquee flex w-max whitespace-nowrap">
 
           {cards.map((worker, i) => (
             <div
-              key={i}
+              key={`${worker.id}-${i}`}
               onClick={() => router.push(`/workers/${worker.id}`)}
-              className="mx-2 min-w-60 cursor-pointer bg-linear-to-br from-white/90 via-slate-100 to-slate-200 border border-white/70 rounded-xl px-3 py-2 flex items-center gap-2 shadow-[inset_0_2px_0_rgba(255,255,255,1),0_10px_25px_rgba(15,23,42,0.15)] backdrop-blur-2xl"
+              className="mx-2 flex min-w-60 cursor-pointer items-center gap-2 rounded-xl border border-white/70 bg-gradient-to-br from-white/90 via-slate-100 to-slate-200 px-3 py-2 shadow-[inset_0_2px_0_rgba(255,255,255,1),0_10px_25px_rgba(15,23,42,0.15)] backdrop-blur-2xl"
             >
-              <div className="w-12 h-12 rounded-xl border border-slate-200 bg-white p-1 flex items-center justify-center">
+              {/* IMAGE */}
+              <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl border border-slate-200 bg-white p-1">
                 <img
                   src={worker.photo}
                   alt={worker.name}
-                  className="max-w-full max-h-full object-contain"
+                  className="max-h-full max-w-full object-contain"
                 />
               </div>
-              <div className="flex-1 min-w-0">
-                <div className="flex items-center justify-between">
-                  <h3 className="text-xs font-bold text-slate-800 truncate">
+
+              {/* INFO */}
+              <div className="min-w-0 flex-1">
+
+                {/* NAME + RATING */}
+                <div className="flex items-center justify-between gap-2">
+                  <h3 className="truncate text-xs font-bold text-slate-800">
                     {worker.name}
                   </h3>
 
-                  <span className="text-[10px] font-bold text-amber-500">
-                    ⭐ {worker.rating}
+                  <span className="shrink-0 text-[10px] font-bold text-amber-500">
+                    ⭐ {worker.rating || 0}
                   </span>
                 </div>
 
-                <p className="text-[10px] text-slate-500 truncate">
+                {/* CATEGORY */}
+                <p className="truncate text-[10px] font-semibold text-emerald-600">
                   {worker.category}
                 </p>
 
-                <div className="flex items-center justify-between mt-1">
-                  <span className="text-[10px] text-green-600 font-semibold">
-                    {worker.completed_jobs}+ works completed
+                {/* SUBCATEGORY */}
+                {worker.subcategory && (
+                  <p className="truncate text-[9px] text-slate-500">
+                    {worker.subcategory}
+                  </p>
+                )}
+
+                {/* BOTTOM */}
+                <div className="mt-1 flex items-center justify-between gap-2">
+                  <span className="truncate text-[10px] font-semibold text-green-600">
+                    {worker.completed_jobs}+ works
                   </span>
 
                   <button
-                    onClick={() => router.push(`/workers/${worker.id}`)}
-                    className="text-[9px] px-2 py-0.5 bg-[#FF5C39] text-white rounded-full font-bold"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      router.push(`/workers/${worker.id}`);
+                    }}
+                    className="shrink-0 rounded-full bg-[#FF5C39] px-2 py-0.5 text-[9px] font-bold text-white transition hover:bg-[#e94d2d]"
                   >
                     Book Now
                   </button>
@@ -211,14 +297,16 @@ export default function LiveNewsStrip() {
               </div>
             </div>
           ))}
+
         </div>
       </div>
 
-      {/* CSS */}
+      {/* =========================
+          MARQUEE CSS
+      ========================= */}
       <style jsx>{`
         .marquee {
-          width: max-content;
-          animation: scroll 30s linear infinite;
+          animation: scroll 35s linear infinite;
         }
 
         .marquee:hover {

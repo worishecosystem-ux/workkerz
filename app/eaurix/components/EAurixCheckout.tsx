@@ -1,4 +1,5 @@
 "use client";
+
 import { useState, useMemo, useEffect } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -29,21 +30,20 @@ const steps = [
   { id: 4, label: "Review" },
 ];
 
-// ═══════════════════════════════════════════════════════════════════════════════
-// MAIN CHECKOUT
-// ═══════════════════════════════════════════════════════════════════════════════
 export function EAurixCheckout() {
   const router = useRouter();
   const { cart, cartTotal, clearCart } = usePlatform();
+
   const [step, setStep] = useState(1);
+
   const [selectedAddress, setSelectedAddress] = useState<AddressItem | null>(
     null,
   );
+
   const [reviewCart, setReviewCart] = useState(cart);
-  const handleAddressPicker = () => {
-    setShowAddressModal(true);
-  };
+
   const [loadingAddress, setLoadingAddress] = useState(true);
+
   const [showOrderPopup, setShowOrderPopup] = useState(false);
   const [showAddressModal, setShowAddressModal] = useState(false);
   const [showOrderItems, setShowOrderItems] = useState(false);
@@ -52,13 +52,27 @@ export function EAurixCheckout() {
   const [editingAddress, setEditingAddress] = useState<AddressItem | null>(
     null,
   );
-  1;
 
   const [showOrderSummary, setShowOrderSummary] = useState(false);
   const [keyboardOpen, setKeyboardOpen] = useState(false);
+  const [compactHeader, setCompactHeader] = useState(false);
+  const [mounted, setMounted] = useState(false);
+
+  /* =========================================================
+     ADDRESS PICKER
+  ========================================================= */
+
+  const handleAddressPicker = () => {
+    setShowAddressModal(true);
+  };
+
+  /* =========================================================
+     KEYBOARD
+  ========================================================= */
 
   useEffect(() => {
     let showListener: Awaited<ReturnType<typeof Keyboard.addListener>>;
+
     let hideListener: Awaited<ReturnType<typeof Keyboard.addListener>>;
 
     const setup = async () => {
@@ -79,29 +93,51 @@ export function EAurixCheckout() {
     };
   }, []);
 
+  /* =========================================================
+     FORM
+  ========================================================= */
+
   const [form, setForm] = useState({
     transactionId: "",
+
     name: "",
     email: "",
     phone: "",
+
     address: "",
     city: "",
     zip: "",
     country: "US",
+
     deliveryNote: "",
     deliveryOption: "standard",
+
     latitude: "",
     longitude: "",
+
     deliverySlot: "09:00 AM - 12:00 PM",
+
+    // IMPORTANT:
+    // This controls Step 3 Continue button
+    termsAccepted: "false",
   });
 
-  const [compactHeader, setCompactHeader] = useState(false);
+  /* =========================================================
+     CART SYNC
+  ========================================================= */
+
   useEffect(() => {
     setReviewCart(cart);
   }, [cart]);
+
   const removeFromCart = (id: string) => {
     setReviewCart((prev) => prev.filter((item) => item.id !== id));
   };
+
+  /* =========================================================
+     ORDER SUMMARY LOCK
+  ========================================================= */
+
   useEffect(() => {
     if (showOrderSummary) {
       document.body.style.overflow = "hidden";
@@ -116,14 +152,27 @@ export function EAurixCheckout() {
       document.documentElement.style.overflow = "";
     };
   }, [showOrderSummary]);
+
+  /* =========================================================
+     COMPACT HEADER
+  ========================================================= */
+
   useEffect(() => {
     const handleScroll = () => {
       setCompactHeader(window.scrollY > 40);
     };
 
     window.addEventListener("scroll", handleScroll);
-    return () => window.removeEventListener("scroll", handleScroll);
+
+    return () => {
+      window.removeEventListener("scroll", handleScroll);
+    };
   }, []);
+
+  /* =========================================================
+     LOAD USER
+  ========================================================= */
+
   useEffect(() => {
     const loadUser = async () => {
       setLoadingAddress(true);
@@ -138,15 +187,18 @@ export function EAurixCheckout() {
           return;
         }
 
-        // Default email
+        /* ===============================
+           DEFAULT EMAIL
+        =============================== */
+
         setForm((prev) => ({
           ...prev,
           email: user.email!,
         }));
 
         /* ===============================
-         CUSTOMER PROFILE
-      =============================== */
+           CUSTOMER PROFILE
+        =============================== */
 
         const { data: profile } = await supabase
           .from("customer_profiles")
@@ -163,8 +215,8 @@ export function EAurixCheckout() {
           }));
         } else {
           /* ===============================
-           LAST BOOKING (Fallback)
-        =============================== */
+             LAST BOOKING FALLBACK
+          =============================== */
 
           const { data: lastBooking } = await supabase
             .from("bookings")
@@ -185,8 +237,8 @@ export function EAurixCheckout() {
         }
 
         /* ===============================
-         DEFAULT ADDRESS
-      =============================== */
+           DEFAULT ADDRESS
+        =============================== */
 
         const { data: addresses, error } = await supabase
           .from("customer_addresses")
@@ -207,6 +259,8 @@ export function EAurixCheckout() {
             zip: address.pincode ?? "",
           }));
         }
+      } catch (error) {
+        console.error("Load User Error:", error);
       } finally {
         setLoadingAddress(false);
       }
@@ -214,6 +268,10 @@ export function EAurixCheckout() {
 
     loadUser();
   }, []);
+
+  /* =========================================================
+     CART TOTALS
+  ========================================================= */
 
   const reviewCartTotal = useMemo(
     () => reviewCart.reduce((sum, item) => sum + item.price * item.qty, 0),
@@ -227,61 +285,142 @@ export function EAurixCheckout() {
 
   const grandTotal = parseFloat((reviewCartTotal + delivery + tax).toFixed(2));
 
-  const update = (field: string, val: string) =>
-    setForm((f) => ({ ...f, [field]: val }));
+  /* =========================================================
+     UPDATE FORM
+  ========================================================= */
+
+  const update = (field: string, val: string) => {
+    setForm((prev) => ({
+      ...prev,
+      [field]: val,
+    }));
+  };
+
+  /* =========================================================
+     STEP VALIDATION
+  ========================================================= */
 
   const canNext = () => {
-    // Customer Details
+    /* ===============================
+       STEP 1 — CUSTOMER DETAILS
+    =============================== */
+
     if (step === 1) {
-      return (
+      return Boolean(
         form.name &&
         form.email &&
         form.phone &&
         form.address &&
         form.city &&
-        form.zip
+        form.zip,
       );
     }
 
-    // Delivery Details
+    /* ===============================
+       STEP 2 — DELIVERY
+    =============================== */
+
     if (step === 2) {
-      return form.deliveryOption && form.deliverySlot;
+      return Boolean(form.deliveryOption && form.deliverySlot);
     }
 
-    // Payment
+    /* ===============================
+       STEP 3 — TERMS
+    =============================== */
+
     if (step === 3) {
-      return form.transactionId.trim().length > 4;
+      return form.termsAccepted === "true";
     }
 
-    return true; // Review
+    /* ===============================
+       STEP 4 — REVIEW
+    =============================== */
+
+    return true;
   };
 
+  /* =========================================================
+     NEXT STEP
+  ========================================================= */
+
+  const handleNext = () => {
+    if (!canNext()) {
+      return;
+    }
+
+    setStep((prev) => Math.min(prev + 1, steps.length));
+  };
+
+  /* =========================================================
+     CONFIRM ORDER
+  ========================================================= */
+
   const handleConfirm = async () => {
+    /* ===============================
+       FINAL TERMS VALIDATION
+    =============================== */
+
+    if (form.termsAccepted !== "true") {
+      alert("Please accept Terms & Conditions to continue.");
+      return;
+    }
+
+    if (!form.name || !form.email || !form.phone) {
+      alert("Please complete customer details.");
+      setStep(1);
+      return;
+    }
+
+    if (!form.address || !form.city || !form.zip) {
+      alert("Please select or enter a delivery address.");
+      setStep(1);
+      return;
+    }
+
+    if (!form.deliveryOption || !form.deliverySlot) {
+      alert("Please select delivery details.");
+      setStep(2);
+      return;
+    }
+
     try {
+      /* ===============================
+         CURRENT ORDER DATA
+      =============================== */
+
       const orderData = {
         form,
-        cart,
-        cartTotal,
+        cart: reviewCart,
+        cartTotal: reviewCartTotal,
         delivery,
         tax,
         grandTotal,
       };
 
-      // Create Order
+      /* ===============================
+         CREATE ORDER
+      =============================== */
+
       const { data: order, error } = await supabase
         .from("orders")
         .insert({
           order_number: `EA-${Date.now()}`,
 
-          // Customer Details
+          /* ===============================
+             CUSTOMER
+          =============================== */
+
           customer_name: form.name,
           customer_email: form.email,
           customer_phone: form.phone,
 
-          // Address
+          /* ===============================
+             ADDRESS
+          =============================== */
+
           address: [
             selectedAddress?.house_no,
-            selectedAddress?.address,
+            selectedAddress?.address || form.address,
             selectedAddress?.landmark,
             selectedAddress?.district,
             selectedAddress?.state,
@@ -289,34 +428,70 @@ export function EAurixCheckout() {
             .filter(Boolean)
             .join(", "),
 
-          city: selectedAddress?.city || "",
-          pincode: selectedAddress?.pincode || "",
+          city: selectedAddress?.city || form.city || "",
 
-          // Delivery
+          pincode: selectedAddress?.pincode || form.zip || "",
+
+          /* ===============================
+             DELIVERY
+          =============================== */
+
           delivery_option: form.deliveryOption,
           delivery_slot: form.deliverySlot,
 
-          // Pricing
-          subtotal: cartTotal,
+          /* ===============================
+             PRICING
+          =============================== */
+
+          subtotal: reviewCartTotal,
           delivery,
           tax,
           total: grandTotal,
 
-          // Payment
+          /* ===============================
+             PAYMENT
+          =============================== */
+
           payment_method: "UPI",
           payment_status: "Pending",
 
-          // Order Status
+          /* ===============================
+             TERMS & CONDITIONS
+          =============================== */
+
+          terms_accepted: form.termsAccepted === "true",
+
+          terms_accepted_at:
+            form.termsAccepted === "true" ? new Date().toISOString() : null,
+
+          /* ===============================
+             ORDER STATUS
+          =============================== */
+
           status: "Pending",
         })
         .select()
         .single();
 
-      if (error) {
+      /* ===============================
+         ORDER ERROR
+      =============================== */
 
+      if (error) {
+        console.error("Order Insert Error:", error);
         alert(error.message);
         return;
       }
+
+      if (!order) {
+        alert("Order could not be created.");
+        return;
+      }
+
+      /* ===============================
+         ORDER STATUS HISTORY
+      =============================== */
+
       const { error: timelineError } = await supabase
         .from("order_status_history")
         .insert({
@@ -326,10 +501,16 @@ export function EAurixCheckout() {
         });
 
       if (timelineError) {
-  console.log("Timeline Error Full:", JSON.stringify(timelineError, null, 2));
-  alert(timelineError.message);
-}
-      // Verify Order
+        console.error(
+          "Timeline Error:",
+          JSON.stringify(timelineError, null, 2),
+        );
+      }
+
+      /* ===============================
+         VERIFY ORDER
+      =============================== */
+
       const { data: verify, error: verifyError } = await supabase
         .from("orders")
         .select("*")
@@ -342,8 +523,11 @@ export function EAurixCheckout() {
         console.log("Saved Order:", verify);
       }
 
-      // Create Order Items
-      const items = cart.map((item) => ({
+      /* ===============================
+         ORDER ITEMS
+      =============================== */
+
+      const items = reviewCart.map((item) => ({
         order_id: order.id,
         product_id: item.id,
         product_name: item.name,
@@ -359,27 +543,48 @@ export function EAurixCheckout() {
 
       if (itemError) {
         console.error("Order Items Error:", itemError);
+
         alert(itemError.message);
         return;
       }
 
-      // Save for Confirmation Page
+      /* ===============================
+         SAVE FOR CONFIRMATION PAGE
+      =============================== */
+
       sessionStorage.setItem(
         "eaurix-order",
         JSON.stringify({
           ...orderData,
           orderId: order.id,
           orderNumber: order.order_number,
+
+          termsAccepted: true,
+          termsAcceptedAt: order.terms_accepted_at,
         }),
       );
+
+      /* ===============================
+         CLEAR CART
+      =============================== */
+
+      clearCart();
+
+      /* ===============================
+         REDIRECT
+      =============================== */
 
       router.push("/eaurix/order-placed");
     } catch (err) {
       console.error("Checkout Error:", err);
+
       alert("Something went wrong. Please try again.");
     }
   };
-  const [mounted, setMounted] = useState(false);
+
+  /* =========================================================
+     MOUNT
+  ========================================================= */
 
   useEffect(() => {
     setMounted(true);
@@ -387,20 +592,25 @@ export function EAurixCheckout() {
 
   if (!mounted) {
     return (
-      <div className="min-h-screen bg-[#F0F9FF] flex items-center justify-center">
-        <div className="w-10 h-10 border-4 border-[#0EA5E9] border-t-transparent rounded-full animate-spin" />
+      <div className="flex min-h-screen items-center justify-center bg-[#F0F9FF]">
+        <div className="h-10 w-10 animate-spin rounded-full border-4 border-[#0EA5E9] border-t-transparent" />
       </div>
     );
   }
 
+  /* =========================================================
+     EMPTY CART
+  ========================================================= */
+
   if (cart.length === 0) {
     return (
-      <div className="min-h-screen bg-[#F0F9FF] pt-24 flex items-center justify-center">
+      <div className="flex min-h-screen items-center justify-center bg-[#F0F9FF] pt-24">
         <div className="text-center">
-          <h2 className="text-[#0F172A] mb-2" style={{ fontWeight: 700 }}>
+          <h2 className="mb-2 text-[#0F172A]" style={{ fontWeight: 700 }}>
             Nothing to checkout
           </h2>
-          <Link href="/eaurix" className="text-[#0EA5E9] text-sm">
+
+          <Link href="/eaurix" className="text-sm text-[#0EA5E9]">
             Browse Products
           </Link>
         </div>
@@ -408,59 +618,86 @@ export function EAurixCheckout() {
     );
   }
 
+  /* =========================================================
+     INPUT STYLE
+  ========================================================= */
+
   const inp =
     "w-full bg-[#F8FAFC] border border-gray-200 rounded-xl px-3 py-2.5 text-sm text-[#0F172A] outline-none focus:border-[#0EA5E9] transition-colors";
 
   return (
-    <div className="min-h-screen  pb-14">
-      {/* Header */}
-      <div className="sticky top-0 z-40 bg-white/95 backdrop-blur-xl border-b border-slate-200">
-        {/* Header */}
+    <div className="min-h-screen pb-14">
+      {/* =====================================================
+          HEADER
+      ===================================================== */}
+
+      <div className="sticky top-0 z-40 border-b border-slate-200 bg-white/95 backdrop-blur-xl">
+        {/* MAIN HEADER */}
+
         <div
           className={`overflow-hidden transition-all duration-300 ${
-            compactHeader ? "max-h-0 opacity-0" : "max-h-28 opacity-100 pt-12"
+            compactHeader ? "max-h-0 opacity-0" : "max-h-28 pt-12 opacity-100"
           }`}
         >
           <div className="mx-auto flex h-16 max-w-4xl items-center justify-between px-4">
-            {/* Left */}
+            {/* BACK */}
+
             <button
               onClick={() =>
-                step === 1 ? router.push("/eaurix/cart") : setStep(step - 1)
+                step === 1
+                  ? router.push("/eaurix/cart")
+                  : setStep((prev) => Math.max(prev - 1, 1))
               }
               className="flex h-10 w-10 items-center justify-center rounded-full border border-slate-200 bg-white"
             >
               <ChevronLeft className="h-5 w-5 text-slate-800" />
             </button>
 
-            {/* Center */}
+            {/* CENTER */}
+
             <div className="text-center">
               <h1 className="text-lg font-bold">Checkout</h1>
+
               <p className="text-xs text-slate-500">
                 Step {step} of {steps.length}
               </p>
             </div>
 
-            {/* Right */}
+            {/* LOCK */}
+
             <div className="flex h-10 w-10 items-center justify-center rounded-full bg-emerald-50">
               <Lock className="h-4 w-4 text-emerald-600" />
             </div>
           </div>
         </div>
 
-        {/* Progress */}
+        {/* PROGRESS */}
+
         <div className="px-4 py-2">
           <div className="h-1.5 overflow-hidden rounded-full bg-slate-200">
             <div
               className="h-full rounded-full bg-sky-500 transition-all duration-300"
-              style={{ width: `${(step / steps.length) * 100}%` }}
+              style={{
+                width: `${(step / steps.length) * 100}%`,
+              }}
             />
           </div>
         </div>
       </div>
-      <div className="mx-auto px-6 mt-4 pb-4">
-        <div className="grid grid-cols-1 xl:grid-cols-[1.6fr_0.9fr] gap-2 items-start">
-          {/* Form panel */}
-          <div className="">
+
+      {/* =====================================================
+          CONTENT
+      ===================================================== */}
+
+      <div className="mx-auto mt-4 px-4 pb-4 sm:px-6">
+        <div className="grid grid-cols-1 items-start gap-2 xl:grid-cols-[1.6fr_0.9fr]">
+          {/* =================================================
+              FORM PANEL
+          ================================================= */}
+
+          <div>
+            {/* STEP 1 */}
+
             {step === 1 && (
               <CheckoutCustomerDetails
                 form={form}
@@ -471,6 +708,9 @@ export function EAurixCheckout() {
                 onAddressClick={handleAddressPicker}
               />
             )}
+
+            {/* STEP 2 */}
+
             {step === 2 && (
               <CheckoutDeliveryDetails
                 form={form}
@@ -480,33 +720,38 @@ export function EAurixCheckout() {
               />
             )}
 
-            {/* ── STEP 2: Payment ── */}
+            {/* STEP 3 */}
+
             {step === 3 && (
               <CheckoutPaymentStep
                 form={form}
                 update={update}
                 grandTotal={grandTotal}
-                inp={inp}
               />
             )}
 
-            {/* ── STEP 4: Review ── */}
+            {/* =================================================
+                STEP 4 — REVIEW
+            ================================================= */}
+
             {step === 4 && (
               <div className="space-y-2">
-                {/* Header */}
+                {/* HEADER */}
+
                 <div>
                   <h2 className="text-base font-bold text-slate-900">
                     Review Order
                   </h2>
-                  <p className="text-xs text-slate-500 mt-0.5">
+
+                  <p className="mt-0.5 text-xs text-slate-500">
                     Check your delivery details before placing the order.
                   </p>
                 </div>
 
-                {/* Delivery Summary */}
-                <div className="rounded-2xl border border-slate-200 bg-slate-50 p-3 ">
-                  <div className="rounded-2xl border border-slate-200 bg-slate-50 p-3 ">
-                    {/* Header */}
+                {/* DELIVERY */}
+
+                <div className="rounded-2xl border border-slate-200 bg-slate-50 p-3">
+                  <div className="rounded-2xl border border-slate-200 bg-slate-50 p-3">
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-2">
                         <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-sky-100">
@@ -517,6 +762,7 @@ export function EAurixCheckout() {
                           <h3 className="text-sm font-semibold text-slate-900">
                             Delivering To
                           </h3>
+
                           <p className="text-[11px] text-slate-500">
                             {form.deliveryOption === "express"
                               ? "Express Delivery"
@@ -532,8 +778,9 @@ export function EAurixCheckout() {
                       </span>
                     </div>
 
-                    {/* Customer */}
-                    <div className="rounded-xl bg-white p-3 border border-slate-100">
+                    {/* CUSTOMER */}
+
+                    <div className="mt-3 rounded-xl border border-slate-100 bg-white p-3">
                       <div className="flex items-center justify-between">
                         <span className="text-sm font-semibold text-slate-900">
                           {form.name}
@@ -544,16 +791,18 @@ export function EAurixCheckout() {
                         </span>
                       </div>
 
-                      <p className="mt-2 wrap-break-word text-xs leading-5 text-slate-600 whitespace-normal">
+                      <p className="mt-2 wrap-break-word whitespace-normal text-xs leading-5 text-slate-600">
                         {form.address}, {form.city} {form.zip}
                       </p>
                     </div>
                   </div>
                 </div>
 
-                {/* Products */}
-                <div className="rounded-2xl border border-slate-200 bg-white overflow-hidden">
-                  {/* Header */}
+                {/* =================================================
+                    ORDER ITEMS
+                ================================================= */}
+
+                <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white">
                   <div className="rounded-2xl border border-slate-200 bg-white px-4 py-1">
                     <button
                       type="button"
@@ -564,6 +813,7 @@ export function EAurixCheckout() {
                         <h3 className="text-sm font-semibold text-slate-900">
                           Order Items
                         </h3>
+
                         <p className="text-xs text-slate-500">
                           {reviewCart.length}{" "}
                           {reviewCart.length === 1 ? "Item" : "Items"}
@@ -576,6 +826,8 @@ export function EAurixCheckout() {
                     </button>
                   </div>
 
+                  {/* ORDER POPUP */}
+
                   {showOrderPopup && (
                     <div
                       className="fixed inset-0 z-[9999] flex items-end justify-center bg-black/60 p-4 sm:items-center"
@@ -585,12 +837,14 @@ export function EAurixCheckout() {
                         onClick={(e) => e.stopPropagation()}
                         className="w-full max-w-lg overflow-hidden rounded-3xl bg-white shadow-2xl"
                       >
-                        {/* Header */}
+                        {/* POPUP HEADER */}
+
                         <div className="flex items-center justify-between border-b px-5 py-4">
                           <div>
                             <h3 className="text-lg font-bold text-slate-900">
                               Order Items
                             </h3>
+
                             <p className="text-xs text-slate-500">
                               {reviewCart.length}{" "}
                               {reviewCart.length === 1 ? "Item" : "Items"}
@@ -605,8 +859,9 @@ export function EAurixCheckout() {
                           </button>
                         </div>
 
-                        {/* Product List */}
-                        <div className="max-h-[65vh] overflow-y-auto divide-y">
+                        {/* PRODUCT LIST */}
+
+                        <div className="max-h-[65vh] divide-y overflow-y-auto">
                           {reviewCart.map((item) => (
                             <div
                               key={item.id}
@@ -645,7 +900,8 @@ export function EAurixCheckout() {
                           ))}
                         </div>
 
-                        {/* Footer */}
+                        {/* FOOTER */}
+
                         <div className="border-t p-4">
                           <button
                             onClick={() => setShowOrderPopup(false)}
@@ -658,8 +914,12 @@ export function EAurixCheckout() {
                     </div>
                   )}
                 </div>
-                {/* Amazon Style Bill Card */}
-                <div className=" mt-2 rounded-2xl border border-slate-200 bg-linear-to-br from-slate-50 to-white p-4 shadow-sm">
+
+                {/* =================================================
+                    BILL
+                ================================================= */}
+
+                <div className="mt-2 rounded-2xl border border-slate-200 bg-gradient-to-br from-slate-50 to-white p-4 shadow-sm">
                   <div className="mb-2 flex items-center justify-between">
                     <h4 className="text-sm font-bold text-slate-900">
                       Bill Details
@@ -674,11 +934,13 @@ export function EAurixCheckout() {
                   <div className="space-y-2.5 text-sm">
                     <div className="flex justify-between text-slate-600">
                       <span>Items Total</span>
-                      <span>₹{cartTotal.toFixed(2)}</span>
+
+                      <span>₹{reviewCartTotal.toFixed(2)}</span>
                     </div>
 
                     <div className="flex justify-between text-slate-600">
                       <span>Delivery Charges</span>
+
                       <span
                         className={`font-medium ${
                           delivery === 0 ? "text-emerald-600" : "text-slate-900"
@@ -690,6 +952,7 @@ export function EAurixCheckout() {
 
                     <div className="flex justify-between text-slate-600">
                       <span>Discount</span>
+
                       <span className="font-medium text-emerald-600">
                         -₹0.00
                       </span>
@@ -697,10 +960,11 @@ export function EAurixCheckout() {
 
                     <div className="flex justify-between text-slate-600">
                       <span>GST</span>
+
                       <span>₹{tax.toFixed(2)}</span>
                     </div>
 
-                    <div className="my-2 border-t border-dashed border-slate-300"></div>
+                    <div className="my-2 border-t border-dashed border-slate-300" />
 
                     <div className="flex items-center justify-between">
                       <span className="text-base font-bold text-slate-900">
@@ -715,17 +979,19 @@ export function EAurixCheckout() {
                     <div className="rounded-xl bg-emerald-50 px-3 py-2 text-xs text-emerald-700">
                       {delivery === 0 ? (
                         <>
-                          🎉 Your order is eligible for <b>FREE Delivery</b>.
+                          Your order is eligible for <b>FREE Delivery</b>.
                         </>
                       ) : (
                         <>
-                          🚚 Delivery Charge: <b>₹{delivery.toFixed(2)}</b>
+                          Delivery Charge: <b>₹{delivery.toFixed(2)}</b>
                         </>
                       )}
                     </div>
                   </div>
                 </div>
-                {/* Terms */}
+
+                {/* TERMS */}
+
                 <div className="flex items-start gap-2 rounded-xl border border-slate-200 bg-slate-50 px-3 py-2">
                   <Lock className="mt-0.5 h-3.5 w-3.5 shrink-0 text-emerald-600" />
 
@@ -744,16 +1010,23 @@ export function EAurixCheckout() {
               </div>
             )}
 
-            {/* Bottom Action Bar */}
+            {/* =================================================
+                BOTTOM ACTION BAR
+            ================================================= */}
+
             <div
-              className={`fixed bottom-0 left-0 right-0 z-50 border-t border-gray-200 bg-white/95 backdrop-blur-md px-4 py-3 pb-[calc(env(safe-area-inset-bottom)+12px)] transition-all duration-300 ${
+              className={`fixed bottom-0 left-0 right-0 z-50 border-t border-gray-200 bg-white/95 px-4 py-3 backdrop-blur-md transition-all duration-300 ${
                 showOrderSummary || (step === 3 && keyboardOpen)
-                  ? "translate-y-full opacity-0 pointer-events-none"
+                  ? "pointer-events-none translate-y-full opacity-0"
                   : "translate-y-0 opacity-100"
               }`}
+              style={{
+                paddingBottom: "calc(env(safe-area-inset-bottom) + 12px)",
+              }}
             >
               <div className="mx-auto flex max-w-md gap-3">
-                {/* View Products */}
+                {/* VIEW PRODUCTS */}
+
                 <button
                   onClick={() => setShowOrderSummary(true)}
                   className="flex-1 rounded-xl border border-gray-200 bg-white py-3 text-sm font-semibold text-slate-700 transition hover:bg-gray-50"
@@ -761,40 +1034,53 @@ export function EAurixCheckout() {
                   View Products
                 </button>
 
-                {/* Continue / Place Order */}
+                {/* CONTINUE / PLACE ORDER */}
+
                 <button
-                  onClick={() =>
-                    step === 4 ? handleConfirm() : setStep((prev) => prev + 1)
-                  }
+                  onClick={() => {
+                    if (step === 4) {
+                      handleConfirm();
+                    } else {
+                      handleNext();
+                    }
+                  }}
                   disabled={!canNext()}
-                  className={`flex-1 flex items-center justify-center gap-2 rounded-xl py-3 text-sm font-bold transition-all ${
+                  className={`flex flex-1 items-center justify-center gap-2 rounded-xl py-3 text-sm font-bold transition-all ${
                     canNext()
                       ? step === 4
-                        ? "bg-[#FF5C39] hover:bg-[#E54E2E] text-white"
-                        : "bg-[#0EA5E9] hover:bg-[#0284C7] text-white"
-                      : "bg-gray-200 text-gray-400 cursor-not-allowed"
+                        ? "bg-[#FF5C39] text-white hover:bg-[#E54E2E]"
+                        : "bg-[#0EA5E9] text-white hover:bg-[#0284C7]"
+                      : "cursor-not-allowed bg-gray-200 text-gray-400"
                   }`}
                 >
                   {step === 4 ? (
                     <>
-                      <Lock className="w-4 h-4 shrink-0" />
-                      <span className="text-xs font-semibold whitespace-nowrap">
+                      <Lock className="h-4 w-4 shrink-0" />
+
+                      <span className="whitespace-nowrap text-xs font-semibold">
                         Place Order
                       </span>
-                      <span className="text-xs font-bold whitespace-nowrap">
+
+                      <span className="whitespace-nowrap text-xs font-bold">
                         ₹{grandTotal.toFixed(0)}
                       </span>
                     </>
                   ) : (
                     <>
                       <span className="text-sm">Continue</span>
-                      <ChevronRight className="w-4 h-4 shrink-0" />
+
+                      <ChevronRight className="h-4 w-4 shrink-0" />
                     </>
                   )}
                 </button>
               </div>
             </div>
           </div>
+
+          {/* =================================================
+              DESKTOP ORDER SUMMARY
+          ================================================= */}
+
           {showOrderSummary && (
             <>
               <div
@@ -820,6 +1106,11 @@ export function EAurixCheckout() {
           )}
         </div>
       </div>
+
+      {/* =====================================================
+          ADDRESS SELECTOR
+      ===================================================== */}
+
       <AddressSelectorModal
         open={showAddressModal}
         selected={selectedAddress}
@@ -847,6 +1138,11 @@ export function EAurixCheckout() {
           setShowAddressForm(true);
         }}
       />
+
+      {/* =====================================================
+          ADDRESS FORM
+      ===================================================== */}
+
       <AddressFormModal
         open={showAddressForm}
         editingAddress={editingAddress}
@@ -861,31 +1157,43 @@ export function EAurixCheckout() {
           const {
             data: { user },
           } = await supabase.auth.getUser();
+
           if (user) {
             setForm((prev) => ({
               ...prev,
               email: user.email ?? "",
             }));
           }
+
           if (!user?.email) return;
 
           const { data } = await supabase
             .from("customer_addresses")
             .select("*")
             .eq("customer_email", user.email)
-            .order("is_default", { ascending: false })
-            .order("created_at", { ascending: false });
+            .order("is_default", {
+              ascending: false,
+            })
+            .order("created_at", {
+              ascending: false,
+            });
 
           if (data?.length) {
             setSelectedAddress(data[0]);
 
             setForm((prev) => ({
               ...prev,
+
               name: data[0].customer_name ?? "",
+
               email: data[0].customer_email ?? user.email ?? "",
+
               phone: data[0].phone ?? "",
+
               address: data[0].address ?? "",
+
               city: data[0].city ?? "",
+
               zip: data[0].pincode ?? "",
             }));
           }

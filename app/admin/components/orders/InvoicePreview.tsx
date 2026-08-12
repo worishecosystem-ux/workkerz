@@ -5,140 +5,212 @@ import { Printer, X } from "lucide-react";
 
 type Props = {
   order: any;
-  items: any[];
+  items?: any[];
   onClose?: () => void;
   onPrint?: () => void;
 };
 
 const InvoicePreview = forwardRef<HTMLDivElement, Props>(
-  ({ order, items, onClose, onPrint }, ref) => {
-    const formatMoney = (value: any) =>
-      `₹${Number(value || 0).toLocaleString("en-IN")}`;
+  ({ order, items = [], onClose, onPrint }, ref) => {
+    const formatMoney = (value: any) => {
+      const number = Number(value ?? 0);
 
-    const date = order?.created_at
+      if (!Number.isFinite(number)) {
+        return "Rs. 0";
+      }
+
+      return `Rs. ${number.toLocaleString("en-IN")}`;
+    };
+
+    const createdAt = order?.created_at
       ? new Date(order.created_at)
       : new Date();
 
-    const formattedDate = date.toLocaleDateString("en-IN", {
+    const invoiceDate = createdAt.toLocaleDateString("en-IN", {
       day: "2-digit",
       month: "short",
       year: "numeric",
     });
 
+    const invoiceTime = createdAt.toLocaleTimeString("en-IN", {
+      hour: "2-digit",
+      minute: "2-digit",
+    });
+
+    const invoiceNumber = order?.order_number || order?.id || "-";
+
+    const paymentStatus = String(
+      order?.payment_status || "Pending",
+    );
+
+    const isPaid = paymentStatus.toLowerCase() === "paid";
+
+    const handlePrint = () => {
+      if (onPrint) {
+        onPrint();
+        return;
+      }
+
+      window.print();
+    };
+
     return (
-      <div className="invoice-wrapper">
-        {/* =====================================================
-            MOBILE ACTION BAR
-            IMPORTANT: outside print ref
-        ===================================================== */}
+      <div className="invoice-container w-full bg-slate-100">
+        {/* MOBILE ACTIONS */}
 
         {(onClose || onPrint) && (
-          <div className="invoice-mobile-actions">
+          <div className="invoice-actions fixed bottom-0 left-0 right-0 z-[9999] flex gap-2 border-t border-slate-200 bg-white p-3 shadow-lg sm:hidden">
             {onClose && (
               <button
                 type="button"
                 onClick={onClose}
-                className="invoice-close-button"
+                className="flex h-11 flex-1 items-center justify-center gap-2 rounded-xl bg-slate-100 text-sm font-bold text-slate-700"
               >
                 <X className="h-4 w-4" />
-                <span>Close</span>
+                Close
               </button>
             )}
 
-            {onPrint && (
-              <button
-                type="button"
-                onClick={onPrint}
-                className="invoice-print-button"
-              >
-                <Printer className="h-4 w-4" />
-                <span>Print Invoice</span>
-              </button>
-            )}
+            <button
+              type="button"
+              onClick={handlePrint}
+              className="flex h-11 flex-[1.4] items-center justify-center gap-2 rounded-xl bg-slate-900 text-sm font-bold text-white"
+            >
+              <Printer className="h-4 w-4" />
+              Print Invoice
+            </button>
           </div>
         )}
 
-        {/* =====================================================
-            ACTUAL PRINTABLE INVOICE
-        ===================================================== */}
+        {/* PRINTABLE INVOICE */}
 
-        <div ref={ref} className="invoice">
+        <div
+          ref={ref}
+          className="invoice-print-area mx-auto w-full max-w-[900px] bg-white p-4 text-slate-900 sm:p-10"
+          style={{
+            fontFamily: "Arial, Helvetica, sans-serif",
+          }}
+        >
           {/* HEADER */}
 
-          <div className="invoice-header">
-            <div className="brand-section">
-              <h1 className="brand-name">
+          <div className="flex items-start justify-between gap-6 border-b-2 border-slate-900 pb-5">
+            <div className="min-w-0">
+              <h1 className="m-0 text-2xl font-black tracking-tight sm:text-3xl">
                 WORISH ECOSYSTEM
               </h1>
 
-              <p className="brand-tagline">
+              <p className="mt-1 text-xs font-extrabold tracking-widest text-slate-600">
+                PRIVATE LIMITED
+              </p>
+
+              <p className="mt-1 text-[10px] font-semibold text-slate-500">
                 Digital Workforce & Marketplace
               </p>
 
-              <div className="invoice-label">
-                INVOICE
-              </div>
+              <p className="mt-4 text-xs font-extrabold text-slate-700">
+                TAX INVOICE / BILL
+              </p>
             </div>
 
-            <div className="invoice-meta">
-              <p className="meta-label">
+            <div className="shrink-0 text-right">
+              <p className="text-[9px] font-bold uppercase tracking-wider text-slate-400">
                 Invoice Number
               </p>
 
-              <h2 className="invoice-number">
-                #{order?.order_number || "-"}
-              </h2>
+              <p className="mt-1 text-lg font-extrabold">
+                #{invoiceNumber}
+              </p>
 
-              <p className="invoice-date">
-                {formattedDate}
+              <p className="mt-3 text-[9px] font-bold uppercase tracking-wider text-slate-400">
+                Invoice Date
+              </p>
+
+              <p className="mt-1 text-[11px] font-semibold">
+                {invoiceDate}
+              </p>
+
+              <p className="text-[9px] text-slate-500">
+                {invoiceTime}
               </p>
             </div>
+          </div>
+
+          {/* COMPANY */}
+
+          <div className="mt-4 flex flex-wrap gap-x-8 gap-y-2 rounded-lg bg-slate-50 px-3 py-2 text-[9px]">
+            <div className="flex gap-2">
+              <span className="font-bold uppercase text-slate-400">
+                Billed By
+              </span>
+
+              <strong>
+                WORISH ECOSYSTEM PRIVATE LIMITED
+              </strong>
+            </div>
+
+            {order?.gstin && (
+              <div className="flex gap-2">
+                <span className="font-bold uppercase text-slate-400">
+                  GSTIN
+                </span>
+
+                <strong>{order.gstin}</strong>
+              </div>
+            )}
           </div>
 
           {/* CUSTOMER + DELIVERY */}
 
-          <div className="info-grid">
-            <div className="info-card">
-              <p className="section-label">
-                Customer
+          <div className="mt-5 grid grid-cols-1 gap-3 sm:grid-cols-2">
+            <div className="rounded-lg border border-slate-200 p-4">
+              <p className="mb-2 text-[9px] font-extrabold uppercase tracking-wider text-slate-400">
+                Bill To
               </p>
 
-              <p className="customer-name">
-                {order?.customer_name || "-"}
+              <p className="text-sm font-extrabold">
+                {order?.customer_name ||
+                  order?.customerName ||
+                  "Customer"}
               </p>
 
               {order?.customer_phone && (
-                <p className="info-text">
+                <p className="mt-1 text-[11px] text-slate-600">
                   {order.customer_phone}
                 </p>
               )}
 
               {order?.customer_email && (
-                <p className="info-text break-text">
+                <p className="mt-1 break-all text-[11px] text-slate-600">
                   {order.customer_email}
                 </p>
               )}
             </div>
 
-            <div className="info-card">
-              <p className="section-label">
+            <div className="rounded-lg border border-slate-200 p-4">
+              <p className="mb-2 text-[9px] font-extrabold uppercase tracking-wider text-slate-400">
                 Delivery Address
               </p>
 
-              <p className="address-text">
-                {order?.address || "-"}
+              <p className="break-words text-xs font-bold leading-5">
+                {order?.address ||
+                  order?.delivery_address ||
+                  "Address not available"}
               </p>
 
               {(order?.city || order?.pincode) && (
-                <p className="info-text">
-                  {order?.city || "-"}
-                  {order?.pincode &&
-                    ` - ${order.pincode}`}
+                <p className="mt-1 text-[10px] text-slate-600">
+                  {order?.city || ""}
+
+                  {order?.city && order?.pincode
+                    ? " - "
+                    : ""}
+
+                  {order?.pincode || ""}
                 </p>
               )}
 
               {order?.delivery_option && (
-                <p className="delivery-text">
+                <p className="mt-2 text-[10px] text-slate-500">
                   Delivery:{" "}
                   <strong>
                     {order.delivery_option}
@@ -147,7 +219,7 @@ const InvoicePreview = forwardRef<HTMLDivElement, Props>(
               )}
 
               {order?.delivery_slot && (
-                <p className="delivery-text">
+                <p className="mt-1 text-[10px] text-slate-500">
                   Slot:{" "}
                   <strong>
                     {order.delivery_slot}
@@ -159,75 +231,85 @@ const InvoicePreview = forwardRef<HTMLDivElement, Props>(
 
           {/* PRODUCTS */}
 
-          <div className="items-section">
-            <table className="items-table">
+          <div className="mt-6 overflow-hidden rounded-lg border border-slate-200">
+            <table className="w-full border-collapse">
               <thead>
-                <tr>
-                  <th className="product-column">
+                <tr className="bg-slate-900 text-white">
+                  <th className="w-[48%] px-3 py-2 text-left text-[9px] font-extrabold uppercase">
                     Product
                   </th>
 
-                  <th className="qty-column">
+                  <th className="w-[14%] px-3 py-2 text-center text-[9px] font-extrabold uppercase">
                     Qty
                   </th>
 
-                  <th className="rate-column">
+                  <th className="w-[19%] px-3 py-2 text-right text-[9px] font-extrabold uppercase">
                     Rate
                   </th>
 
-                  <th className="total-column">
+                  <th className="w-[19%] px-3 py-2 text-right text-[9px] font-extrabold uppercase">
                     Total
                   </th>
                 </tr>
               </thead>
 
               <tbody>
-                {items?.length ? (
-                  items.map(
-                    (item: any, index: number) => {
-                      const qty = Number(
-                        item.qty || 0,
-                      );
+                {items.length > 0 ? (
+                  items.map((item: any, index: number) => {
+                    const quantity = Number(
+                      item?.qty ??
+                        item?.quantity ??
+                        1,
+                    );
 
-                      const price = Number(
-                        item.price || 0,
-                      );
+                    const price = Number(
+                      item?.price ??
+                        item?.unit_price ??
+                        item?.unitPrice ??
+                        0,
+                    );
 
-                      return (
-                        <tr
-                          key={
-                            item.id || index
-                          }
-                        >
-                          <td className="product-name">
-                            {item.product_name ||
-                              "-"}
-                          </td>
+                    const productName =
+                      item?.product_name ??
+                      item?.productName ??
+                      item?.name ??
+                      "Product";
 
-                          <td className="qty">
-                            {qty}
-                          </td>
+                    return (
+                      <tr
+                        key={
+                          item?.id ??
+                          item?.product_id ??
+                          index
+                        }
+                      >
+                        <td className="break-words border-t border-slate-200 px-3 py-2.5 text-xs font-semibold">
+                          {productName}
+                        </td>
 
-                          <td className="rate">
-                            {formatMoney(price)}
-                          </td>
+                        <td className="border-t border-slate-200 px-3 py-2.5 text-center text-xs">
+                          {quantity}
+                        </td>
 
-                          <td className="item-total">
-                            {formatMoney(
-                              price * qty,
-                            )}
-                          </td>
-                        </tr>
-                      );
-                    },
-                  )
+                        <td className="border-t border-slate-200 px-3 py-2.5 text-right text-xs">
+                          {formatMoney(price)}
+                        </td>
+
+                        <td className="border-t border-slate-200 px-3 py-2.5 text-right text-xs font-extrabold">
+                          {formatMoney(
+                            price * quantity,
+                          )}
+                        </td>
+                      </tr>
+                    );
+                  })
                 ) : (
                   <tr>
                     <td
                       colSpan={4}
-                      className="empty-products"
+                      className="border-t border-slate-200 px-3 py-8 text-center text-xs text-slate-400"
                     >
-                      No products found.
+                      No product details available.
                     </td>
                   </tr>
                 )}
@@ -235,57 +317,65 @@ const InvoicePreview = forwardRef<HTMLDivElement, Props>(
             </table>
           </div>
 
-          {/* PAYMENT + SUMMARY */}
+          {/* PAYMENT + TOTAL */}
 
-          <div className="bottom-section">
-            <div className="payment-section">
-              <p className="section-label">
+          <div className="mt-6 flex flex-col justify-between gap-8 sm:flex-row">
+            <div className="min-w-[180px]">
+              <p className="mb-2 text-[9px] font-extrabold uppercase tracking-wider text-slate-400">
                 Payment Details
               </p>
 
-              <div className="payment-list">
-                <div className="payment-row">
-                  <span>Method</span>
+              <div className="space-y-2 text-[11px]">
+                <div className="flex justify-between gap-5">
+                  <span className="text-slate-500">
+                    Method
+                  </span>
 
                   <strong>
-                    {order?.payment_method ||
-                      "COD"}
+                    {order?.payment_method || "COD"}
                   </strong>
                 </div>
 
-                <div className="payment-row">
-                  <span>Status</span>
+                <div className="flex justify-between gap-5">
+                  <span className="text-slate-500">
+                    Status
+                  </span>
 
-                  <strong>
-                    {order?.payment_status ||
-                      "Pending"}
-                  </strong>
+                  <strong>{paymentStatus}</strong>
                 </div>
+
+                {order?.transaction_id && (
+                  <div className="flex justify-between gap-5">
+                    <span className="text-slate-500">
+                      Transaction
+                    </span>
+
+                    <strong className="break-all">
+                      {order.transaction_id}
+                    </strong>
+                  </div>
+                )}
               </div>
             </div>
 
-            <div className="summary">
-              <div className="summary-row">
+            <div className="w-full max-w-[300px]">
+              <div className="flex justify-between py-1 text-xs text-slate-500">
                 <span>Subtotal</span>
 
                 <strong>
-                  {formatMoney(
-                    order?.subtotal,
-                  )}
+                  {formatMoney(order?.subtotal)}
                 </strong>
               </div>
 
-              <div className="summary-row">
+              <div className="flex justify-between py-1 text-xs text-slate-500">
                 <span>Delivery</span>
 
                 <strong>
-                  {formatMoney(
-                    order?.delivery,
-                  )}
+                  {formatMoney(order?.delivery)}
                 </strong>
               </div>
 
-              <div className="summary-row">
+              <div className="flex justify-between py-1 text-xs text-slate-500">
                 <span>Tax</span>
 
                 <strong>
@@ -293,8 +383,8 @@ const InvoicePreview = forwardRef<HTMLDivElement, Props>(
                 </strong>
               </div>
 
-              <div className="summary-total">
-                <span>Total</span>
+              <div className="mt-2 flex justify-between border-t-2 border-slate-900 pt-3 text-base font-black">
+                <span>Total Amount</span>
 
                 <strong>
                   {formatMoney(order?.total)}
@@ -303,712 +393,48 @@ const InvoicePreview = forwardRef<HTMLDivElement, Props>(
             </div>
           </div>
 
+          {/* STATUS */}
+
+          <div className="mt-5 flex items-center justify-between">
+            <span
+              className={
+                isPaid
+                  ? "rounded-full bg-green-100 px-3 py-1 text-[9px] font-extrabold uppercase text-green-700"
+                  : "rounded-full bg-amber-100 px-3 py-1 text-[9px] font-extrabold uppercase text-amber-700"
+              }
+            >
+              {paymentStatus}
+            </span>
+
+            {String(order?.status || "").toLowerCase() ===
+              "delivered" && (
+              <span className="rounded-full bg-green-100 px-3 py-1 text-[9px] font-extrabold uppercase text-green-700">
+                Delivered
+              </span>
+            )}
+          </div>
+
           {/* FOOTER */}
 
-          <div className="invoice-footer">
-            <p className="thank-you">
+          <div className="mt-8 border-t border-slate-200 pt-4 text-center">
+            <p className="text-[11px] font-bold">
               Thank you for choosing Workkerz.
             </p>
 
-            <p className="generated-text">
-              This is a computer-generated invoice
-              and does not require a physical
-              signature.
+            <p className="mt-1 text-[10px] font-extrabold text-slate-700">
+              WORISH ECOSYSTEM PRIVATE LIMITED
+            </p>
+
+            <p className="mx-auto mt-1 max-w-lg text-[9px] text-slate-400">
+              This is a computer-generated invoice and
+              does not require a physical signature.
             </p>
           </div>
         </div>
 
-        {/* =====================================================
-            CSS
-        ===================================================== */}
+        {/* PRINT CSS */}
 
         <style>{`
-          * {
-            box-sizing: border-box;
-          }
-
-          .invoice-wrapper {
-            width: 100%;
-            background: #f1f5f9;
-          }
-
-          /* ===================================================
-             MOBILE ACTION BAR
-          =================================================== */
-
-          .invoice-mobile-actions {
-            display: none;
-          }
-
-          .invoice-close-button,
-          .invoice-print-button {
-            border: 0;
-            cursor: pointer;
-
-            display: flex;
-            align-items: center;
-            justify-content: center;
-
-            gap: 7px;
-
-            height: 42px;
-
-            border-radius: 11px;
-
-            padding: 0 15px;
-
-            font-family: Arial, Helvetica, sans-serif;
-
-            font-size: 13px;
-            font-weight: 700;
-          }
-
-          .invoice-close-button {
-            flex: 1;
-            background: #f1f5f9;
-            color: #334155;
-          }
-
-          .invoice-print-button {
-            flex: 1.4;
-            background: #0f172a;
-            color: white;
-          }
-
-          /* ===================================================
-             INVOICE
-          =================================================== */
-
-          .invoice {
-            width: 100%;
-            max-width: 900px;
-
-            margin: 0 auto;
-
-            padding: 40px;
-
-            background: #ffffff;
-
-            color: #0f172a;
-
-            font-family:
-              Arial,
-              Helvetica,
-              sans-serif;
-
-            font-size: 14px;
-            line-height: 1.45;
-          }
-
-          .invoice *,
-          .invoice *::before,
-          .invoice *::after {
-            box-sizing: border-box;
-          }
-
-          /* ===================================================
-             HEADER
-          =================================================== */
-
-          .invoice-header {
-            display: flex;
-            align-items: flex-start;
-            justify-content: space-between;
-
-            gap: 30px;
-
-            padding-bottom: 22px;
-
-            border-bottom: 2px solid #0f172a;
-          }
-
-          .brand-section {
-            min-width: 0;
-          }
-
-          .brand-name {
-            margin: 0;
-
-            font-size: 30px;
-            line-height: 1;
-
-            font-weight: 900;
-
-            letter-spacing: -0.8px;
-          }
-
-          .brand-tagline {
-            margin: 7px 0 0;
-
-            color: #64748b;
-
-            font-size: 11px;
-            font-weight: 600;
-          }
-
-          .invoice-label {
-            margin-top: 17px;
-
-            color: #334155;
-
-            font-size: 13px;
-            font-weight: 800;
-          }
-
-          .invoice-meta {
-            min-width: 150px;
-            text-align: right;
-          }
-
-          .meta-label {
-            margin: 0;
-
-            color: #94a3b8;
-
-            font-size: 9px;
-            font-weight: 700;
-
-            text-transform: uppercase;
-            letter-spacing: 0.8px;
-          }
-
-          .invoice-number {
-            margin: 4px 0 0;
-
-            font-size: 18px;
-            font-weight: 800;
-          }
-
-          .invoice-date {
-            margin: 7px 0 0;
-
-            color: #64748b;
-
-            font-size: 11px;
-          }
-
-          /* ===================================================
-             INFO
-          =================================================== */
-
-          .info-grid {
-            display: grid;
-
-            grid-template-columns:
-              repeat(2, minmax(0, 1fr));
-
-            gap: 18px;
-
-            margin-top: 24px;
-          }
-
-          .info-card {
-            min-width: 0;
-
-            padding: 16px;
-
-            border: 1px solid #e2e8f0;
-
-            border-radius: 10px;
-
-            background: #fff;
-          }
-
-          .section-label {
-            margin: 0 0 9px;
-
-            color: #94a3b8;
-
-            font-size: 9px;
-            font-weight: 800;
-
-            text-transform: uppercase;
-            letter-spacing: 0.8px;
-          }
-
-          .customer-name {
-            margin: 0;
-
-            font-size: 14px;
-            font-weight: 800;
-          }
-
-          .info-text {
-            margin: 5px 0 0;
-
-            color: #475569;
-
-            font-size: 11px;
-          }
-
-          .break-text {
-            overflow-wrap: anywhere;
-            word-break: break-word;
-          }
-
-          .address-text {
-            margin: 0;
-
-            font-size: 13px;
-            font-weight: 700;
-
-            line-height: 1.5;
-
-            overflow-wrap: anywhere;
-            word-break: break-word;
-          }
-
-          .delivery-text {
-            margin: 7px 0 0;
-
-            color: #64748b;
-
-            font-size: 10px;
-          }
-
-          /* ===================================================
-             PRODUCTS
-          =================================================== */
-
-          .items-section {
-            width: 100%;
-
-            margin-top: 25px;
-
-            overflow: hidden;
-
-            border: 1px solid #e2e8f0;
-
-            border-radius: 10px;
-          }
-
-          .items-table {
-            width: 100%;
-
-            border-collapse: collapse;
-
-            table-layout: fixed;
-          }
-
-          .items-table thead tr {
-            background: #0f172a;
-            color: white;
-          }
-
-          .items-table th {
-            padding: 10px 12px;
-
-            font-size: 9px;
-            font-weight: 800;
-
-            text-transform: uppercase;
-          }
-
-          .items-table td {
-            border-top: 1px solid #e2e8f0;
-
-            padding: 11px 12px;
-          }
-
-          .product-column {
-            width: 48%;
-            text-align: left;
-          }
-
-          .qty-column {
-            width: 14%;
-            text-align: center;
-          }
-
-          .rate-column {
-            width: 19%;
-            text-align: right;
-          }
-
-          .total-column {
-            width: 19%;
-            text-align: right;
-          }
-
-          .product-name {
-            font-size: 12px;
-            font-weight: 600;
-
-            overflow-wrap: anywhere;
-            word-break: break-word;
-          }
-
-          .qty {
-            font-size: 12px;
-            text-align: center;
-          }
-
-          .rate,
-          .item-total {
-            font-size: 12px;
-
-            text-align: right;
-
-            white-space: nowrap;
-          }
-
-          .item-total {
-            font-weight: 800;
-          }
-
-          .empty-products {
-            padding: 30px 12px !important;
-
-            color: #94a3b8;
-
-            text-align: center;
-          }
-
-          /* ===================================================
-             PAYMENT
-          =================================================== */
-
-          .bottom-section {
-            display: flex;
-
-            align-items: flex-start;
-            justify-content: space-between;
-
-            gap: 40px;
-
-            margin-top: 24px;
-          }
-
-          .payment-section {
-            min-width: 180px;
-          }
-
-          .payment-list {
-            display: flex;
-
-            flex-direction: column;
-
-            gap: 7px;
-          }
-
-          .payment-row {
-            display: flex;
-
-            align-items: center;
-            justify-content: space-between;
-
-            gap: 20px;
-
-            color: #64748b;
-
-            font-size: 11px;
-          }
-
-          .payment-row strong {
-            color: #0f172a;
-          }
-
-          .summary {
-            width: 300px;
-            max-width: 100%;
-          }
-
-          .summary-row {
-            display: flex;
-
-            justify-content: space-between;
-
-            gap: 20px;
-
-            padding: 4px 0;
-
-            color: #64748b;
-
-            font-size: 12px;
-          }
-
-          .summary-row strong {
-            color: #334155;
-            white-space: nowrap;
-          }
-
-          .summary-total {
-            display: flex;
-
-            justify-content: space-between;
-
-            gap: 20px;
-
-            margin-top: 9px;
-
-            padding-top: 11px;
-
-            border-top: 2px solid #0f172a;
-
-            font-size: 16px;
-            font-weight: 900;
-          }
-
-          /* ===================================================
-             FOOTER
-          =================================================== */
-
-          .invoice-footer {
-            margin-top: 32px;
-
-            padding-top: 17px;
-
-            border-top: 1px solid #e2e8f0;
-
-            text-align: center;
-          }
-
-          .thank-you {
-            margin: 0;
-
-            font-size: 11px;
-            font-weight: 700;
-          }
-
-          .generated-text {
-            max-width: 500px;
-
-            margin: 5px auto 0;
-
-            color: #94a3b8;
-
-            font-size: 9px;
-          }
-
-          /* ===================================================
-             MOBILE
-          =================================================== */
-
-          @media (max-width: 640px) {
-            .invoice-wrapper {
-              min-height: 100vh;
-              padding-bottom: 72px;
-              background: #f1f5f9;
-            }
-
-            .invoice-mobile-actions {
-              position: fixed;
-
-              left: 0;
-              right: 0;
-              bottom: 0;
-
-              z-index: 99999;
-
-              display: flex;
-
-              gap: 8px;
-
-              padding:
-                9px
-                12px
-                calc(9px + env(safe-area-inset-bottom));
-
-              background: rgba(
-                255,
-                255,
-                255,
-                0.97
-              );
-
-              border-top: 1px solid #e2e8f0;
-
-              box-shadow:
-                0 -8px 25px
-                rgba(15, 23, 42, 0.10);
-
-              backdrop-filter: blur(12px);
-            }
-
-            .invoice {
-              width: 100%;
-              max-width: 100%;
-
-              padding: 14px;
-            }
-
-            .invoice-header {
-              gap: 10px;
-
-              padding-bottom: 13px;
-            }
-
-            .brand-name {
-              font-size: 20px;
-
-              letter-spacing: -0.5px;
-            }
-
-            .brand-tagline {
-              margin-top: 4px;
-
-              font-size: 7px;
-            }
-
-            .invoice-label {
-              margin-top: 8px;
-
-              font-size: 9px;
-            }
-
-            .invoice-meta {
-              min-width: 95px;
-            }
-
-            .meta-label {
-              font-size: 6.5px;
-            }
-
-            .invoice-number {
-              font-size: 10px;
-            }
-
-            .invoice-date {
-              margin-top: 3px;
-
-              font-size: 7px;
-            }
-
-            .info-grid {
-              grid-template-columns: 1fr;
-
-              gap: 7px;
-
-              margin-top: 12px;
-            }
-
-            .info-card {
-              padding: 9px;
-
-              border-radius: 8px;
-            }
-
-            .section-label {
-              margin-bottom: 5px;
-
-              font-size: 7px;
-            }
-
-            .customer-name {
-              font-size: 10px;
-            }
-
-            .info-text {
-              margin-top: 3px;
-
-              font-size: 8px;
-            }
-
-            .address-text {
-              font-size: 9px;
-
-              line-height: 1.4;
-            }
-
-            .delivery-text {
-              margin-top: 4px;
-
-              font-size: 7.5px;
-            }
-
-            .items-section {
-              margin-top: 12px;
-
-              border-radius: 8px;
-            }
-
-            .items-table th {
-              padding: 7px 5px;
-
-              font-size: 6.5px;
-            }
-
-            .items-table td {
-              padding: 7px 5px;
-            }
-
-            .product-column {
-              width: 44%;
-            }
-
-            .qty-column {
-              width: 13%;
-            }
-
-            .rate-column {
-              width: 21%;
-            }
-
-            .total-column {
-              width: 22%;
-            }
-
-            .product-name,
-            .qty,
-            .rate,
-            .item-total {
-              font-size: 8px;
-            }
-
-            .bottom-section {
-              flex-direction: column;
-
-              gap: 12px;
-
-              margin-top: 13px;
-            }
-
-            .payment-section,
-            .summary {
-              width: 100%;
-              min-width: 0;
-            }
-
-            .payment-list {
-              gap: 4px;
-            }
-
-            .payment-row,
-            .summary-row {
-              font-size: 8.5px;
-            }
-
-            .summary-row {
-              padding: 2px 0;
-            }
-
-            .summary-total {
-              margin-top: 5px;
-
-              padding-top: 7px;
-
-              font-size: 12px;
-            }
-
-            .invoice-footer {
-              margin-top: 17px;
-
-              padding-top: 10px;
-            }
-
-            .thank-you {
-              font-size: 8.5px;
-            }
-
-            .generated-text {
-              font-size: 6.5px;
-            }
-          }
-
-          /* ===================================================
-             PRINT
-          =================================================== */
-
           @media print {
             @page {
               size: A4;
@@ -1019,40 +445,41 @@ const InvoicePreview = forwardRef<HTMLDivElement, Props>(
             body {
               margin: 0 !important;
               padding: 0 !important;
+              background: #ffffff !important;
+            }
 
+            body * {
+              visibility: hidden !important;
+            }
+
+            .invoice-print-area,
+            .invoice-print-area * {
+              visibility: visible !important;
+            }
+
+            .invoice-print-area {
+              position: absolute !important;
+              left: 0 !important;
+              top: 0 !important;
               width: 100% !important;
-
-              background: white !important;
-            }
-
-            .invoice-wrapper {
-              background: white !important;
+              max-width: none !important;
+              margin: 0 !important;
               padding: 0 !important;
+              background: #ffffff !important;
             }
 
-            .invoice-mobile-actions {
+            .invoice-actions {
               display: none !important;
             }
 
-            .invoice {
+            table {
               width: 100% !important;
-              max-width: none !important;
-
-              margin: 0 !important;
-              padding: 0 !important;
+              border-collapse: collapse !important;
             }
 
-            .invoice-header,
-            .info-grid,
-            .bottom-section,
-            .invoice-footer {
-              break-inside: avoid;
-              page-break-inside: avoid;
-            }
-
-            .items-table tr {
-              break-inside: avoid;
-              page-break-inside: avoid;
+            tr {
+              break-inside: avoid !important;
+              page-break-inside: avoid !important;
             }
 
             * {

@@ -1,7 +1,22 @@
 "use client";
 
-import { Receipt, ShieldCheck, QrCode, X } from "lucide-react";
-import { useState } from "react";
+import {
+  ArrowLeft,
+  ArrowRight,
+  Bell,
+  CalendarCheck2,
+  Check,
+  Clock3,
+  FileText,
+  Gift,
+  HardHat,
+  Phone,
+  Sparkles,
+  UserRound,
+} from "lucide-react";
+
+import type React from "react";
+
 interface BookingPaymentStepProps {
   form: any;
   setForm: React.Dispatch<React.SetStateAction<any>>;
@@ -15,223 +30,254 @@ interface BookingPaymentStepProps {
 export default function BookingPaymentStep({
   form,
   setForm,
-  paymentType,
-  setPaymentType,
-  payableAmount,
-  grandTotal,
-  inp,
 }: BookingPaymentStepProps) {
-  const [showQR, setShowQR] = useState(false);
+  const handleConfirm = () => {
+    setForm((prev: any) => ({
+      ...prev,
+      bookingConfirmed: true,
+      bookingRequestConfirmed: true,
+    }));
+  };
+
+  const handlePrevious = () => {
+    window.dispatchEvent(new CustomEvent("booking:previous-step"));
+  };
+
+  const handleContinue = () => {
+    window.dispatchEvent(new CustomEvent("booking:continue"));
+  };
+
   return (
-    <div
-      className="space-y-6 pb-32"
-      style={{
-        paddingBottom: "calc(8rem + env(safe-area-inset-bottom))",
-      }}
-    >
-      {/* HEADER */}
-      <div>
-        <h2
-          className="text-[#0F172A] text-[1.35rem] mb-1"
-          style={{ fontWeight: 800 }}
-        >
-          Complete Payment
-        </h2>
-
-        <p className="text-[#64748B] text-sm">
-          Scan QR & enter transaction ID to continue
-        </p>
-      </div>
-
-      {/* PAYMENT CARD */}
-      <div className="rounded-4xl border border-gray-100 bg-white p-4 sm:p-6 shadow-sm">
-        <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-5">
-          {/* LEFT */}
-          <div className="flex-1">
-            <div className="grid grid-cols-2 gap-3 mb-5">
-              <button
-                type="button"
-                onClick={() => setPaymentType("fee")}
-                className={`h-13 rounded-2xl text-sm font-bold transition-all ${
-                  paymentType === "fee"
-                    ? "bg-[#FF5C39] text-white shadow-lg shadow-orange-200"
-                    : "bg-white border border-gray-200 text-[#0F172A]"
-                }`}
-              >
-                Booking Fee ₹{form.bookingType === "monthly" ? 99 : 15}
-              </button>
-
-              <button
-                type="button"
-                onClick={() => setPaymentType("full")}
-                className={`h-13 rounded-2xl text-sm font-bold transition-all ${
-                  paymentType === "full"
-                    ? "bg-[#0F172A] text-white shadow-lg"
-                    : "bg-white border border-gray-200 text-[#0F172A]"
-                }`}
-              >
-                Full Pay ₹{grandTotal}
-              </button>
-            </div>
-            {/* PAYMENT APPS */}
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mt-6">
-              <a
-                href={`gpay://upi/pay?pa=8602190366@ptaxis&pn=Workkerz&am=${payableAmount}&cu=INR`}
-                className="h-14 rounded-2xl border border-gray-200 hover:border-[#FF5C39] flex items-center justify-center gap-2 px-3 transition-all"
-              >
-                <img
-                  src="/gpay.png"
-                  alt="GPay"
-                  className="w-8 h-8 object-contain"
-                />
-                <span className="text-sm font-semibold text-[#0F172A]">
-                  GPay
-                </span>
-              </a>
-
-              <a
-                href={`phonepe://pay?pa=8602190366@ptaxis&pn=Workkerz&am=${payableAmount}&cu=INR`}
-                className="h-14 rounded-2xl border border-gray-200 hover:border-[#FF5C39] flex items-center justify-center p-3 transition-all"
-              >
-                <img
-                  src="/phonepe.svg"
-                  alt="PhonePe"
-                  className="w-28 h-8 object-contain"
-                />
-              </a>
-
-              <a
-                href={`paytmmp://pay?pa=8602190366@ptaxis&pn=Workkerz&am=${payableAmount}&cu=INR`}
-                className="h-14 rounded-2xl border border-gray-200 hover:border-[#FF5C39] flex items-center justify-center p-3 transition-all"
-              >
-                <img
-                  src="/paytm.png"
-                  alt="Paytm"
-                  className="w-28 h-8 object-contain"
-                />
-              </a>
-
-              <a
-                href={`amazonpay://pay?pa=8602190366@ptaxis&pn=Workkerz&am=${payableAmount}&cu=INR`}
-                className="h-14 rounded-2xl border border-gray-200 hover:border-[#FF5C39] flex items-center justify-center p-3 transition-all"
-              >
-                <img
-                  src="/amazon_pay.svg"
-                  alt="Amazon Pay"
-                  className="w-28 h-10 object-contain"
-                />
-              </a>
-            </div>
-          </div>
-
-          {/* QR */}
-          <button
-            type="button"
-            onClick={() => setShowQR(true)}
-            className="mt-6 w-full h-14 rounded-2xl bg-[#0F172A] text-white font-semibold flex items-center justify-center gap-3 hover:bg-black transition"
-          >
-            <QrCode className="w-5 h-5" />
-            Show QR Code
-          </button>
-        </div>
-
-        {/* TRANSACTION ID */}
-        <div className="mt-7">
-          <label className="block text-sm text-[#0F172A] mb-2">
-            Transaction ID *
-          </label>
-
-          <div className="relative">
-            <Receipt className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-
-            <form
-              onSubmit={(e) => {
-                e.preventDefault();
-                (document.activeElement as HTMLInputElement)?.blur();
-              }}
-            >
-              <input
-                type="text"
-                enterKeyHint="done"
-                autoComplete="off"
-                autoCorrect="off"
-                autoCapitalize="none"
-                spellCheck={false}
-                value={form.transactionId}
-                onChange={(e) =>
-                  setForm({
-                    ...form,
-                    transactionId: e.target.value,
-                  })
-                }
-                className={inp + " pl-11"}
-                placeholder="Enter UPI transaction/reference ID"
-              />
-            </form>
-          </div>
-        </div>
-
-        <div className="mt-5 rounded-2xl border border-blue-100 bg-blue-50 p-4 flex gap-3">
-          <ShieldCheck className="w-5 h-5 text-[#0EA5E9] shrink-0 mt-0.5" />
-
-          <div>
-            <div className="text-sm font-bold text-[#0F172A]">
-              Booking Verification
+    <div className="">
+      {/* ====================================================
+          CONTENT
+      ====================================================== */}
+      <div className="space-y-3.5 px-3.5 py-4">
+        {/* ===================================================
+            CONFIRM INTRO
+        ==================================================== */}
+        <section className="rounded-[20px] border border-[#edf0ee] bg-white p-4 shadow-[0_2px_10px_rgba(15,23,42,0.04)]">
+          <div className="flex items-start gap-3">
+            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-[13px] bg-[#f1edff] text-[#6d4aff]">
+              <Clock3 className="h-[19px] w-[19px]" />
             </div>
 
-            <div className="text-xs text-[#64748B] mt-1">
-              Booking continues after valid payment verification.
-            </div>
-          </div>
-        </div>
-      </div>
-      {showQR && (
-        <div className="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-center justify-center p-5">
-          <div className="relative w-full max-w-sm rounded-3xl bg-white p-5 shadow-2xl">
-            <button
-              type="button"
-              onClick={() => setShowQR(false)}
-              className="absolute right-4 top-4 h-9 w-9 rounded-full bg-gray-100 flex items-center justify-center"
-            >
-              <X className="w-5 h-5" />
-            </button>
+            <div className="min-w-0">
+              <h1 className="text-[19px] font-extrabold leading-6 tracking-[-0.025em] text-[#111827]">
+                Confirm Your Worker Booking
+                <span className="ml-1">🎉</span>
+              </h1>
 
-            <div className="text-center mb-5">
-              <h3 className="text-xl font-bold text-[#0F172A]">Scan QR Code</h3>
-
-              <p className="text-sm text-gray-500 mt-1">
-                Pay ₹{payableAmount} using any UPI app
+              <p className="mt-1 text-[12px] leading-[18px] text-[#667085]">
+                Almost done! Just confirm your booking request.
               </p>
             </div>
+          </div>
+        </section>
 
-            <div className="rounded-3xl border-4 border-[#0F172A] p-4">
-              <img
-                src="/workkerzpay.jpeg"
-                alt="QR Code"
-                className="w-full rounded-2xl"
-              />
-            </div>
+        {/* ===================================================
+            FREE BOOKING CARD
+        ==================================================== */}
+        <section className="overflow-hidden rounded-[20px] border border-[#d9eee0] bg-gradient-to-br from-[#f5fcf7] to-[#edf8f0] p-4">
+          <div className="flex items-center gap-3.5">
+            {/* FREE BADGE */}
+            <div className="relative flex h-[94px] w-[94px] shrink-0 items-center justify-center rounded-full border-[2.5px] border-[#0a9f4b] bg-white/60">
+              <div className="text-center">
+                <div className="text-[7px] font-bold tracking-[0.08em] text-[#087c3d]">
+                  WORKER BOOKING
+                </div>
 
-            <div className="mt-5 text-center">
-              <div className="text-3xl font-black text-[#0F172A]">
-                ₹{payableAmount}
+                <div className="mt-0.5 text-[25px] font-black leading-none tracking-tight text-[#079744]">
+                  FREE
+                </div>
               </div>
 
-              <p className="text-sm text-gray-500 mt-1">
-                Scan using GPay, PhonePe, Paytm or any UPI app
-              </p>
+              <div className="absolute -bottom-1 flex h-7 w-7 items-center justify-center rounded-full bg-[#08a34f] text-white shadow-sm">
+                <Gift className="h-3.5 w-3.5" />
+              </div>
             </div>
 
-            <button
-              type="button"
-              onClick={() => setShowQR(false)}
-              className="mt-6 h-12 w-full rounded-2xl bg-[#FF5C39] text-white font-semibold"
-            >
-              Done
-            </button>
+            {/* CONTENT */}
+            <div className="min-w-0 flex-1">
+              <h2 className="text-[15px] font-extrabold leading-5 text-[#078a42]">
+                Worker Booking Bilkul FREE!
+              </h2>
+
+              <p className="mt-1 text-[11px] leading-[17px] text-[#344054]">
+                Workkerz par worker booking ke liye aapse koi charge nahi liya
+                jata.
+              </p>
+
+              <div className="mt-2 flex items-start gap-1.5 rounded-[10px] border border-[#d8ebdd] bg-white/70 px-2.5 py-1.5">
+                <span className="mt-0.5 flex h-4 w-4 shrink-0 items-center justify-center rounded-full bg-[#0a9f4b] text-white">
+                  <Check className="h-2.5 w-2.5 stroke-[3]" />
+                </span>
+
+                <span className="text-[10px] font-medium leading-4 text-[#31543b]">
+                  Aap sirf apne kaam ka payment worker ko karenge.
+                </span>
+              </div>
+            </div>
           </div>
-        </div>
-      )}
+        </section>
+
+        {/* ===================================================
+            BOOKING PROCESS
+        ==================================================== */}
+        <section className="rounded-[20px] border border-[#edf0ee] bg-white p-4 shadow-[0_2px_10px_rgba(15,23,42,0.04)]">
+          <div className="flex items-center gap-2.5">
+            <div className="flex h-9 w-9 items-center justify-center rounded-[12px] bg-[#f1edff] text-[#6d4aff]">
+              <FileText className="h-[18px] w-[18px]" />
+            </div>
+
+            <div>
+              <h2 className="text-[16px] font-extrabold text-[#111827]">
+                Booking Process
+              </h2>
+
+              <p className="text-[10px] text-[#98a2b3]">Simple & transparent</p>
+            </div>
+          </div>
+
+          <div className="relative mt-4">
+            <div className="pointer-events-none absolute left-[12%] right-[12%] top-2.5 border-t border-dashed border-[#dce3df]" />
+
+            <div className="relative grid grid-cols-4 gap-0.5">
+              <ProcessStep
+                number="1"
+                icon={<Phone className="h-3.5 w-3.5" />}
+                title="Request Send"
+                description="Request bheji gayi."
+              />
+
+              <ProcessStep
+                number="2"
+                icon={<UserRound className="h-3.5 w-3.5" />}
+                title="Worker Match"
+                description="Best worker match."
+              />
+
+              <ProcessStep
+                number="3"
+                icon={<Phone className="h-3.5 w-3.5" />}
+                title="Worker Confirm"
+                description="Worker accept karega."
+              />
+
+              <ProcessStep
+                number="4"
+                icon={<HardHat className="h-3.5 w-3.5" />}
+                title="Kaam Shuru"
+                description="Kaam start hoga."
+              />
+            </div>
+          </div>
+        </section>
+
+        {/* ===================================================
+            TRUST / BENEFITS
+        ==================================================== */}
+        <section className="rounded-[18px] border border-[#dceafe] bg-gradient-to-br from-[#f1f7ff] to-[#f7f9ff] p-3.5">
+          <div className="flex gap-3">
+            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[#2563eb] text-white shadow-sm">
+              <Sparkles className="h-4 w-4" />
+            </div>
+
+            <div className="min-w-0 flex-1">
+              <h3 className="text-[14px] font-extrabold text-[#1554a3]">
+                Aap Khush, Hum Khush! 💜
+              </h3>
+
+              <div className="mt-2 grid grid-cols-2 gap-x-3 gap-y-2">
+                <Benefit text="Koi booking charge nahi" />
+                <Benefit text="Trusted & Verified Workers" />
+                <Benefit text="Best worker, best service" />
+                <Benefit text="Safe, Fast & Reliable" />
+              </div>
+            </div>
+          </div>
+        </section>
+
+        {/* ===================================================
+            IMPORTANT NOTE
+        ==================================================== */}
+        <section className="rounded-[18px] border border-[#f4e6b8] bg-[#fffbeb] p-3.5">
+          <div className="flex items-start gap-3">
+            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[#fef0c7] text-[#c58a00]">
+              <Bell className="h-4 w-4" />
+            </div>
+
+            <div className="min-w-0">
+              <h3 className="text-[13px] font-extrabold text-[#1f2937]">
+                Important Note
+              </h3>
+
+              <p className="mt-1 text-[11px] leading-[17px] text-[#667085]">
+                Kaam complete hone ke baad aap directly worker ko payment
+                karein.
+              </p>
+            </div>
+          </div>
+        </section>
+      </div>
+    </div>
+  );
+}
+
+/* =============================================================
+   PROCESS STEP
+============================================================= */
+
+function ProcessStep({
+  number,
+  icon,
+  title,
+  description,
+}: {
+  number: string;
+  icon: React.ReactNode;
+  title: string;
+  description: string;
+}) {
+  return (
+    <div className="relative z-10 flex min-w-0 flex-col items-center text-center">
+      {/* NUMBER */}
+      <div className="flex h-5 w-5 items-center justify-center rounded-full bg-[#079d49] text-[8px] font-bold text-white">
+        {number}
+      </div>
+
+      {/* ICON */}
+      <div className="mt-1.5 flex h-10 w-10 items-center justify-center rounded-full border border-[#dceee1] bg-[#f5fbf6] text-[#344054]">
+        {icon}
+      </div>
+
+      {/* TITLE */}
+      <h4 className="mt-1.5 line-clamp-2 px-0.5 text-[8.5px] font-extrabold leading-[11px] text-[#188342]">
+        {title}
+      </h4>
+
+      {/* DESCRIPTION */}
+      <p className="mt-0.5 line-clamp-2 max-w-[62px] text-[7px] leading-[10px] text-[#667085]">
+        {description}
+      </p>
+    </div>
+  );
+}
+
+/* =============================================================
+   BENEFIT
+============================================================= */
+
+function Benefit({ text }: { text: string }) {
+  return (
+    <div className="flex min-w-0 items-start gap-1.5">
+      <span className="mt-0.5 flex h-3.5 w-3.5 shrink-0 items-center justify-center rounded-full bg-[#2563eb] text-white">
+        <Check className="h-2 w-2 stroke-[3]" />
+      </span>
+
+      <span className="text-[9.5px] font-medium leading-[14px] text-[#1e3a6d]">
+        {text}
+      </span>
     </div>
   );
 }

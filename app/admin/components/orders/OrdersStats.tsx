@@ -23,18 +23,12 @@ export default function OrdersStats({
 }: Props) {
   const totalOrders = orders.length;
   const pending = orders.filter((o) => o.status === "Pending").length;
-  const delivery = orders.filter(
-    (o) => o.status === "Out For Delivery"
-  ).length;
+  const delivery = orders.filter((o) => o.status === "Out For Delivery").length;
   const readyToDispatch = orders.filter(
-    (o) => o.status === "Ready to Dispatch"
+    (o) => o.status === "Ready to Dispatch",
   ).length;
-  const delivered = orders.filter(
-    (o) => o.status === "Delivered"
-  ).length;
-  const cancelled = orders.filter(
-    (o) => o.status === "Cancelled"
-  ).length;
+  const delivered = orders.filter((o) => o.status === "Delivered").length;
+  const cancelled = orders.filter((o) => o.status === "Cancelled").length;
 
   const revenue = orders
     .filter((o) => o.status === "Delivered")
@@ -103,17 +97,14 @@ export default function OrdersStats({
     <div className="grid w-full grid-cols-3 gap-1.5 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-7">
       {cards.map((card) => {
         const Icon = card.icon;
-        const active =
-          card.status !== "" && selectedStatus === card.status;
+        const active = card.status !== "" && selectedStatus === card.status;
 
         return (
           <button
             key={card.title}
             type="button"
             disabled={!card.status}
-            onClick={() =>
-              card.status && onSelectStatus(card.status)
-            }
+            onClick={() => card.status && onSelectStatus(card.status)}
             className={`flex min-w-0 items-center gap-1.5 rounded-lg border bg-white px-2 py-2 text-left transition ${
               active
                 ? "border-orange-400 bg-orange-50"

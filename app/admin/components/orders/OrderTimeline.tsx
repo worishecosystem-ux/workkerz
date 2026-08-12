@@ -27,13 +27,8 @@ const statuses = [
   { value: "Cancelled", label: "Cancelled", icon: XCircle },
 ];
 
-export default function OrderStatusTimeline({
-  value,
-  onChange,
-}: Props) {
-  const currentIndex = statuses.findIndex(
-    (status) => status.value === value
-  );
+export default function OrderStatusTimeline({ value, onChange }: Props) {
+  const currentIndex = statuses.findIndex((status) => status.value === value);
 
   const cancelled = value === "Cancelled";
 
@@ -45,14 +40,10 @@ export default function OrderStatusTimeline({
             const Icon = status.icon;
             const active = status.value === value;
             const isCancelled = status.value === "Cancelled";
-            const completed =
-              !cancelled && currentIndex > index;
+            const completed = !cancelled && currentIndex > index;
 
             return (
-              <div
-                key={status.value}
-                className="flex shrink-0 items-center"
-              >
+              <div key={status.value} className="flex shrink-0 items-center">
                 <button
                   type="button"
                   onClick={() => onChange(status.value)}
@@ -82,9 +73,7 @@ export default function OrderStatusTimeline({
                     className={[
                       "mx-1.5 h-0.5 w-4 shrink-0 rounded-full",
                       "sm:mx-2 sm:w-6",
-                      completed
-                        ? "bg-emerald-400"
-                        : "bg-slate-200",
+                      completed ? "bg-emerald-400" : "bg-slate-200",
                     ].join(" ")}
                   />
                 )}

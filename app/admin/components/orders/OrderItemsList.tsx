@@ -43,8 +43,7 @@ export default function OrderItemsList({ items }: Props) {
           const price = Number(item.price || 0);
           const total = price * qty;
 
-          const image =
-            item.product_image || "/placeholder-product.png";
+          const image = item.product_image || "/placeholder-product.png";
 
           return (
             <div

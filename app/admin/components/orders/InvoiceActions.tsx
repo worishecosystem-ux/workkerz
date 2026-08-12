@@ -7,10 +7,7 @@ type Props = {
   onPrint: () => void;
 };
 
-export default function InvoiceActions({
-  order,
-  onPrint,
-}: Props) {
+export default function InvoiceActions({ order, onPrint }: Props) {
   return (
     <div className="flex min-w-0 items-center gap-1.5">
       {/* PRINT / PDF */}
@@ -43,13 +40,9 @@ export default function InvoiceActions({
       >
         <Download className="h-3.5 w-3.5 shrink-0" />
 
-        <span className="hidden xs:inline sm:inline">
-          PDF
-        </span>
+        <span className="hidden xs:inline sm:inline">PDF</span>
 
-        <span className="sm:hidden">
-          Print
-        </span>
+        <span className="sm:hidden">Print</span>
       </button>
 
       {/* ORDER NUMBER */}
@@ -74,9 +67,7 @@ export default function InvoiceActions({
       >
         <FileText className="h-3 w-3 shrink-0 text-slate-400" />
 
-        <span className="truncate">
-          #{order?.order_number || "-"}
-        </span>
+        <span className="truncate">#{order?.order_number || "-"}</span>
       </div>
     </div>
   );

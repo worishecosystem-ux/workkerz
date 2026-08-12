@@ -16,9 +16,7 @@ export default function CustomerCard({ order }: Props) {
         </div>
 
         <div>
-          <h3 className="text-sm font-bold text-slate-900">
-            Customer Details
-          </h3>
+          <h3 className="text-sm font-bold text-slate-900">Customer Details</h3>
 
           <p className="text-[10px] text-slate-400">
             Customer contact information

@@ -1,6 +1,6 @@
 "use client";
 
-import { ShoppingBag } from "lucide-react";
+import { ShoppingBag, ChevronRight } from "lucide-react";
 import NewOrderCard from "./NewOrderCard";
 
 type Props = {
@@ -16,63 +16,92 @@ export default function NewOrdersBoard({
   onConfirm,
   onReject,
 }: Props) {
-  const newOrders = orders.filter(
-    (order) => order.status === "Pending"
-  );
+  const newOrders = orders.filter((order) => order.status === "Pending");
 
   return (
-    <section className="w-full overflow-hidden rounded-xl border border-red-100 bg-white shadow-sm">
-      {/* HEADER */}
-      <div className="flex items-center justify-between gap-3 border-b border-red-100 bg-red-50/50 px-3 py-2.5 sm:px-4">
+    <section className="w-full overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
+      {/* =====================================================
+          HEADER
+      ===================================================== */}
+      <div className="flex items-center justify-between border-b border-slate-100 bg-white px-3 py-3 sm:px-4">
         <div className="flex min-w-0 items-center gap-2.5">
-          <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-red-100">
-            <ShoppingBag className="h-4 w-4 text-red-600" />
+          {/* ICON */}
+          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-red-50">
+            <ShoppingBag className="h-[17px] w-[17px] text-red-500" />
           </div>
 
+          {/* TITLE */}
           <div className="min-w-0">
             <div className="flex items-center gap-1.5">
               <span className="h-2 w-2 shrink-0 rounded-full bg-red-500" />
 
-              <h2 className="text-sm font-bold text-slate-900">
+              <h2 className="truncate text-[13px] font-bold text-slate-900 sm:text-sm">
                 New Orders
               </h2>
             </div>
 
-            <p className="mt-0.5 text-[10px] text-slate-500">
-              {newOrders.length} orders waiting for confirmation
+            <p className="mt-0.5 text-[10px] text-slate-400 sm:text-[11px]">
+              {newOrders.length > 0
+                ? `${newOrders.length} order${
+                    newOrders.length > 1 ? "s" : ""
+                  } waiting for confirmation`
+                : "No pending orders"}
             </p>
           </div>
         </div>
 
-        <span className="shrink-0 rounded-full bg-red-100 px-2 py-1 text-[10px] font-bold text-red-700">
-          {newOrders.length}
-        </span>
+        {/* COUNT */}
+        <div className="flex shrink-0 items-center gap-1.5">
+          <span className="rounded-full bg-red-50 px-2.5 py-1 text-[10px] font-bold text-red-600">
+            {newOrders.length}
+          </span>
+        </div>
       </div>
 
-      {/* BOARD */}
-      <div className="p-2.5 sm:p-3">
+      {/* =====================================================
+          ORDERS AREA
+      ===================================================== */}
+      <div className="bg-slate-50/50 p-2.5 sm:p-3">
         {newOrders.length === 0 ? (
-          <div className="flex min-h-[150px] flex-col items-center justify-center rounded-lg border border-dashed border-red-200 bg-red-50/20 px-4 text-center">
-            <ShoppingBag className="mb-2 h-7 w-7 text-red-200" />
+          /* EMPTY STATE */
+          <div className="flex min-h-[180px] flex-col items-center justify-center rounded-xl border border-dashed border-slate-200 bg-white px-4 text-center">
+            <div className="mb-3 flex h-11 w-11 items-center justify-center rounded-full bg-slate-50">
+              <ShoppingBag className="h-5 w-5 text-slate-300" />
+            </div>
 
             <p className="text-xs font-semibold text-slate-600">
               No New Orders
             </p>
 
-            <p className="mt-1 text-[10px] text-slate-400">
-              New customer orders will appear here.
+            <p className="mt-1 max-w-[240px] text-[10px] leading-4 text-slate-400">
+              New customer orders will appear here automatically.
             </p>
           </div>
         ) : (
-          <div className="flex gap-2.5 overflow-x-auto pb-1 [scrollbar-width:thin] sm:gap-3">
+          /* =================================================
+             RESPONSIVE ORDER GRID
+          ================================================= */
+          <div
+            className="
+              grid w-full grid-cols-1 gap-3
+              sm:grid-cols-2
+              lg:grid-cols-3
+              xl:grid-cols-4
+              2xl:grid-cols-5
+            "
+          >
             {newOrders.map((order) => (
-              <NewOrderCard
+              <div
                 key={order.id}
-                order={order}
-                onView={onView}
-                onConfirm={onConfirm}
-                onReject={onReject}
-              />
+                className="min-w-0 overflow-hidden rounded-xl bg-white"
+              >
+                <NewOrderCard
+                  order={order}
+                  onView={onView}
+                  onConfirm={onConfirm}
+                  onReject={onReject}
+                />
+              </div>
             ))}
           </div>
         )}

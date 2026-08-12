@@ -18,15 +18,11 @@ export default function OrderRow({
   selected,
   onSelect,
 }: Props) {
-  const canSelect = ![
-    "Delivered",
-    "Cancelled",
-    "Out For Delivery",
-  ].includes(order.status);
+  const canSelect = !["Delivered", "Cancelled", "Out For Delivery"].includes(
+    order.status,
+  );
 
-  const date = order.created_at
-    ? new Date(order.created_at)
-    : null;
+  const date = order.created_at ? new Date(order.created_at) : null;
 
   return (
     <tr
@@ -156,15 +152,11 @@ export default function OrderRow({
 
           <a
             href={
-              order.customer_phone
-                ? `tel:${order.customer_phone}`
-                : undefined
+              order.customer_phone ? `tel:${order.customer_phone}` : undefined
             }
             title="Call Customer"
             className={`flex h-7 w-7 items-center justify-center rounded-lg bg-green-50 text-green-600 transition hover:bg-green-600 hover:text-white ${
-              !order.customer_phone
-                ? "pointer-events-none opacity-40"
-                : ""
+              !order.customer_phone ? "pointer-events-none opacity-40" : ""
             }`}
           >
             <Phone className="h-3.5 w-3.5" />

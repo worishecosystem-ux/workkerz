@@ -1,42 +1,224 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import {
+  useEffect,
+  useMemo,
+  useState,
+} from "react";
+
 import {
   ArrowLeft,
   Search,
-  SlidersHorizontal,
+  ShoppingCart,
   Store,
   MapPin,
-  Star,
-  ChevronRight,
+  BadgeCheck,
+  Package,
+  Plus,
+  Minus,
   X,
 } from "lucide-react";
-import Link from "next/link";
 
-import { getShops, type Shop } from "@/app/data/shops";
+import {
+  useParams,
+  useRouter,
+} from "next/navigation";
+
+import { EAurixCart } from "../../components/EAurixCart";
+
+import {
+  getShop,
+  type Shop,
+} from "@/app/data/shops";
+
+import {
+  getProducts,
+  type Product,
+} from "@/app/data/products";
+
+import { usePlatform } from "@/app/components/context/PlatformContext";
 
 /* =========================================================
-   SHOP SKELETON
+   HELPERS
 ========================================================= */
 
-function ShopSkeleton() {
+function getImageUrl(url?: string) {
+  if (!url || !url.trim()) {
+    return "";
+  }
+
+  return url.trim();
+}
+
+function getProductName(
+  product: Product,
+) {
+  return product.name || "Product";
+}
+
+function getProductImage(
+  product: Product,
+) {
   return (
-    <div className="overflow-hidden rounded-xl border border-slate-100 bg-white shadow-[0_1px_5px_rgba(15,23,42,0.04)]">
-      <div className="aspect-[1.3/1] animate-pulse bg-slate-100" />
+    product.image ||
+    "/placeholder-product.png"
+  );
+}
+
+function getProductPrice(
+  product: Product,
+) {
+  const value = Number(
+    product.price ?? 0,
+  );
+
+  return Number.isFinite(value)
+    ? value
+    : 0;
+}
+
+/* =========================================================
+   SHOP IMAGE
+========================================================= */
+
+function ShopImage({
+  shop,
+}: {
+  shop: Shop;
+}) {
+  const [imageError, setImageError] =
+    useState(false);
+
+  const [imageLoaded, setImageLoaded] =
+    useState(false);
+
+  const image = getImageUrl(
+    shop.logo,
+  );
+
+  if (!image || imageError) {
+    return (
+      <div className="flex h-full w-full items-center justify-center bg-slate-50">
+        <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-white shadow-sm">
+          <Store
+            size={21}
+            strokeWidth={1.7}
+            className="text-slate-300"
+          />
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <>
+      {!imageLoaded && (
+        <div className="absolute inset-0 animate-pulse bg-slate-100" />
+      )}
+
+      <img
+        src={image}
+        alt={
+          shop.shop_name ||
+          "Shop"
+        }
+        loading="eager"
+        referrerPolicy="no-referrer"
+        onLoad={() =>
+          setImageLoaded(true)
+        }
+        onError={() => {
+          setImageError(true);
+          setImageLoaded(true);
+        }}
+        className={`relative h-full w-full object-cover transition-opacity duration-300 ${
+          imageLoaded
+            ? "opacity-100"
+            : "opacity-0"
+        }`}
+      />
+    </>
+  );
+}
+
+/* =========================================================
+   PRODUCT IMAGE
+========================================================= */
+
+function ProductImage({
+  product,
+}: {
+  product: Product;
+}) {
+  const [imageError, setImageError] =
+    useState(false);
+
+  const [imageLoaded, setImageLoaded] =
+    useState(false);
+
+  const image =
+    getProductImage(product);
+
+  if (!image || imageError) {
+    return (
+      <div className="flex h-full w-full items-center justify-center bg-slate-50">
+        <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-white shadow-sm">
+          <Package
+            size={22}
+            strokeWidth={1.6}
+            className="text-slate-300"
+          />
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <>
+      {!imageLoaded && (
+        <div className="absolute inset-0 animate-pulse bg-slate-100" />
+      )}
+
+      <img
+        src={image}
+        alt={getProductName(product)}
+        loading="lazy"
+        referrerPolicy="no-referrer"
+        onLoad={() =>
+          setImageLoaded(true)
+        }
+        onError={() => {
+          setImageError(true);
+          setImageLoaded(true);
+        }}
+        className={`h-full w-full object-cover transition duration-300 ${
+          imageLoaded
+            ? "opacity-100"
+            : "opacity-0"
+        }`}
+      />
+    </>
+  );
+}
+
+/* =========================================================
+   PRODUCT SKELETON
+========================================================= */
+
+function ProductSkeleton() {
+  return (
+    <div className="overflow-hidden rounded-2xl border border-slate-100 bg-white shadow-[0_2px_9px_rgba(15,23,42,0.045)]">
+      <div className="aspect-square animate-pulse bg-slate-100" />
 
       <div className="p-2.5">
         <div className="h-3.5 w-4/5 animate-pulse rounded bg-slate-100" />
 
-        <div className="mt-1.5 h-2.5 w-2/3 animate-pulse rounded bg-slate-100" />
+        <div className="mt-1.5 h-2.5 w-1/2 animate-pulse rounded bg-slate-100" />
 
-        <div className="mt-2 flex gap-1.5">
-          <div className="h-5 w-12 animate-pulse rounded-md bg-slate-100" />
-          <div className="h-5 w-16 animate-pulse rounded-md bg-slate-100" />
-        </div>
+        <div className="mt-3 flex items-center justify-between">
+          <div className="h-4 w-16 animate-pulse rounded bg-slate-100" />
 
-        <div className="mt-2.5 flex items-center justify-between">
-          <div className="h-3 w-20 animate-pulse rounded bg-slate-100" />
-          <div className="h-7 w-14 animate-pulse rounded-lg bg-slate-100" />
+          <div className="h-8 w-8 animate-pulse rounded-lg bg-slate-100" />
         </div>
       </div>
     </div>
@@ -44,133 +226,230 @@ function ShopSkeleton() {
 }
 
 /* =========================================================
-   SHOP CARD
+   PAGE SKELETON
 ========================================================= */
 
-function ShopCard({ shop }: { shop: Shop }) {
-  const [imageError, setImageError] = useState(false);
-  const [imageLoaded, setImageLoaded] = useState(false);
-
-  const image = shop.logo || "";
-  const rating = "4.5";
-
+function ShopProductsSkeleton() {
   return (
-    <Link
-      href={`/eaurix/shop/${shop.id}`}
-      className="group block min-w-0 overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-[0_2px_10px_rgba(15,23,42,0.055)] ring-1 ring-slate-100 transition-all duration-200 hover:-translate-y-0.5 hover:border-emerald-200 hover:shadow-[0_8px_24px_rgba(16,185,129,0.10)] active:scale-[0.985]"
-    >
-      {/* IMAGE */}
-      <div className="relative aspect-[1.3/1] bg-slate-100 p-1.5">
-        <div className="relative h-full w-full overflow-hidden rounded-xl border border-slate-200 bg-slate-50 shadow-[inset_0_0_0_1px_rgba(255,255,255,0.8)]">
-          {!imageLoaded && !imageError && image && (
-            <div className="absolute inset-0 animate-pulse bg-linear-to-br from-slate-100 via-slate-200 to-slate-100" />
-          )}
+    <main className="min-h-screen bg-[#f7f7f7]">
+      <header className="sticky top-0 z-50 border-b border-slate-100 bg-white">
+        <div className="pt-[max(env(safe-area-inset-top),10px)]">
+          <div className="flex h-14 items-center gap-3 px-3">
+            <div className="h-9 w-9 animate-pulse rounded-full bg-slate-100" />
 
-          {image && !imageError ? (
-            <img
-              src={image}
-              alt={shop.shop_name}
-              loading="lazy"
-              referrerPolicy="no-referrer"
-              onLoad={() => setImageLoaded(true)}
-              onError={() => {
-                setImageError(true);
-                setImageLoaded(false);
-              }}
-              className={`h-full w-full object-cover transition-all duration-500 group-hover:scale-[1.035] ${
-                imageLoaded ? "opacity-100" : "opacity-0"
-              }`}
-            />
-          ) : (
-            <div className="absolute inset-0 bg-slate-100" />
-          )}
+            <div className="flex-1">
+              <div className="h-4 w-32 animate-pulse rounded bg-slate-100" />
 
-          {imageLoaded && (
-            <div className="pointer-events-none absolute inset-x-0 bottom-0 h-20 bg-gradient-to-t from-black/50 via-black/15 to-transparent" />
-          )}
-
-          {/* E-AURIX */}
-          <div className="absolute right-2 top-2 flex items-center gap-1 rounded-md border border-white/80 bg-white/95 px-1.5 py-1 text-[8px] font-black tracking-wide text-emerald-700 shadow-sm backdrop-blur">
-            <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
-            E-AURIX
-          </div>
-
-          {/* OPEN */}
-          <div className="absolute left-2 top-2 flex items-center gap-1 rounded-md border border-white/70 bg-white/95 px-1.5 py-1 text-[8px] font-extrabold text-emerald-700 shadow-sm backdrop-blur">
-            <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
-            OPEN
-          </div>
-
-          {/* RATING */}
-          {imageLoaded && (
-            <div className="absolute bottom-2 left-2 flex items-center gap-1 rounded-md border border-white/20 bg-emerald-600 px-1.5 py-1 text-[9px] font-extrabold text-white shadow-md">
-              <Star size={9} fill="currentColor" strokeWidth={2.5} />
-              {rating}
+              <div className="mt-1.5 h-2.5 w-20 animate-pulse rounded bg-slate-100" />
             </div>
-          )}
 
-          {/* LOGO */}
-          <div className="absolute bottom-2 right-2 flex h-7 w-7 items-center justify-center overflow-hidden rounded-lg border border-white bg-white/95 shadow-md backdrop-blur">
-            {shop.logo && !imageError ? (
-              <img
-                src={shop.logo}
-                alt=""
-                referrerPolicy="no-referrer"
-                className="h-full w-full object-cover"
-              />
-            ) : (
-              <Store size={14} strokeWidth={2} className="text-slate-400" />
-            )}
+            <div className="h-9 w-9 animate-pulse rounded-xl bg-slate-100" />
           </div>
         </div>
+      </header>
+
+      <section className="bg-white px-3 pb-3 pt-3">
+        <div className="overflow-hidden rounded-[20px] bg-slate-100">
+          <div className="flex items-center gap-3 p-4">
+            <div className="h-16 w-16 animate-pulse rounded-2xl bg-slate-200" />
+
+            <div className="flex-1">
+              <div className="h-4 w-32 animate-pulse rounded bg-slate-200" />
+
+              <div className="mt-2 h-2.5 w-24 animate-pulse rounded bg-slate-200" />
+
+              <div className="mt-2 h-2.5 w-20 animate-pulse rounded bg-slate-200" />
+            </div>
+          </div>
+
+          <div className="border-t border-slate-200/50 px-4 py-2.5">
+            <div className="h-2.5 w-40 animate-pulse rounded bg-slate-200" />
+          </div>
+        </div>
+      </section>
+
+      <section className="px-3 pt-1">
+        <div className="h-11 animate-pulse rounded-xl bg-slate-200" />
+      </section>
+
+      <section className="px-3 pb-8 pt-5">
+        <div className="mb-3">
+          <div className="h-4 w-24 animate-pulse rounded bg-slate-200" />
+
+          <div className="mt-1.5 h-2.5 w-36 animate-pulse rounded bg-slate-100" />
+        </div>
+
+        <div className="grid grid-cols-2 gap-2.5">
+          {Array.from({
+            length: 6,
+          }).map((_, index) => (
+            <ProductSkeleton
+              key={index}
+            />
+          ))}
+        </div>
+      </section>
+    </main>
+  );
+}
+
+/* =========================================================
+   PRODUCT CARD
+========================================================= */
+
+function ProductCard({
+  product,
+  quantity,
+  onAdd,
+  onRemove,
+}: {
+  product: Product;
+  quantity: number;
+  onAdd: () => void;
+  onRemove: () => void;
+}) {
+  const name =
+    getProductName(product);
+
+  const price =
+    getProductPrice(product);
+
+  const outOfStock =
+    typeof product.stock ===
+      "number" &&
+    product.stock <= 0;
+
+  return (
+    <div className="overflow-hidden rounded-2xl border border-slate-100 bg-white shadow-[0_2px_9px_rgba(15,23,42,0.045)]">
+      {/* IMAGE */}
+
+      <div className="relative aspect-square overflow-hidden bg-slate-100">
+        <ProductImage
+          product={product}
+        />
+
+        {/* CATEGORY */}
+
+        {product.categoryLabel && (
+          <span className="absolute left-2 top-2 max-w-[80%] truncate rounded-md bg-white/95 px-1.5 py-1 text-[7px] font-black uppercase text-slate-600 shadow-sm backdrop-blur">
+            {product.categoryLabel}
+          </span>
+        )}
+
+        {/* BADGE */}
+
+        {product.badge && (
+          <span className="absolute right-2 top-2 max-w-[70%] truncate rounded-md bg-emerald-600 px-1.5 py-1 text-[7px] font-black uppercase text-white shadow-sm">
+            {product.badge}
+          </span>
+        )}
+
+        {/* OUT OF STOCK */}
+
+        {outOfStock && (
+          <div className="absolute inset-0 flex items-center justify-center bg-black/35">
+            <span className="rounded-lg bg-white px-2 py-1 text-[9px] font-black text-red-600">
+              OUT OF STOCK
+            </span>
+          </div>
+        )}
       </div>
 
       {/* DETAILS */}
+
       <div className="p-2.5">
-        <div className="flex items-start justify-between gap-2">
+        <h3 className="line-clamp-2 min-h-8 text-[11px] font-extrabold leading-4 text-slate-900">
+          {name}
+        </h3>
+
+        {product.brand && (
+          <p className="mt-1 truncate text-[8px] font-semibold text-slate-400">
+            {product.brand}
+          </p>
+        )}
+
+        {product.unit && (
+          <p className="mt-0.5 truncate text-[8px] font-semibold text-slate-400">
+            Per {product.unit}
+          </p>
+        )}
+
+        <div className="mt-2.5 flex items-end justify-between gap-2">
+          {/* PRICE */}
+
           <div className="min-w-0">
-            <h2 className="truncate text-[13px] font-extrabold leading-4 text-slate-900">
-              {shop.shop_name}
-            </h2>
-
-            <p className="mt-1 truncate text-[9px] font-medium text-slate-500">
-              {shop.category || "General Store"}
+            <p className="text-[14px] font-black leading-4 text-emerald-700">
+              ₹
+              {price.toLocaleString(
+                "en-IN",
+              )}
             </p>
+
+            {product.originalPrice &&
+              product.originalPrice >
+                price && (
+                <p className="mt-0.5 text-[8px] font-semibold text-slate-400 line-through">
+                  ₹
+                  {product.originalPrice.toLocaleString(
+                    "en-IN",
+                  )}
+                </p>
+              )}
           </div>
 
-          <span className="shrink-0 rounded-md border border-emerald-100 bg-emerald-50 px-1.5 py-1 text-[7px] font-black tracking-wide text-emerald-700">
-            E-AURIX
-          </span>
-        </div>
+          {/* QUANTITY */}
 
-        {/* TAGS */}
-        <div className="mt-2 flex min-w-0 gap-1.5">
-          <span className="shrink-0 rounded-md border border-emerald-100 bg-emerald-50 px-1.5 py-1 text-[8px] font-bold text-emerald-700">
-            Materials
-          </span>
+          {quantity === 0 ? (
+            <button
+              type="button"
+              onClick={onAdd}
+              disabled={outOfStock}
+              className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-emerald-600 text-white shadow-sm transition active:scale-90 disabled:bg-slate-300"
+            >
+              <Plus
+                size={16}
+                strokeWidth={3}
+              />
+            </button>
+          ) : (
+            <div className="flex h-8 items-center overflow-hidden rounded-lg bg-emerald-600 text-white shadow-sm">
+              <button
+                type="button"
+                onClick={onRemove}
+                className="flex h-8 w-7 items-center justify-center active:bg-emerald-700"
+              >
+                <Minus
+                  size={13}
+                  strokeWidth={3}
+                />
+              </button>
 
-          <span className="flex min-w-0 items-center gap-1 truncate rounded-md border border-slate-100 bg-slate-50 px-1.5 py-1 text-[8px] font-semibold text-slate-500">
-            <MapPin size={8} />
-            Nearby
-          </span>
-        </div>
+              <span className="min-w-5 text-center text-[10px] font-black">
+                {quantity}
+              </span>
 
-        {/* FOOTER */}
-        <div className="mt-2.5 flex items-center justify-between gap-2">
-          <div className="flex min-w-0 items-center gap-1">
-            <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-emerald-500" />
-            <span className="truncate text-[8px] font-semibold text-slate-400">
-              Local shop
-            </span>
-          </div>
-
-          <span className="flex h-7 shrink-0 items-center gap-0.5 rounded-lg border border-emerald-500 bg-emerald-600 px-2 text-[9px] font-extrabold text-white shadow-sm transition-colors group-hover:bg-emerald-700">
-            View
-            <ChevronRight size={11} strokeWidth={2.5} />
-          </span>
+              <button
+                type="button"
+                onClick={onAdd}
+                disabled={
+                  typeof product.stock ===
+                    "number" &&
+                  product.stock > 0 &&
+                  quantity >=
+                    product.stock
+                }
+                className="flex h-8 w-7 items-center justify-center active:bg-emerald-700 disabled:opacity-40"
+              >
+                <Plus
+                  size={13}
+                  strokeWidth={3}
+                />
+              </button>
+            </div>
+          )}
         </div>
       </div>
-    </Link>
+    </div>
   );
 }
 
@@ -178,34 +457,104 @@ function ShopCard({ shop }: { shop: Shop }) {
    MAIN PAGE
 ========================================================= */
 
-export default function AllShopsPage() {
-  const [shops, setShops] = useState<Shop[]>([]);
-  const [loading, setLoading] = useState(true);
+export default function ShopProductsPage() {
+  const router =
+    useRouter();
 
-  const [search, setSearch] = useState("");
-  const [activeCategory, setActiveCategory] = useState("All");
+  const params =
+    useParams();
 
-  /* =====================================================
-     LOAD SHOPS
-  ===================================================== */
+  const shopId =
+    String(params.shopId);
+
+  /* =======================================================
+     GLOBAL CART
+  ======================================================= */
+
+  const {
+    cart,
+    addToCart,
+    updateQty,
+  } = usePlatform();
+
+  const [shop, setShop] =
+    useState<Shop | null>(
+      null,
+    );
+
+  const [products, setProducts] =
+    useState<Product[]>([]);
+
+  const [loading, setLoading] =
+    useState(true);
+
+  const [search, setSearch] =
+    useState("");
+
+  const [cartOpen, setCartOpen] =
+    useState(false);
+
+  /* =======================================================
+     LOAD SHOP
+  ======================================================= */
 
   useEffect(() => {
     let mounted = true;
 
-    async function loadShops() {
+    async function loadShop() {
+      try {
+        const data =
+          await getShop(shopId);
+
+        if (!mounted) return;
+
+        setShop(data);
+      } catch (error) {
+        console.error(
+          "Failed to load shop:",
+          error,
+        );
+
+        if (mounted) {
+          setShop(null);
+        }
+      }
+    }
+
+    if (shopId) {
+      loadShop();
+    }
+
+    return () => {
+      mounted = false;
+    };
+  }, [shopId]);
+
+  /* =======================================================
+     LOAD PRODUCTS
+  ======================================================= */
+
+  useEffect(() => {
+    let mounted = true;
+
+    async function loadProducts() {
       try {
         setLoading(true);
 
-        const data = await getShops();
+        const data =
+          await getProducts(shopId);
 
-        if (mounted) {
-          setShops(data || []);
-        }
+        if (!mounted) return;
+
+        setProducts(data);
       } catch (error) {
-        console.error("Failed to load shops:", error);
+        console.error(
+          "Products loading error:",
+          error,
+        );
 
         if (mounted) {
-          setShops([]);
+          setProducts([]);
         }
       } finally {
         if (mounted) {
@@ -214,439 +563,612 @@ export default function AllShopsPage() {
       }
     }
 
-    loadShops();
+    if (shopId) {
+      loadProducts();
+    }
 
     return () => {
       mounted = false;
     };
-  }, []);
+  }, [shopId]);
 
-  /* =====================================================
-     CATEGORIES
-  ===================================================== */
+  /* =======================================================
+     FILTER PRODUCTS
+  ======================================================= */
 
-  const categories = useMemo(() => {
-    const unique = new Set<string>();
+  const filteredProducts =
+    useMemo(() => {
+      const query =
+        search
+          .trim()
+          .toLowerCase();
 
-    shops.forEach((shop) => {
-      const category = shop.category?.trim();
-
-      if (category) {
-        unique.add(category);
+      if (!query) {
+        return products;
       }
+
+      return products.filter(
+        (product) => {
+          const name =
+            String(
+              product.name || "",
+            ).toLowerCase();
+
+          const category =
+            String(
+              product.categoryLabel ||
+                product.category ||
+                "",
+            ).toLowerCase();
+
+          const brand =
+            String(
+              product.brand || "",
+            ).toLowerCase();
+
+          const material =
+            String(
+              product.materialName ||
+                "",
+            ).toLowerCase();
+
+          return (
+            name.includes(query) ||
+            category.includes(query) ||
+            brand.includes(query) ||
+            material.includes(query)
+          );
+        },
+      );
+    }, [
+      products,
+      search,
+    ]);
+
+  /* =======================================================
+     PRODUCT QUANTITY FROM GLOBAL CART
+  ======================================================= */
+
+  const getProductQuantity = (
+    productId: string,
+  ) => {
+    const item = cart.find(
+      (cartItem) =>
+        cartItem.productId ===
+        productId,
+    );
+
+    return item?.qty || 0;
+  };
+
+  /* =======================================================
+     CART COUNT
+  ======================================================= */
+
+  const cartCount = useMemo(() => {
+    return cart.reduce(
+      (total, item) =>
+        total +
+        Number(item.qty || 0),
+      0,
+    );
+  }, [cart]);
+
+  /* =======================================================
+     CART TOTAL
+  ======================================================= */
+
+  const cartTotal = useMemo(() => {
+    return Number(
+      cart
+        .reduce(
+          (total, item) =>
+            total +
+            Number(item.price || 0) *
+              Number(item.qty || 0),
+          0,
+        )
+        .toFixed(2),
+    );
+  }, [cart]);
+
+  /* =======================================================
+     ADD PRODUCT
+  ======================================================= */
+
+  const addProduct = (
+    product: Product,
+  ) => {
+    const productId =
+      String(product.id);
+
+    const currentQuantity =
+      getProductQuantity(
+        productId,
+      );
+
+    /* STOCK CHECK */
+
+    if (
+      typeof product.stock ===
+        "number" &&
+      product.stock <= 0
+    ) {
+      return;
+    }
+
+    if (
+      typeof product.stock ===
+        "number" &&
+      product.stock > 0 &&
+      currentQuantity >=
+        product.stock
+    ) {
+      return;
+    }
+
+    /* GLOBAL CART */
+
+    addToCart({
+      productId,
+
+      name:
+        product.name ||
+        "Product",
+
+      brand:
+        product.brand || "",
+
+      price:
+        getProductPrice(
+          product,
+        ),
+
+      qty: 1,
+
+      icon:
+        getProductImage(
+          product,
+        ),
+
+      color:
+        (product as any)
+          .color ||
+        "#10B981",
+
+      unit:
+        product.unit || "",
     });
+  };
 
-    return ["All", ...Array.from(unique).sort((a, b) => a.localeCompare(b))];
-  }, [shops]);
+  /* =======================================================
+     REMOVE / DECREASE PRODUCT
+  ======================================================= */
 
-  /* =====================================================
-     FILTERED SHOPS
-  ===================================================== */
+  const removeProduct = (
+    productId: string,
+  ) => {
+    const item = cart.find(
+      (cartItem) =>
+        cartItem.productId ===
+        productId,
+    );
 
-  const filteredShops = useMemo(() => {
-    const query = search.trim().toLowerCase();
+    if (!item) return;
 
-    return shops.filter((shop) => {
-      const name = shop.shop_name?.toLowerCase() || "";
+    updateQty(
+      item.id,
+      item.qty - 1,
+    );
+  };
 
-      const category = shop.category?.toLowerCase() || "";
-
-      const matchesSearch =
-        !query || name.includes(query) || category.includes(query);
-
-      const matchesCategory =
-        activeCategory === "All" || shop.category === activeCategory;
-
-      return matchesSearch && matchesCategory;
-    });
-  }, [shops, search, activeCategory]);
-
-  /* =====================================================
-     LOADING STATE
-  ===================================================== */
+  /* =======================================================
+     LOADING
+  ======================================================= */
 
   if (loading) {
     return (
-      <main className="min-h-screen bg-[#f7f7f7]">
-        <header className="sticky top-0 z-50 border-b border-slate-100 bg-white">
-          <div className="pt-[max(env(safe-area-inset-top),16px)]">
-            {/* TOP */}
+      <ShopProductsSkeleton />
+    );
+  }
 
-            <div className="flex h-11 items-center gap-2.5 px-3">
-              <div className="h-8 w-8 animate-pulse rounded-full bg-slate-100" />
+  /* =======================================================
+     SHOP NOT FOUND
+  ======================================================= */
 
-              <div className="flex-1">
-                <div className="h-3.5 w-28 animate-pulse rounded bg-slate-100" />
-
-                <div className="mt-1.5 h-2.5 w-20 animate-pulse rounded bg-slate-100" />
-              </div>
-
-              <div className="h-8 w-8 animate-pulse rounded-full bg-slate-100" />
-            </div>
-
-            {/* SEARCH */}
-
-            <div className="px-3 pb-2.5">
-              <div className="h-10.5 animate-pulse rounded-xl bg-slate-100" />
-            </div>
-
-            {/* CATEGORIES */}
-
-            <div className="flex gap-2 overflow-hidden px-3 pb-2.5">
-              {Array.from({ length: 5 }).map((_, i) => (
-                <div
-                  key={i}
-                  className="
-                      h-8
-                      w-20
-                      shrink-0
-                      animate-pulse
-                      rounded-full
-                      bg-slate-100
-                    "
-                />
-              ))}
-            </div>
-          </div>
-        </header>
-
-        <section className="px-3 pb-8 pt-3">
-          <div className="mb-3">
-            <div className="h-4 w-32 animate-pulse rounded bg-slate-200" />
-
-            <div className="mt-1.5 h-2.5 w-40 animate-pulse rounded bg-slate-200" />
+  if (!shop) {
+    return (
+      <main className="flex min-h-screen items-center justify-center bg-[#f7f7f7] p-5">
+        <div className="w-full max-w-sm rounded-2xl border border-slate-100 bg-white p-6 text-center shadow-sm">
+          <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-slate-50">
+            <Store
+              size={25}
+              className="text-slate-400"
+            />
           </div>
 
-          <div className="grid grid-cols-2 gap-2.5">
-            {Array.from({ length: 8 }).map((_, i) => (
-              <ShopSkeleton key={i} />
-            ))}
-          </div>
-        </section>
+          <h1 className="mt-4 text-sm font-black text-slate-900">
+            Shop not found
+          </h1>
+
+          <p className="mt-1 text-[10px] text-slate-500">
+            This shop may no longer be available.
+          </p>
+
+          <button
+            type="button"
+            onClick={() =>
+              router.push(
+                "/eaurix/shops",
+              )
+            }
+            className="mt-4 rounded-xl bg-emerald-600 px-4 py-2 text-[11px] font-black text-white active:scale-95"
+          >
+            View All Shops
+          </button>
+        </div>
       </main>
     );
   }
 
-  /* =====================================================
-     MAIN UI
-  ===================================================== */
+  /* =======================================================
+     SHOP IMAGE
+  ======================================================= */
+
+  const shopImage =
+    getImageUrl(shop.logo);
+
+  /* =======================================================
+     UI
+  ======================================================= */
 
   return (
-    <main className="min-h-screen bg-[#f7f7f7]">
-      {/* =================================================
-          STICKY HEADER
-      ================================================= */}
+    <main className="min-h-screen bg-[#f7f7f7] pb-24">
+      {/* ===================================================
+          HEADER
+      =================================================== */}
 
       <header className="sticky top-0 z-50 border-b border-slate-100 bg-white/95 backdrop-blur-xl">
-        <div className="pt-[max(env(safe-area-inset-top),10px)]">
-          {/* =================================================
-              TOP BAR
-          ================================================= */}
-
-          <div className="flex h-11 items-center gap-2.5 px-3">
-            <Link
-              href="/eaurix"
+        <div className="pt-[max(env(safe-area-inset-top),8px)]">
+          <div className="flex h-13 items-center gap-2.5 px-3">
+            <button
+              type="button"
+              onClick={() =>
+                router.back()
+              }
               aria-label="Back"
-              className="
-                flex
-                h-8
-                w-8
-                shrink-0
-                items-center
-                justify-center
-                rounded-full
-                bg-slate-50
-                text-slate-700
-                transition
-                active:scale-90
-              "
+              className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-slate-50 text-slate-700 transition active:scale-90"
             >
-              <ArrowLeft size={17} strokeWidth={2.4} />
-            </Link>
+              <ArrowLeft
+                size={18}
+                strokeWidth={2.4}
+              />
+            </button>
 
             <div className="min-w-0 flex-1">
-              <h1
-                className="
-                  truncate
-                  text-[15px]
-                  font-extrabold
-                  leading-4
-                  text-slate-900
-                "
-              >
-                All Shops
+              <h1 className="truncate text-[14px] font-black leading-4 text-slate-900">
+                {shop.shop_name}
               </h1>
 
-              <div
-                className="
-                  mt-0.5
-                  flex
-                  items-center
-                  gap-1
-                  text-[9px]
-                  font-medium
-                  text-slate-500
-                "
-              >
-                <MapPin size={9} />
-                Shops near you
-              </div>
+              <p className="mt-0.5 truncate text-[8px] font-semibold text-slate-400">
+                {shop.category ||
+                  "Building Materials"}
+              </p>
             </div>
+
+            {/* HEADER CART */}
 
             <button
               type="button"
-              aria-label="Filters"
-              className="
-                flex
-                h-8
-                w-8
-                shrink-0
-                items-center
-                justify-center
-                rounded-full
-                bg-slate-50
-                text-slate-600
-                transition
-                active:scale-90
-              "
+              aria-label="Cart"
+              onClick={() =>
+                setCartOpen(true)
+              }
+              className="relative flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-emerald-50 text-emerald-600 active:scale-90"
             >
-              <SlidersHorizontal size={15} />
-            </button>
-          </div>
-
-          {/* =================================================
-              SEARCH
-          ================================================= */}
-
-          <div className="px-3 pb-2.5">
-            <div className="relative">
-              <Search
-                size={16}
-                strokeWidth={2}
-                className="
-                  absolute
-                  left-3
-                  top-1/2
-                  -translate-y-1/2
-                  text-slate-400
-                "
+              <ShoppingCart
+                size={17}
               />
 
-              <input
-                type="search"
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-                placeholder="Search shops, materials..."
-                className="
-                  h-10.5
-                  w-full
-                  rounded-xl
-                  border
-                  border-slate-200
-                  bg-[#f7f7f7]
-                  pl-9
-                  pr-9
-                  text-[12px]
-                  font-medium
-                  text-slate-800
-                  outline-none
-                  transition
-                  placeholder:text-slate-400
-                  focus:border-emerald-400
-                  focus:bg-white
-                  focus:ring-2
-                  focus:ring-emerald-50
-                "
-              />
-
-              {search && (
-                <button
-                  type="button"
-                  aria-label="Clear search"
-                  onClick={() => setSearch("")}
-                  className="
-                    absolute
-                    right-2.5
-                    top-1/2
-                    flex
-                    h-6
-                    w-6
-                    -translate-y-1/2
-                    items-center
-                    justify-center
-                    rounded-full
-                    bg-slate-200
-                    text-slate-500
-                    active:scale-90
-                  "
-                >
-                  <X size={13} />
-                </button>
+              {cartCount > 0 && (
+                <span className="absolute -right-1 -top-1 flex h-4 min-w-4 items-center justify-center rounded-full bg-emerald-600 px-1 text-[7px] font-black text-white">
+                  {cartCount > 99
+                    ? "99+"
+                    : cartCount}
+                </span>
               )}
-            </div>
-          </div>
-
-          {/* =================================================
-              CATEGORY CHIPS
-          ================================================= */}
-
-          <div className="scrollbar-none flex gap-2 overflow-x-auto px-3 pb-2.5">
-            {categories.map((category) => {
-              const active = activeCategory === category;
-
-              return (
-                <button
-                  key={category}
-                  type="button"
-                  onClick={() => setActiveCategory(category)}
-                  className={`
-                    shrink-0
-                    rounded-full
-                    border
-                    px-3
-                    py-1.5
-                    text-[10px]
-                    font-bold
-                    transition-all
-                    active:scale-95
-                    ${
-                      active
-                        ? "border-emerald-600 bg-emerald-600 text-white shadow-sm"
-                        : "border-slate-200 bg-white text-slate-600"
-                    }
-                  `}
-                >
-                  {category}
-                </button>
-              );
-            })}
+            </button>
           </div>
         </div>
       </header>
 
-      {/* =================================================
-          CONTENT
-      ================================================= */}
+      {/* ===================================================
+          SHOP HERO
+      =================================================== */}
 
-      <section className="px-3 pb-8 pt-3">
-        {/* SECTION HEADER */}
+      <section className="bg-white px-3 pb-3 pt-3">
+        <div className="relative overflow-hidden rounded-[20px] bg-emerald-700 shadow-sm">
+          <div className="absolute inset-0 bg-gradient-to-br from-emerald-500 via-emerald-700 to-teal-900" />
 
-        <div className="mb-3 flex items-end justify-between">
-          <div className="min-w-0">
-            <h2
-              className="
-                text-[15px]
-                font-extrabold
-                leading-5
-                text-slate-900
-              "
-            >
-              Shops near you
-            </h2>
+          <div className="relative flex items-center gap-3 p-4">
+            <div className="relative h-16 w-16 shrink-0 overflow-hidden rounded-2xl border-2 border-white/80 bg-white shadow-lg">
+              {shopImage ? (
+                <ShopImage
+                  shop={shop}
+                />
+              ) : (
+                <div className="flex h-full w-full items-center justify-center bg-slate-50">
+                  <Store
+                    size={21}
+                    className="text-slate-300"
+                  />
+                </div>
+              )}
+            </div>
 
-            <p className="mt-0.5 text-[10px] font-medium text-slate-500">
-              {filteredShops.length}{" "}
-              {filteredShops.length === 1 ? "shop" : "shops"} available
-            </p>
+            <div className="min-w-0 flex-1 text-white">
+              <div className="flex items-center gap-1">
+                <h2 className="truncate text-[16px] font-black leading-5">
+                  {shop.shop_name ||
+                    "Shop"}
+                </h2>
+
+                {shop.status ===
+                  "online" && (
+                  <BadgeCheck
+                    size={15}
+                    strokeWidth={2.5}
+                    className="shrink-0"
+                  />
+                )}
+              </div>
+
+              <p className="mt-1 truncate text-[9px] font-semibold text-emerald-100">
+                {shop.category ||
+                  "Building Materials"}
+              </p>
+
+              <div className="mt-2 flex items-center gap-1 text-[8px] font-semibold text-emerald-50">
+                <MapPin
+                  size={10}
+                  className="shrink-0"
+                />
+
+                <span className="truncate">
+                  {shop.city
+                    ? `${shop.city}${
+                        shop.state
+                          ? `, ${shop.state}`
+                          : ""
+                      }`
+                    : shop.address ||
+                      "Nearby shop"}
+                </span>
+              </div>
+            </div>
           </div>
 
-          {(search || activeCategory !== "All") && (
+          <div className="relative flex items-center gap-1.5 border-t border-white/10 px-4 py-2.5">
+            <span className="relative flex h-2 w-2">
+              {shop.status ===
+                "online" && (
+                <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-white/60" />
+              )}
+
+              <span
+                className={`relative inline-flex h-2 w-2 rounded-full ${
+                  shop.status ===
+                  "online"
+                    ? "bg-white"
+                    : "bg-red-300"
+                }`}
+              />
+            </span>
+
+            <span className="text-[8px] font-black tracking-wide text-white">
+              {shop.status ===
+              "online"
+                ? "SHOP ONLINE • READY FOR ORDERS"
+                : "SHOP OFFLINE"}
+            </span>
+          </div>
+        </div>
+      </section>
+
+      {/* ===================================================
+          SEARCH
+      =================================================== */}
+
+      <section className="px-3 pt-1">
+        <div className="relative">
+          <Search
+            size={16}
+            className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"
+          />
+
+          <input
+            type="search"
+            value={search}
+            onChange={(e) =>
+              setSearch(
+                e.target.value,
+              )
+            }
+            placeholder={`Search products in ${shop.shop_name}`}
+            className="h-11 w-full rounded-xl border border-slate-200 bg-white pl-9 pr-10 text-[11px] font-semibold text-slate-800 outline-none placeholder:text-slate-400 focus:border-emerald-400 focus:ring-2 focus:ring-emerald-50"
+          />
+
+          {search && (
             <button
               type="button"
-              onClick={() => {
-                setSearch("");
-                setActiveCategory("All");
-              }}
-              className="
-                shrink-0
-                text-[10px]
-                font-bold
-                text-emerald-600
-              "
+              onClick={() =>
+                setSearch("")
+              }
+              className="absolute right-2 top-1/2 flex h-7 w-7 -translate-y-1/2 items-center justify-center rounded-full bg-slate-100 text-slate-500 active:scale-90"
             >
-              Clear all
+              <X size={13} />
             </button>
           )}
         </div>
+      </section>
 
-        {/* =================================================
-            EMPTY
-        ================================================= */}
+      {/* ===================================================
+          PRODUCTS HEADER
+      =================================================== */}
 
-        {!filteredShops.length ? (
-          <div
-            className="
-              rounded-2xl
-              border
-              border-slate-100
-              bg-white
-              px-5
-              py-12
-              text-center
-              shadow-[0_1px_5px_rgba(15,23,42,0.03)]
-            "
-          >
-            <div
-              className="
-                mx-auto
-                flex
-                h-14
-                w-14
-                items-center
-                justify-center
-                rounded-2xl
-                bg-slate-50
-              "
-            >
-              <Store size={23} strokeWidth={1.8} className="text-slate-400" />
+      <section className="px-3 pb-2 pt-5">
+        <div className="flex items-end justify-between gap-2">
+          <div>
+            <h2 className="text-[15px] font-black leading-5 text-slate-900">
+              Shop Products
+            </h2>
+
+            <p className="mt-0.5 text-[9px] font-medium text-slate-500">
+              {
+                filteredProducts.length
+              }{" "}
+              {filteredProducts.length ===
+              1
+                ? "product"
+                : "products"}{" "}
+              available
+            </p>
+          </div>
+
+          {search && (
+            <span className="shrink-0 rounded-full bg-emerald-50 px-2 py-1 text-[8px] font-bold text-emerald-700">
+              Search active
+            </span>
+          )}
+        </div>
+      </section>
+
+      {/* ===================================================
+          PRODUCTS
+      =================================================== */}
+
+      <section className="px-3">
+        {!filteredProducts.length ? (
+          <div className="rounded-2xl border border-slate-100 bg-white px-5 py-12 text-center shadow-sm">
+            <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-slate-50">
+              {search ? (
+                <Search
+                  size={23}
+                  className="text-slate-400"
+                />
+              ) : (
+                <Package
+                  size={23}
+                  className="text-slate-400"
+                />
+              )}
             </div>
 
-            <h3 className="mt-4 text-sm font-extrabold text-slate-800">
-              {search ? "No shops found" : "No shops available"}
+            <h3 className="mt-4 text-sm font-black text-slate-800">
+              {search
+                ? "No products found"
+                : "No products available"}
             </h3>
 
-            <p className="mx-auto mt-1 max-w-[250px] text-[11px] leading-4 text-slate-500">
+            <p className="mt-1 text-[10px] leading-4 text-slate-500">
               {search
-                ? "Try another shop name or category."
-                : "There are no shops available right now."}
+                ? "Try another product name, brand or category."
+                : "This shop has not added any products yet."}
             </p>
 
-            {(search || activeCategory !== "All") && (
+            {search && (
               <button
                 type="button"
-                onClick={() => {
-                  setSearch("");
-                  setActiveCategory("All");
-                }}
-                className="
-                  mt-4
-                  rounded-xl
-                  bg-emerald-600
-                  px-4
-                  py-2
-                  text-[11px]
-                  font-bold
-                  text-white
-                  shadow-sm
-                  active:scale-95
-                "
+                onClick={() =>
+                  setSearch("")
+                }
+                className="mt-4 rounded-xl bg-emerald-600 px-4 py-2 text-[10px] font-black text-white active:scale-95"
               >
-                View all shops
+                Clear Search
               </button>
             )}
           </div>
         ) : (
-          /* =================================================
-             SHOP GRID
-          ================================================= */
-
           <div className="grid grid-cols-2 gap-2.5">
-            {filteredShops.map((shop) => (
-              <ShopCard key={shop.id} shop={shop} />
-            ))}
+            {filteredProducts.map(
+              (product) => (
+                <ProductCard
+                  key={product.id}
+                  product={product}
+                  quantity={getProductQuantity(
+                    String(
+                      product.id,
+                    ),
+                  )}
+                  onAdd={() =>
+                    addProduct(
+                      product,
+                    )
+                  }
+                  onRemove={() =>
+                    removeProduct(
+                      String(
+                        product.id,
+                      ),
+                    )
+                  }
+                />
+              ),
+            )}
           </div>
         )}
       </section>
+
+      {/* ===================================================
+          CART BAR
+      =================================================== */}
+
+      {cartCount > 0 && (
+        <div className="fixed inset-x-0 bottom-0 z-50 border-t border-slate-200 bg-white/95 px-3 pb-[max(env(safe-area-inset-bottom),10px)] pt-2.5 shadow-[0_-6px_20px_rgba(15,23,42,0.08)] backdrop-blur-xl">
+          <div className="flex items-center gap-2">
+            <div className="min-w-0 flex-1">
+              <p className="text-[9px] font-semibold text-slate-400">
+                {shop.shop_name}
+              </p>
+
+              <p className="text-[12px] font-black text-slate-900">
+                {cartCount}{" "}
+                {cartCount === 1
+                  ? "item"
+                  : "items"}{" "}
+                • ₹
+                {cartTotal.toLocaleString(
+                  "en-IN",
+                )}
+              </p>
+            </div>
+
+            <button
+              type="button"
+              onClick={() =>
+                setCartOpen(true)
+              }
+              className="flex h-10 shrink-0 items-center gap-1.5 rounded-xl bg-emerald-600 px-4 text-[10px] font-black text-white shadow-sm active:scale-95"
+            >
+              View Cart
+
+              <ShoppingCart
+                size={13}
+              />
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* ===================================================
+          CART
+      =================================================== */}
+
+      {cartOpen && (
+        <div className="fixed inset-0 z-[100] bg-white">
+          <EAurixCart />
+        </div>
+      )}
     </main>
   );
 }

@@ -99,7 +99,9 @@ export default function OrdersTab({
       );
     });
   }, [orders, search, statusFilter, paymentFilter]);
+  type OrderBoardTab = "new" | "confirmed" | "dispatch" | "delivered";
 
+  const [activeBoard, setActiveBoard] = useState<OrderBoardTab>("new");
   /* ---------------- FETCH ---------------- */
 
   const fetchOrders = useCallback(async () => {
@@ -520,28 +522,163 @@ export default function OrdersTab({
       {/* OPERATIONS */}
       <OperationsDashboard orders={orders} />
 
-      {/* BOARDS */}
+     {/* =========================================================
+    ORDER BOARD HEADER — ZOMATO STYLE
+========================================================= */}
+<div className="mb-4 border-b border-slate-200 bg-white">
+  <div className="overflow-x-auto scrollbar-hide">
+    <div className="flex min-w-max items-center gap-1 px-1">
+
+      {/* NEW */}
+      <button
+        type="button"
+        onClick={() => setActiveBoard("new")}
+        className={`relative flex items-center gap-1.5 px-3 py-3 text-[13px] font-semibold transition-colors ${
+          activeBoard === "new"
+            ? "text-blue-600"
+            : "text-slate-500 hover:text-slate-800"
+        }`}
+      >
+        <span>New</span>
+
+        {orders.filter((o) => o.status === "Pending").length > 0 && (
+          <span
+            className={`flex h-[18px] min-w-[18px] items-center justify-center rounded-full px-1 text-[9px] font-bold ${
+              activeBoard === "new"
+                ? "bg-blue-600 text-white"
+                : "bg-slate-100 text-slate-600"
+            }`}
+          >
+            {orders.filter((o) => o.status === "Pending").length}
+          </span>
+        )}
+
+        {activeBoard === "new" && (
+          <span className="absolute bottom-0 left-2 right-2 h-[2px] rounded-full bg-blue-600" />
+        )}
+      </button>
+
+      {/* CONFIRMED */}
+      <button
+        type="button"
+        onClick={() => setActiveBoard("confirmed")}
+        className={`relative flex items-center gap-1.5 px-3 py-3 text-[13px] font-semibold transition-colors ${
+          activeBoard === "confirmed"
+            ? "text-indigo-600"
+            : "text-slate-500 hover:text-slate-800"
+        }`}
+      >
+        <span>Confirmed</span>
+
+        {orders.filter((o) => o.status === "Confirmed").length > 0 && (
+          <span
+            className={`flex h-[18px] min-w-[18px] items-center justify-center rounded-full px-1 text-[9px] font-bold ${
+              activeBoard === "confirmed"
+                ? "bg-indigo-600 text-white"
+                : "bg-slate-100 text-slate-600"
+            }`}
+          >
+            {orders.filter((o) => o.status === "Confirmed").length}
+          </span>
+        )}
+
+        {activeBoard === "confirmed" && (
+          <span className="absolute bottom-0 left-2 right-2 h-[2px] rounded-full bg-indigo-600" />
+        )}
+      </button>
+
+      {/* DISPATCH */}
+      <button
+        type="button"
+        onClick={() => setActiveBoard("dispatch")}
+        className={`relative flex items-center gap-1.5 px-3 py-3 text-[13px] font-semibold transition-colors ${
+          activeBoard === "dispatch"
+            ? "text-orange-600"
+            : "text-slate-500 hover:text-slate-800"
+        }`}
+      >
+        <span>Dispatch</span>
+
+        {orders.filter((o) => o.status === "Ready to Dispatch").length > 0 && (
+          <span
+            className={`flex h-[18px] min-w-[18px] items-center justify-center rounded-full px-1 text-[9px] font-bold ${
+              activeBoard === "dispatch"
+                ? "bg-orange-600 text-white"
+                : "bg-slate-100 text-slate-600"
+            }`}
+          >
+            {orders.filter((o) => o.status === "Ready to Dispatch").length}
+          </span>
+        )}
+
+        {activeBoard === "dispatch" && (
+          <span className="absolute bottom-0 left-2 right-2 h-[2px] rounded-full bg-orange-600" />
+        )}
+      </button>
+
+      {/* DELIVERED */}
+      <button
+        type="button"
+        onClick={() => setActiveBoard("delivered")}
+        className={`relative flex items-center gap-1.5 px-3 py-3 text-[13px] font-semibold transition-colors ${
+          activeBoard === "delivered"
+            ? "text-green-600"
+            : "text-slate-500 hover:text-slate-800"
+        }`}
+      >
+        <span>Delivered</span>
+
+        {orders.filter((o) => o.status === "Delivered").length > 0 && (
+          <span
+            className={`flex h-[18px] min-w-[18px] items-center justify-center rounded-full px-1 text-[9px] font-bold ${
+              activeBoard === "delivered"
+                ? "bg-green-600 text-white"
+                : "bg-slate-100 text-slate-600"
+            }`}
+          >
+            {orders.filter((o) => o.status === "Delivered").length}
+          </span>
+        )}
+
+        {activeBoard === "delivered" && (
+          <span className="absolute bottom-0 left-2 right-2 h-[2px] rounded-full bg-green-600" />
+        )}
+      </button>
+
+    </div>
+  </div>
+</div>
+
+      {/* ACTIVE BOARD */}
       <div className="space-y-4 sm:space-y-5">
-        <NewOrdersBoard
-          orders={orders}
-          onView={openOrder}
-          onConfirm={updateOrderStatus}
-          onReject={openReject}
-        />
+        {activeBoard === "new" && (
+          <NewOrdersBoard
+            orders={orders}
+            onView={openOrder}
+            onConfirm={updateOrderStatus}
+            onReject={openReject}
+          />
+        )}
 
-        <ConfirmedOrdersBoard
-          orders={orders}
-          onView={openOrder}
-          onDispatch={updateOrderStatus}
-        />
+        {activeBoard === "confirmed" && (
+          <ConfirmedOrdersBoard
+            orders={orders}
+            onView={openOrder}
+            onDispatch={updateOrderStatus}
+          />
+        )}
 
-        <OutForDeliveryBoard
-          orders={orders}
-          onView={openOrder}
-          onDelivered={updateOrderStatus}
-        />
+        {activeBoard === "dispatch" && (
+          <OutForDeliveryBoard
+            orders={orders}
+            onView={openOrder}
+            onDelivered={updateOrderStatus}
+          />
+        )}
 
-        <DeliveredBoard orders={orders} onView={openOrder} />
+        {activeBoard === "delivered" && (
+          <DeliveredBoard orders={orders} onView={openOrder} />
+        )}
       </div>
 
       {/* MORE DETAILS */}

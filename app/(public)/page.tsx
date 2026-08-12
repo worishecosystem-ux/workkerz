@@ -8,15 +8,14 @@ const HomeBanner = dynamic(() => import("../components/HomeBanner"), {
   ssr: false,
 });
 import SplashScreen from "@/app/components/SplashScreen";
-import { ArrowRight } from "lucide-react";
-import { FeaturedWorkerSmallCard } from "../components/FeaturedWorkerSmallCard";
+import HomeHero from "../components/HomeHero";
 import HomeServices from "../components/home/HomeServices";
-import WorkerLive from "../components/WorkerLive";
+import HomeCategories from "../components/HomeCategories";
 import { useAdmin } from "../components/context/AdminContext";
 export default function Home() {
   const router = useRouter();
   const { workers } = useAdmin();
- 
+
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
@@ -72,49 +71,27 @@ export default function Home() {
 
   return (
     <div className="min-h-screen flex flex-col">
-      {/* Hero Section */}
+  {/* Hero Section */}
+  <HomeBanner />
 
-      <HomeBanner />
+  {/* New Big Category Section */}
+  <section className="mt-4 sm:mt-6 md:mt-8">
+    <HomeCategories />
+  </section>
 
-      <WorkerLive />
-
-      <section className="py-5">
-        <div className=" mx-auto px-4">
-          <div className="">
-            {/* Header */}
-            <div>
-              <span className="inline-flex items-center gap-2 bg-[#FFF5F3] text-[#FF5C39] px-3 py-1 rounded-full text-xs font-bold">
-                ⭐ FEATURED WORKERS
-              </span>
-
-              <h2 className="mt-3 text-2xl md:text-4xl font-black text-[#0F172A]">
-                Top Rated Professionals
-              </h2>
-
-              <p className="mt-1 text-sm text-slate-500">
-                Verified workers trusted by thousands
-              </p>
-            </div>
-
-            {/* Workers */}
-            <div className="pt-4">
-              <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4">
-                {featuredWorkers.map((worker) => (
-                  <FeaturedWorkerSmallCard key={worker.id} worker={worker} />
-                ))}
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
-      <div className="pb-8">
-        <HomeServices workers={workers} />
-      </div>
-      <>
-        {/* Other Sections */}
-
-        <BottomGreeting />
-      </>
+  {/* Home Hero */}
+  <section className="py-4 sm:py-5">
+    <div className="mx-auto px-3 sm:px-4">
+      <HomeHero />
     </div>
+  </section>
+
+  {/* Home Services */}
+  <div className="pb-8">
+    <HomeServices workers={workers} />
+  </div>
+
+  <BottomGreeting />
+</div>
   );
 }

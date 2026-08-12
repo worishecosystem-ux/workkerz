@@ -1,11 +1,6 @@
 "use client";
 
-import {
-  CreditCard,
-  Receipt,
-  Truck,
-  Wallet,
-} from "lucide-react";
+import { CreditCard, Receipt, Truck, Wallet } from "lucide-react";
 
 type Props = {
   order: any;
@@ -84,9 +79,7 @@ export default function PaymentCard({ order }: Props) {
             Payment Summary
           </h3>
 
-          <p className="text-[9px] text-slate-400">
-            Order payment details
-          </p>
+          <p className="text-[9px] text-slate-400">Order payment details</p>
         </div>
       </div>
 
@@ -106,7 +99,7 @@ export default function PaymentCard({ order }: Props) {
           value={
             <span
               className={`inline-flex rounded-full px-1.5 py-0.5 text-[9px] ${statusStyle(
-                paymentStatus
+                paymentStatus,
               )}`}
             >
               {paymentStatus}

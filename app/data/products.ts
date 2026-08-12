@@ -1,11 +1,11 @@
 /* =========================================
-   products.ts
+   app/data/products.ts
 ========================================= */
 
 import { supabase } from "@/lib/supabase";
 
 /* =========================================
-   PRODUCT CATEGORY TYPE
+   PRODUCT CATEGORY
 ========================================= */
 
 export type ProductCategory =
@@ -42,7 +42,51 @@ export type ProductCategory =
   | "granite";
 
 /* =========================================
-   PRODUCT INTERFACE
+   CATEGORY
+========================================= */
+
+export interface ProductCategoryItem {
+  id: ProductCategory;
+  label: string;
+  description: string;
+  image: string;
+  color: string;
+  bgColor: string;
+}
+
+/* =========================================
+   VARIANT
+========================================= */
+
+export interface ProductVariant {
+  id: string;
+  productId: string;
+
+  variantName: string;
+
+  watt?: number | null;
+
+  price: number;
+  originalPrice?: number | null;
+
+  stock: number;
+
+  sku?: string | null;
+  unit?: string | null;
+
+  specs: Record<string, unknown>;
+
+  image?: string;
+  images: string[];
+
+  isActive: boolean;
+
+  createdAt?: string;
+  updatedAt?: string;
+}
+
+/* =========================================
+   PRODUCT
 ========================================= */
 
 export interface Product {
@@ -51,23 +95,18 @@ export interface Product {
   shop_id: string;
 
   name: string;
-
   brand: string;
 
   category: ProductCategory;
-
   categoryLabel: string;
 
   description: string;
-
   longDescription: string;
 
   price: number;
-
   originalPrice?: number;
 
   rating: number;
-
   reviewCount: number;
 
   stock: number;
@@ -75,7 +114,6 @@ export interface Product {
   unit: string;
 
   image?: string;
-
   images?: string[];
 
   brochure?: string;
@@ -86,14 +124,17 @@ export interface Product {
 
   tags: string[];
 
-  specs: Record<string, any>;
+  specs: Record<string, unknown>;
+
   about?: string;
 
   materialName?: string;
-
   unitType?: string;
-
   measurement?: string;
+
+  variants: ProductVariant[];
+
+  hasVariants: boolean;
 
   createdAt?: string;
 
@@ -107,10 +148,10 @@ export interface Product {
 const BUCKET = "products";
 
 /* =========================================
-   PRODUCT CATEGORIES
+   CATEGORY LIST
 ========================================= */
 
-export const productCategories = [
+export const productCategories: ProductCategoryItem[] = [
   {
     id: "sand",
     label: "Sand",
@@ -168,6 +209,14 @@ export const productCategories = [
     bgColor: "#ECFEFF",
   },
   {
+    id: "tiles",
+    label: "Tiles",
+    description: "Floor, wall & bathroom tiles",
+    image: "/categories/eaurix/tiles.png",
+    color: "#0F766E",
+    bgColor: "#F0FDFA",
+  },
+  {
     id: "electrical",
     label: "Electrical",
     description: "Wires, switches & electrical items",
@@ -190,6 +239,14 @@ export const productCategories = [
     image: "/categories/eaurix/sanitary ware (1).png",
     color: "#059669",
     bgColor: "#ECFDF5",
+  },
+  {
+    id: "bathroom_fittings",
+    label: "Bathroom Fittings",
+    description: "Taps, showers & bathroom accessories",
+    image: "/categories/eaurix/Bathroom fitting.png",
+    color: "#0284C7",
+    bgColor: "#F0F9FF",
   },
   {
     id: "kitchen_fittings",
@@ -265,7 +322,7 @@ export const productCategories = [
   },
   {
     id: "safety",
-    label: "Safety",
+    label: "Safety Equipment",
     description: "Safety helmets, gloves & PPE",
     image: "/categories/eaurix/safety (1).png",
     color: "#DC2626",
@@ -328,14 +385,6 @@ export const productCategories = [
     bgColor: "#F1F5F9",
   },
   {
-    id: "marble",
-    label: "Marble",
-    description: "Premium marble slabs & tiles",
-    image: "/categories/eaurix/marble tiles (1).png",
-    color: "#94A3B8",
-    bgColor: "#F8FAFC",
-  },
-  {
     id: "granite",
     label: "Granite",
     description: "Granite slabs & countertops",
@@ -343,111 +392,286 @@ export const productCategories = [
     color: "#6B7280",
     bgColor: "#E5E7EB",
   },
-] as const;
+  {
+    id: "marble",
+    label: "Marble",
+    description: "Marble slabs & stone surfaces",
+    image: "/categories/eaurix/granite marble (1).png",
+    color: "#64748B",
+    bgColor: "#F8FAFC",
+  },
+];
 
 /* =========================================
-   CATEGORY LABELS
+   CATEGORY MAPS
 ========================================= */
 
-export const CATEGORY_LABELS: Record<ProductCategory, string> = {
-  sand: "Sand",
-  aggregate: "Aggregate",
-  brick: "Brick",
-  cement: "Cement",
-  tmt: "TMT Steel",
-  paint: "Paint",
-  plumbing: "Plumbing",
-  tiles: "Tiles",
-  electrical: "Electrical",
+export const CATEGORY_LABELS = Object.fromEntries(
+  productCategories.map((category) => [
+    category.id,
+    category.label,
+  ]),
+) as Record<ProductCategory, string>;
 
-  hardware: "Hardware",
-  sanitaryware: "Sanitary Ware",
-  bathroom_fittings: "Bathroom Fittings",
-  kitchen_fittings: "Kitchen Fittings",
-  water_tank: "Water Tank",
-  pipes: "Pipes",
-  doors: "Doors",
-  windows: "Windows",
-  roofing: "Roofing",
-  flooring: "Flooring",
-  adhesive: "Adhesive",
-  tools: "Tools",
-  safety: "Safety Equipment",
-  lighting: "Lighting",
-  wire_cable: "Wire & Cable",
-  switches: "Switches & Sockets",
-  pumps: "Water Pumps",
-  construction_chemicals: "Construction Chemicals",
-  steel: "Steel",
-  stone: "Stone",
-  marble: "Marble",
-  granite: "Granite",
-};
+export const CATEGORY_COLORS = Object.fromEntries(
+  productCategories.map((category) => [
+    category.id,
+    category.bgColor,
+  ]),
+) as Record<ProductCategory, string>;
 
 /* =========================================
-   CATEGORY COLORS
+   CATEGORY HELPERS
 ========================================= */
 
-export const CATEGORY_COLORS: Record<ProductCategory, string> = {
-  sand: "#FFF7ED",
-  aggregate: "#F3F4F6",
-  brick: "#FEF2F2",
-  cement: "#F8FAFC",
-  tmt: "#F1F5F9",
-  paint: "#F5F3FF",
-  plumbing: "#EFF6FF",
-  tiles: "#F0FDFA",
-  electrical: "#FEFCE8",
+export function getProductCategory(
+  id?: string | null,
+): ProductCategoryItem {
+  return (
+    productCategories.find(
+      (category) => category.id === id,
+    ) ?? productCategories[0]
+  );
+}
 
-  hardware: "#F5F5F5",
-  sanitaryware: "#ECFDF5",
-  bathroom_fittings: "#F0F9FF",
-  kitchen_fittings: "#EEF2FF",
-  water_tank: "#E0F2FE",
-  pipes: "#ECFEFF",
-  doors: "#FFF1F2",
-  windows: "#FDF4FF",
-  roofing: "#F3F4F6",
-  flooring: "#FAF5FF",
-  adhesive: "#FEF3C7",
-  tools: "#F3F4F6",
-  safety: "#FEF2F2",
-  lighting: "#FFFBEB",
-  wire_cable: "#EEF2FF",
-  switches: "#F8FAFC",
-  pumps: "#ECFEFF",
-  construction_chemicals: "#F5F3FF",
-  steel: "#E2E8F0",
-  stone: "#F1F5F9",
-  marble: "#F8FAFC",
-  granite: "#E5E7EB",
-};
+/* =========================================
+   SAFE HELPERS
+========================================= */
+
+function safeString(
+  value: unknown,
+  fallback = "",
+): string {
+  if (value === null || value === undefined) {
+    return fallback;
+  }
+
+  const result = String(value).trim();
+
+  return result || fallback;
+}
+
+function safeNumber(
+  value: unknown,
+  fallback = 0,
+): number {
+  if (
+    value === null ||
+    value === undefined ||
+    value === ""
+  ) {
+    return fallback;
+  }
+
+  const result = Number(value);
+
+  return Number.isFinite(result)
+    ? result
+    : fallback;
+}
+
+function safeObject(
+  value: unknown,
+): Record<string, unknown> {
+  if (
+    value &&
+    typeof value === "object" &&
+    !Array.isArray(value)
+  ) {
+    return value as Record<string, unknown>;
+  }
+
+  return {};
+}
+
+function safeArray(
+  value: unknown,
+): unknown[] {
+  return Array.isArray(value) ? value : [];
+}
+
+/* =========================================
+   STORAGE URL
+========================================= */
+
+function getStorageUrl(
+  value?: string | null,
+  folder = "",
+): string {
+  const fallback = "/placeholder.png";
+
+  if (!value) {
+    return fallback;
+  }
+
+  const raw = String(value).trim();
+
+  if (!raw) {
+    return fallback;
+  }
+
+  if (
+    raw.startsWith("http://") ||
+    raw.startsWith("https://") ||
+    raw.startsWith("data:") ||
+    raw.startsWith("blob:")
+  ) {
+    return raw;
+  }
+
+  if (raw.startsWith("/")) {
+    return raw;
+  }
+
+  let path = raw.replace(/^\/+/, "");
+
+  if (
+    folder &&
+    !path.startsWith(`${folder}/`)
+  ) {
+    path = `${folder}/${path}`;
+  }
+
+  const { data } = supabase.storage
+    .from(BUCKET)
+    .getPublicUrl(path);
+
+  return data?.publicUrl || fallback;
+}
+
+function getProductImage(
+  value?: string | null,
+): string {
+  return getStorageUrl(value, "images");
+}
+
+function getBrochureUrl(
+  value?: string | null,
+): string {
+  if (!value) {
+    return "";
+  }
+
+  const raw = String(value).trim();
+
+  if (
+    raw.startsWith("http://") ||
+    raw.startsWith("https://") ||
+    raw.startsWith("/")
+  ) {
+    return raw;
+  }
+
+  return getStorageUrl(raw, "brochures");
+}
+
+/* =========================================
+   SELECTS
+========================================= */
+
+/*
+ * Explicit columns only.
+ * No select("*")
+ */
+
+const PRODUCT_VARIANT_SELECT = `
+  id,
+  product_id,
+  variant_name,
+  watt,
+  price,
+  original_price,
+  stock,
+  sku,
+  unit,
+  specs,
+  image,
+  images,
+  is_active,
+  created_at,
+  updated_at
+`;
+
+const PRODUCT_SELECT = `
+  id,
+  shop_id,
+  name,
+  brand,
+  category,
+  category_label,
+  description,
+  long_description,
+  price,
+  original_price,
+  rating,
+  review_count,
+  stock,
+  unit,
+  image,
+  images,
+  brochure,
+  color,
+  badge,
+  tags,
+  specs,
+  about,
+  material_name,
+  unit_type,
+  measurement,
+  is_active,
+  created_at,
+  product_variants (
+    ${PRODUCT_VARIANT_SELECT}
+  )
+`;
+
+/* =========================================
+   EMPTY VARIANT
+========================================= */
+
+export function emptyProductVariant(
+  productId = "",
+): ProductVariant {
+  return {
+    id: "",
+    productId,
+    variantName: "",
+    watt: null,
+    price: 0,
+    originalPrice: null,
+    stock: 0,
+    sku: null,
+    unit: "Piece",
+    specs: {},
+    image: "",
+    images: [],
+    isActive: true,
+  };
+}
 
 /* =========================================
    EMPTY PRODUCT
 ========================================= */
 
-export const emptyProduct = (): Omit<Product, "id"> => ({
+export const emptyProduct = (): Omit<
+  Product,
+  "id"
+> => ({
   shop_id: "",
 
   name: "",
-
   brand: "",
 
   category: "sand",
-
   categoryLabel: "Sand",
 
   description: "",
-
   longDescription: "",
 
   price: 0,
-
   originalPrice: undefined,
 
   rating: 4.8,
-
   reviewCount: 0,
 
   stock: 0,
@@ -455,12 +679,11 @@ export const emptyProduct = (): Omit<Product, "id"> => ({
   unit: "",
 
   image: "",
-
   images: [],
 
   brochure: "",
 
-  color: "#FFF7ED",
+  color: productCategories[0].color,
 
   badge: undefined,
 
@@ -468,128 +691,440 @@ export const emptyProduct = (): Omit<Product, "id"> => ({
 
   specs: {},
 
+  about: "",
+
+  materialName: "",
+  unitType: "",
+  measurement: "",
+
+  variants: [],
+  hasVariants: false,
+
   is_active: true,
 });
 
 /* =========================================
-   GET IMAGE URL
+   MAP VARIANT
 ========================================= */
 
-const getBucketImage = (fileName?: string) => {
-  try {
-    if (!fileName) {
-      return "/placeholder.png";
-    }
+function mapVariant(
+  variant: Record<string, unknown>,
+): ProductVariant {
+  const rawImages = safeArray(
+    variant.images,
+  );
 
-    let cleanPath = fileName.trim();
+  const images = rawImages
+    .filter(
+      (item) =>
+        item !== null &&
+        item !== undefined &&
+        String(item).trim() !== "",
+    )
+    .map((item) =>
+      getProductImage(String(item)),
+    );
 
-    cleanPath = cleanPath.replace(/^\/+/, "");
+  const rawImage = safeString(
+    variant.image,
+  );
 
-    if (cleanPath.startsWith("http://") || cleanPath.startsWith("https://")) {
-      return cleanPath;
-    }
+  return {
+    id: safeString(variant.id),
 
-    if (!cleanPath.startsWith("images/")) {
-      cleanPath = `images/${cleanPath}`;
-    }
+    productId: safeString(
+      variant.product_id ??
+        variant.productId,
+    ),
 
-    const { data } = supabase.storage.from(BUCKET).getPublicUrl(cleanPath);
+    variantName:
+      safeString(
+        variant.variant_name ??
+          variant.variantName,
+      ) || "Option",
 
-    return data.publicUrl;
-  } catch (error) {
-    console.log("IMAGE ERROR:", error);
+    watt:
+      variant.watt === null ||
+      variant.watt === undefined ||
+      variant.watt === ""
+        ? null
+        : safeNumber(variant.watt),
 
-    return "/placeholder.png";
-  }
-};
+    price: safeNumber(
+      variant.price,
+    ),
+
+    originalPrice:
+      variant.original_price ===
+        null ||
+      variant.original_price ===
+        undefined ||
+      variant.original_price ===
+        ""
+        ? null
+        : safeNumber(
+            variant.original_price,
+          ),
+
+    stock: safeNumber(
+      variant.stock,
+    ),
+
+    sku:
+      safeString(variant.sku) ||
+      null,
+
+    unit:
+      safeString(variant.unit) ||
+      null,
+
+    specs: safeObject(
+      variant.specs,
+    ),
+
+    image: rawImage
+      ? getProductImage(rawImage)
+      : images[0] || "",
+
+    images,
+
+    isActive:
+      variant.is_active !== false,
+
+    createdAt:
+      safeString(
+        variant.created_at,
+      ) || undefined,
+
+    updatedAt:
+      safeString(
+        variant.updated_at,
+      ) || undefined,
+  };
+}
 
 /* =========================================
-   GET BROCHURE URL
+   MAP VARIANTS
 ========================================= */
 
-const getBrochureUrl = (fileName?: string) => {
-  try {
-    if (!fileName) {
-      return "";
-    }
-
-    let cleanPath = fileName.trim();
-
-    cleanPath = cleanPath.replace(/^\/+/, "");
-
-    if (cleanPath.startsWith("http://") || cleanPath.startsWith("https://")) {
-      return cleanPath;
-    }
-
-    if (!cleanPath.startsWith("brochures/")) {
-      cleanPath = `brochures/${cleanPath}`;
-    }
-
-    const { data } = supabase.storage.from(BUCKET).getPublicUrl(cleanPath);
-
-    return data.publicUrl;
-  } catch (error) {
-    console.log("BROCHURE ERROR:", error);
-
-    return "";
+function mapVariants(
+  variants: unknown,
+): ProductVariant[] {
+  if (!Array.isArray(variants)) {
+    return [];
   }
-};
+
+  return variants
+    .filter(
+      (variant): variant is Record<
+        string,
+        unknown
+      > =>
+        !!variant &&
+        typeof variant === "object" &&
+        !Array.isArray(variant),
+    )
+    .map(mapVariant)
+    .sort((a, b) => {
+      if (
+        a.watt !== null &&
+        a.watt !== undefined &&
+        b.watt !== null &&
+        b.watt !== undefined
+      ) {
+        return a.watt - b.watt;
+      }
+
+      if (a.price !== b.price) {
+        return a.price - b.price;
+      }
+
+      return a.variantName.localeCompare(
+        b.variantName,
+      );
+    });
+}
 
 /* =========================================
    MAP PRODUCT
 ========================================= */
 
-const mapProduct = (p: any): Product => {
-  const category = (p.category || "sand") as ProductCategory;
+function mapProduct(
+  product: Record<string, unknown>,
+): Product {
+  const categoryData =
+    getProductCategory(
+      safeString(
+        product.category ??
+          product.product_category,
+        "sand",
+      ),
+    );
+
+  const rawVariants =
+    product.product_variants ??
+    product.variants ??
+    [];
+
+  const variants =
+    mapVariants(rawVariants);
+
+  const activeVariants =
+    variants.filter(
+      (variant) => variant.isActive,
+    );
+
+  const name =
+    safeString(product.name) ||
+    safeString(product.product_name) ||
+    safeString(product.title) ||
+    "Product";
+
+  const brand =
+    safeString(product.brand) ||
+    safeString(product.brand_name);
+
+  const rawImages = safeArray(
+    product.images,
+  );
+
+  const images = rawImages
+    .filter(
+      (item) =>
+        item !== null &&
+        item !== undefined &&
+        String(item).trim() !== "",
+    )
+    .map((item) =>
+      getProductImage(String(item)),
+    );
+
+  const rawMainImage =
+    safeString(product.image) ||
+    safeString(product.product_image) ||
+    images[0] ||
+    "";
+
+  const mainImage = rawMainImage
+    ? getProductImage(rawMainImage)
+    : "/placeholder.png";
+
+  const variantPrices =
+    activeVariants
+      .map((variant) =>
+        safeNumber(variant.price),
+      )
+      .filter((price) => price >= 0);
+
+  const lowestVariantPrice =
+    variantPrices.length
+      ? Math.min(...variantPrices)
+      : safeNumber(product.price);
+
+  const variantStock =
+    activeVariants.reduce(
+      (total, variant) =>
+        total +
+        safeNumber(variant.stock),
+      0,
+    );
+
+  const stock =
+    activeVariants.length
+      ? variantStock
+      : safeNumber(product.stock);
+
+  const originalPrice =
+    product.original_price !==
+      null &&
+    product.original_price !==
+      undefined &&
+    product.original_price !== ""
+      ? safeNumber(
+          product.original_price,
+        )
+      : undefined;
+
+  const tags = safeArray(
+    product.tags,
+  )
+    .filter(
+      (tag) =>
+        tag !== null &&
+        tag !== undefined &&
+        String(tag).trim() !== "",
+    )
+    .map(String);
 
   return {
-    id: String(p.id),
+    id: safeString(product.id),
 
-    shop_id: p.shop_id || "",
+    shop_id:
+      safeString(product.shop_id) ||
+      safeString(product.shopId),
 
-    name: p.name || "",
+    name,
+    brand,
 
-    brand: p.brand || "",
+    category: categoryData.id,
 
-    category,
+    categoryLabel:
+      safeString(
+        product.category_label,
+      ) ||
+      safeString(
+        product.categoryLabel,
+      ) ||
+      categoryData.label,
 
-    categoryLabel: p.category_label || CATEGORY_LABELS[category],
+    description: safeString(
+      product.description,
+    ),
 
-    description: p.description || "",
+    longDescription:
+      safeString(
+        product.long_description,
+      ) ||
+      safeString(
+        product.longDescription,
+      ),
 
-    longDescription: p.long_description || "",
+    price:
+      activeVariants.length
+        ? lowestVariantPrice
+        : safeNumber(product.price),
 
-    price: Number(p.price || 0),
+    originalPrice,
 
-    originalPrice: p.original_price ? Number(p.original_price) : undefined,
+    rating: safeNumber(
+      product.rating,
+    ),
 
-    rating: Number(p.rating || 0),
+    reviewCount: safeNumber(
+      product.review_count ??
+        product.reviewCount,
+    ),
 
-    reviewCount: Number(p.review_count || 0),
+    stock,
 
-    stock: Number(p.stock || 0),
+    unit:
+      safeString(product.unit) ||
+      safeString(product.unit_type),
 
-    unit: p.unit || "",
+    image: mainImage,
 
-    image: getBucketImage(p.image),
+    images,
 
-    images: Array.isArray(p.images)
-      ? p.images.map((img: string) => getBucketImage(img))
-      : [],
+    brochure: getBrochureUrl(
+      safeString(product.brochure),
+    ),
 
-    brochure: getBrochureUrl(p.brochure),
+    color:
+      safeString(product.color) ||
+      categoryData.color,
 
-    color: p.color || CATEGORY_COLORS[category],
+    badge:
+      safeString(product.badge) ||
+      undefined,
 
-    badge: p.badge || undefined,
+    tags,
 
-    tags: Array.isArray(p.tags) ? p.tags : [],
+    specs: safeObject(
+      product.specs,
+    ),
 
-    specs: typeof p.specs === "object" && p.specs !== null ? p.specs : {},
+    about:
+      safeString(product.about) ||
+      undefined,
 
-    is_active: p.is_active !== false,
+    materialName:
+      safeString(
+        product.material_name,
+      ) ||
+      safeString(
+        product.materialName,
+      ) ||
+      undefined,
+
+    unitType:
+      safeString(
+        product.unit_type,
+      ) ||
+      safeString(
+        product.unitType,
+      ) ||
+      undefined,
+
+    measurement:
+      safeString(
+        product.measurement,
+      ) || undefined,
+
+    variants,
+
+    hasVariants:
+      activeVariants.length > 0,
+
+    createdAt:
+      safeString(
+        product.created_at,
+      ) || undefined,
+
+    is_active:
+      product.is_active !== false,
   };
-};
+}
+
+/* =========================================
+   GET PRODUCT VARIANTS
+========================================= */
+
+export async function getProductVariants(
+  productId: string,
+): Promise<ProductVariant[]> {
+  if (!productId) {
+    return [];
+  }
+
+  try {
+    const { data, error } =
+      await supabase
+        .from("product_variants")
+        .select(
+          PRODUCT_VARIANT_SELECT,
+        )
+        .eq(
+          "product_id",
+          productId,
+        )
+        .eq(
+          "is_active",
+          true,
+        )
+        .order("watt", {
+          ascending: true,
+          nullsFirst: false,
+        });
+
+    if (error) {
+      console.error(
+        "GET PRODUCT VARIANTS ERROR:",
+        error.message,
+      );
+
+      return [];
+    }
+
+    return mapVariants(data);
+  } catch (error) {
+    console.error(
+      "GET PRODUCT VARIANTS ERROR:",
+      error,
+    );
+
+    return [];
+  }
+}
 
 /* =========================================
    GET PRODUCTS
@@ -598,48 +1133,56 @@ const mapProduct = (p: any): Product => {
 export async function getProducts(
   shopId?: string,
   includeOffline = false,
+  limit = 100,
 ): Promise<Product[]> {
   try {
     let query = supabase
       .from("products")
-      .select(
-        `
-          *,
-          shops!inner (
-            id,
-            status
-          )
-        `,
-      )
+      .select(PRODUCT_SELECT)
       .order("created_at", {
         ascending: false,
-      });
-
-    /* SHOP FILTER */
+      })
+      .limit(limit);
 
     if (shopId) {
-      query = query.eq("shop_id", shopId);
+      query = query.eq(
+        "shop_id",
+        shopId,
+      );
     }
-
-    /* ONLINE SHOP ONLY */
 
     if (!includeOffline) {
-      query = query.eq("shops.status", "online");
-
-      query = query.eq("is_active", true);
+      query = query.eq(
+        "is_active",
+        true,
+      );
     }
 
-    const { data, error } = await query;
+    const { data, error } =
+      await query;
 
     if (error) {
-      console.log("GET PRODUCTS ERROR:", error);
+      console.error(
+        "GET PRODUCTS ERROR:",
+        error.message,
+      );
 
       return [];
     }
 
-    return (data || []).map((item: any) => mapProduct(item));
-  } catch (err) {
-    console.log(err);
+    return (data ?? []).map((item) =>
+  mapProduct(
+    item as unknown as Record<
+      string,
+      unknown
+    >,
+  ),
+);
+  } catch (error) {
+    console.error(
+      "GET PRODUCTS ERROR:",
+      error,
+    );
 
     return [];
   }
@@ -649,81 +1192,175 @@ export async function getProducts(
    GET PRODUCT BY ID
 ========================================= */
 
-export async function getProductById(id: string): Promise<Product | null> {
-  const { data, error } = await supabase
-    .from("products")
-    .select("*")
-    .eq("id", id)
-    .maybeSingle();
-
-  if (error || !data) {
-    console.log("GET PRODUCT ERROR:", error);
-
+export async function getProductById(
+  id: string,
+): Promise<Product | null> {
+  if (!id) {
     return null;
   }
 
-  return mapProduct(data);
+  try {
+    const { data, error } =
+      await supabase
+        .from("products")
+        .select(PRODUCT_SELECT)
+        .eq("id", id)
+        .maybeSingle();
+
+    if (error) {
+      console.error(
+        "GET PRODUCT BY ID ERROR:",
+        error.message,
+      );
+
+      return null;
+    }
+
+    if (!data) {
+      return null;
+    }
+
+    return mapProduct(
+      data as Record<
+        string,
+        unknown
+      >,
+    );
+  } catch (error) {
+    console.error(
+      "GET PRODUCT BY ID ERROR:",
+      error,
+    );
+
+    return null;
+  }
 }
 
 /* =========================================
    ADD PRODUCT
 ========================================= */
 
-export async function addProduct(product: Omit<Product, "id">) {
-  const { data, error } = await supabase
-    .from("products")
-    .insert([
-      {
-        shop_id: product.shop_id,
+export async function addProduct(
+  product: Omit<Product, "id">,
+) {
+  const payload = {
+    shop_id:
+      product.shop_id || null,
 
-        name: product.name,
+    name:
+      safeString(product.name) ||
+      "Product",
 
-        brand: product.brand,
+    brand:
+      safeString(product.brand),
 
-        category: product.category,
+    category:
+      product.category,
 
-        category_label: product.categoryLabel,
+    category_label:
+      product.categoryLabel ||
+      getProductCategory(
+        product.category,
+      ).label,
 
-        description: product.description,
+    description:
+      product.description || "",
 
-        long_description: product.longDescription,
+    long_description:
+      product.longDescription || "",
 
-        price: product.price,
+    price:
+      safeNumber(product.price),
 
-        original_price: product.originalPrice,
+    original_price:
+      product.originalPrice ??
+      null,
 
-        rating: product.rating,
+    rating:
+      safeNumber(
+        product.rating,
+        4.8,
+      ),
 
-        review_count: product.reviewCount,
+    review_count:
+      safeNumber(
+        product.reviewCount,
+      ),
 
-        stock: product.stock,
+    stock:
+      safeNumber(product.stock),
 
-        unit: product.unit,
+    unit:
+      product.unit || "",
 
-        image: product.image,
+    image:
+      product.image || null,
 
-        images: product.images,
+    images:
+      Array.isArray(product.images)
+        ? product.images
+        : [],
 
-        brochure: product.brochure,
+    brochure:
+      product.brochure || null,
 
-        color: product.color,
+    color:
+      product.color ||
+      getProductCategory(
+        product.category,
+      ).color,
 
-        badge: product.badge,
+    badge:
+      product.badge || null,
 
-        tags: product.tags,
+    tags:
+      Array.isArray(product.tags)
+        ? product.tags
+        : [],
 
-        specs: product.specs,
+    specs:
+      product.specs || {},
 
-        is_active: product.is_active ?? true,
-      },
-    ])
-    .select()
-    .single();
+    about:
+      product.about || null,
+
+    material_name:
+      product.materialName || null,
+
+    unit_type:
+      product.unitType || null,
+
+    measurement:
+      product.measurement || null,
+
+    is_active:
+      product.is_active ?? true,
+  };
+
+  const { data, error } =
+    await supabase
+      .from("products")
+      .insert(payload)
+      .select()
+      .single();
 
   if (error) {
-    console.log("ADD PRODUCT ERROR:", error);
+    console.error(
+      "ADD PRODUCT ERROR:",
+      error.message,
+    );
 
     throw error;
+  }
+
+  if (
+    data?.id &&
+    product.variants?.length
+  ) {
+    await saveProductVariants(
+      String(data.id),
+      product.variants,
+    );
   }
 
   return data;
@@ -733,58 +1370,578 @@ export async function addProduct(product: Omit<Product, "id">) {
    UPDATE PRODUCT
 ========================================= */
 
-export async function updateProduct(id: string, product: Partial<Product>) {
-  const { data, error } = await supabase
-    .from("products")
-    .update({
-      shop_id: product.shop_id,
+export async function updateProduct(
+  id: string,
+  product: Partial<Product>,
+) {
+  if (!id) {
+    throw new Error(
+      "Product ID is required",
+    );
+  }
 
-      name: product.name,
+  const updateData: Record<
+    string,
+    unknown
+  > = {};
 
-      brand: product.brand,
+  if (
+    product.shop_id !== undefined
+  ) {
+    updateData.shop_id =
+      product.shop_id || null;
+  }
 
-      category: product.category,
+  if (
+    product.name !== undefined
+  ) {
+    updateData.name =
+      safeString(product.name) ||
+      "Product";
+  }
 
-      category_label: product.categoryLabel,
+  if (
+    product.brand !== undefined
+  ) {
+    updateData.brand =
+      product.brand;
+  }
 
-      description: product.description,
+  if (
+    product.category !== undefined
+  ) {
+    updateData.category =
+      product.category;
+  }
 
-      long_description: product.longDescription,
+  if (
+    product.categoryLabel !==
+    undefined
+  ) {
+    updateData.category_label =
+      product.categoryLabel;
+  }
 
-      price: product.price,
+  if (
+    product.description !==
+    undefined
+  ) {
+    updateData.description =
+      product.description;
+  }
 
-      original_price: product.originalPrice,
+  if (
+    product.longDescription !==
+    undefined
+  ) {
+    updateData.long_description =
+      product.longDescription;
+  }
 
-      rating: product.rating,
+  if (
+    product.price !== undefined
+  ) {
+    updateData.price =
+      safeNumber(product.price);
+  }
 
-      review_count: product.reviewCount,
+  if (
+    product.originalPrice !==
+    undefined
+  ) {
+    updateData.original_price =
+      product.originalPrice ?? null;
+  }
 
-      stock: product.stock,
+  if (
+    product.rating !== undefined
+  ) {
+    updateData.rating =
+      safeNumber(product.rating);
+  }
 
-      unit: product.unit,
+  if (
+    product.reviewCount !==
+    undefined
+  ) {
+    updateData.review_count =
+      safeNumber(
+        product.reviewCount,
+      );
+  }
 
-      image: product.image,
+  if (
+    product.stock !== undefined
+  ) {
+    updateData.stock =
+      safeNumber(product.stock);
+  }
 
-      images: product.images,
+  if (
+    product.unit !== undefined
+  ) {
+    updateData.unit =
+      product.unit;
+  }
 
-      brochure: product.brochure,
+  if (
+    product.image !== undefined
+  ) {
+    updateData.image =
+      product.image || null;
+  }
 
-      color: product.color,
+  if (
+    product.images !== undefined
+  ) {
+    updateData.images =
+      Array.isArray(product.images)
+        ? product.images
+        : [];
+  }
 
-      badge: product.badge,
+  if (
+    product.brochure !== undefined
+  ) {
+    updateData.brochure =
+      product.brochure || null;
+  }
 
-      tags: product.tags,
+  if (
+    product.color !== undefined
+  ) {
+    updateData.color =
+      product.color;
+  }
 
-      specs: product.specs,
+  if (
+    product.badge !== undefined
+  ) {
+    updateData.badge =
+      product.badge || null;
+  }
 
-      is_active: product.is_active,
-    })
-    .eq("id", id)
-    .select()
-    .single();
+  if (
+    product.tags !== undefined
+  ) {
+    updateData.tags =
+      Array.isArray(product.tags)
+        ? product.tags
+        : [];
+  }
+
+  if (
+    product.specs !== undefined
+  ) {
+    updateData.specs =
+      product.specs || {};
+  }
+
+  if (
+    product.about !== undefined
+  ) {
+    updateData.about =
+      product.about || null;
+  }
+
+  if (
+    product.materialName !==
+    undefined
+  ) {
+    updateData.material_name =
+      product.materialName || null;
+  }
+
+  if (
+    product.unitType !== undefined
+  ) {
+    updateData.unit_type =
+      product.unitType || null;
+  }
+
+  if (
+    product.measurement !==
+    undefined
+  ) {
+    updateData.measurement =
+      product.measurement || null;
+  }
+
+  if (
+    product.is_active !== undefined
+  ) {
+    updateData.is_active =
+      product.is_active;
+  }
+
+  const { data, error } =
+    await supabase
+      .from("products")
+      .update(updateData)
+      .eq("id", id)
+      .select()
+      .single();
 
   if (error) {
-    console.log("UPDATE PRODUCT ERROR:", error);
+    console.error(
+      "UPDATE PRODUCT ERROR:",
+      error.message,
+    );
+
+    throw error;
+  }
+
+  if (
+    product.variants !== undefined
+  ) {
+    await updateProductVariants(
+      id,
+      product.variants,
+    );
+  }
+
+  return data;
+}
+
+/* =========================================
+   SAVE VARIANTS
+========================================= */
+
+export async function saveProductVariants(
+  productId: string,
+  variants: ProductVariant[],
+) {
+  if (
+    !productId ||
+    !Array.isArray(variants) ||
+    variants.length === 0
+  ) {
+    return [];
+  }
+
+  const rows = variants
+    .filter(
+      (variant) =>
+        !!variant &&
+        !!safeString(
+          variant.variantName,
+        ),
+    )
+    .map((variant) => ({
+      product_id: productId,
+
+      variant_name:
+        safeString(
+          variant.variantName,
+        ) || "Option",
+
+      watt:
+        variant.watt == null
+          ? null
+          : safeNumber(
+              variant.watt,
+            ),
+
+      price:
+        safeNumber(
+          variant.price,
+        ),
+
+      original_price:
+        variant.originalPrice == null
+          ? null
+          : safeNumber(
+              variant.originalPrice,
+            ),
+
+      stock:
+        safeNumber(
+          variant.stock,
+        ),
+
+      sku:
+        safeString(
+          variant.sku,
+        ) || null,
+
+      unit:
+        safeString(
+          variant.unit,
+        ) || null,
+
+      specs:
+        safeObject(
+          variant.specs,
+        ),
+
+      image:
+        safeString(
+          variant.image,
+        ) || null,
+
+      images:
+        Array.isArray(
+          variant.images,
+        )
+          ? variant.images
+          : [],
+
+      is_active:
+        variant.isActive !== false,
+    }));
+
+  if (!rows.length) {
+    return [];
+  }
+
+  const { data, error } =
+    await supabase
+      .from("product_variants")
+      .insert(rows)
+      .select(PRODUCT_VARIANT_SELECT);
+
+  if (error) {
+    console.error(
+      "SAVE PRODUCT VARIANTS ERROR:",
+      error.message,
+    );
+
+    throw error;
+  }
+
+  return mapVariants(data);
+}
+
+/* =========================================
+   UPDATE VARIANTS
+========================================= */
+
+export async function updateProductVariants(
+  productId: string,
+  variants: ProductVariant[],
+) {
+  if (!productId) {
+    throw new Error(
+      "Product ID is required",
+    );
+  }
+
+  const { error } =
+    await supabase
+      .from("product_variants")
+      .delete()
+      .eq(
+        "product_id",
+        productId,
+      );
+
+  if (error) {
+    console.error(
+      "DELETE OLD VARIANTS ERROR:",
+      error.message,
+    );
+
+    throw error;
+  }
+
+  if (
+    !Array.isArray(variants) ||
+    variants.length === 0
+  ) {
+    return [];
+  }
+
+  return saveProductVariants(
+    productId,
+    variants,
+  );
+}
+
+/* =========================================
+   UPDATE SINGLE VARIANT
+========================================= */
+
+export async function updateProductVariant(
+  variantId: string,
+  variant: Partial<ProductVariant>,
+) {
+  if (!variantId) {
+    throw new Error(
+      "Variant ID is required",
+    );
+  }
+
+  const updateData: Record<
+    string,
+    unknown
+  > = {};
+
+  if (
+    variant.variantName !==
+    undefined
+  ) {
+    updateData.variant_name =
+      safeString(
+        variant.variantName,
+      ) || "Option";
+  }
+
+  if (variant.watt !== undefined) {
+    updateData.watt =
+      variant.watt === null
+        ? null
+        : safeNumber(
+            variant.watt,
+          );
+  }
+
+  if (variant.price !== undefined) {
+    updateData.price =
+      safeNumber(variant.price);
+  }
+
+  if (
+    variant.originalPrice !==
+    undefined
+  ) {
+    updateData.original_price =
+      variant.originalPrice ?? null;
+  }
+
+  if (variant.stock !== undefined) {
+    updateData.stock =
+      safeNumber(variant.stock);
+  }
+
+  if (variant.sku !== undefined) {
+    updateData.sku =
+      safeString(
+        variant.sku,
+      ) || null;
+  }
+
+  if (variant.unit !== undefined) {
+    updateData.unit =
+      safeString(
+        variant.unit,
+      ) || null;
+  }
+
+  if (variant.specs !== undefined) {
+    updateData.specs =
+      safeObject(
+        variant.specs,
+      );
+  }
+
+  if (variant.image !== undefined) {
+    updateData.image =
+      safeString(
+        variant.image,
+      ) || null;
+  }
+
+  if (
+    variant.images !== undefined
+  ) {
+    updateData.images =
+      Array.isArray(
+        variant.images,
+      )
+        ? variant.images
+        : [];
+  }
+
+  if (
+    variant.isActive !== undefined
+  ) {
+    updateData.is_active =
+      variant.isActive;
+  }
+
+  const { data, error } =
+    await supabase
+      .from("product_variants")
+      .update(updateData)
+      .eq("id", variantId)
+      .select(PRODUCT_VARIANT_SELECT)
+      .single();
+
+  if (error) {
+    console.error(
+      "UPDATE VARIANT ERROR:",
+      error.message,
+    );
+
+    throw error;
+  }
+
+  return mapVariant(
+    data as Record<
+      string,
+      unknown
+    >,
+  );
+}
+
+/* =========================================
+   DELETE VARIANT
+========================================= */
+
+export async function deleteProductVariant(
+  variantId: string,
+) {
+  if (!variantId) {
+    return false;
+  }
+
+  const { error } =
+    await supabase
+      .from("product_variants")
+      .delete()
+      .eq("id", variantId);
+
+  if (error) {
+    console.error(
+      "DELETE VARIANT ERROR:",
+      error.message,
+    );
+
+    throw error;
+  }
+
+  return true;
+}
+
+/* =========================================
+   TOGGLE PRODUCT
+========================================= */
+
+export async function toggleProductStatus(
+  id: string,
+  active: boolean,
+) {
+  if (!id) {
+    throw new Error(
+      "Product ID is required",
+    );
+  }
+
+  const { data, error } =
+    await supabase
+      .from("products")
+      .update({
+        is_active: active,
+      })
+      .eq("id", id)
+      .select()
+      .single();
+
+  if (error) {
+    console.error(
+      "TOGGLE PRODUCT ERROR:",
+      error.message,
+    );
 
     throw error;
   }
@@ -793,37 +1950,83 @@ export async function updateProduct(id: string, product: Partial<Product>) {
 }
 
 /* =========================================
-   TOGGLE PRODUCT STATUS
+   TOGGLE VARIANT
 ========================================= */
 
-export async function toggleProductStatus(id: string, active: boolean) {
-  const { data, error } = await supabase
-    .from("products")
-    .update({
-      is_active: active,
-    })
-    .eq("id", id)
-    .select()
-    .single();
+export async function toggleProductVariantStatus(
+  id: string,
+  active: boolean,
+) {
+  if (!id) {
+    throw new Error(
+      "Variant ID is required",
+    );
+  }
+
+  const { data, error } =
+    await supabase
+      .from("product_variants")
+      .update({
+        is_active: active,
+      })
+      .eq("id", id)
+      .select(PRODUCT_VARIANT_SELECT)
+      .single();
 
   if (error) {
-    console.log("TOGGLE PRODUCT ERROR:", error);
+    console.error(
+      "TOGGLE VARIANT ERROR:",
+      error.message,
+    );
 
     throw error;
   }
 
-  return data;
+  return mapVariant(
+    data as Record<
+      string,
+      unknown
+    >,
+  );
 }
 
 /* =========================================
    DELETE PRODUCT
 ========================================= */
 
-export async function deleteProduct(id: string) {
-  const { error } = await supabase.from("products").delete().eq("id", id);
+export async function deleteProduct(
+  id: string,
+) {
+  if (!id) {
+    return false;
+  }
+
+  const { error: variantError } =
+    await supabase
+      .from("product_variants")
+      .delete()
+      .eq("product_id", id);
+
+  if (variantError) {
+    console.error(
+      "DELETE PRODUCT VARIANTS ERROR:",
+      variantError.message,
+    );
+
+    return false;
+  }
+
+  const { error } =
+    await supabase
+      .from("products")
+      .delete()
+      .eq("id", id);
 
   if (error) {
-    console.log("DELETE PRODUCT ERROR:", error);
+    console.error(
+      "DELETE PRODUCT ERROR:",
+      error.message,
+    );
 
     return false;
   }
@@ -832,29 +2035,323 @@ export async function deleteProduct(id: string) {
 }
 
 /* =========================================
-   HELPERS
+   PRODUCTS BY CATEGORY
 ========================================= */
 
-export async function getProductsByCategory(cat: ProductCategory) {
-  const products = await getProducts();
+export async function getProductsByCategory(
+  category: ProductCategory,
+  limit = 50,
+): Promise<Product[]> {
+  try {
+    const { data, error } =
+      await supabase
+        .from("products")
+        .select(PRODUCT_SELECT)
+        .eq("category", category)
+        .eq("is_active", true)
+        .order("created_at", {
+          ascending: false,
+        })
+        .limit(limit);
 
-  return products.filter((p) => p.category === cat);
+    if (error) {
+      console.error(
+        "GET PRODUCTS BY CATEGORY ERROR:",
+        error.message,
+      );
+
+      return [];
+    }
+
+ return (data ?? []).map((item) =>
+  mapProduct(
+    item as unknown as Record<
+      string,
+      unknown
+    >,
+  ),
+);
+  } catch (error) {
+    console.error(
+      "GET PRODUCTS BY CATEGORY ERROR:",
+      error,
+    );
+
+    return [];
+  }
 }
 
-/* ========================================= */
+/* =========================================
+   FEATURED PRODUCTS
+========================================= */
 
-export async function getFeaturedProducts() {
-  const products = await getProducts();
+export async function getFeaturedProducts(
+  limit = 20,
+): Promise<Product[]> {
+  try {
+    const { data, error } =
+      await supabase
+        .from("products")
+        .select(PRODUCT_SELECT)
+        .eq("is_active", true)
+        .in("badge", [
+          "popular",
+          "pro",
+        ])
+        .order("created_at", {
+          ascending: false,
+        })
+        .limit(limit);
 
-  return products.filter((p) => p.badge === "popular" || p.badge === "pro");
+    if (error) {
+      console.error(
+        "GET FEATURED PRODUCTS ERROR:",
+        error.message,
+      );
+
+      return [];
+    }
+
+   return (data ?? []).map((item) =>
+  mapProduct(
+    item as unknown as Record<
+      string,
+      unknown
+    >,
+  ),
+);
+  } catch (error) {
+    console.error(
+      "GET FEATURED PRODUCTS ERROR:",
+      error,
+    );
+
+    return [];
+  }
 }
 
-/* ========================================= */
+/* =========================================
+   RELATED PRODUCTS
+========================================= */
 
-export async function getRelatedProducts(product: Product, count = 4) {
-  const products = await getProducts(product.shop_id);
+export async function getRelatedProducts(
+  product: Product,
+  count = 4,
+): Promise<Product[]> {
+  if (!product?.id) {
+    return [];
+  }
 
-  return products
-    .filter((p) => p.category === product.category && p.id !== product.id)
-    .slice(0, count);
+  try {
+    let query = supabase
+      .from("products")
+      .select(PRODUCT_SELECT)
+      .eq(
+        "category",
+        product.category,
+      )
+      .eq("is_active", true)
+      .neq("id", product.id)
+      .order("created_at", {
+        ascending: false,
+      })
+      .limit(count);
+
+    if (product.shop_id) {
+      query = query.eq(
+        "shop_id",
+        product.shop_id,
+      );
+    }
+
+    const { data, error } =
+      await query;
+
+    if (error) {
+      console.error(
+        "GET RELATED PRODUCTS ERROR:",
+        error.message,
+      );
+
+      return [];
+    }
+
+    return (data ?? []).map((item) =>
+  mapProduct(
+    item as unknown as Record<
+      string,
+      unknown
+    >,
+  ),
+);
+  } catch (error) {
+    console.error(
+      "GET RELATED PRODUCTS ERROR:",
+      error,
+    );
+
+    return [];
+  }
+}
+
+/* =========================================
+   CATEGORY LOOKUP
+========================================= */
+
+export function findProductCategory(
+  value?: string | null,
+): ProductCategoryItem {
+  const normalized = String(
+    value || "",
+  )
+    .toLowerCase()
+    .trim()
+    .replace(/&/g, "and")
+    .replace(/[\s_-]+/g, "");
+
+  return (
+    productCategories.find(
+      (category) => {
+        const id =
+          category.id
+            .toLowerCase()
+            .replace(
+              /[\s_-]+/g,
+              "",
+            );
+
+        const label =
+          category.label
+            .toLowerCase()
+            .replace(
+              /[\s_-]+/g,
+              "",
+            );
+
+        return (
+          id === normalized ||
+          label === normalized
+        );
+      },
+    ) ?? productCategories[0]
+  );
+}
+
+/* =========================================
+   PRICE HELPERS
+========================================= */
+
+export function getLowestVariantPrice(
+  product: Product,
+): number {
+  const variants =
+    product.variants?.filter(
+      (variant) =>
+        variant.isActive,
+    ) || [];
+
+  if (!variants.length) {
+    return safeNumber(
+      product.price,
+    );
+  }
+
+  return Math.min(
+    ...variants.map(
+      (variant) =>
+        safeNumber(
+          variant.price,
+        ),
+    ),
+  );
+}
+
+export function getHighestVariantPrice(
+  product: Product,
+): number {
+  const variants =
+    product.variants?.filter(
+      (variant) =>
+        variant.isActive,
+    ) || [];
+
+  if (!variants.length) {
+    return safeNumber(
+      product.price,
+    );
+  }
+
+  return Math.max(
+    ...variants.map(
+      (variant) =>
+        safeNumber(
+          variant.price,
+        ),
+    ),
+  );
+}
+
+/* =========================================
+   STOCK
+========================================= */
+
+export function getTotalVariantStock(
+  product: Product,
+): number {
+  const variants =
+    product.variants?.filter(
+      (variant) =>
+        variant.isActive,
+    ) || [];
+
+  if (!variants.length) {
+    return safeNumber(
+      product.stock,
+    );
+  }
+
+  return variants.reduce(
+    (total, variant) =>
+      total +
+      safeNumber(
+        variant.stock,
+      ),
+    0,
+  );
+}
+
+/* =========================================
+   FIND VARIANT
+========================================= */
+
+export function findProductVariant(
+  product: Product,
+  variantId: string,
+): ProductVariant | null {
+  return (
+    product.variants?.find(
+      (variant) =>
+        String(variant.id) ===
+        String(variantId),
+    ) ?? null
+  );
+}
+
+/* =========================================
+   FIND VARIANT BY WATT
+========================================= */
+
+export function findVariantByWatt(
+  product: Product,
+  watt: number,
+): ProductVariant | null {
+  return (
+    product.variants?.find(
+      (variant) =>
+        variant.watt !== null &&
+        variant.watt !== undefined &&
+        Number(variant.watt) ===
+          Number(watt),
+    ) ?? null
+  );
 }

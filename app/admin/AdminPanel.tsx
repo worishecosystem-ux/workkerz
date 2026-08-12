@@ -110,6 +110,7 @@ export default function AdminPanel() {
   const channelRef = useRef<ReturnType<typeof supabase.channel> | null>(null);
   const realtimeStarted = useRef(false);
   const [workerFormOpen, setWorkerFormOpen] = useState(false);
+  const [shopProfileOpen, setShopProfileOpen] = useState(false);
   const hasAccess = useCallback(
     (module: AdminModule) =>
       !!admin &&
@@ -580,7 +581,7 @@ export default function AdminPanel() {
       )}
 
       {/* ANDROID HEADER */}
-      {android && (
+      {android && !shopProfileOpen && (
         <header className="fixed left-0 right-0 top-0 z-40 border-b border-gray-100 bg-white/95 pt-[env(safe-area-inset-top)] backdrop-blur-xl">
           <div className="flex h-14 items-center justify-between px-4 pt-2">
             <div>
@@ -617,7 +618,7 @@ export default function AdminPanel() {
       )}
 
       {/* NORMAL MOBILE HEADER */}
-      {!android && (
+      {!android && !shopProfileOpen && (
         <header className="fixed left-0 right-0 top-0 z-40 flex h-16 items-center justify-between border-b border-gray-100 bg-white px-3 lg:hidden">
           <div className="flex items-center gap-2.5">
             <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-orange-50">
@@ -749,13 +750,15 @@ export default function AdminPanel() {
 
       {/* MAIN */}
       <main className="min-h-screen w-full bg-[#F8FAFC] pb-20 lg:ml-64 lg:w-[calc(100%-16rem)] lg:pb-0">
-        {android ? (
-          <div className="h-14.5 pt-26 lg:hidden" />
-        ) : (
-          <div className="h-16 lg:hidden" />
-        )}
+        {!shopProfileOpen &&
+          (android ? (
+            <div className="h-14.5 lg:hidden" />
+          ) : (
+            <div className="h-16 lg:hidden" />
+          ))}
 
         {tab === "dashboard" && hasAccess("dashboard") && <DashboardTab />}
+
         {tab === "workers" && hasAccess("workers") && (
           <WorkersTab onFormOpenChange={setWorkerFormOpen} />
         )}
@@ -773,14 +776,18 @@ export default function AdminPanel() {
           />
         )}
 
-        {tab === "shops" && hasAccess("shops") && <ShopsTab />}
+        {tab === "shops" && hasAccess("shops") && (
+          <ShopsTab onShopProfileChange={setShopProfileOpen} />
+        )}
+
         {tab === "bookings" && hasAccess("bookings") && <BookingsTab />}
+
         {tab === "admins" && hasAccess("admins") && <AdminsTab />}
       </main>
 
       {/* ANDROID BOTTOM NAV */}
-     {android && !workerFormOpen && (
-  <nav className="fixed bottom-0 left-0 right-0 z-50 border-t border-gray-100 bg-white/95 pb-[env(safe-area-inset-bottom)] backdrop-blur-xl lg:hidden">
+      {android && !workerFormOpen && (
+        <nav className="fixed bottom-0 left-0 right-0 z-50 border-t border-gray-100 bg-white/95 pb-[env(safe-area-inset-bottom)] backdrop-blur-xl lg:hidden">
           <div className="mx-auto grid h-16 max-w-md grid-cols-5">
             {(["dashboard", "workers", "orders", "bookings"] as AdminModule[])
               .map((id) => visible.find((x) => x.id === id))

@@ -11,6 +11,8 @@ import {
   ChevronRight,
 } from "lucide-react";
 
+import { useEffect, useState } from "react";
+
 type Props = {
   order: any;
   onClose: () => void;
@@ -35,23 +37,54 @@ export default function NewOrderNotification({
   onAccept,
   onReject,
 }: Props) {
+  /*
+   * IMPORTANT:
+   *
+   * Timer starts when this notification receives a NEW order.
+   * It does NOT use order.created_at.
+   *
+   * Example:
+   * Order created in DB -> 10 seconds later notification appears
+   * Timer will still start from 00:00 when notification appears.
+   */
+
+  const [arrivalTime, setArrivalTime] = useState<number>(() => Date.now());
+  const [now, setNow] = useState<number>(() => Date.now());
+
   if (!order) return null;
 
+  /* =========================================================
+     ORDER STATUS
+  ========================================================= */
+
   const status = String(order.status ?? "Pending").trim();
+
   const normalizedStatus = status.toLowerCase();
 
   const canAct = !FINAL_STATUSES.includes(normalizedStatus);
+
+  /* =========================================================
+     CUSTOMER
+  ========================================================= */
 
   const customerName =
     order.customer_name ||
     order.customerName ||
     "New Customer";
 
+  /* =========================================================
+     ORDER NUMBER
+  ========================================================= */
+
   const orderNumber = order.order_number
     ? `#${order.order_number}`
     : order.id
       ? `#${String(order.id).slice(0, 8).toUpperCase()}`
       : "#NEW";
+
+  /* =========================================================
+     AMOUNT
+  ========================================================= */
 
   const amount =
     order.total_amount ??
@@ -65,6 +98,100 @@ export default function NewOrderNotification({
     !Number.isNaN(Number(amount))
       ? `₹${Number(amount).toLocaleString("en-IN")}`
       : null;
+
+  /* =========================================================
+     ORDER ARRIVAL TIME
+  =========================================================
+  
+  Timer resets whenever a new order ID appears.
+  */
+
+  useEffect(() => {
+    if (!order?.id) return;
+
+    const startedAt = Date.now();
+
+    setArrivalTime(startedAt);
+    setNow(startedAt);
+  }, [order?.id]);
+
+  /* =========================================================
+     LIVE TIMER
+  ========================================================= */
+
+  useEffect(() => {
+    if (!canAct) return;
+
+    const interval = window.setInterval(() => {
+      setNow(Date.now());
+    }, 1000);
+
+    return () => {
+      window.clearInterval(interval);
+    };
+  }, [canAct]);
+
+  /* =========================================================
+     ELAPSED TIME
+  ========================================================= */
+
+  const elapsedSeconds = Math.max(
+    0,
+    Math.floor((now - arrivalTime) / 1000),
+  );
+
+  const minutes = Math.floor(elapsedSeconds / 60);
+
+  const seconds = elapsedSeconds % 60;
+
+  const formattedTime = `${String(minutes).padStart(
+    2,
+    "0",
+  )}:${String(seconds).padStart(2, "0")}`;
+
+  /* =========================================================
+     TIMER STATE
+  ========================================================= */
+
+  const timerState =
+    elapsedSeconds >= 60
+      ? "urgent"
+      : elapsedSeconds >= 30
+        ? "warning"
+        : "normal";
+
+  const timerConfig = {
+    normal: {
+      wrapper:
+        "border-emerald-100 bg-emerald-50 text-emerald-700",
+      icon: "text-emerald-600",
+      timer: "text-emerald-700",
+      label: "Waiting",
+      dot: "bg-emerald-500",
+    },
+
+    warning: {
+      wrapper:
+        "border-orange-100 bg-orange-50 text-orange-700",
+      icon: "text-orange-600",
+      timer: "text-orange-700",
+      label: "Waiting",
+      dot: "bg-orange-500",
+    },
+
+    urgent: {
+      wrapper:
+        "border-red-100 bg-red-50 text-red-700",
+      icon: "text-red-600",
+      timer: "text-red-700",
+      label: "Urgent",
+      dot: "bg-red-500",
+    },
+  }[timerState];
+
+  /* =========================================================
+     STATUS CONFIG
+  ========================================================= */
 
   const statusConfig = (() => {
     switch (normalizedStatus) {
@@ -92,6 +219,10 @@ export default function NewOrderNotification({
     }
   })();
 
+  /* =========================================================
+     ACCEPT
+  ========================================================= */
+
   const handleAccept = (
     event: React.MouseEvent<HTMLButtonElement>,
   ) => {
@@ -107,6 +238,10 @@ export default function NewOrderNotification({
 
     onAccept();
   };
+
+  /* =========================================================
+     REJECT
+  ========================================================= */
 
   const handleReject = (
     event: React.MouseEvent<HTMLButtonElement>,
@@ -124,21 +259,35 @@ export default function NewOrderNotification({
     onReject();
   };
 
+  /* =========================================================
+     VIEW
+  ========================================================= */
+
   const handleView = (
     event: React.MouseEvent<HTMLButtonElement>,
   ) => {
     event.preventDefault();
     event.stopPropagation();
+
     onView();
   };
+
+  /* =========================================================
+     CLOSE
+  ========================================================= */
 
   const handleClose = (
     event: React.MouseEvent<HTMLButtonElement>,
   ) => {
     event.preventDefault();
     event.stopPropagation();
+
     onClose();
   };
+
+  /* =========================================================
+     UI
+  ========================================================= */
 
   return (
     <div
@@ -154,24 +303,34 @@ export default function NewOrderNotification({
         shadow-[0_12px_35px_-12px_rgba(15,23,42,0.28)]
       "
     >
-      {/* TOP ACCENT */}
+      {/* =====================================================
+          TOP ACCENT
+      ===================================================== */}
+
       <div
-        className="
+        className={`
           absolute
           inset-x-0
           top-0
           h-[2px]
-          bg-gradient-to-r
-          from-orange-500
-          via-amber-500
-          to-orange-400
-        "
+          ${
+            timerState === "urgent"
+              ? "bg-red-500"
+              : timerState === "warning"
+                ? "bg-orange-500"
+                : "bg-gradient-to-r from-orange-500 via-amber-500 to-orange-400"
+          }
+        `}
       />
 
       <div className="p-3">
-        {/* HEADER */}
+        {/* =====================================================
+            HEADER
+        ===================================================== */}
+
         <div className="flex items-center gap-2.5">
           {/* ICON */}
+
           <div className="relative shrink-0">
             <div
               className="
@@ -206,6 +365,7 @@ export default function NewOrderNotification({
           </div>
 
           {/* TITLE */}
+
           <div className="min-w-0 flex-1">
             <div className="flex items-center gap-1.5">
               <h3 className="truncate text-[13px] font-extrabold text-slate-900">
@@ -248,6 +408,7 @@ export default function NewOrderNotification({
           </div>
 
           {/* CLOSE */}
+
           <button
             type="button"
             onClick={handleClose}
@@ -271,7 +432,10 @@ export default function NewOrderNotification({
           </button>
         </div>
 
-        {/* COMPACT ORDER ROW */}
+        {/* =====================================================
+            ORDER ROW
+        ===================================================== */}
+
         <div
           className="
             mt-2.5
@@ -288,6 +452,7 @@ export default function NewOrderNotification({
           "
         >
           {/* LEFT */}
+
           <div className="flex min-w-0 items-center gap-2">
             <div
               className="
@@ -318,6 +483,7 @@ export default function NewOrderNotification({
           </div>
 
           {/* RIGHT */}
+
           <div className="flex shrink-0 items-center gap-1.5">
             {formattedAmount && (
               <span className="text-[12px] font-extrabold text-slate-900">
@@ -353,21 +519,105 @@ export default function NewOrderNotification({
           </div>
         </div>
 
-        {/* WAITING */}
-        {canAct && (
-          <div className="mt-1.5 flex items-center gap-1.5 px-0.5">
-            <Clock3 className="h-3 w-3 text-orange-500" />
+        {/* =====================================================
+            LIVE WAITING TIMER
+        ===================================================== */}
 
-            <span className="text-[9px] font-medium text-slate-400">
-              Waiting for your action
-            </span>
+        {canAct && (
+          <div
+            className={`
+              mt-2
+              flex
+              items-center
+              justify-between
+              rounded-lg
+              border
+              px-2.5
+              py-2
+              ${timerConfig.wrapper}
+            `}
+          >
+            {/* LEFT */}
+
+            <div className="flex items-center gap-2">
+              <div
+                className="
+                  relative
+                  flex
+                  h-7
+                  w-7
+                  items-center
+                  justify-center
+                  rounded-md
+                  bg-white/80
+                "
+              >
+                <Clock3
+                  className={`h-3.5 w-3.5 ${timerConfig.icon}`}
+                />
+
+                <span
+                  className={`
+                    absolute
+                    -right-0.5
+                    -top-0.5
+                    h-1.5
+                    w-1.5
+                    rounded-full
+                    ${timerConfig.dot}
+                    ${
+                      timerState === "urgent"
+                        ? "animate-pulse"
+                        : ""
+                    }
+                  `}
+                />
+              </div>
+
+              <div>
+                <p className="text-[8px] font-bold uppercase tracking-wider opacity-60">
+                  {timerConfig.label}
+                </p>
+
+                <p className="text-[9px] font-medium opacity-70">
+                  Waiting for your action
+                </p>
+              </div>
+            </div>
+
+            {/* TIMER */}
+
+            <div className="text-right">
+              <p
+                className={`
+                  font-mono
+                  text-[18px]
+                  font-black
+                  leading-none
+                  tabular-nums
+                  ${timerConfig.timer}
+                `}
+              >
+                {formattedTime}
+              </p>
+
+              <p className="mt-0.5 text-[7px] font-bold uppercase tracking-wider opacity-50">
+                {timerState === "urgent"
+                  ? "Please respond"
+                  : "Response time"}
+              </p>
+            </div>
           </div>
         )}
 
-        {/* ACTIONS */}
+        {/* =====================================================
+            ACTIONS
+        ===================================================== */}
+
         {canAct && (
           <div className="mt-2.5 grid grid-cols-2 gap-1.5">
             {/* ACCEPT */}
+
             <button
               type="button"
               onClick={handleAccept}
@@ -394,6 +644,7 @@ export default function NewOrderNotification({
             </button>
 
             {/* REJECT */}
+
             <button
               type="button"
               onClick={handleReject}
@@ -423,7 +674,10 @@ export default function NewOrderNotification({
           </div>
         )}
 
-        {/* VIEW */}
+        {/* =====================================================
+            VIEW ORDER
+        ===================================================== */}
+
         <button
           type="button"
           onClick={handleView}
@@ -478,7 +732,10 @@ export default function NewOrderNotification({
           />
         </button>
 
-        {/* LIVE */}
+        {/* =====================================================
+            LIVE STATUS
+        ===================================================== */}
+
         <div className="mt-2 flex items-center justify-center gap-1">
           <span className="relative flex h-1.5 w-1.5">
             <span
