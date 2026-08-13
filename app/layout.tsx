@@ -1,9 +1,12 @@
 import "./globals.css";
 import type { Metadata, Viewport } from "next";
+
 import { PlatformProvider } from "./components/context/PlatformContext";
 import { AdminProvider } from "./components/context/AdminContext";
 import { Toaster } from "sonner";
 import BackButtonHandler from "./components/BackButtonHandler";
+import AutoAppUpdate from "./components/AutoAppUpdate";
+
 export const metadata: Metadata = {
   title: "Workkerz",
   description: "Workkerz Platform",
@@ -31,6 +34,8 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning className="h-full">
       <body className="min-h-dvh overflow-x-hidden bg-white antialiased">
+        <AutoAppUpdate />
+
         <PlatformProvider>
           <AdminProvider>
             <BackButtonHandler />
