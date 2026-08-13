@@ -7,7 +7,7 @@ const config: CapacitorConfig = {
   webDir: "public",
 
   server: {
-    url: "http://10.247.1.137:3000/admin",
+    url: "https://workkerz.com/admin",
     cleartext: true,
   },
 
