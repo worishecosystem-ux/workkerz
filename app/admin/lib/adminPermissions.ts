@@ -5,6 +5,7 @@ export type AdminRole =
 export type AdminModule =
   | "dashboard"
   | "workers"
+  | "worker_requests"
   | "orders"
   | "shops"
   | "bookings"
@@ -12,6 +13,7 @@ export type AdminModule =
 
 export type AdminSubRole =
   | "worker_admin"
+  | "worker_request_admin"
   | "order_admin"
   | "shop_admin"
   | "booking_admin";
@@ -23,6 +25,12 @@ export const ROLE_MODULES: Record<
   worker_admin: [
     "dashboard",
     "workers",
+    "worker_requests",
+  ],
+
+  worker_request_admin: [
+    "dashboard",
+    "worker_requests",
   ],
 
   order_admin: [
@@ -51,7 +59,7 @@ export function canAccessModule(
     return true;
   }
 
-  // Normal admin → check assigned role
+  // Normal Admin → assigned modules only
   return assignedRoles.some((role) =>
     ROLE_MODULES[role]?.includes(module),
   );

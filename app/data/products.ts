@@ -38,8 +38,7 @@ export type ProductCategory =
   | "construction_chemicals"
   | "steel"
   | "stone"
-  | "marble"
-  | "granite";
+  | "granite"
 
 /* =========================================
    CATEGORY
@@ -392,14 +391,7 @@ export const productCategories: ProductCategoryItem[] = [
     color: "#6B7280",
     bgColor: "#E5E7EB",
   },
-  {
-    id: "marble",
-    label: "Marble",
-    description: "Marble slabs & stone surfaces",
-    image: "/categories/eaurix/granite marble (1).png",
-    color: "#64748B",
-    bgColor: "#F8FAFC",
-  },
+ 
 ];
 
 /* =========================================
@@ -421,17 +413,187 @@ export const CATEGORY_COLORS = Object.fromEntries(
 ) as Record<ProductCategory, string>;
 
 /* =========================================
+   CATEGORY NORMALIZER
+========================================= */
+
+function normalizeCategory(
+  value?: string | null,
+): string {
+  return String(value || "")
+    .toLowerCase()
+    .trim()
+    .replace(/&/g, "and")
+    .replace(/[^a-z0-9]/g, "");
+}
+
+/* =========================================
+   CATEGORY ALIASES
+========================================= */
+
+const CATEGORY_ALIASES: Record<
+  string,
+  ProductCategory
+> = {
+  sand: "sand",
+
+  aggregate: "aggregate",
+  aggregates: "aggregate",
+
+  brick: "brick",
+  bricks: "brick",
+
+  cement: "cement",
+
+  tmt: "tmt",
+  tmtsteel: "tmt",
+  tmtbars: "tmt",
+
+  paint: "paint",
+  paints: "paint",
+
+  plumbing: "plumbing",
+
+  tiles: "tiles",
+  tile: "tiles",
+
+  electrical: "electrical",
+
+  hardware: "hardware",
+
+  sanitaryware: "sanitaryware",
+  sanitary: "sanitaryware",
+  sanitarywares: "sanitaryware",
+
+  bathroomfittings: "bathroom_fittings",
+  bathroomfitting: "bathroom_fittings",
+
+  kitchenfittings: "kitchen_fittings",
+  kitchenfitting: "kitchen_fittings",
+
+  watertank: "water_tank",
+  watertanks: "water_tank",
+  tank: "water_tank",
+
+  pipes: "pipes",
+  pipe: "pipes",
+  pipesfittings: "pipes",
+  pipefittings: "pipes",
+
+  doors: "doors",
+  door: "doors",
+
+  windows: "windows",
+  window: "windows",
+
+  roofing: "roofing",
+
+  flooring: "flooring",
+
+  adhesive: "adhesive",
+  adhesives: "adhesive",
+
+  tools: "tools",
+  tool: "tools",
+  toolsequipment: "tools",
+
+  safety: "safety",
+  safetyequipment: "safety",
+
+  lighting: "lighting",
+  lights: "lighting",
+
+  wirecable: "wire_cable",
+  wirescables: "wire_cable",
+  wireandcable: "wire_cable",
+
+  switches: "switches",
+  switchessockets: "switches",
+  switchandsockets: "switches",
+
+  pumps: "pumps",
+  pump: "pumps",
+  waterpumps: "pumps",
+
+  constructionchemicals:
+    "construction_chemicals",
+
+  steel: "steel",
+
+  stone: "stone",
+
+  granite: "granite",
+};
+
+/* =========================================
    CATEGORY HELPERS
 ========================================= */
 
 export function getProductCategory(
   id?: string | null,
 ): ProductCategoryItem {
-  return (
-    productCategories.find(
-      (category) => category.id === id,
-    ) ?? productCategories[0]
+  const resolved = findProductCategory(id);
+
+  return resolved;
+}
+
+/* =========================================
+   FIND CATEGORY
+========================================= */
+
+export function findProductCategory(
+  value?: string | null,
+): ProductCategoryItem {
+  const normalized = normalizeCategory(value);
+
+  /*
+   * 1. Direct database/category ID alias
+   */
+  const alias =
+    CATEGORY_ALIASES[normalized];
+
+  if (alias) {
+    const category = productCategories.find(
+      (item) => item.id === alias,
+    );
+
+    if (category) {
+      return category;
+    }
+  }
+
+  /*
+   * 2. Exact ID match
+   */
+  const byId = productCategories.find(
+    (category) =>
+      normalizeCategory(category.id) ===
+      normalized,
   );
+
+  if (byId) {
+    return byId;
+  }
+
+  /*
+   * 3. Label match
+   */
+  const byLabel = productCategories.find(
+    (category) =>
+      normalizeCategory(category.label) ===
+      normalized,
+  );
+
+  if (byLabel) {
+    return byLabel;
+  }
+
+  /*
+   * 4. Never silently return Sand for an
+   *    unknown category.
+   *
+   *    Return Sand only as final safety fallback.
+   */
+  return productCategories[0];
 }
 
 /* =========================================
@@ -442,7 +604,10 @@ function safeString(
   value: unknown,
   fallback = "",
 ): string {
-  if (value === null || value === undefined) {
+  if (
+    value === null ||
+    value === undefined
+  ) {
     return fallback;
   }
 
@@ -478,7 +643,10 @@ function safeObject(
     typeof value === "object" &&
     !Array.isArray(value)
   ) {
-    return value as Record<string, unknown>;
+    return value as Record<
+      string,
+      unknown
+    >;
   }
 
   return {};
@@ -487,7 +655,9 @@ function safeObject(
 function safeArray(
   value: unknown,
 ): unknown[] {
-  return Array.isArray(value) ? value : [];
+  return Array.isArray(value)
+    ? value
+    : [];
 }
 
 /* =========================================
@@ -532,18 +702,33 @@ function getStorageUrl(
     path = `${folder}/${path}`;
   }
 
-  const { data } = supabase.storage
-    .from(BUCKET)
-    .getPublicUrl(path);
+  const { data } =
+    supabase.storage
+      .from(BUCKET)
+      .getPublicUrl(path);
 
-  return data?.publicUrl || fallback;
+  return (
+    data?.publicUrl ||
+    fallback
+  );
 }
+
+/* =========================================
+   PRODUCT IMAGE
+========================================= */
 
 function getProductImage(
   value?: string | null,
 ): string {
-  return getStorageUrl(value, "images");
+  return getStorageUrl(
+    value,
+    "images",
+  );
 }
+
+/* =========================================
+   BROCHURE
+========================================= */
 
 function getBrochureUrl(
   value?: string | null,
@@ -562,17 +747,15 @@ function getBrochureUrl(
     return raw;
   }
 
-  return getStorageUrl(raw, "brochures");
+  return getStorageUrl(
+    raw,
+    "brochures",
+  );
 }
 
 /* =========================================
    SELECTS
 ========================================= */
-
-/*
- * Explicit columns only.
- * No select("*")
- */
 
 const PRODUCT_VARIANT_SELECT = `
   id,
@@ -653,55 +836,54 @@ export function emptyProductVariant(
    EMPTY PRODUCT
 ========================================= */
 
-export const emptyProduct = (): Omit<
-  Product,
-  "id"
-> => ({
-  shop_id: "",
+export const emptyProduct =
+  (): Omit<Product, "id"> => ({
+    shop_id: "",
 
-  name: "",
-  brand: "",
+    name: "",
+    brand: "",
 
-  category: "sand",
-  categoryLabel: "Sand",
+    category: "sand",
+    categoryLabel: "Sand",
 
-  description: "",
-  longDescription: "",
+    description: "",
+    longDescription: "",
 
-  price: 0,
-  originalPrice: undefined,
+    price: 0,
+    originalPrice: undefined,
 
-  rating: 4.8,
-  reviewCount: 0,
+    rating: 4.8,
+    reviewCount: 0,
 
-  stock: 0,
+    stock: 0,
 
-  unit: "",
+    unit: "",
 
-  image: "",
-  images: [],
+    image: "",
+    images: [],
 
-  brochure: "",
+    brochure: "",
 
-  color: productCategories[0].color,
+    color:
+      productCategories[0].color,
 
-  badge: undefined,
+    badge: undefined,
 
-  tags: [],
+    tags: [],
 
-  specs: {},
+    specs: {},
 
-  about: "",
+    about: "",
 
-  materialName: "",
-  unitType: "",
-  measurement: "",
+    materialName: "",
+    unitType: "",
+    measurement: "",
 
-  variants: [],
-  hasVariants: false,
+    variants: [],
+    hasVariants: false,
 
-  is_active: true,
-});
+    is_active: true,
+  });
 
 /* =========================================
    MAP VARIANT
@@ -722,7 +904,9 @@ function mapVariant(
         String(item).trim() !== "",
     )
     .map((item) =>
-      getProductImage(String(item)),
+      getProductImage(
+        String(item),
+      ),
     );
 
   const rawImage = safeString(
@@ -730,7 +914,9 @@ function mapVariant(
   );
 
   return {
-    id: safeString(variant.id),
+    id: safeString(
+      variant.id,
+    ),
 
     productId: safeString(
       variant.product_id ??
@@ -748,7 +934,9 @@ function mapVariant(
       variant.watt === undefined ||
       variant.watt === ""
         ? null
-        : safeNumber(variant.watt),
+        : safeNumber(
+            variant.watt,
+          ),
 
     price: safeNumber(
       variant.price,
@@ -771,19 +959,23 @@ function mapVariant(
     ),
 
     sku:
-      safeString(variant.sku) ||
-      null,
+      safeString(
+        variant.sku,
+      ) || null,
 
     unit:
-      safeString(variant.unit) ||
-      null,
+      safeString(
+        variant.unit,
+      ) || null,
 
     specs: safeObject(
       variant.specs,
     ),
 
     image: rawImage
-      ? getProductImage(rawImage)
+      ? getProductImage(
+          rawImage,
+        )
       : images[0] || "",
 
     images,
@@ -816,13 +1008,18 @@ function mapVariants(
 
   return variants
     .filter(
-      (variant): variant is Record<
+      (
+        variant,
+      ): variant is Record<
         string,
         unknown
       > =>
         !!variant &&
-        typeof variant === "object" &&
-        !Array.isArray(variant),
+        typeof variant ===
+          "object" &&
+        !Array.isArray(
+          variant,
+        ),
     )
     .map(mapVariant)
     .sort((a, b) => {
@@ -835,8 +1032,12 @@ function mapVariants(
         return a.watt - b.watt;
       }
 
-      if (a.price !== b.price) {
-        return a.price - b.price;
+      if (
+        a.price !== b.price
+      ) {
+        return (
+          a.price - b.price
+        );
       }
 
       return a.variantName.localeCompare(
@@ -853,133 +1054,172 @@ function mapProduct(
   product: Record<string, unknown>,
 ): Product {
   const categoryData =
-    getProductCategory(
+    findProductCategory(
       safeString(
-        product.category ??
-          product.product_category,
-        "sand",
+        product.category,
       ),
     );
 
-  const rawVariants =
-    product.product_variants ??
-    product.variants ??
-    [];
-
   const variants =
-    mapVariants(rawVariants);
+    mapVariants(
+      product.product_variants ??
+        product.variants ??
+        [],
+    );
 
   const activeVariants =
     variants.filter(
-      (variant) => variant.isActive,
+      (variant) =>
+        variant.isActive,
     );
 
   const name =
-    safeString(product.name) ||
-    safeString(product.product_name) ||
-    safeString(product.title) ||
+    safeString(
+      product.name,
+    ) ||
+    safeString(
+      product.product_name,
+    ) ||
+    safeString(
+      product.title,
+    ) ||
     "Product";
 
   const brand =
-    safeString(product.brand) ||
-    safeString(product.brand_name);
-
-  const rawImages = safeArray(
-    product.images,
-  );
-
-  const images = rawImages
-    .filter(
-      (item) =>
-        item !== null &&
-        item !== undefined &&
-        String(item).trim() !== "",
-    )
-    .map((item) =>
-      getProductImage(String(item)),
+    safeString(
+      product.brand,
+    ) ||
+    safeString(
+      product.brand_name,
     );
 
+  const rawImages =
+    safeArray(
+      product.images,
+    );
+
+  const images =
+    rawImages
+      .filter(
+        (item) =>
+          item !== null &&
+          item !== undefined &&
+          String(item).trim() !== "",
+      )
+      .map((item) =>
+        getProductImage(
+          String(item),
+        ),
+      );
+
   const rawMainImage =
-    safeString(product.image) ||
-    safeString(product.product_image) ||
+    safeString(
+      product.image,
+    ) ||
+    safeString(
+      product.product_image,
+    ) ||
     images[0] ||
     "";
 
-  const mainImage = rawMainImage
-    ? getProductImage(rawMainImage)
-    : "/placeholder.png";
+  const mainImage =
+    rawMainImage
+      ? getProductImage(
+          rawMainImage,
+        )
+      : "/placeholder.png";
 
   const variantPrices =
     activeVariants
       .map((variant) =>
-        safeNumber(variant.price),
+        safeNumber(
+          variant.price,
+        ),
       )
-      .filter((price) => price >= 0);
+      .filter(
+        (price) =>
+          price >= 0,
+      );
 
   const lowestVariantPrice =
     variantPrices.length
-      ? Math.min(...variantPrices)
-      : safeNumber(product.price);
+      ? Math.min(
+          ...variantPrices,
+        )
+      : safeNumber(
+          product.price,
+        );
 
   const variantStock =
     activeVariants.reduce(
       (total, variant) =>
         total +
-        safeNumber(variant.stock),
+        safeNumber(
+          variant.stock,
+        ),
       0,
     );
 
   const stock =
     activeVariants.length
       ? variantStock
-      : safeNumber(product.stock);
+      : safeNumber(
+          product.stock,
+        );
 
   const originalPrice =
     product.original_price !==
       null &&
     product.original_price !==
       undefined &&
-    product.original_price !== ""
+    product.original_price !==
+      ""
       ? safeNumber(
           product.original_price,
         )
       : undefined;
 
-  const tags = safeArray(
-    product.tags,
-  )
-    .filter(
-      (tag) =>
-        tag !== null &&
-        tag !== undefined &&
-        String(tag).trim() !== "",
+  const tags =
+    safeArray(
+      product.tags,
     )
-    .map(String);
+      .filter(
+        (tag) =>
+          tag !== null &&
+          tag !== undefined &&
+          String(tag).trim() !== "",
+      )
+      .map(String);
 
   return {
-    id: safeString(product.id),
+    id: safeString(
+      product.id,
+    ),
 
     shop_id:
-      safeString(product.shop_id) ||
-      safeString(product.shopId),
+      safeString(
+        product.shop_id,
+      ) ||
+      safeString(
+        product.shopId,
+      ),
 
     name,
     brand,
 
-    category: categoryData.id,
+    category:
+      categoryData.id,
 
     categoryLabel:
       safeString(
         product.category_label,
       ) ||
-      safeString(
-        product.categoryLabel,
-      ) ||
       categoryData.label,
 
-    description: safeString(
-      product.description,
-    ),
+    description:
+      safeString(
+        product.description,
+      ),
 
     longDescription:
       safeString(
@@ -992,7 +1232,9 @@ function mapProduct(
     price:
       activeVariants.length
         ? lowestVariantPrice
-        : safeNumber(product.price),
+        : safeNumber(
+            product.price,
+          ),
 
     originalPrice,
 
@@ -1000,32 +1242,43 @@ function mapProduct(
       product.rating,
     ),
 
-    reviewCount: safeNumber(
-      product.review_count ??
-        product.reviewCount,
-    ),
+    reviewCount:
+      safeNumber(
+        product.review_count ??
+          product.reviewCount,
+      ),
 
     stock,
 
     unit:
-      safeString(product.unit) ||
-      safeString(product.unit_type),
+      safeString(
+        product.unit,
+      ) ||
+      safeString(
+        product.unit_type,
+      ),
 
     image: mainImage,
 
     images,
 
-    brochure: getBrochureUrl(
-      safeString(product.brochure),
-    ),
+    brochure:
+      getBrochureUrl(
+        safeString(
+          product.brochure,
+        ),
+      ),
 
     color:
-      safeString(product.color) ||
+      safeString(
+        product.color,
+      ) ||
       categoryData.color,
 
     badge:
-      safeString(product.badge) ||
-      undefined,
+      safeString(
+        product.badge,
+      ) || undefined,
 
     tags,
 
@@ -1034,8 +1287,9 @@ function mapProduct(
     ),
 
     about:
-      safeString(product.about) ||
-      undefined,
+      safeString(
+        product.about,
+      ) || undefined,
 
     materialName:
       safeString(
@@ -1063,7 +1317,8 @@ function mapProduct(
     variants,
 
     hasVariants:
-      activeVariants.length > 0,
+      activeVariants.length >
+      0,
 
     createdAt:
       safeString(
@@ -1071,7 +1326,8 @@ function mapProduct(
       ) || undefined,
 
     is_active:
-      product.is_active !== false,
+      product.is_active !==
+      false,
   };
 }
 
@@ -1087,24 +1343,28 @@ export async function getProductVariants(
   }
 
   try {
-    const { data, error } =
-      await supabase
-        .from("product_variants")
-        .select(
-          PRODUCT_VARIANT_SELECT,
-        )
-        .eq(
-          "product_id",
-          productId,
-        )
-        .eq(
-          "is_active",
-          true,
-        )
-        .order("watt", {
-          ascending: true,
-          nullsFirst: false,
-        });
+    const {
+      data,
+      error,
+    } = await supabase
+      .from(
+        "product_variants",
+      )
+      .select(
+        PRODUCT_VARIANT_SELECT,
+      )
+      .eq(
+        "product_id",
+        productId,
+      )
+      .eq(
+        "is_active",
+        true,
+      )
+      .order("watt", {
+        ascending: true,
+        nullsFirst: false,
+      });
 
     if (error) {
       console.error(
@@ -1139,9 +1399,12 @@ export async function getProducts(
     let query = supabase
       .from("products")
       .select(PRODUCT_SELECT)
-      .order("created_at", {
-        ascending: false,
-      })
+      .order(
+        "created_at",
+        {
+          ascending: false,
+        },
+      )
       .limit(limit);
 
     if (shopId) {
@@ -1158,8 +1421,10 @@ export async function getProducts(
       );
     }
 
-    const { data, error } =
-      await query;
+    const {
+      data,
+      error,
+    } = await query;
 
     if (error) {
       console.error(
@@ -1170,14 +1435,16 @@ export async function getProducts(
       return [];
     }
 
-    return (data ?? []).map((item) =>
-  mapProduct(
-    item as unknown as Record<
-      string,
-      unknown
-    >,
-  ),
-);
+    return (
+      data ?? []
+    ).map((item) =>
+      mapProduct(
+        item as unknown as Record<
+          string,
+          unknown
+        >,
+      ),
+    );
   } catch (error) {
     console.error(
       "GET PRODUCTS ERROR:",
@@ -1200,12 +1467,14 @@ export async function getProductById(
   }
 
   try {
-    const { data, error } =
-      await supabase
-        .from("products")
-        .select(PRODUCT_SELECT)
-        .eq("id", id)
-        .maybeSingle();
+    const {
+      data,
+      error,
+    } = await supabase
+      .from("products")
+      .select(PRODUCT_SELECT)
+      .eq("id", id)
+      .maybeSingle();
 
     if (error) {
       console.error(
@@ -1248,14 +1517,19 @@ export async function addProduct(
       product.shop_id || null,
 
     name:
-      safeString(product.name) ||
-      "Product",
+      safeString(
+        product.name,
+      ) || "Product",
 
     brand:
-      safeString(product.brand),
+      safeString(
+        product.brand,
+      ),
 
     category:
-      product.category,
+      findProductCategory(
+        product.category,
+      ).id,
 
     category_label:
       product.categoryLabel ||
@@ -1270,7 +1544,9 @@ export async function addProduct(
       product.longDescription || "",
 
     price:
-      safeNumber(product.price),
+      safeNumber(
+        product.price,
+      ),
 
     original_price:
       product.originalPrice ??
@@ -1288,7 +1564,9 @@ export async function addProduct(
       ),
 
     stock:
-      safeNumber(product.stock),
+      safeNumber(
+        product.stock,
+      ),
 
     unit:
       product.unit || "",
@@ -1297,7 +1575,9 @@ export async function addProduct(
       product.image || null,
 
     images:
-      Array.isArray(product.images)
+      Array.isArray(
+        product.images,
+      )
         ? product.images
         : [],
 
@@ -1314,7 +1594,9 @@ export async function addProduct(
       product.badge || null,
 
     tags:
-      Array.isArray(product.tags)
+      Array.isArray(
+        product.tags,
+      )
         ? product.tags
         : [],
 
@@ -1325,24 +1607,30 @@ export async function addProduct(
       product.about || null,
 
     material_name:
-      product.materialName || null,
+      product.materialName ||
+      null,
 
     unit_type:
-      product.unitType || null,
+      product.unitType ||
+      null,
 
     measurement:
-      product.measurement || null,
+      product.measurement ||
+      null,
 
     is_active:
-      product.is_active ?? true,
+      product.is_active ??
+      true,
   };
 
-  const { data, error } =
-    await supabase
-      .from("products")
-      .insert(payload)
-      .select()
-      .single();
+  const {
+    data,
+    error,
+  } = await supabase
+    .from("products")
+    .insert(payload)
+    .select()
+    .single();
 
   if (error) {
     console.error(
@@ -1386,32 +1674,45 @@ export async function updateProduct(
   > = {};
 
   if (
-    product.shop_id !== undefined
+    product.shop_id !==
+    undefined
   ) {
     updateData.shop_id =
       product.shop_id || null;
   }
 
   if (
-    product.name !== undefined
+    product.name !==
+    undefined
   ) {
     updateData.name =
-      safeString(product.name) ||
-      "Product";
+      safeString(
+        product.name,
+      ) || "Product";
   }
 
   if (
-    product.brand !== undefined
+    product.brand !==
+    undefined
   ) {
     updateData.brand =
       product.brand;
   }
 
   if (
-    product.category !== undefined
+    product.category !==
+    undefined
   ) {
     updateData.category =
-      product.category;
+      findProductCategory(
+        product.category,
+      ).id;
+
+    updateData.category_label =
+      product.categoryLabel ||
+      getProductCategory(
+        product.category,
+      ).label;
   }
 
   if (
@@ -1439,10 +1740,13 @@ export async function updateProduct(
   }
 
   if (
-    product.price !== undefined
+    product.price !==
+    undefined
   ) {
     updateData.price =
-      safeNumber(product.price);
+      safeNumber(
+        product.price,
+      );
   }
 
   if (
@@ -1450,14 +1754,18 @@ export async function updateProduct(
     undefined
   ) {
     updateData.original_price =
-      product.originalPrice ?? null;
+      product.originalPrice ??
+      null;
   }
 
   if (
-    product.rating !== undefined
+    product.rating !==
+    undefined
   ) {
     updateData.rating =
-      safeNumber(product.rating);
+      safeNumber(
+        product.rating,
+      );
   }
 
   if (
@@ -1471,74 +1779,93 @@ export async function updateProduct(
   }
 
   if (
-    product.stock !== undefined
+    product.stock !==
+    undefined
   ) {
     updateData.stock =
-      safeNumber(product.stock);
+      safeNumber(
+        product.stock,
+      );
   }
 
   if (
-    product.unit !== undefined
+    product.unit !==
+    undefined
   ) {
     updateData.unit =
       product.unit;
   }
 
   if (
-    product.image !== undefined
+    product.image !==
+    undefined
   ) {
     updateData.image =
-      product.image || null;
+      product.image ||
+      null;
   }
 
   if (
-    product.images !== undefined
+    product.images !==
+    undefined
   ) {
     updateData.images =
-      Array.isArray(product.images)
+      Array.isArray(
+        product.images,
+      )
         ? product.images
         : [];
   }
 
   if (
-    product.brochure !== undefined
+    product.brochure !==
+    undefined
   ) {
     updateData.brochure =
-      product.brochure || null;
+      product.brochure ||
+      null;
   }
 
   if (
-    product.color !== undefined
+    product.color !==
+    undefined
   ) {
     updateData.color =
       product.color;
   }
 
   if (
-    product.badge !== undefined
+    product.badge !==
+    undefined
   ) {
     updateData.badge =
-      product.badge || null;
+      product.badge ||
+      null;
   }
 
   if (
-    product.tags !== undefined
+    product.tags !==
+    undefined
   ) {
     updateData.tags =
-      Array.isArray(product.tags)
+      Array.isArray(
+        product.tags,
+      )
         ? product.tags
         : [];
   }
 
   if (
-    product.specs !== undefined
+    product.specs !==
+    undefined
   ) {
     updateData.specs =
       product.specs || {};
   }
 
   if (
-    product.about !== undefined
+    product.about !==
+    undefined
   ) {
     updateData.about =
       product.about || null;
@@ -1549,14 +1876,17 @@ export async function updateProduct(
     undefined
   ) {
     updateData.material_name =
-      product.materialName || null;
+      product.materialName ||
+      null;
   }
 
   if (
-    product.unitType !== undefined
+    product.unitType !==
+    undefined
   ) {
     updateData.unit_type =
-      product.unitType || null;
+      product.unitType ||
+      null;
   }
 
   if (
@@ -1564,23 +1894,27 @@ export async function updateProduct(
     undefined
   ) {
     updateData.measurement =
-      product.measurement || null;
+      product.measurement ||
+      null;
   }
 
   if (
-    product.is_active !== undefined
+    product.is_active !==
+    undefined
   ) {
     updateData.is_active =
       product.is_active;
   }
 
-  const { data, error } =
-    await supabase
-      .from("products")
-      .update(updateData)
-      .eq("id", id)
-      .select()
-      .single();
+  const {
+    data,
+    error,
+  } = await supabase
+    .from("products")
+    .update(updateData)
+    .eq("id", id)
+    .select()
+    .single();
 
   if (error) {
     console.error(
@@ -1592,7 +1926,8 @@ export async function updateProduct(
   }
 
   if (
-    product.variants !== undefined
+    product.variants !==
+    undefined
   ) {
     await updateProductVariants(
       id,
@@ -1613,7 +1948,9 @@ export async function saveProductVariants(
 ) {
   if (
     !productId ||
-    !Array.isArray(variants) ||
+    !Array.isArray(
+      variants,
+    ) ||
     variants.length === 0
   ) {
     return [];
@@ -1628,7 +1965,8 @@ export async function saveProductVariants(
         ),
     )
     .map((variant) => ({
-      product_id: productId,
+      product_id:
+        productId,
 
       variant_name:
         safeString(
@@ -1648,7 +1986,8 @@ export async function saveProductVariants(
         ),
 
       original_price:
-        variant.originalPrice == null
+        variant.originalPrice ==
+        null
           ? null
           : safeNumber(
               variant.originalPrice,
@@ -1687,18 +2026,25 @@ export async function saveProductVariants(
           : [],
 
       is_active:
-        variant.isActive !== false,
+        variant.isActive !==
+        false,
     }));
 
   if (!rows.length) {
     return [];
   }
 
-  const { data, error } =
-    await supabase
-      .from("product_variants")
-      .insert(rows)
-      .select(PRODUCT_VARIANT_SELECT);
+  const {
+    data,
+    error,
+  } = await supabase
+    .from(
+      "product_variants",
+    )
+    .insert(rows)
+    .select(
+      PRODUCT_VARIANT_SELECT,
+    );
 
   if (error) {
     console.error(
@@ -1726,14 +2072,17 @@ export async function updateProductVariants(
     );
   }
 
-  const { error } =
-    await supabase
-      .from("product_variants")
-      .delete()
-      .eq(
-        "product_id",
-        productId,
-      );
+  const {
+    error,
+  } = await supabase
+    .from(
+      "product_variants",
+    )
+    .delete()
+    .eq(
+      "product_id",
+      productId,
+    );
 
   if (error) {
     console.error(
@@ -1745,7 +2094,9 @@ export async function updateProductVariants(
   }
 
   if (
-    !Array.isArray(variants) ||
+    !Array.isArray(
+      variants,
+    ) ||
     variants.length === 0
   ) {
     return [];
@@ -1786,7 +2137,10 @@ export async function updateProductVariant(
       ) || "Option";
   }
 
-  if (variant.watt !== undefined) {
+  if (
+    variant.watt !==
+    undefined
+  ) {
     updateData.watt =
       variant.watt === null
         ? null
@@ -1795,9 +2149,14 @@ export async function updateProductVariant(
           );
   }
 
-  if (variant.price !== undefined) {
+  if (
+    variant.price !==
+    undefined
+  ) {
     updateData.price =
-      safeNumber(variant.price);
+      safeNumber(
+        variant.price,
+      );
   }
 
   if (
@@ -1805,36 +2164,54 @@ export async function updateProductVariant(
     undefined
   ) {
     updateData.original_price =
-      variant.originalPrice ?? null;
+      variant.originalPrice ??
+      null;
   }
 
-  if (variant.stock !== undefined) {
+  if (
+    variant.stock !==
+    undefined
+  ) {
     updateData.stock =
-      safeNumber(variant.stock);
+      safeNumber(
+        variant.stock,
+      );
   }
 
-  if (variant.sku !== undefined) {
+  if (
+    variant.sku !==
+    undefined
+  ) {
     updateData.sku =
       safeString(
         variant.sku,
       ) || null;
   }
 
-  if (variant.unit !== undefined) {
+  if (
+    variant.unit !==
+    undefined
+  ) {
     updateData.unit =
       safeString(
         variant.unit,
       ) || null;
   }
 
-  if (variant.specs !== undefined) {
+  if (
+    variant.specs !==
+    undefined
+  ) {
     updateData.specs =
       safeObject(
         variant.specs,
       );
   }
 
-  if (variant.image !== undefined) {
+  if (
+    variant.image !==
+    undefined
+  ) {
     updateData.image =
       safeString(
         variant.image,
@@ -1842,7 +2219,8 @@ export async function updateProductVariant(
   }
 
   if (
-    variant.images !== undefined
+    variant.images !==
+    undefined
   ) {
     updateData.images =
       Array.isArray(
@@ -1853,19 +2231,29 @@ export async function updateProductVariant(
   }
 
   if (
-    variant.isActive !== undefined
+    variant.isActive !==
+    undefined
   ) {
     updateData.is_active =
       variant.isActive;
   }
 
-  const { data, error } =
-    await supabase
-      .from("product_variants")
-      .update(updateData)
-      .eq("id", variantId)
-      .select(PRODUCT_VARIANT_SELECT)
-      .single();
+  const {
+    data,
+    error,
+  } = await supabase
+    .from(
+      "product_variants",
+    )
+    .update(updateData)
+    .eq(
+      "id",
+      variantId,
+    )
+    .select(
+      PRODUCT_VARIANT_SELECT,
+    )
+    .single();
 
   if (error) {
     console.error(
@@ -1895,11 +2283,17 @@ export async function deleteProductVariant(
     return false;
   }
 
-  const { error } =
-    await supabase
-      .from("product_variants")
-      .delete()
-      .eq("id", variantId);
+  const {
+    error,
+  } = await supabase
+    .from(
+      "product_variants",
+    )
+    .delete()
+    .eq(
+      "id",
+      variantId,
+    );
 
   if (error) {
     console.error(
@@ -1927,15 +2321,17 @@ export async function toggleProductStatus(
     );
   }
 
-  const { data, error } =
-    await supabase
-      .from("products")
-      .update({
-        is_active: active,
-      })
-      .eq("id", id)
-      .select()
-      .single();
+  const {
+    data,
+    error,
+  } = await supabase
+    .from("products")
+    .update({
+      is_active: active,
+    })
+    .eq("id", id)
+    .select()
+    .single();
 
   if (error) {
     console.error(
@@ -1963,15 +2359,21 @@ export async function toggleProductVariantStatus(
     );
   }
 
-  const { data, error } =
-    await supabase
-      .from("product_variants")
-      .update({
-        is_active: active,
-      })
-      .eq("id", id)
-      .select(PRODUCT_VARIANT_SELECT)
-      .single();
+  const {
+    data,
+    error,
+  } = await supabase
+    .from(
+      "product_variants",
+    )
+    .update({
+      is_active: active,
+    })
+    .eq("id", id)
+    .select(
+      PRODUCT_VARIANT_SELECT,
+    )
+    .single();
 
   if (error) {
     console.error(
@@ -2001,11 +2403,17 @@ export async function deleteProduct(
     return false;
   }
 
-  const { error: variantError } =
-    await supabase
-      .from("product_variants")
-      .delete()
-      .eq("product_id", id);
+  const {
+    error: variantError,
+  } = await supabase
+    .from(
+      "product_variants",
+    )
+    .delete()
+    .eq(
+      "product_id",
+      id,
+    );
 
   if (variantError) {
     console.error(
@@ -2016,11 +2424,12 @@ export async function deleteProduct(
     return false;
   }
 
-  const { error } =
-    await supabase
-      .from("products")
-      .delete()
-      .eq("id", id);
+  const {
+    error,
+  } = await supabase
+    .from("products")
+    .delete()
+    .eq("id", id);
 
   if (error) {
     console.error(
@@ -2039,20 +2448,71 @@ export async function deleteProduct(
 ========================================= */
 
 export async function getProductsByCategory(
-  category: ProductCategory,
-  limit = 50,
+  category:
+    | ProductCategory
+    | string,
+  limit = 100,
 ): Promise<Product[]> {
   try {
-    const { data, error } =
-      await supabase
-        .from("products")
-        .select(PRODUCT_SELECT)
-        .eq("category", category)
-        .eq("is_active", true)
-        .order("created_at", {
+    if (!category) {
+      console.warn(
+        "GET PRODUCTS BY CATEGORY: EMPTY CATEGORY",
+      );
+
+      return [];
+    }
+
+    const categoryData =
+      findProductCategory(
+        category,
+      );
+
+    const categoryId =
+      categoryData.id;
+
+    console.log(
+      "CATEGORY REQUEST:",
+      {
+        received: category,
+        resolved: categoryId,
+        label:
+          categoryData.label,
+      },
+    );
+
+    /*
+     * IMPORTANT:
+     * Filter only by database category ID.
+     *
+     * This means:
+     *
+     * tools → all 15
+     * tiles → all 101
+     * tmt → all 30
+     * pipes → all 17
+     * water_tank → all 5
+     */
+    const {
+      data,
+      error,
+    } = await supabase
+      .from("products")
+      .select(PRODUCT_SELECT)
+      .eq(
+        "category",
+        categoryId,
+      )
+      .eq(
+        "is_active",
+        true,
+      )
+      .order(
+        "created_at",
+        {
           ascending: false,
-        })
-        .limit(limit);
+        },
+      )
+      .limit(limit);
 
     if (error) {
       console.error(
@@ -2063,14 +2523,21 @@ export async function getProductsByCategory(
       return [];
     }
 
- return (data ?? []).map((item) =>
-  mapProduct(
-    item as unknown as Record<
-      string,
-      unknown
-    >,
-  ),
-);
+    console.log(
+      `CATEGORY "${categoryId}" FOUND:`,
+      data?.length ?? 0,
+    );
+
+    return (
+      data ?? []
+    ).map((item) =>
+      mapProduct(
+        item as unknown as Record<
+          string,
+          unknown
+        >,
+      ),
+    );
   } catch (error) {
     console.error(
       "GET PRODUCTS BY CATEGORY ERROR:",
@@ -2089,19 +2556,27 @@ export async function getFeaturedProducts(
   limit = 20,
 ): Promise<Product[]> {
   try {
-    const { data, error } =
-      await supabase
-        .from("products")
-        .select(PRODUCT_SELECT)
-        .eq("is_active", true)
-        .in("badge", [
-          "popular",
-          "pro",
-        ])
-        .order("created_at", {
+    const {
+      data,
+      error,
+    } = await supabase
+      .from("products")
+      .select(PRODUCT_SELECT)
+      .eq(
+        "is_active",
+        true,
+      )
+      .in("badge", [
+        "popular",
+        "pro",
+      ])
+      .order(
+        "created_at",
+        {
           ascending: false,
-        })
-        .limit(limit);
+        },
+      )
+      .limit(limit);
 
     if (error) {
       console.error(
@@ -2112,14 +2587,16 @@ export async function getFeaturedProducts(
       return [];
     }
 
-   return (data ?? []).map((item) =>
-  mapProduct(
-    item as unknown as Record<
-      string,
-      unknown
-    >,
-  ),
-);
+    return (
+      data ?? []
+    ).map((item) =>
+      mapProduct(
+        item as unknown as Record<
+          string,
+          unknown
+        >,
+      ),
+    );
   } catch (error) {
     console.error(
       "GET FEATURED PRODUCTS ERROR:",
@@ -2143,29 +2620,42 @@ export async function getRelatedProducts(
   }
 
   try {
-    let query = supabase
-      .from("products")
-      .select(PRODUCT_SELECT)
-      .eq(
-        "category",
-        product.category,
-      )
-      .eq("is_active", true)
-      .neq("id", product.id)
-      .order("created_at", {
-        ascending: false,
-      })
-      .limit(count);
+    let query =
+      supabase
+        .from("products")
+        .select(PRODUCT_SELECT)
+        .eq(
+          "category",
+          product.category,
+        )
+        .eq(
+          "is_active",
+          true,
+        )
+        .neq(
+          "id",
+          product.id,
+        )
+        .order(
+          "created_at",
+          {
+            ascending: false,
+          },
+        )
+        .limit(count);
 
     if (product.shop_id) {
-      query = query.eq(
-        "shop_id",
-        product.shop_id,
-      );
+      query =
+        query.eq(
+          "shop_id",
+          product.shop_id,
+        );
     }
 
-    const { data, error } =
-      await query;
+    const {
+      data,
+      error,
+    } = await query;
 
     if (error) {
       console.error(
@@ -2176,14 +2666,16 @@ export async function getRelatedProducts(
       return [];
     }
 
-    return (data ?? []).map((item) =>
-  mapProduct(
-    item as unknown as Record<
-      string,
-      unknown
-    >,
-  ),
-);
+    return (
+      data ?? []
+    ).map((item) =>
+      mapProduct(
+        item as unknown as Record<
+          string,
+          unknown
+        >,
+      ),
+    );
   } catch (error) {
     console.error(
       "GET RELATED PRODUCTS ERROR:",
@@ -2192,49 +2684,6 @@ export async function getRelatedProducts(
 
     return [];
   }
-}
-
-/* =========================================
-   CATEGORY LOOKUP
-========================================= */
-
-export function findProductCategory(
-  value?: string | null,
-): ProductCategoryItem {
-  const normalized = String(
-    value || "",
-  )
-    .toLowerCase()
-    .trim()
-    .replace(/&/g, "and")
-    .replace(/[\s_-]+/g, "");
-
-  return (
-    productCategories.find(
-      (category) => {
-        const id =
-          category.id
-            .toLowerCase()
-            .replace(
-              /[\s_-]+/g,
-              "",
-            );
-
-        const label =
-          category.label
-            .toLowerCase()
-            .replace(
-              /[\s_-]+/g,
-              "",
-            );
-
-        return (
-          id === normalized ||
-          label === normalized
-        );
-      },
-    ) ?? productCategories[0]
-  );
 }
 
 /* =========================================
@@ -2266,6 +2715,10 @@ export function getLowestVariantPrice(
   );
 }
 
+/* =========================================
+   HIGHEST VARIANT PRICE
+========================================= */
+
 export function getHighestVariantPrice(
   product: Product,
 ): number {
@@ -2292,7 +2745,7 @@ export function getHighestVariantPrice(
 }
 
 /* =========================================
-   STOCK
+   TOTAL VARIANT STOCK
 ========================================= */
 
 export function getTotalVariantStock(
@@ -2331,8 +2784,12 @@ export function findProductVariant(
   return (
     product.variants?.find(
       (variant) =>
-        String(variant.id) ===
-        String(variantId),
+        String(
+          variant.id,
+        ) ===
+        String(
+          variantId,
+        ),
     ) ?? null
   );
 }
@@ -2348,9 +2805,13 @@ export function findVariantByWatt(
   return (
     product.variants?.find(
       (variant) =>
-        variant.watt !== null &&
-        variant.watt !== undefined &&
-        Number(variant.watt) ===
+        variant.watt !==
+          null &&
+        variant.watt !==
+          undefined &&
+        Number(
+          variant.watt,
+        ) ===
           Number(watt),
     ) ?? null
   );

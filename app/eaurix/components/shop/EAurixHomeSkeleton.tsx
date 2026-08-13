@@ -4,12 +4,10 @@ export default function EAurixHomeSkeleton() {
   return (
     <div className="min-h-screen bg-[#F0F9FF] animate-pulse">
       {/* Shop Live */}
-      <div className="px-4 pt-3">
-        <div className="h-16 rounded-2xl bg-white" />
-      </div>
+
 
       {/* Featured Products */}
-      <div className="mt-4 px-4">
+      <div className="mt-4 px-6">
         <div className="mb-3 h-6 w-40 rounded-lg bg-slate-200" />
 
         <div className="flex gap-3 overflow-hidden">
@@ -35,7 +33,7 @@ export default function EAurixHomeSkeleton() {
       </div>
 
       {/* Categories */}
-      <div className="mt-6 px-4">
+      <div className="mt-6 px-6">
         <div className="flex gap-3 overflow-hidden">
           {[1, 2, 3, 4, 5].map((i) => (
             <div key={i} className="flex flex-col items-center">

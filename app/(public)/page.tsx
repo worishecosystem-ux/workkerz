@@ -8,7 +8,6 @@ const HomeBanner = dynamic(() => import("../components/HomeBanner"), {
   ssr: false,
 });
 import SplashScreen from "@/app/components/SplashScreen";
-import HomeHero from "../components/HomeHero";
 import HomeServices from "../components/home/HomeServices";
 import HomeCategories from "../components/HomeCategories";
 import { useAdmin } from "../components/context/AdminContext";
@@ -71,27 +70,22 @@ export default function Home() {
 
   return (
     <div className="min-h-screen flex flex-col">
-  {/* Hero Section */}
-  <HomeBanner />
+      {/* Hero Section */}
+      <HomeBanner />
 
-  {/* New Big Category Section */}
-  <section className="mt-4 sm:mt-6 md:mt-8">
-    <HomeCategories />
-  </section>
+      {/* New Big Category Section */}
+      <section className="mt-4 sm:mt-6 md:mt-8">
+        <HomeCategories />
+      </section>
 
-  {/* Home Hero */}
-  <section className="py-4 sm:py-5">
-    <div className="mx-auto px-3 sm:px-4">
-      <HomeHero />
+    
+
+      {/* Home Services */}
+      <div className="pb-8">
+        <HomeServices workers={workers} />
+      </div>
+
+      <BottomGreeting />
     </div>
-  </section>
-
-  {/* Home Services */}
-  <div className="pb-8">
-    <HomeServices workers={workers} />
-  </div>
-
-  <BottomGreeting />
-</div>
   );
 }

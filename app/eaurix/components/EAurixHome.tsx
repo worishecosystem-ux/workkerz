@@ -16,10 +16,14 @@ import {
 import { usePlatform } from "@/app/components/context/PlatformContext";
 
 /* =====================================================
-   SKELETON COMPONENTS
+   SKELETON BOX
 ===================================================== */
 
-function SkeletonBox({ className = "" }: { className?: string }) {
+function SkeletonBox({
+  className = "",
+}: {
+  className?: string;
+}) {
   return (
     <div
       className={`
@@ -46,10 +50,10 @@ function CategoriesSkeleton() {
             className="
               flex
               min-w-[72px]
+              shrink-0
               flex-col
               items-center
               gap-2
-              shrink-0
             "
           >
             <SkeletonBox className="h-14 w-14 rounded-full" />
@@ -74,13 +78,7 @@ function FeaturedProductsSkeleton() {
         <SkeletonBox className="h-4 w-16" />
       </div>
 
-      <div
-        className="
-          flex
-          gap-3
-          overflow-hidden
-        "
-      >
+      <div className="flex gap-3 overflow-hidden">
         {Array.from({ length: 4 }).map((_, index) => (
           <div
             key={index}
@@ -123,13 +121,7 @@ function ShopLiveSkeleton() {
         <SkeletonBox className="h-4 w-16" />
       </div>
 
-      <div
-        className="
-          flex
-          gap-3
-          overflow-hidden
-        "
-      >
+      <div className="flex gap-3 overflow-hidden">
         {Array.from({ length: 4 }).map((_, index) => (
           <div
             key={index}
@@ -191,7 +183,11 @@ function ProductSkeletonCard() {
    PRODUCTS GRID SKELETON
 ===================================================== */
 
-function ProductsGridSkeleton({ count = 8 }: { count?: number }) {
+function ProductsGridSkeleton({
+  count = 8,
+}: {
+  count?: number;
+}) {
   return (
     <div
       className="
@@ -216,19 +212,10 @@ function ProductsGridSkeleton({ count = 8 }: { count?: number }) {
 function EAurixPageSkeleton() {
   return (
     <div className="min-h-screen bg-linear-to-br from-sky-100 via-sky-150 to-cyan-100">
-      {/* =========================================
-          MOBILE PAGE CONTAINER
-      ========================================= */}
-
       <div className="w-full space-y-4 pb-20">
-        {/* =========================================
-            HEADER / CATEGORIES
-        ========================================= */}
-
+        {/* HEADER */}
         <section className="bg-sky-100">
           <div className="px-3 pt-3">
-            {/* Header skeleton */}
-
             <div className="flex items-center justify-between">
               <div className="space-y-1.5">
                 <SkeletonBox className="h-4 w-28" />
@@ -238,34 +225,23 @@ function EAurixPageSkeleton() {
               <SkeletonBox className="h-7 w-7 rounded-full" />
             </div>
 
-            {/* Categories */}
-
             <div className="mt-3">
               <CategoriesSkeleton />
             </div>
           </div>
         </section>
 
-        {/* =========================================
-            FEATURED PRODUCTS
-        ========================================= */}
-
+        {/* FEATURED */}
         <section className="bg-sky-100 py-3">
           <FeaturedProductsSkeleton />
         </section>
 
-        {/* =========================================
-            LIVE SHOPS
-        ========================================= */}
-
+        {/* SHOPS */}
         <section className="bg-sky-100 py-3">
           <ShopLiveSkeleton />
         </section>
 
-        {/* =========================================
-            PRODUCTS HEADER
-        ========================================= */}
-
+        {/* PRODUCTS HEADER */}
         <section className="bg-sky-100 px-3 py-3">
           <div className="flex items-center justify-between">
             <div>
@@ -280,10 +256,7 @@ function EAurixPageSkeleton() {
           </div>
         </section>
 
-        {/* =========================================
-            PRODUCTS
-        ========================================= */}
-
+        {/* PRODUCTS */}
         <section className="bg-white px-3 py-3">
           <ProductsGridSkeleton count={8} />
         </section>
@@ -293,38 +266,64 @@ function EAurixPageSkeleton() {
 }
 
 /* =====================================================
-   MAIN
+   MAIN EAURIX HOME
 ===================================================== */
 
 export function EAurixHome() {
   const { shops = [] } = useAdmin();
 
-  const categoryRef = useRef<HTMLDivElement | null>(null);
-  const loadMoreRef = useRef<HTMLDivElement | null>(null);
+  const categoryRef =
+    useRef<HTMLDivElement | null>(null);
 
-  const [activeCategory, setActiveCategory] = useState<string | null>(null);
+  const loadMoreRef =
+    useRef<HTMLDivElement | null>(null);
 
-  const [sort, setSort] = useState("latest");
+  /* =====================================================
+     STATE
+  ===================================================== */
 
-  const { cart, addToCart } = usePlatform();
+  const [
+    activeCategory,
+    setActiveCategory,
+  ] = useState<string | null>(null);
 
-  const [products, setProducts] = useState<Product[]>([]);
+  const [sort, setSort] =
+    useState("latest");
 
-  const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [products, setProducts] =
+    useState<Product[]>([]);
 
-  const [loading, setLoading] = useState(true);
+  const [sidebarOpen, setSidebarOpen] =
+    useState(false);
+
+  const [loading, setLoading] =
+    useState(true);
+
+  const [page, setPage] =
+    useState(1);
+
+  const [loadingMore, setLoadingMore] =
+    useState(false);
+
+  const [search, setSearch] =
+    useState("");
 
   const PRODUCTS_PER_PAGE = 8;
 
-  const [page, setPage] = useState(1);
+  const { cart, addToCart } =
+    usePlatform();
 
-  const [loadingMore, setLoadingMore] = useState(false);
+  /* =====================================================
+     FEATURED HIDE STATE
+  ===================================================== */
 
-  const [search, setSearch] = useState("");
+  const hasHiddenFeatured =
+    useRef(false);
 
-  const hasHiddenFeatured = useRef(false);
-
-  const [hideFeatured, setHideFeatured] = useState(false);
+  const [
+    hideFeatured,
+    setHideFeatured,
+  ] = useState(false);
 
   /* =====================================================
      HIDE FEATURED ON SCROLL
@@ -332,16 +331,26 @@ export function EAurixHome() {
 
   useEffect(() => {
     const onScroll = () => {
-      if (!hasHiddenFeatured.current && window.scrollY > 250) {
+      if (
+        !hasHiddenFeatured.current &&
+        window.scrollY > 250
+      ) {
         hasHiddenFeatured.current = true;
         setHideFeatured(true);
       }
     };
 
-    window.addEventListener("scroll", onScroll, { passive: true });
+    window.addEventListener(
+      "scroll",
+      onScroll,
+      { passive: true },
+    );
 
     return () => {
-      window.removeEventListener("scroll", onScroll);
+      window.removeEventListener(
+        "scroll",
+        onScroll,
+      );
     };
   }, []);
 
@@ -352,10 +361,18 @@ export function EAurixHome() {
   useEffect(() => {
     setPage(1);
     setLoadingMore(false);
-  }, [activeCategory, sort]);
+  }, [
+    activeCategory,
+    sort,
+    search,
+  ]);
 
   /* =====================================================
-     LOAD PRODUCTS
+     LOAD ALL ACTIVE PRODUCTS
+     
+     IMPORTANT:
+     Do NOT filter by online shop here.
+     Products are controlled by products.is_active.
   ===================================================== */
 
   useEffect(() => {
@@ -365,13 +382,73 @@ export function EAurixHome() {
       try {
         setLoading(true);
 
-        const data = await getProducts();
+        console.log(
+          "====================================",
+        );
+
+        console.log(
+          "EAURIX: LOADING PRODUCTS",
+        );
+
+        const data =
+          await getProducts(
+            undefined,
+            false,
+            1000,
+          );
+
+        console.log(
+          "EAURIX TOTAL PRODUCTS:",
+          data.length,
+        );
+
+        /* =========================================
+           CATEGORY DEBUG
+        ========================================= */
+
+        const categoryCounts =
+          data.reduce(
+            (
+              acc: Record<
+                string,
+                number
+              >,
+              product,
+            ) => {
+              const category =
+                String(
+                  product.category ||
+                    "unknown",
+                )
+                  .trim()
+                  .toLowerCase();
+
+              acc[category] =
+                (acc[category] || 0) +
+                1;
+
+              return acc;
+            },
+            {},
+          );
+
+        console.log(
+          "EAURIX CATEGORY COUNTS:",
+          categoryCounts,
+        );
+
+        console.log(
+          "====================================",
+        );
 
         if (mounted) {
           setProducts(data);
         }
       } catch (error) {
-        console.log(error);
+        console.error(
+          "EAURIX LOAD PRODUCTS ERROR:",
+          error,
+        );
       } finally {
         if (mounted) {
           setLoading(false);
@@ -388,128 +465,319 @@ export function EAurixHome() {
 
   /* =====================================================
      ONLINE SHOP IDS
+     
+     Kept only for Featured Products / shop logic.
+     NOT used for category filtering.
   ===================================================== */
 
-  const onlineShopIds = useMemo(() => {
-    return shops
-      .filter((shop) => shop.status === "online")
-      .map((shop) => shop.id);
-  }, [shops]);
+  const onlineShopIds =
+    useMemo(() => {
+      return shops
+        .filter(
+          (shop) =>
+            shop.status ===
+            "online",
+        )
+        .map(
+          (shop) => shop.id,
+        );
+    }, [shops]);
 
   /* =====================================================
      VISIBLE PRODUCTS
+     
+     CATEGORY FILTER IS BASED DIRECTLY
+     ON products.category
   ===================================================== */
 
-  const visibleProducts = useMemo(() => {
-    let list = products.filter(
-      (product) => !!product.shop_id && onlineShopIds.includes(product.shop_id),
-    );
+  const visibleProducts =
+    useMemo(() => {
+      let list = [...products];
 
-    /* Category */
-    if (activeCategory) {
-      list = list.filter((product) => product.category === activeCategory);
-    }
+      /* =========================================
+         CATEGORY
+      ========================================= */
 
-    /* Search */
-    if (search.trim()) {
-      const query = search.trim().toLowerCase();
+      if (activeCategory) {
+        const selectedCategory =
+          String(
+            activeCategory,
+          )
+            .trim()
+            .toLowerCase();
 
-      list = list.filter((product) =>
-        product.name.toLowerCase().includes(query),
+        list = list.filter(
+          (product) => {
+            const productCategory =
+              String(
+                product.category ||
+                  "",
+              )
+                .trim()
+                .toLowerCase();
+
+            return (
+              productCategory ===
+              selectedCategory
+            );
+          },
+        );
+      }
+
+      /* =========================================
+         SEARCH
+      ========================================= */
+
+      if (search.trim()) {
+        const query =
+          search
+            .trim()
+            .toLowerCase();
+
+        list = list.filter(
+          (product) => {
+            return (
+              String(
+                product.name || "",
+              )
+                .toLowerCase()
+                .includes(query) ||
+              String(
+                product.brand || "",
+              )
+                .toLowerCase()
+                .includes(query) ||
+              String(
+                product.categoryLabel ||
+                  "",
+              )
+                .toLowerCase()
+                .includes(query)
+            );
+          },
+        );
+      }
+
+      /* =========================================
+         SORT
+      ========================================= */
+
+      switch (sort) {
+        case "low":
+          list.sort(
+            (a, b) =>
+              a.price - b.price,
+          );
+          break;
+
+        case "high":
+          list.sort(
+            (a, b) =>
+              b.price - a.price,
+          );
+          break;
+
+        case "name":
+          list.sort(
+            (a, b) =>
+              String(
+                a.name,
+              ).localeCompare(
+                String(
+                  b.name,
+                ),
+              ),
+          );
+          break;
+
+        case "latest":
+        default:
+          list.sort(
+            (a, b) => {
+              const aTime =
+                a.createdAt
+                  ? new Date(
+                      a.createdAt,
+                    ).getTime()
+                  : 0;
+
+              const bTime =
+                b.createdAt
+                  ? new Date(
+                      b.createdAt,
+                    ).getTime()
+                  : 0;
+
+              return (
+                bTime - aTime
+              );
+            },
+          );
+          break;
+      }
+
+      console.log(
+        "EAURIX CATEGORY RESULT:",
+        {
+          category:
+            activeCategory,
+          totalLoaded:
+            products.length,
+          filtered:
+            list.length,
+        },
       );
-    }
 
-    /* Sorting */
-    switch (sort) {
-      case "low":
-        list.sort((a, b) => a.price - b.price);
-        break;
-
-      case "high":
-        list.sort((a, b) => b.price - a.price);
-        break;
-
-      case "name":
-        list.sort((a, b) => a.name.localeCompare(b.name));
-        break;
-
-      default:
-        break;
-    }
-
-    return list;
-  }, [products, onlineShopIds, activeCategory, sort, search]);
+      return list;
+    }, [
+      products,
+      activeCategory,
+      search,
+      sort,
+    ]);
 
   /* =====================================================
      FEATURED PRODUCTS
+     
+     This does NOT affect category products.
   ===================================================== */
 
-  const featuredProducts = useMemo(() => {
-    let list = products.filter(
-      (product) => !!product.shop_id && onlineShopIds.includes(product.shop_id),
-    );
+  const featuredProducts =
+    useMemo(() => {
+      let list =
+        products.filter(
+          (product) =>
+            !!product.shop_id &&
+            onlineShopIds.includes(
+              product.shop_id,
+            ),
+        );
 
-    switch (sort) {
-      case "low":
-        list.sort((a, b) => a.price - b.price);
-        break;
+      switch (sort) {
+        case "low":
+          list.sort(
+            (a, b) =>
+              a.price - b.price,
+          );
+          break;
 
-      case "high":
-        list.sort((a, b) => b.price - a.price);
-        break;
+        case "high":
+          list.sort(
+            (a, b) =>
+              b.price - a.price,
+          );
+          break;
 
-      case "name":
-        list.sort((a, b) => a.name.localeCompare(b.name));
-        break;
+        case "name":
+          list.sort(
+            (a, b) =>
+              String(
+                a.name,
+              ).localeCompare(
+                String(
+                  b.name,
+                ),
+              ),
+          );
+          break;
 
-      default:
-        break;
-    }
+        case "latest":
+        default:
+          list.sort(
+            (a, b) => {
+              const aTime =
+                a.createdAt
+                  ? new Date(
+                      a.createdAt,
+                    ).getTime()
+                  : 0;
 
-    return list;
-  }, [products, onlineShopIds, sort]);
+              const bTime =
+                b.createdAt
+                  ? new Date(
+                      b.createdAt,
+                    ).getTime()
+                  : 0;
+
+              return (
+                bTime - aTime
+              );
+            },
+          );
+          break;
+      }
+
+      return list;
+    }, [
+      products,
+      onlineShopIds,
+      sort,
+    ]);
 
   /* =====================================================
      PAGINATION
   ===================================================== */
 
-  const paginatedProducts = useMemo(() => {
-    return visibleProducts.slice(0, page * PRODUCTS_PER_PAGE);
-  }, [visibleProducts, page]);
+  const paginatedProducts =
+    useMemo(() => {
+      return visibleProducts.slice(
+        0,
+        page *
+          PRODUCTS_PER_PAGE,
+      );
+    }, [
+      visibleProducts,
+      page,
+    ]);
 
   /* =====================================================
      LOAD MORE
   ===================================================== */
 
   useEffect(() => {
-    const node = loadMoreRef.current;
+    const node =
+      loadMoreRef.current;
 
-    if (!node) return;
+    if (!node) {
+      return;
+    }
 
-    const observer = new IntersectionObserver(
-      ([entry]) => {
-        if (
-          entry.isIntersecting &&
-          !loadingMore &&
-          paginatedProducts.length < visibleProducts.length
-        ) {
-          setLoadingMore(true);
+    const observer =
+      new IntersectionObserver(
+        ([entry]) => {
+          if (
+            entry.isIntersecting &&
+            !loadingMore &&
+            paginatedProducts.length <
+              visibleProducts.length
+          ) {
+            setLoadingMore(true);
 
-          setTimeout(() => {
-            setPage((p) => p + 1);
-            setLoadingMore(false);
-          }, 500);
-        }
-      },
-      {
-        rootMargin: "150px",
-      },
-    );
+            setTimeout(() => {
+              setPage(
+                (previous) =>
+                  previous + 1,
+              );
+
+              setLoadingMore(false);
+            }, 500);
+          }
+        },
+        {
+          rootMargin:
+            "150px",
+        },
+      );
 
     observer.observe(node);
 
-    return () => observer.disconnect();
-  }, [loadingMore, paginatedProducts.length, visibleProducts.length]);
+    return () =>
+      observer.disconnect();
+  }, [
+    loadingMore,
+    paginatedProducts.length,
+    visibleProducts.length,
+  ]);
 
   /* =====================================================
      CATEGORIES
@@ -529,11 +797,13 @@ export function EAurixHome() {
       icon: LayoutGrid,
     },
 
-    ...productCategories.map((category) => ({
-      id: category.id,
-      name: category.label,
-      image: category.image,
-    })),
+    ...productCategories.map(
+      (category) => ({
+        id: category.id,
+        name: category.label,
+        image: category.image,
+      }),
+    ),
   ];
 
   /* =====================================================
@@ -541,7 +811,9 @@ export function EAurixHome() {
   ===================================================== */
 
   if (loading) {
-    return <EAurixPageSkeleton />;
+    return (
+      <EAurixPageSkeleton />
+    );
   }
 
   /* =====================================================
@@ -550,9 +822,9 @@ export function EAurixHome() {
 
   return (
     <div className="w-full space-y-5">
-      {/* =================================================
+      {/* =========================================
           CATEGORIES
-      ================================================= */}
+      ========================================= */}
 
       <CategoriesHeader
         loading={loading}
@@ -561,23 +833,27 @@ export function EAurixHome() {
         sortLabels={sortLabels}
         categories={categories}
         activeCategory={activeCategory}
-        setActiveCategory={setActiveCategory}
+        setActiveCategory={
+          setActiveCategory
+        }
         categoryRef={categoryRef}
-        onOpenSidebar={() => setSidebarOpen(true)}
+        onOpenSidebar={() =>
+          setSidebarOpen(true)
+        }
         products={products}
         search={search}
         setSearch={setSearch}
       />
 
-      {/* =================================================
+      {/* =========================================
           SHOP LIVE
-      ================================================= */}
+      ========================================= */}
 
       <ShopLive />
 
-      {/* =================================================
-          PRODUCTS
-      ================================================= */}
+      {/* =========================================
+          PRODUCTS GRID
+      ========================================= */}
 
       <ProductsGrid
         loading={loading}
@@ -586,37 +862,85 @@ export function EAurixHome() {
         sortLabels={sortLabels}
         categories={categories}
         activeCategory={activeCategory}
-        setActiveCategory={setActiveCategory}
+        setActiveCategory={
+          setActiveCategory
+        }
         categoryRef={categoryRef}
         sidebarOpen={sidebarOpen}
-        setSidebarOpen={setSidebarOpen}
+        setSidebarOpen={
+          setSidebarOpen
+        }
         products={products}
         search={search}
         setSearch={setSearch}
-        paginatedProducts={paginatedProducts}
-        visibleProducts={visibleProducts}
+        paginatedProducts={
+          paginatedProducts
+        }
+        visibleProducts={
+          visibleProducts
+        }
         cart={cart}
         addToCart={addToCart}
-        loadMoreRef={loadMoreRef}
+        loadMoreRef={
+          loadMoreRef
+        }
       />
 
-      {/* =================================================
-          LOAD MORE SKELETON
-      ================================================= */}
+      {/* =========================================
+          LOAD MORE
+      ========================================= */}
 
-      <div ref={loadMoreRef} className="w-full">
-        {loadingMore && <ProductsGridSkeleton count={4} />}
+      <div
+        ref={loadMoreRef}
+        className="w-full"
+      >
+        {loadingMore && (
+          <ProductsGridSkeleton
+            count={4}
+          />
+        )}
       </div>
 
-      {/* =================================================
+      {/* =========================================
           NO MORE PRODUCTS
-      ================================================= */}
+      ========================================= */}
 
       {!loadingMore &&
-        paginatedProducts.length > 0 &&
-        paginatedProducts.length >= visibleProducts.length && (
+        paginatedProducts.length >
+          0 &&
+        paginatedProducts.length >=
+          visibleProducts.length && (
           <div className="py-5 text-center">
-            <p className="text-xs text-gray-400">No more products</p>
+            <p className="text-xs text-gray-400">
+              No more products
+            </p>
+          </div>
+        )}
+
+      {/* =========================================
+          NO PRODUCTS
+      ========================================= */}
+
+      {!loadingMore &&
+        !loading &&
+        visibleProducts.length ===
+          0 && (
+          <div className="py-12 text-center">
+            <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-gray-100">
+              <LayoutGrid
+                size={20}
+                className="text-gray-400"
+              />
+            </div>
+
+            <p className="text-sm font-medium text-gray-700">
+              No products found
+            </p>
+
+            <p className="mt-1 text-xs text-gray-400">
+              Try another category or
+              search.
+            </p>
           </div>
         )}
     </div>

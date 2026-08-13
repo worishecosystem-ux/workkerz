@@ -4,10 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { Keyboard } from "@capacitor/keyboard";
-import {
-  TransformComponent,
-  TransformWrapper,
-} from "react-zoom-pan-pinch";
+import { TransformComponent, TransformWrapper } from "react-zoom-pan-pinch";
 
 import {
   ArrowRight,
@@ -63,11 +60,7 @@ export function EAurixProduct() {
 
   const { addToCart, cart } = usePlatform();
 
-  const {
-    getProductById,
-    getRelatedProducts,
-    products,
-  } = useAdmin();
+  const { getProductById, getRelatedProducts, products } = useAdmin();
 
   /* =========================================================
      PRODUCT STATE
@@ -75,12 +68,11 @@ export function EAurixProduct() {
 
   const [product, setProduct] = useState<Product | null>(null);
 
-  const [relatedProducts, setRelatedProducts] = useState<Product[]>(
-    [],
-  );
+  const [relatedProducts, setRelatedProducts] = useState<Product[]>([]);
 
-  const [selectedVariant, setSelectedVariant] =
-    useState<ProductVariant | null>(null);
+  const [selectedVariant, setSelectedVariant] = useState<ProductVariant | null>(
+    null,
+  );
 
   /* =========================================================
      LOADING
@@ -192,9 +184,7 @@ export function EAurixProduct() {
         const result = await getRelatedProducts(product);
 
         if (!cancelled) {
-          setRelatedProducts(
-            Array.isArray(result) ? result : [],
-          );
+          setRelatedProducts(Array.isArray(result) ? result : []);
         }
       } catch (error) {
         console.error("RELATED PRODUCTS ERROR:", error);
@@ -267,33 +257,25 @@ export function EAurixProduct() {
   useEffect(() => {
     let mounted = true;
 
-    let showListener:
-      | Awaited<ReturnType<typeof Keyboard.addListener>>
-      | null = null;
+    let showListener: Awaited<ReturnType<typeof Keyboard.addListener>> | null =
+      null;
 
-    let hideListener:
-      | Awaited<ReturnType<typeof Keyboard.addListener>>
-      | null = null;
+    let hideListener: Awaited<ReturnType<typeof Keyboard.addListener>> | null =
+      null;
 
     async function setupKeyboard() {
       try {
-        const show = await Keyboard.addListener(
-          "keyboardDidShow",
-          () => {
-            if (mounted) {
-              setKeyboardOpen(true);
-            }
-          },
-        );
+        const show = await Keyboard.addListener("keyboardDidShow", () => {
+          if (mounted) {
+            setKeyboardOpen(true);
+          }
+        });
 
-        const hide = await Keyboard.addListener(
-          "keyboardDidHide",
-          () => {
-            if (mounted) {
-              setKeyboardOpen(false);
-            }
-          },
-        );
+        const hide = await Keyboard.addListener("keyboardDidHide", () => {
+          if (mounted) {
+            setKeyboardOpen(false);
+          }
+        });
 
         if (!mounted) {
           show.remove();
@@ -345,43 +327,31 @@ export function EAurixProduct() {
       return [];
     }
 
-    return product.variants.filter(
-      (variant) => variant.isActive,
-    );
+    return product.variants.filter((variant) => variant.isActive);
   }, [product]);
 
   /* =========================================================
      DISPLAY DATA
   ========================================================= */
 
-  const displayPrice =
-    selectedVariant?.price ?? product?.price ?? 0;
+  const displayPrice = selectedVariant?.price ?? product?.price ?? 0;
 
   const displayOriginalPrice =
-    selectedVariant?.originalPrice ??
-    product?.originalPrice ??
-    null;
+    selectedVariant?.originalPrice ?? product?.originalPrice ?? null;
 
-  const displayStock =
-    selectedVariant?.stock ?? product?.stock ?? 0;
+  const displayStock = selectedVariant?.stock ?? product?.stock ?? 0;
 
-  const displayUnit =
-    selectedVariant?.unit || product?.unit || "";
+  const displayUnit = selectedVariant?.unit || product?.unit || "";
 
-  const displayImage =
-    selectedVariant?.image || product?.image || "";
+  const displayImage = selectedVariant?.image || product?.image || "";
 
   const variantDiscount =
-    displayOriginalPrice &&
-    displayOriginalPrice > displayPrice
-      ? Math.round(
-          (1 - displayPrice / displayOriginalPrice) * 100,
-        )
+    displayOriginalPrice && displayOriginalPrice > displayPrice
+      ? Math.round((1 - displayPrice / displayOriginalPrice) * 100)
       : 0;
 
   const savings =
-    displayOriginalPrice &&
-    displayOriginalPrice > displayPrice
+    displayOriginalPrice && displayOriginalPrice > displayPrice
       ? displayOriginalPrice - displayPrice
       : 0;
 
@@ -395,9 +365,7 @@ export function EAurixProduct() {
     }
 
     return (
-      productCategories.find(
-        (item) => item.id === product.category,
-      ) || null
+      productCategories.find((item) => item.id === product.category) || null
     );
   }, [product]);
 
@@ -410,9 +378,7 @@ export function EAurixProduct() {
       return false;
     }
 
-    return cart.some(
-      (item) => item.productId === product.id,
-    );
+    return cart.some((item) => item.productId === product.id);
   }, [cart, product]);
 
   /* =========================================================
@@ -426,9 +392,7 @@ export function EAurixProduct() {
 
     return Object.entries(product.specs).filter(
       ([, value]) =>
-        value !== null &&
-        value !== undefined &&
-        String(value).trim() !== "",
+        value !== null && value !== undefined && String(value).trim() !== "",
     );
   }, [product]);
 
@@ -437,21 +401,19 @@ export function EAurixProduct() {
       return [];
     }
 
-    return Object.entries(product.specs).filter(
-      ([key, value]) => {
-        if (
-          value === null ||
-          value === undefined ||
-          String(value).trim() === ""
-        ) {
-          return false;
-        }
+    return Object.entries(product.specs).filter(([key, value]) => {
+      if (
+        value === null ||
+        value === undefined ||
+        String(value).trim() === ""
+      ) {
+        return false;
+      }
 
-        return /size|dimension|length|width|height|weight|thickness|diameter|capacity|volume|depth|breadth|measurement|gauge|mm|cm|inch|ft|kg|gram|litre|liter/i.test(
-          key,
-        );
-      },
-    );
+      return /size|dimension|length|width|height|weight|thickness|diameter|capacity|volume|depth|breadth|measurement|gauge|mm|cm|inch|ft|kg|gram|litre|liter/i.test(
+        key,
+      );
+    });
   }, [product]);
 
   /* =========================================================
@@ -475,8 +437,7 @@ export function EAurixProduct() {
       return;
     }
 
-    const variantName =
-      selectedVariant?.variantName || "";
+    const variantName = selectedVariant?.variantName || "";
 
     const finalName = variantName
       ? `${product.name} - ${variantName}`
@@ -503,10 +464,7 @@ export function EAurixProduct() {
       return;
     }
 
-    if (
-      activeVariants.length > 0 &&
-      !selectedVariant
-    ) {
+    if (activeVariants.length > 0 && !selectedVariant) {
       return;
     }
 
@@ -577,9 +535,7 @@ export function EAurixProduct() {
       return;
     }
 
-    setQty((value) =>
-      Math.min(displayStock, value + 1),
-    );
+    setQty((value) => Math.min(displayStock, value + 1));
   };
 
   /* =========================================================
@@ -614,9 +570,7 @@ export function EAurixProduct() {
     },
   };
 
-  const badge = product?.badge
-    ? badgeMap[product.badge]
-    : null;
+  const badge = product?.badge ? badgeMap[product.badge] : null;
 
   /* =========================================================
      LOADING UI
@@ -643,8 +597,7 @@ export function EAurixProduct() {
           </h2>
 
           <p className="mt-1 text-xs text-slate-500">
-            This product may have been removed or is no
-            longer available.
+            This product may have been removed or is no longer available.
           </p>
 
           <Link
@@ -669,7 +622,7 @@ export function EAurixProduct() {
       ===================================================== */}
 
       {showCartHint && (
-        <div className="fixed bottom-24 left-1/2 z-[9999] w-[calc(100%-24px)] max-w-md -translate-x-1/2">
+        <div className="fixed bottom-24 left-1/2 z-9999 w-[calc(100%-24px)] max-w-md -translate-x-1/2">
           <div className="flex items-center justify-between gap-3 rounded-2xl bg-slate-950 px-3 py-3 text-white shadow-2xl">
             <div className="flex min-w-0 items-center gap-2.5">
               <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-emerald-500/20">
@@ -677,9 +630,7 @@ export function EAurixProduct() {
               </div>
 
               <div className="min-w-0">
-                <p className="truncate text-xs font-bold">
-                  Added to cart
-                </p>
+                <p className="truncate text-xs font-bold">Added to cart</p>
 
                 {selectedVariant && (
                   <p className="truncate text-[9px] text-slate-400">
@@ -691,9 +642,7 @@ export function EAurixProduct() {
 
             <button
               type="button"
-              onClick={() =>
-                router.push("/eaurix/cart")
-              }
+              onClick={() => router.push("/eaurix/cart")}
               className="shrink-0 rounded-xl bg-emerald-500 px-3 py-2 text-[10px] font-bold"
             >
               Go to Cart
@@ -706,16 +655,14 @@ export function EAurixProduct() {
           PAGE
       ===================================================== */}
 
-      <div className="min-h-screen bg-gradient-to-br from-sky-100 via-sky-50 to-cyan-100 pb-32">
+      <div className="min-h-screen bg-linear-to-br from-sky-100 via-sky-50 to-cyan-100 pb-32">
         {/* ===================================================
             HEADER
         =================================================== */}
 
         <header
-          className={`fixed inset-x-0 top-0 z-50 border-b border-sky-200/60 bg-gradient-to-br from-sky-100 via-sky-50 to-cyan-100 shadow-lg backdrop-blur-xl transition-all duration-300 ${
-            isScrolled
-              ? "px-3 pb-2 pt-2"
-              : "px-3 pb-4 pt-10"
+          className={`fixed inset-x-0 top-0 z-50 border-b border-sky-200/60 bg-linear-to-br from-sky-100 via-sky-50 to-cyan-100 shadow-lg backdrop-blur-xl transition-all duration-300 ${
+            isScrolled ? "px-3 pb-2 pt-2" : "px-3 pb-4 pt-10"
           }`}
         >
           <div className="mx-auto max-w-5xl">
@@ -741,16 +688,6 @@ export function EAurixProduct() {
 
         <main className="mx-auto max-w-6xl px-3 pt-28 sm:px-5 sm:pt-32 lg:px-6">
           {/* BACK */}
-
-          <button
-            type="button"
-            onClick={() => router.back()}
-            className="mb-3 inline-flex h-9 items-center gap-1.5 rounded-xl border border-white/70 bg-white/70 px-3 text-[11px] font-bold text-slate-700 shadow-sm backdrop-blur-md"
-          >
-            <ChevronLeft className="h-4 w-4" />
-            Back
-          </button>
-
           <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
             {/* =================================================
                 LEFT
@@ -758,34 +695,12 @@ export function EAurixProduct() {
 
             <div className="min-w-0">
               {/* PRODUCT IMAGE */}
-
-              <div
-                className="relative flex h-[310px] items-center justify-center overflow-hidden rounded-[28px] shadow-lg sm:h-[420px]"
-                style={{
-                  background: `linear-gradient(135deg, ${
-                    product.color ||
-                    categoryData?.color ||
-                    "#0EA5E9"
-                  } 0%, ${
-                    product.color ||
-                    categoryData?.color ||
-                    "#0EA5E9"
-                  }90 100%)`,
-                }}
-              >
-                {/* Decorative glow */}
-
-                <div className="absolute -right-16 -top-16 h-52 w-52 rounded-full bg-white/20 blur-3xl" />
-
-                <div className="absolute -bottom-20 -left-10 h-64 w-64 rounded-full bg-white/10 blur-3xl" />
-
-                {/* Main image */}
-
+              <div className="relative h-77.5 overflow-hidden rounded-[24px] border border-gray-200 bg-white shadow-sm sm:h-105">
                 {displayImage ? (
                   <button
                     type="button"
                     onClick={() => setShowImage(true)}
-                    className="relative z-10 flex h-[88%] w-[88%] items-center justify-center overflow-hidden rounded-[26px] border border-white/30 bg-white/15 p-2 shadow-2xl backdrop-blur-sm"
+                    className="relative h-full w-full overflow-hidden"
                   >
                     <img
                       src={displayImage}
@@ -794,45 +709,51 @@ export function EAurixProduct() {
                           ? `${product.name} ${selectedVariant.variantName}`
                           : product.name
                       }
-                      className="h-full w-full rounded-[20px] object-cover transition duration-500 hover:scale-[1.02]"
+                      className="h-full w-full object-cover transition duration-500 hover:scale-[1.02]"
                     />
 
-                    <span className="absolute bottom-3 right-3 flex items-center gap-1.5 rounded-full bg-black/55 px-3 py-1.5 text-[9px] font-bold text-white backdrop-blur-md">
+                    {/* IMAGE BORDER */}
+                    <span className="pointer-events-none absolute inset-0 rounded-3xl border border-black/10" />
+
+                    {/* VIEW */}
+                    <span className="absolute bottom-3 right-3 flex items-center gap-1.5 rounded-full bg-black/60 px-3 py-1.5 text-[9px] font-bold text-white backdrop-blur-md">
                       <Eye className="h-3 w-3" />
                       View
                     </span>
                   </button>
                 ) : (
-                  <div className="relative z-10 flex h-52 w-52 items-center justify-center rounded-3xl bg-white/25 text-7xl font-black text-white">
-                    {product.name.charAt(0)}
+                  /* NO IMAGE — SAME BOX + BORDER */
+                  <div
+                    className="flex h-full w-full items-center justify-center"
+                    style={{
+                      background:
+                        product.color || categoryData?.color || "#F8FAFC",
+                    }}
+                  >
+                    <div className="flex h-[78%] w-[78%] items-center justify-center rounded-[20px] border border-white/50 bg-white/20 text-7xl font-black text-white">
+                      {product.name.charAt(0)}
+                    </div>
                   </div>
                 )}
 
-                {/* Stock badge */}
-
+                {/* STOCK BADGE */}
                 <div
-                  className={`absolute left-3 top-3 z-20 rounded-full px-3 py-1.5 text-[9px] font-black backdrop-blur-md ${
+                  className={`absolute left-3 top-3 rounded-full px-3 py-1.5 text-[9px] font-black shadow-sm backdrop-blur-md ${
                     displayStock > 0
                       ? "bg-emerald-500 text-white"
                       : "bg-rose-500 text-white"
                   }`}
                 >
-                  {displayStock > 0
-                    ? "IN STOCK"
-                    : "OUT OF STOCK"}
+                  {displayStock > 0 ? "IN STOCK" : "OUT OF STOCK"}
                 </div>
               </div>
 
               {/* VARIANT THUMBNAILS */}
-
               {activeVariants.length > 0 && (
                 <div className="mt-2 flex gap-2 overflow-x-auto pb-1 scrollbar-hide">
                   {activeVariants.map((variant) => {
-                    const selected =
-                      selectedVariant?.id === variant.id;
-
-                    const outOfStock =
-                      Number(variant.stock) <= 0;
+                    const selected = selectedVariant?.id === variant.id;
+                    const outOfStock = Number(variant.stock) <= 0;
 
                     return (
                       <button
@@ -846,12 +767,8 @@ export function EAurixProduct() {
                         className={`relative h-14 w-14 shrink-0 overflow-hidden rounded-xl border-2 bg-white transition ${
                           selected
                             ? "border-orange-500 ring-2 ring-orange-100"
-                            : "border-white"
-                        } ${
-                          outOfStock
-                            ? "opacity-40"
-                            : ""
-                        }`}
+                            : "border-gray-200"
+                        } ${outOfStock ? "opacity-40" : ""}`}
                       >
                         {variant.image ? (
                           <img
@@ -867,10 +784,7 @@ export function EAurixProduct() {
                                 : "bg-sky-50 text-sky-600"
                             }`}
                           >
-                            {variant.variantName.slice(
-                              0,
-                              5,
-                            )}
+                            {variant.variantName.slice(0, 5)}
                           </div>
                         )}
 
@@ -886,7 +800,6 @@ export function EAurixProduct() {
               )}
 
               {/* TRUST */}
-
               <div className="mt-2 grid grid-cols-3 gap-1.5">
                 <TrustCard
                   icon={Truck}
@@ -900,11 +813,7 @@ export function EAurixProduct() {
                   subtitle="Verified"
                 />
 
-                <TrustCard
-                  icon={Package}
-                  title="Returns"
-                  subtitle="5 Days"
-                />
+                <TrustCard icon={Package} title="Returns" subtitle="5 Days" />
               </div>
             </div>
 
@@ -996,21 +905,15 @@ export function EAurixProduct() {
                   <div className="p-3 sm:p-4">
                     <div className="scrollbar-hide flex gap-2.5 overflow-x-auto pb-1">
                       {activeVariants.map((variant) => {
-                        const selected =
-                          selectedVariant?.id ===
-                          variant.id;
+                        const selected = selectedVariant?.id === variant.id;
 
-                        const outOfStock =
-                          Number(variant.stock) <= 0;
+                        const outOfStock = Number(variant.stock) <= 0;
 
                         const variantSave =
                           variant.originalPrice &&
-                          variant.originalPrice >
-                            variant.price
+                          variant.originalPrice > variant.price
                             ? Math.round(
-                                (1 -
-                                  variant.price /
-                                    variant.originalPrice) *
+                                (1 - variant.price / variant.originalPrice) *
                                   100,
                               )
                             : 0;
@@ -1021,9 +924,7 @@ export function EAurixProduct() {
                             type="button"
                             disabled={outOfStock}
                             onClick={() => {
-                              setSelectedVariant(
-                                variant,
-                              );
+                              setSelectedVariant(variant);
                               setQty(1);
                             }}
                             className={`
@@ -1093,8 +994,7 @@ export function EAurixProduct() {
                             {/* WATT */}
 
                             {variant.watt !== null &&
-                              variant.watt !==
-                                undefined && (
+                              variant.watt !== undefined && (
                                 <span className="mt-1 inline-flex rounded-md bg-violet-50 px-1.5 py-0.5 text-[8px] font-bold text-violet-600">
                                   {variant.watt}W
                                 </span>
@@ -1104,20 +1004,13 @@ export function EAurixProduct() {
 
                             <div className="mt-2 flex flex-wrap items-center gap-1.5">
                               <span className="text-[15px] font-black text-slate-950">
-                                ₹
-                                {Number(
-                                  variant.price,
-                                ).toFixed(0)}
+                                ₹{Number(variant.price).toFixed(0)}
                               </span>
 
                               {variant.originalPrice &&
-                                variant.originalPrice >
-                                  variant.price && (
+                                variant.originalPrice > variant.price && (
                                   <span className="text-[8px] text-slate-400 line-through">
-                                    ₹
-                                    {Number(
-                                      variant.originalPrice,
-                                    ).toFixed(0)}
+                                    ₹{Number(variant.originalPrice).toFixed(0)}
                                   </span>
                                 )}
                             </div>
@@ -1158,12 +1051,8 @@ export function EAurixProduct() {
                           {selectedVariant.image && (
                             <div className="h-9 w-9 shrink-0 overflow-hidden rounded-lg border border-slate-200 bg-white">
                               <img
-                                src={
-                                  selectedVariant.image
-                                }
-                                alt={
-                                  selectedVariant.variantName
-                                }
+                                src={selectedVariant.image}
+                                alt={selectedVariant.variantName}
                                 className="h-full w-full object-cover"
                               />
                             </div>
@@ -1175,33 +1064,24 @@ export function EAurixProduct() {
                             </p>
 
                             <p className="truncate text-[11px] font-black text-slate-900">
-                              {
-                                selectedVariant.variantName
-                              }
+                              {selectedVariant.variantName}
                             </p>
                           </div>
                         </div>
 
                         <div className="shrink-0 text-right">
                           <p className="text-[13px] font-black text-slate-950">
-                            ₹
-                            {Number(
-                              selectedVariant.price,
-                            ).toFixed(0)}
+                            ₹{Number(selectedVariant.price).toFixed(0)}
                           </p>
 
                           <p
                             className={`text-[8px] font-bold ${
-                              Number(
-                                selectedVariant.stock,
-                              ) > 0
+                              Number(selectedVariant.stock) > 0
                                 ? "text-emerald-600"
                                 : "text-rose-500"
                             }`}
                           >
-                            {Number(
-                              selectedVariant.stock,
-                            ) > 0
+                            {Number(selectedVariant.stock) > 0
                               ? `${selectedVariant.stock} available`
                               : "Out of stock"}
                           </p>
@@ -1227,10 +1107,7 @@ export function EAurixProduct() {
 
                     <div className="flex items-end gap-1.5">
                       <span className="text-[28px] font-black tracking-tight text-slate-950">
-                        ₹
-                        {Number(
-                          displayPrice,
-                        ).toFixed(2)}
+                        ₹{Number(displayPrice).toFixed(2)}
                       </span>
 
                       {displayUnit && (
@@ -1241,19 +1118,14 @@ export function EAurixProduct() {
                     </div>
 
                     {displayOriginalPrice &&
-                      displayOriginalPrice >
-                        displayPrice && (
+                      displayOriginalPrice > displayPrice && (
                         <div className="mt-1.5 flex flex-wrap items-center gap-1.5">
                           <span className="text-[10px] text-slate-400 line-through">
-                            ₹
-                            {Number(
-                              displayOriginalPrice,
-                            ).toFixed(2)}
+                            ₹{Number(displayOriginalPrice).toFixed(2)}
                           </span>
 
                           <span className="rounded-full bg-rose-50 px-2 py-0.5 text-[8px] font-bold text-rose-600">
-                            Save ₹
-                            {savings.toFixed(2)}
+                            Save ₹{savings.toFixed(2)}
                           </span>
 
                           {variantDiscount > 0 && (
@@ -1267,23 +1139,17 @@ export function EAurixProduct() {
 
                   <div
                     className={`rounded-xl px-2.5 py-2 ${
-                      displayStock > 0
-                        ? "bg-emerald-50"
-                        : "bg-rose-50"
+                      displayStock > 0 ? "bg-emerald-50" : "bg-rose-50"
                     }`}
                   >
                     <div
                       className={`flex items-center gap-1 text-[8px] font-black ${
-                        displayStock > 0
-                          ? "text-emerald-700"
-                          : "text-rose-600"
+                        displayStock > 0 ? "text-emerald-700" : "text-rose-600"
                       }`}
                     >
                       <span
                         className={`h-1.5 w-1.5 rounded-full ${
-                          displayStock > 0
-                            ? "bg-emerald-500"
-                            : "bg-rose-500"
+                          displayStock > 0 ? "bg-emerald-500" : "bg-rose-500"
                         }`}
                       />
 
@@ -1316,10 +1182,8 @@ export function EAurixProduct() {
                   </div>
 
                   <div className="grid grid-cols-2 gap-2 p-3 sm:grid-cols-4">
-                    {selectedVariant.watt !==
-                      null &&
-                      selectedVariant.watt !==
-                        undefined && (
+                    {selectedVariant.watt !== null &&
+                      selectedVariant.watt !== undefined && (
                         <MiniInfo
                           label="Watt"
                           value={`${selectedVariant.watt}W`}
@@ -1328,39 +1192,27 @@ export function EAurixProduct() {
 
                     <MiniInfo
                       label="Stock"
-                      value={String(
-                        selectedVariant.stock,
-                      )}
+                      value={String(selectedVariant.stock)}
                     />
 
                     {selectedVariant.unit && (
-                      <MiniInfo
-                        label="Unit"
-                        value={selectedVariant.unit}
-                      />
+                      <MiniInfo label="Unit" value={selectedVariant.unit} />
                     )}
 
                     {selectedVariant.sku && (
-                      <MiniInfo
-                        label="SKU"
-                        value={selectedVariant.sku}
-                      />
+                      <MiniInfo label="SKU" value={selectedVariant.sku} />
                     )}
                   </div>
 
                   {selectedVariant.specs &&
-                    Object.keys(
-                      selectedVariant.specs,
-                    ).length > 0 && (
+                    Object.keys(selectedVariant.specs).length > 0 && (
                       <div className="border-t border-orange-100 px-3 pb-3 pt-2.5">
                         <p className="mb-2 text-[8px] font-black uppercase tracking-wider text-orange-600">
                           Variant Specifications
                         </p>
 
                         <div className="grid grid-cols-2 gap-2">
-                          {Object.entries(
-                            selectedVariant.specs,
-                          ).map(
+                          {Object.entries(selectedVariant.specs).map(
                             ([key, value]) => (
                               <div
                                 key={key}
@@ -1414,10 +1266,7 @@ export function EAurixProduct() {
                   <button
                     type="button"
                     onClick={increaseQty}
-                    disabled={
-                      qty >= displayStock ||
-                      displayStock <= 0
-                    }
+                    disabled={qty >= displayStock || displayStock <= 0}
                     className="flex h-8 w-8 items-center justify-center rounded-lg bg-white text-lg font-bold text-slate-700 shadow-sm disabled:opacity-40"
                   >
                     +
@@ -1453,30 +1302,15 @@ export function EAurixProduct() {
                 </div>
 
                 <div className="px-4">
-                  <InfoRow
-                    label="Brand"
-                    value={product.brand}
-                  />
+                  <InfoRow label="Brand" value={product.brand} />
 
-                  <InfoRow
-                    label="Category"
-                    value={product.categoryLabel}
-                  />
+                  <InfoRow label="Category" value={product.categoryLabel} />
 
-                  <InfoRow
-                    label="Material"
-                    value={product.materialName}
-                  />
+                  <InfoRow label="Material" value={product.materialName} />
 
-                  <InfoRow
-                    label="Unit"
-                    value={displayUnit}
-                  />
+                  <InfoRow label="Unit" value={displayUnit} />
 
-                  <InfoRow
-                    label="Measurement"
-                    value={product.measurement}
-                  />
+                  <InfoRow label="Measurement" value={product.measurement} />
                 </div>
               </div>
 
@@ -1496,8 +1330,7 @@ export function EAurixProduct() {
                     </h2>
 
                     <p className="text-[8px] text-slate-500">
-                      Product dimensions &
-                      specifications
+                      Product dimensions & specifications
                     </p>
                   </div>
                 </div>
@@ -1516,42 +1349,36 @@ export function EAurixProduct() {
 
                 {measurementEntries.length > 0 && (
                   <div className="grid grid-cols-2">
-                    {measurementEntries.map(
-                      ([key, value], index) => (
-                        <div
-                          key={key}
-                          className={`px-4 py-3 ${
-                            index % 2 === 0
-                              ? "border-r border-slate-100"
-                              : ""
-                          } ${
-                            index <
-                            measurementEntries.length - 2
-                              ? "border-b border-slate-100"
-                              : ""
-                          }`}
-                        >
-                          <p className="mb-1 text-[8px] capitalize text-slate-400">
-                            {cleanLabel(key)}
-                          </p>
+                    {measurementEntries.map(([key, value], index) => (
+                      <div
+                        key={key}
+                        className={`px-4 py-3 ${
+                          index % 2 === 0 ? "border-r border-slate-100" : ""
+                        } ${
+                          index < measurementEntries.length - 2
+                            ? "border-b border-slate-100"
+                            : ""
+                        }`}
+                      >
+                        <p className="mb-1 text-[8px] capitalize text-slate-400">
+                          {cleanLabel(key)}
+                        </p>
 
-                          <p className="break-words text-[11px] font-bold text-slate-900">
-                            {String(value)}
-                          </p>
-                        </div>
-                      ),
-                    )}
+                        <p className="break-words text-[11px] font-bold text-slate-900">
+                          {String(value)}
+                        </p>
+                      </div>
+                    ))}
                   </div>
                 )}
 
-                {measurementEntries.length === 0 &&
-                  !product.description && (
-                    <div className="px-4 py-4 text-center">
-                      <p className="text-[10px] text-slate-400">
-                        Measurement details not available
-                      </p>
-                    </div>
-                  )}
+                {measurementEntries.length === 0 && !product.description && (
+                  <div className="px-4 py-4 text-center">
+                    <p className="text-[10px] text-slate-400">
+                      Measurement details not available
+                    </p>
+                  </div>
+                )}
               </div>
 
               {/* =================================================
@@ -1571,22 +1398,20 @@ export function EAurixProduct() {
                   </div>
 
                   <div className="divide-y divide-slate-100">
-                    {technicalSpecs.map(
-                      ([key, value]) => (
-                        <div
-                          key={key}
-                          className="grid grid-cols-[42%_58%] px-4 py-2.5"
-                        >
-                          <span className="pr-3 text-[9px] capitalize text-slate-500">
-                            {cleanLabel(key)}
-                          </span>
+                    {technicalSpecs.map(([key, value]) => (
+                      <div
+                        key={key}
+                        className="grid grid-cols-[42%_58%] px-4 py-2.5"
+                      >
+                        <span className="pr-3 text-[9px] capitalize text-slate-500">
+                          {cleanLabel(key)}
+                        </span>
 
-                          <span className="break-words text-[9px] font-bold text-slate-900">
-                            {String(value)}
-                          </span>
-                        </div>
-                      ),
-                    )}
+                        <span className="break-words text-[9px] font-bold text-slate-900">
+                          {String(value)}
+                        </span>
+                      </div>
+                    ))}
                   </div>
                 </div>
               )}
@@ -1595,9 +1420,7 @@ export function EAurixProduct() {
                   TAGS
               ================================================= */}
 
-              {product.tags?.filter(
-                (tag) => tag?.trim(),
-              ).length > 0 && (
+              {product.tags?.filter((tag) => tag?.trim()).length > 0 && (
                 <div className="mb-4 flex flex-wrap gap-1.5">
                   {product.tags
                     .filter((tag) => tag?.trim())
@@ -1625,10 +1448,7 @@ export function EAurixProduct() {
                         {shopData.logo ? (
                           <img
                             src={shopData.logo}
-                            alt={
-                              shopData.shop_name ||
-                              "Shop"
-                            }
+                            alt={shopData.shop_name || "Shop"}
                             className="h-full w-full object-cover"
                             referrerPolicy="no-referrer"
                           />
@@ -1647,17 +1467,14 @@ export function EAurixProduct() {
                         </h3>
 
                         <p className="truncate text-[8px] text-slate-500">
-                          {shopData.city}{" "}
-                          {shopData.state}
+                          {shopData.city} {shopData.state}
                         </p>
                       </div>
                     </div>
 
                     <button
                       type="button"
-                      onClick={() =>
-                        setShowShopDetails(true)
-                      }
+                      onClick={() => setShowShopDetails(true)}
                       className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-slate-100 hover:bg-sky-100"
                     >
                       <Eye className="h-4 w-4 text-slate-700" />
@@ -1673,9 +1490,7 @@ export function EAurixProduct() {
               {product.brochure && (
                 <button
                   type="button"
-                  onClick={() =>
-                    setShowBrochure(true)
-                  }
+                  onClick={() => setShowBrochure(true)}
                   className="mb-4 flex h-11 w-full items-center justify-center gap-2 rounded-2xl border border-slate-200 bg-white text-xs font-black text-slate-900 shadow-sm hover:border-sky-400 hover:bg-sky-50"
                 >
                   <FileText className="h-4 w-4 text-sky-500" />
@@ -1719,9 +1534,7 @@ export function EAurixProduct() {
                       style={{
                         background: `linear-gradient(135deg, ${
                           item.color || "#0EA5E9"
-                        }15, ${
-                          item.color || "#0EA5E9"
-                        }35)`,
+                        }15, ${item.color || "#0EA5E9"}35)`,
                       }}
                     >
                       <div
@@ -1729,9 +1542,7 @@ export function EAurixProduct() {
                         style={{
                           background: `linear-gradient(135deg, ${
                             item.color || "#0EA5E9"
-                          }, ${
-                            item.color || "#0EA5E9"
-                          }90)`,
+                          }, ${item.color || "#0EA5E9"}90)`,
                         }}
                       >
                         {item.image ? (
@@ -1796,9 +1607,7 @@ export function EAurixProduct() {
 
                 <button
                   type="button"
-                  onClick={() =>
-                    setShowBrochure(false)
-                  }
+                  onClick={() => setShowBrochure(false)}
                   className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-slate-100"
                 >
                   <X className="h-5 w-5 text-slate-600" />
@@ -1825,9 +1634,7 @@ export function EAurixProduct() {
 
               <button
                 type="button"
-                onClick={() =>
-                  setShowShopDetails(false)
-                }
+                onClick={() => setShowShopDetails(false)}
                 className="absolute right-3 top-3 z-50 flex h-10 w-10 items-center justify-center rounded-xl bg-white shadow-xl"
               >
                 <X className="h-5 w-5 text-slate-700" />
@@ -1836,17 +1643,10 @@ export function EAurixProduct() {
               {/* BANNER */}
 
               <div className="relative h-40 shrink-0 bg-gradient-to-r from-sky-500 via-cyan-500 to-blue-600 sm:h-52">
-                {shopData.banner ||
-                shopData.logo ? (
+                {shopData.banner || shopData.logo ? (
                   <img
-                    src={
-                      shopData.banner ||
-                      shopData.logo
-                    }
-                    alt={
-                      shopData.shop_name ||
-                      "Shop"
-                    }
+                    src={shopData.banner || shopData.logo}
+                    alt={shopData.shop_name || "Shop"}
                     className="h-full w-full object-cover"
                     referrerPolicy="no-referrer"
                   />
@@ -1863,10 +1663,7 @@ export function EAurixProduct() {
                     {shopData.logo ? (
                       <img
                         src={shopData.logo}
-                        alt={
-                          shopData.shop_name ||
-                          "Shop"
-                        }
+                        alt={shopData.shop_name || "Shop"}
                         className="h-full w-full object-cover"
                         referrerPolicy="no-referrer"
                       />
@@ -1890,38 +1687,31 @@ export function EAurixProduct() {
 
                         {shopData.owner_name && (
                           <p className="mt-1 text-[10px] font-semibold text-slate-500">
-                            Owner:{" "}
-                            {shopData.owner_name}
+                            Owner: {shopData.owner_name}
                           </p>
                         )}
                       </div>
 
                       <span
                         className={`shrink-0 rounded-full px-3 py-1.5 text-[8px] font-black uppercase ${
-                          shopData.status ===
-                          "online"
+                          shopData.status === "online"
                             ? "bg-emerald-100 text-emerald-600"
                             : "bg-rose-100 text-rose-600"
                         }`}
                       >
-                        {shopData.status ||
-                          "offline"}
+                        {shopData.status || "offline"}
                       </span>
                     </div>
 
                     <div className="mt-3 flex flex-wrap gap-1.5">
                       <span className="rounded-xl bg-violet-50 px-2.5 py-1.5 text-[8px] font-black text-violet-700">
-                        Shop ID:{" "}
-                        {shopData.shop_uid ||
-                          "N/A"}
+                        Shop ID: {shopData.shop_uid || "N/A"}
                       </span>
 
                       <span className="rounded-xl bg-emerald-50 px-2.5 py-1.5 text-[8px] font-black text-emerald-700">
                         Joined:{" "}
                         {shopData.joined_date
-                          ? new Date(
-                              shopData.joined_date,
-                            ).toLocaleDateString(
+                          ? new Date(shopData.joined_date).toLocaleDateString(
                               "en-GB",
                             )
                           : "-"}
@@ -1933,9 +1723,7 @@ export function EAurixProduct() {
                     <ShopInfoCard
                       icon={Package}
                       title="Category"
-                      value={
-                        shopData.category || "-"
-                      }
+                      value={shopData.category || "-"}
                     />
 
                     <ShopInfoCard
@@ -1947,18 +1735,14 @@ export function EAurixProduct() {
                     <ShopInfoCard
                       icon={Store}
                       title="Address"
-                      value={
-                        shopData.address || "-"
-                      }
+                      value={shopData.address || "-"}
                       full
                     />
 
                     <ShopInfoCard
                       icon={FileText}
                       title="Description"
-                      value={
-                        shopData.description || "-"
-                      }
+                      value={shopData.description || "-"}
                       full
                     />
                   </div>
@@ -2034,9 +1818,7 @@ export function EAurixProduct() {
               </span>
 
               <span className="text-[11px] font-black">
-                {displayStock <= 0
-                  ? "Unavailable"
-                  : "Buy Now"}
+                {displayStock <= 0 ? "Unavailable" : "Buy Now"}
               </span>
             </div>
 
@@ -2067,9 +1849,7 @@ export function EAurixProduct() {
 
           <div
             className="flex h-screen w-screen items-center justify-center overflow-hidden"
-            onClick={(event) =>
-              event.stopPropagation()
-            }
+            onClick={(event) => event.stopPropagation()}
           >
             <TransformWrapper
               initialScale={1}
@@ -2116,13 +1896,9 @@ function TrustCard({
         <Icon className="h-3.5 w-3.5 text-sky-500" />
       </div>
 
-      <p className="truncate text-[8px] font-black text-slate-900">
-        {title}
-      </p>
+      <p className="truncate text-[8px] font-black text-slate-900">{title}</p>
 
-      <p className="mt-0.5 text-[7px] text-slate-400">
-        {subtitle}
-      </p>
+      <p className="mt-0.5 text-[7px] text-slate-400">{subtitle}</p>
     </div>
   );
 }
@@ -2131,13 +1907,7 @@ function TrustCard({
    MINI INFO
 ============================================================ */
 
-function MiniInfo({
-  label,
-  value,
-}: {
-  label: string;
-  value: string;
-}) {
+function MiniInfo({ label, value }: { label: string; value: string }) {
   return (
     <div className="min-w-0 rounded-xl border border-orange-100 bg-white px-2.5 py-2">
       <p className="text-[7px] font-bold uppercase tracking-wide text-slate-400">
@@ -2155,26 +1925,14 @@ function MiniInfo({
    INFO ROW
 ============================================================ */
 
-function InfoRow({
-  label,
-  value,
-}: {
-  label: string;
-  value?: unknown;
-}) {
-  if (
-    value === null ||
-    value === undefined ||
-    String(value).trim() === ""
-  ) {
+function InfoRow({ label, value }: { label: string; value?: unknown }) {
+  if (value === null || value === undefined || String(value).trim() === "") {
     return null;
   }
 
   return (
     <div className="flex items-center justify-between gap-4 border-b border-slate-100 py-2.5 last:border-0">
-      <span className="shrink-0 text-[10px] text-slate-500">
-        {label}
-      </span>
+      <span className="shrink-0 text-[10px] text-slate-500">{label}</span>
 
       <span className="max-w-[62%] wrap-break-word text-right text-[10px] font-bold text-slate-900">
         {String(value)}

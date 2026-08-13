@@ -59,16 +59,16 @@ export default function BookingPaymentStep({
         <section className="rounded-[20px] border border-[#edf0ee] bg-white p-4 shadow-[0_2px_10px_rgba(15,23,42,0.04)]">
           <div className="flex items-start gap-3">
             <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-[13px] bg-[#f1edff] text-[#6d4aff]">
-              <Clock3 className="h-[19px] w-[19px]" />
+              <Clock3 className="h-4.75 w-4.75" />
             </div>
 
             <div className="min-w-0">
-              <h1 className="text-[19px] font-extrabold leading-6 tracking-[-0.025em] text-[#111827]">
+              <h1 className="text-[19px] font-extrabold leading-6 tracking-tight text-[#111827]">
                 Confirm Your Worker Booking
                 <span className="ml-1">🎉</span>
               </h1>
 
-              <p className="mt-1 text-[12px] leading-[18px] text-[#667085]">
+              <p className="mt-1 text-[12px] leading-4.5 text-[#667085]">
                 Almost done! Just confirm your booking request.
               </p>
             </div>
@@ -127,7 +127,7 @@ export default function BookingPaymentStep({
         <section className="rounded-[20px] border border-[#edf0ee] bg-white p-4 shadow-[0_2px_10px_rgba(15,23,42,0.04)]">
           <div className="flex items-center gap-2.5">
             <div className="flex h-9 w-9 items-center justify-center rounded-[12px] bg-[#f1edff] text-[#6d4aff]">
-              <FileText className="h-[18px] w-[18px]" />
+              <FileText className="h-4.5 w-4.5" />
             </div>
 
             <div>

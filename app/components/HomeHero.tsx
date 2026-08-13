@@ -1,7 +1,14 @@
 "use client";
 
-import Image from "next/image";
-import { FormEvent, ReactNode, useMemo, useRef, useState } from "react";
+import {
+  FormEvent,
+  ReactNode,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
+
 import {
   ArrowRight,
   CalendarDays,
@@ -10,17 +17,33 @@ import {
   ChevronDown,
   Clock3,
   MapPin,
-  Minus,
-  Search,
   ShieldCheck,
+  Sparkles,
+  User,
   Users,
   X,
 } from "lucide-react";
 
-import { supabase } from "@/lib/supabase";
-import { serviceCategories } from "@/app/data/workers";
+import ProjectWorkerGroups, {
+  type WorkerGroup,
+} from "@/app/components/ProjectWorkerGroups";
 
-const locations = [
+import { Capacitor } from "@capacitor/core";
+import { Keyboard } from "@capacitor/keyboard";
+
+import { supabase } from "@/lib/supabase";
+
+/* =========================================================
+   TYPES
+========================================================= */
+
+type RequesterType = "individual" | "contractor" | "company";
+
+/* =========================================================
+   DATA
+========================================================= */
+
+const requestLocations = [
   "Bhopal",
   "Gwalior",
   "Indore",
@@ -49,6 +72,7 @@ const districtsByState: Record<string, string[]> = {
     "Sagar",
     "Other",
   ],
+
   Chhattisgarh: [
     "Bilaspur",
     "Raipur",
@@ -57,9 +81,31 @@ const districtsByState: Record<string, string[]> = {
     "Rajnandgaon",
     "Other",
   ],
-  Rajasthan: ["Jaipur", "Kota", "Udaipur", "Jodhpur", "Other"],
-  Maharashtra: ["Mumbai", "Pune", "Nagpur", "Nashik", "Other"],
-  "Uttar Pradesh": ["Lucknow", "Kanpur", "Agra", "Varanasi", "Other"],
+
+  Rajasthan: [
+    "Jaipur",
+    "Kota",
+    "Udaipur",
+    "Jodhpur",
+    "Other",
+  ],
+
+  Maharashtra: [
+    "Mumbai",
+    "Pune",
+    "Nagpur",
+    "Nashik",
+    "Other",
+  ],
+
+  "Uttar Pradesh": [
+    "Lucknow",
+    "Kanpur",
+    "Agra",
+    "Varanasi",
+    "Other",
+  ],
+
   Other: ["Other"],
 };
 
@@ -72,146 +118,353 @@ const durations = [
   "1 Month",
 ];
 
-const categoryImages: Record<string, string> = {
-  Labour: "/categories/workkerz/Labour.png",
-  Driver: "/categories/workkerz/Driver.png",
-  Mechanic: "/categories/workkerz/Mechanic.png",
-  Painter: "/categories/workkerz/painter.png",
-  Washer: "/categories/workkerz/Washer.png",
-  "Office Worker": "/categories/workkerz/Office worker.png",
-  "Home Services": "/categories/workkerz/House service.png",
-  Restaurant: "/categories/workkerz/Restaurant.png",
-  "Home Contractor": "/categories/workkerz/Home contractor.png",
-  Factory: "/categories/workkerz/Factory worker.png",
-  "Salon & Beauty": "/categories/workkerz/Salon and beauty.png",
-  Construction: "/categories/workkerz/Constructionworker.png",
-  Security: "/categories/workkerz/Security.png",
-  "Event Services": "/categories/workkerz/Events.png",
-};
+/* =========================================================
+   MAIN
+========================================================= */
 
-export default function HomeHero() {
-  const [requestOpen, setRequestOpen] = useState(false);
+export default function HomeHero({
+  openRequest = false,
+  onRequestClose,
+}: {
+  openRequest?: boolean;
+  onRequestClose?: () => void;
+}) {
+  /* =======================================================
+     REQUEST STATE
+  ======================================================= */
 
-  const [workerCount, setWorkerCount] = useState(1);
-  const [selectedLocation, setSelectedLocation] = useState("");
-  const [selectedCategory, setSelectedCategory] = useState("all");
+  const [requestOpen, setRequestOpen] =
+    useState(openRequest);
 
-  const [categorySearch, setCategorySearch] = useState("");
-  const [locationSearch, setLocationSearch] = useState("");
+  const [requestLocation, setRequestLocation] =
+    useState("");
 
-  const [categoryOpen, setCategoryOpen] = useState(false);
-  const [locationOpen, setLocationOpen] = useState(false);
+  const [locationSearch, setLocationSearch] =
+    useState("");
 
-  const [fullAddress, setFullAddress] = useState("");
-  const [locality, setLocality] = useState("");
-  const [district, setDistrict] = useState("");
-  const [state, setState] = useState("");
-  const [pincode, setPincode] = useState("");
+  const [requestLocationOpen, setRequestLocationOpen] =
+    useState(false);
 
-  const [workDate, setWorkDate] = useState("");
-  const [startTime, setStartTime] = useState("");
-  const [duration, setDuration] = useState("1 Day");
-  const [budget, setBudget] = useState("");
-  const [requirement, setRequirement] = useState("");
+  /* =======================================================
+     REQUESTER DETAILS
+  ======================================================= */
 
-  const [submitting, setSubmitting] = useState(false);
-  const [submitted, setSubmitted] = useState(false);
-  const [error, setError] = useState("");
+  const [requesterType, setRequesterType] =
+    useState<RequesterType>("individual");
 
-  const formRef = useRef<HTMLFormElement>(null);
+  const [requesterName, setRequesterName] =
+    useState("");
 
-  const categories = useMemo(() => serviceCategories, []);
+  const [requesterMobile, setRequesterMobile] =
+    useState("");
 
-  const selectedCategoryLabel = useMemo(() => {
-    const category = categories.find(
-      (item) => item.id === selectedCategory,
-    );
+  const [requesterEmail, setRequesterEmail] =
+    useState("");
 
-    return category?.label || "Select Category";
-  }, [categories, selectedCategory]);
+  const [companyName, setCompanyName] =
+    useState("");
 
-  const availableDistricts = useMemo(() => {
-    return districtsByState[state] || [];
-  }, [state]);
+  const [gstin, setGstin] =
+    useState("");
 
-  const filteredCategories = useMemo(() => {
-    const search = categorySearch.trim().toLowerCase();
+  const [requesterAddress, setRequesterAddress] =
+    useState("");
 
-    return categories
-      .filter((category) => category.id !== "all")
-      .filter(
-        (category) =>
-          !search ||
-          category.label.toLowerCase().includes(search),
+  /* =======================================================
+     PROJECT
+  ======================================================= */
+
+  const [projectName, setProjectName] =
+    useState("");
+
+  const [projectType, setProjectType] =
+    useState("Construction");
+
+  const [workerGroups, setWorkerGroups] =
+    useState<WorkerGroup[]>([
+      {
+        id: "initial-group",
+        category: "Labour",
+        workers_required: 1,
+      },
+    ]);
+
+  /* =======================================================
+     WORK ADDRESS
+  ======================================================= */
+
+  const [fullAddress, setFullAddress] =
+    useState("");
+
+  const [locality, setLocality] =
+    useState("");
+
+  const [district, setDistrict] =
+    useState("");
+
+  const [state, setState] =
+    useState("");
+
+  const [pincode, setPincode] =
+    useState("");
+
+  /* =======================================================
+     SCHEDULE
+  ======================================================= */
+
+  const [workDate, setWorkDate] =
+    useState("");
+
+  const [startTime, setStartTime] =
+    useState("");
+
+  const [duration, setDuration] =
+    useState("1 Day");
+
+  /* =======================================================
+     WORK DETAILS
+  ======================================================= */
+
+  const [budget, setBudget] =
+    useState("");
+
+  const [requirement, setRequirement] =
+    useState("");
+
+  /* =======================================================
+     SUBMIT STATE
+  ======================================================= */
+
+  const [submitting, setSubmitting] =
+    useState(false);
+
+  const [submitted, setSubmitted] =
+    useState(false);
+
+  const [error, setError] =
+    useState("");
+
+  /* =======================================================
+     KEYBOARD
+  ======================================================= */
+
+  const [keyboardOpen, setKeyboardOpen] =
+    useState(false);
+
+  const locationSearchRef =
+    useRef<HTMLInputElement>(null);
+
+  /* =======================================================
+     SYNC OPEN
+  ======================================================= */
+
+  useEffect(() => {
+    setRequestOpen(openRequest);
+  }, [openRequest]);
+
+  /* =======================================================
+     LOCK BODY
+  ======================================================= */
+
+  useEffect(() => {
+    if (!requestOpen) return;
+
+    const previousOverflow =
+      document.body.style.overflow;
+
+    document.body.style.overflow = "hidden";
+
+    return () => {
+      document.body.style.overflow =
+        previousOverflow;
+    };
+  }, [requestOpen]);
+
+  /* =======================================================
+     NATIVE KEYBOARD
+  ======================================================= */
+
+  useEffect(() => {
+    if (!requestOpen) {
+      setKeyboardOpen(false);
+      return;
+    }
+
+    if (!Capacitor.isNativePlatform()) {
+      setKeyboardOpen(false);
+      return;
+    }
+
+    let showListener:
+      | { remove: () => Promise<void> }
+      | null = null;
+
+    let hideListener:
+      | { remove: () => Promise<void> }
+      | null = null;
+
+    let didShowListener:
+      | { remove: () => Promise<void> }
+      | null = null;
+
+    let didHideListener:
+      | { remove: () => Promise<void> }
+      | null = null;
+
+    let cancelled = false;
+
+    const setupKeyboard = async () => {
+      const show = await Keyboard.addListener(
+        "keyboardWillShow",
+        () => {
+          setKeyboardOpen(true);
+        },
       );
-  }, [categories, categorySearch]);
 
-  const filteredLocations = useMemo(() => {
-    const search = locationSearch.trim().toLowerCase();
+      const hide = await Keyboard.addListener(
+        "keyboardWillHide",
+        () => {
+          setKeyboardOpen(false);
+        },
+      );
 
-    return locations.filter(
-      (location) =>
-        !search ||
-        location.toLowerCase().includes(search),
+      const didShow = await Keyboard.addListener(
+        "keyboardDidShow",
+        () => {
+          setKeyboardOpen(true);
+        },
+      );
+
+      const didHide = await Keyboard.addListener(
+        "keyboardDidHide",
+        () => {
+          setKeyboardOpen(false);
+        },
+      );
+
+      if (cancelled) {
+        await show.remove();
+        await hide.remove();
+        await didShow.remove();
+        await didHide.remove();
+        return;
+      }
+
+      showListener = show;
+      hideListener = hide;
+      didShowListener = didShow;
+      didHideListener = didHide;
+    };
+
+    setupKeyboard();
+
+    return () => {
+      cancelled = true;
+
+      showListener?.remove();
+      hideListener?.remove();
+      didShowListener?.remove();
+      didHideListener?.remove();
+
+      setKeyboardOpen(false);
+    };
+  }, [requestOpen]);
+
+  /* =======================================================
+     ESC CLOSE
+  ======================================================= */
+
+  useEffect(() => {
+    if (!requestOpen) return;
+
+    const handleKeyDown = (
+      event: KeyboardEvent,
+    ) => {
+      if (event.key === "Escape") {
+        closeForm();
+      }
+    };
+
+    window.addEventListener(
+      "keydown",
+      handleKeyDown,
     );
-  }, [locationSearch]);
+
+    return () => {
+      window.removeEventListener(
+        "keydown",
+        handleKeyDown,
+      );
+    };
+  }, [requestOpen, submitting]);
+
+  /* =======================================================
+     TODAY
+  ======================================================= */
 
   const today = new Date()
     .toISOString()
     .split("T")[0];
 
-  /* =====================================================
-     WORKERS
-  ===================================================== */
+  /* =======================================================
+     DISTRICTS
+  ======================================================= */
 
-  const increaseWorkers = () => {
-    setWorkerCount((count) =>
-      Math.min(count + 1, 50),
+  const availableDistricts = useMemo(
+    () => districtsByState[state] || [],
+    [state],
+  );
+
+  /* =======================================================
+     FILTER LOCATIONS
+  ======================================================= */
+
+  const filteredLocations = useMemo(() => {
+    const query =
+      locationSearch.trim().toLowerCase();
+
+    return requestLocations.filter(
+      (location) =>
+        !query ||
+        location
+          .toLowerCase()
+          .includes(query),
     );
-  };
+  }, [locationSearch]);
 
-  const decreaseWorkers = () => {
-    setWorkerCount((count) =>
-      Math.max(count - 1, 1),
-    );
-  };
-
-  /* =====================================================
-     OPEN / CLOSE
-  ===================================================== */
-
-  const openRequest = () => {
-    setSubmitted(false);
-    setError("");
-    setRequestOpen(true);
-  };
-
-  const closeModal = () => {
-    if (submitting) return;
-
-    setRequestOpen(false);
-    setError("");
-    setCategoryOpen(false);
-    setLocationOpen(false);
-  };
-
-  /* =====================================================
+  /* =======================================================
      RESET
-  ===================================================== */
+  ======================================================= */
 
-  const resetForm = () => {
-    setSubmitted(false);
+  function resetForm() {
+    setRequestLocation("");
 
-    setWorkerCount(1);
-
-    setSelectedLocation("");
-    setSelectedCategory("all");
-
-    setCategorySearch("");
     setLocationSearch("");
 
-    setCategoryOpen(false);
-    setLocationOpen(false);
+    setRequestLocationOpen(false);
+
+    setWorkerGroups([
+      {
+        id: `${Date.now()}-initial`,
+        category: "Labour",
+        workers_required: 1,
+      },
+    ]);
+
+    setProjectName("");
+    setProjectType("Construction");
+
+    /* REQUESTER */
+
+    setRequesterType("individual");
+    setRequesterName("");
+    setRequesterMobile("");
+    setRequesterEmail("");
+    setCompanyName("");
+    setGstin("");
+    setRequesterAddress("");
+
+    /* ADDRESS */
 
     setFullAddress("");
     setLocality("");
@@ -219,49 +472,92 @@ export default function HomeHero() {
     setState("");
     setPincode("");
 
+    /* SCHEDULE */
+
     setWorkDate("");
     setStartTime("");
     setDuration("1 Day");
+
+    /* DETAILS */
+
     setBudget("");
     setRequirement("");
 
     setError("");
-  };
+    setSubmitted(false);
+    setKeyboardOpen(false);
+  }
 
-  /* =====================================================
-     STATE
-  ===================================================== */
+  /* =======================================================
+     CLOSE
+  ======================================================= */
 
-  const handleStateChange = (
-    value: string,
-  ) => {
-    setState(value);
-    setDistrict("");
-  };
+  function closeForm() {
+    if (submitting) return;
 
-  /* =====================================================
-     PINCODE
-  ===================================================== */
+    setRequestOpen(false);
+    setKeyboardOpen(false);
 
-  const handlePincodeChange = (
-    value: string,
-  ) => {
-    setPincode(
-      value.replace(/\D/g, "").slice(0, 6),
-    );
-  };
+    setRequestLocationOpen(false);
 
-  /* =====================================================
+    setError("");
+
+    onRequestClose?.();
+  }
+
+  /* =======================================================
      VALIDATION
-  ===================================================== */
+  ======================================================= */
 
-  const validateForm = () => {
-    if (!selectedLocation) {
-      return "Please select your work location.";
+  function validateForm() {
+    if (!requesterName.trim()) {
+      return "Please enter your full name.";
     }
 
-    if (selectedCategory === "all") {
-      return "Please select a work category.";
+    const mobile =
+      requesterMobile.replace(/\D/g, "");
+
+    if (mobile.length !== 10) {
+      return "Please enter a valid 10-digit mobile number.";
+    }
+
+    if (
+      requesterType === "contractor" ||
+      requesterType === "company"
+    ) {
+      if (!companyName.trim()) {
+        return `Please enter your ${
+          requesterType === "company"
+            ? "company"
+            : "contractor"
+        } name.`;
+      }
+    }
+
+    if (!projectName.trim()) {
+      return "Please enter your project name.";
+    }
+
+    if (!workerGroups.length) {
+      return "Please add at least one worker group.";
+    }
+
+    const invalidGroup =
+      workerGroups.some(
+        (group) =>
+          !group.category.trim() ||
+          !Number.isFinite(
+            group.workers_required,
+          ) ||
+          group.workers_required < 1,
+      );
+
+    if (invalidGroup) {
+      return "Please select a worker and enter a valid quantity.";
+    }
+
+    if (!requestLocation) {
+      return "Please select your work city.";
     }
 
     if (!fullAddress.trim()) {
@@ -293,49 +589,180 @@ export default function HomeHero() {
     }
 
     return "";
-  };
+  }
 
-  /* =====================================================
+  /* =======================================================
      SUBMIT
-  ===================================================== */
+  ======================================================= */
 
-  const handleSubmit = async (
-    event?: FormEvent<HTMLFormElement>,
-  ) => {
-    event?.preventDefault();
+  async function submitRequest(
+    event: FormEvent<HTMLFormElement>,
+  ) {
+    event.preventDefault();
 
     if (submitting) return;
 
     setError("");
 
-    const validationError = validateForm();
+    const validationError =
+      validateForm();
 
     if (validationError) {
       setError(validationError);
+
+      requestAnimationFrame(() => {
+        document
+          .querySelector(
+            "[data-request-error]",
+          )
+          ?.scrollIntoView({
+            behavior: "smooth",
+            block: "center",
+          });
+      });
+
       return;
     }
 
     try {
       setSubmitting(true);
 
+      /* =====================================================
+         GET CURRENT USER
+      ===================================================== */
+
+      const {
+        data: { user },
+      } =
+        await supabase.auth.getUser();
+
+      /* =====================================================
+         INSERT REQUEST
+      ===================================================== */
+
       const { error: insertError } =
         await supabase
           .from("worker_requests")
           .insert({
-            workers_required: workerCount,
-            location: selectedLocation,
-            category: selectedCategory,
+            /* PROJECT */
 
-            full_address: fullAddress.trim(),
-            locality: locality.trim(),
+            project_name:
+              projectName.trim(),
+
+            project_type:
+              projectType,
+
+            /* WORKER GROUPS */
+
+            workers_required:
+              workerGroups.reduce(
+                (total, group) =>
+                  total +
+                  Math.max(
+                    1,
+                    Number(
+                      group.workers_required,
+                    ) || 1,
+                  ),
+                0,
+              ),
+
+            category:
+              workerGroups
+                .map(
+                  (group) =>
+                    group.category,
+                )
+                .filter(Boolean)
+                .join(", "),
+
+            requirements:
+              workerGroups.map(
+                (group) => ({
+                  category:
+                    group.category,
+
+                  workers_required:
+                    Math.max(
+                      1,
+                      Number(
+                        group.workers_required,
+                      ) || 1,
+                    ),
+                }),
+              ),
+
+            location:
+              requestLocation,
+
+            /* REQUESTER */
+
+            requester_type:
+              requesterType,
+
+            requester_name:
+              requesterName.trim(),
+
+            requester_mobile:
+              requesterMobile
+                .replace(/\D/g, "")
+                .slice(0, 10),
+
+            requester_email:
+              requesterEmail.trim() ||
+              null,
+
+            company_name:
+              requesterType ===
+              "individual"
+                ? null
+                : companyName.trim() ||
+                  null,
+
+            gstin:
+              requesterType ===
+              "individual"
+                ? null
+                : gstin
+                    .replace(
+                      /\s/g,
+                      "",
+                    )
+                    .toUpperCase() ||
+                  null,
+
+            requester_address:
+              requesterAddress.trim() ||
+              null,
+
+            requester_user_id:
+              user?.id || null,
+
+            /* WORK ADDRESS */
+
+            full_address:
+              fullAddress.trim(),
+
+            locality:
+              locality.trim(),
+
             district,
+
             state,
+
             pincode,
 
-            work_date: workDate,
-            start_time: startTime || null,
+            /* SCHEDULE */
+
+            work_date:
+              workDate,
+
+            start_time:
+              startTime || null,
 
             duration,
+
+            /* WORK DETAILS */
 
             budget: budget
               ? Number(budget)
@@ -344,13 +771,16 @@ export default function HomeHero() {
             requirement:
               requirement.trim(),
 
+            /* SYSTEM */
+
             status: "pending",
+
             source: "home",
           });
 
       if (insertError) {
         console.error(
-          "Worker request insert error:",
+          "WORKER REQUEST ERROR:",
           insertError,
         );
 
@@ -361,23 +791,29 @@ export default function HomeHero() {
         return;
       }
 
-      /*
-       * IMPORTANT:
-       * Modal close hoga.
-       * Success Home page par dikhega.
-       */
+      /* =====================================================
+         SUCCESS
+      ===================================================== */
 
       setSubmitted(true);
-      setRequestOpen(false);
 
-      window.scrollTo({
-        top: 0,
-        behavior: "smooth",
-      });
-    } catch (err) {
+      window.dispatchEvent(
+        new CustomEvent(
+          "workkerz-request-success",
+        ),
+      );
+
+      setTimeout(() => {
+        resetForm();
+
+        setRequestOpen(false);
+
+        onRequestClose?.();
+      }, 1200);
+    } catch (submitError) {
       console.error(
-        "Worker request error:",
-        err,
+        "WORKER REQUEST ERROR:",
+        submitError,
       );
 
       setError(
@@ -386,146 +822,110 @@ export default function HomeHero() {
     } finally {
       setSubmitting(false);
     }
-  };
+  }
+
+  /* =======================================================
+     UI
+  ======================================================= */
 
   return (
     <>
-      {/* =====================================================
-          HOME HERO
-      ===================================================== */}
-
-      <section className="relative overflow-hidden bg-white">
-        <div className="pointer-events-none absolute inset-0">
-          <div className="absolute -left-32 -top-32 h-72 w-72 rounded-full bg-emerald-100/50 blur-3xl" />
-
-          <div className="absolute -right-32 top-10 h-72 w-72 rounded-full bg-green-100/40 blur-3xl" />
-        </div>
-
-        <div className="relative mx-auto max-w-7xl px-4 py-9 sm:px-6 sm:py-14 lg:px-8 lg:py-20">
-          <div className="mx-auto max-w-3xl text-center">
-            <div className="mb-4 inline-flex items-center gap-2 rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1.5">
-              <span className="relative flex h-2 w-2">
-                <span className="absolute h-full w-full animate-ping rounded-full bg-emerald-400 opacity-60" />
-
-                <span className="relative h-2 w-2 rounded-full bg-emerald-500" />
-              </span>
-
-              <span className="text-[10px] font-bold uppercase tracking-[0.15em] text-emerald-700">
-                Workkerz Worker Request
-              </span>
-            </div>
-
-            <h1 className="text-4xl font-black tracking-tight text-gray-950 sm:text-5xl lg:text-6xl">
-              Worker Chahiye?
-              <span className="text-emerald-600">
-                {" "}
-                Request Karo.
-              </span>
-            </h1>
-
-            <p className="mx-auto mt-4 max-w-2xl text-sm leading-6 text-gray-500 sm:text-base">
-              Apni worker requirement submit
-              karein. Workkerz team suitable
-              workers arrange karne ke liye
-              aapse contact karegi.
-            </p>
-
-            <button
-              type="button"
-              onClick={openRequest}
-              className="mt-7 inline-flex h-12 items-center justify-center gap-2 rounded-2xl bg-emerald-600 px-6 text-sm font-black text-white shadow-xl shadow-emerald-600/20 transition hover:bg-emerald-700"
-            >
-              {submitted
-                ? "Submit Another Request"
-                : "Request Worker"}
-
-              <ArrowRight className="h-5 w-5" />
-            </button>
-
-            <div className="mt-7 flex flex-wrap items-center justify-center gap-x-6 gap-y-3">
-              <TrustBadge
-                icon={
-                  <ShieldCheck className="h-4 w-4" />
-                }
-                text="Verified Workers"
-              />
-
-              <TrustBadge
-                icon={
-                  <Users className="h-4 w-4" />
-                }
-                text="Team Support"
-              />
-
-              <TrustBadge
-                icon={
-                  <CheckCircle2 className="h-4 w-4" />
-                }
-                text="No Advance Payment"
-              />
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* =====================================================
-          SUCCESS ON HOME PAGE
-      ===================================================== */}
-
-      {submitted && (
-        <SuccessScreen
-          workerCount={workerCount}
-          selectedCategoryLabel={
-            selectedCategoryLabel
-          }
-          selectedLocation={
-            selectedLocation
-          }
-          duration={duration}
-          fullAddress={fullAddress}
-          locality={locality}
-          district={district}
-          state={state}
-          pincode={pincode}
-          onReset={() => {
-            resetForm();
-            setRequestOpen(true);
-          }}
-          onClose={resetForm}
-        />
-      )}
-
-      {/* =====================================================
-          FULL SCREEN REQUEST MODAL
-      ===================================================== */}
-
       {requestOpen && (
         <div
-          className="fixed inset-0 z-[9999] bg-black/60 backdrop-blur-sm"
-          onKeyDown={(event) => {
-            if (event.key === "Escape") {
-              closeModal();
-            }
-          }}
+          className="
+            fixed inset-0 z-[9999]
+            bg-black/70
+            backdrop-blur-md
+          "
         >
-          <div className="flex h-dvh w-full items-center justify-center">
-            <div className="relative flex h-full w-full flex-col overflow-hidden bg-[#f7faf8] lg:h-[96vh] lg:max-w-6xl lg:rounded-[24px] lg:border lg:border-white/20 lg:shadow-2xl">
+          <div
+            className="
+              flex h-[100dvh] w-full
+              items-center justify-center
+              p-0
+              sm:p-3
+              lg:p-5
+            "
+          >
+            <div
+              className="
+                relative flex
+                h-[100dvh] w-full
+                flex-col
+                overflow-hidden
+                bg-[#f6faf8]
+                sm:h-[96dvh]
+                sm:rounded-3xl
+                sm:border
+                sm:border-white/30
+                sm:shadow-[0_30px_100px_rgba(0,0,0,0.25)]
+                lg:max-w-6xl
+              "
+            >
               {/* =================================================
                   HEADER
               ================================================= */}
 
-              <header className="flex shrink-0 items-center justify-between border-b border-gray-200 bg-white px-3 py-2.5 pt-[max(10px,env(safe-area-inset-top))] sm:px-5">
+              <header
+                className="
+                  relative z-30
+                  flex shrink-0
+                  items-center justify-between
+                  border-b border-white/20
+                  bg-gradient-to-r
+                  from-[#047a3b]
+                  via-[#079d49]
+                  to-[#0ab957]
+                  px-3 py-2.5
+                  pt-[max(10px,env(safe-area-inset-top))]
+                  text-white
+                  sm:px-5
+                "
+              >
                 <div className="flex min-w-0 items-center gap-2.5">
-                  <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-emerald-600">
-                    <Users className="h-4 w-4 text-white" />
+                  <div
+                    className="
+                      flex h-9 w-9 shrink-0
+                      items-center justify-center
+                      rounded-xl
+                      bg-white/15
+                      ring-1 ring-white/20
+                      backdrop-blur
+                    "
+                  >
+                    <Users className="h-4.5 w-4.5" />
                   </div>
 
                   <div className="min-w-0">
-                    <p className="text-[8px] font-black uppercase tracking-[0.15em] text-emerald-600">
-                      Workkerz
-                    </p>
+                    <div className="flex items-center gap-1.5">
+                      <p
+                        className="
+                          text-[8px]
+                          font-black
+                          uppercase
+                          tracking-[0.18em]
+                          text-emerald-100
+                        "
+                      >
+                        Workkerz
+                      </p>
 
-                    <h2 className="truncate text-sm font-black text-gray-950">
+                      <span
+                        className="
+                          flex items-center gap-1
+                          rounded-full
+                          bg-white/15
+                          px-1.5 py-0.5
+                          text-[7px]
+                          font-bold
+                        "
+                      >
+                        <Sparkles className="h-2.5 w-2.5" />
+                        PREMIUM
+                      </span>
+                    </div>
+
+                    <h2 className="truncate text-sm font-black">
                       Request Worker
                     </h2>
                   </div>
@@ -533,575 +933,677 @@ export default function HomeHero() {
 
                 <button
                   type="button"
-                  onClick={closeModal}
+                  onClick={closeForm}
                   disabled={submitting}
-                  aria-label="Close request form"
-                  className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-gray-100 text-gray-600 transition hover:bg-gray-200 disabled:opacity-40"
+                  aria-label="Close"
+                  className="
+                    flex h-10 w-10 shrink-0
+                    items-center justify-center
+                    rounded-xl
+                    bg-white/10
+                    ring-1 ring-white/15
+                    transition
+                    active:scale-95
+                    hover:bg-white/20
+                    disabled:opacity-50
+                  "
                 >
                   <X className="h-4 w-4" />
                 </button>
               </header>
 
               {/* =================================================
-                  FORM SCROLL
+                  SCROLL AREA
               ================================================= */}
 
-              <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain">
+              <div
+                className="
+                  min-h-0 flex-1
+                  overflow-y-auto
+                  overscroll-contain
+                  scroll-smooth
+                  [webkit-overflow-scrolling:touch]
+                "
+              >
                 <form
-                  ref={formRef}
-                  onSubmit={handleSubmit}
-                  className="mx-auto w-full max-w-5xl px-3 py-3 pb-6 sm:px-5 sm:py-5"
+                  onSubmit={submitRequest}
+                  className="
+                    mx-auto w-full
+                    max-w-5xl
+                    px-3 py-3
+                    pb-[calc(110px+env(safe-area-inset-bottom))]
+                    sm:px-5 sm:py-5
+                  "
                 >
-                  {/* FORM TITLE */}
+                  {/* =================================================
+                      TITLE
+                  ================================================= */}
 
                   <div className="mb-3">
-                    <div className="inline-flex items-center gap-1.5 rounded-full border border-emerald-200 bg-emerald-50 px-2.5 py-1">
-                      <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
+                    <div
+                      className="
+                        inline-flex items-center gap-1.5
+                        rounded-full
+                        border border-emerald-200
+                        bg-emerald-50
+                        px-2.5 py-1
+                      "
+                    >
+                      <span
+                        className="
+                          h-1.5 w-1.5
+                          animate-pulse
+                          rounded-full
+                          bg-emerald-500
+                        "
+                      />
 
-                      <span className="text-[8px] font-black uppercase tracking-[0.14em] text-emerald-700">
+                      <span
+                        className="
+                          text-[8px]
+                          font-black
+                          uppercase
+                          tracking-[0.14em]
+                          text-emerald-700
+                        "
+                      >
                         Worker Request
                       </span>
                     </div>
 
-                    <h1 className="mt-2 text-xl font-black tracking-tight text-gray-950 sm:text-2xl">
-                      Apni requirement submit
-                      karein
+                    <h1
+                      className="
+                        mt-2
+                        text-xl
+                        font-black
+                        tracking-tight
+                        text-gray-950
+                        sm:text-2xl
+                      "
+                    >
+                      Apni requirement submit karein
                     </h1>
 
-                    <p className="mt-1 text-[11px] leading-4 text-gray-500">
-                      Complete details dene se
-                      suitable worker arrange karna
-                      easy hota hai.
+                    <p
+                      className="
+                        mt-1
+                        max-w-2xl
+                        text-[11px]
+                        leading-4
+                        text-gray-500
+                      "
+                    >
+                      Complete details dene se suitable
+                      worker arrange karna easy hota hai.
                     </p>
                   </div>
 
-                  <div className="overflow-visible rounded-2xl border border-gray-200 bg-white shadow-[0_10px_35px_rgba(0,0,0,0.05)]">
+                  {/* =================================================
+                      MAIN CARD
+                  ================================================= */}
+
+                  <div
+                    className="
+                      overflow-visible
+                      rounded-2xl
+                      border border-gray-200
+                      bg-white
+                      shadow-[0_10px_40px_rgba(0,0,0,0.06)]
+                    "
+                  >
                     {/* =================================================
-                        SECTION 01
+                        01 REQUESTER DETAILS
                     ================================================= */}
 
                     <FormSection
                       number="01"
-                      title="Worker Requirement"
+                      title="Requester Details"
                     >
-                      <div className="grid gap-3 md:grid-cols-2">
-                        {/* WORKER COUNT */}
+                      <div className="space-y-3">
+                        <div>
+                          <FieldLabel
+                            icon={
+                              <User className="h-3.5 w-3.5" />
+                            }
+                            label="Who is sending this request?"
+                            required
+                          />
+
+                          <div className="mt-1.5 grid grid-cols-3 gap-1.5">
+                            {(
+                              [
+                                [
+                                  "individual",
+                                  "Individual",
+                                ],
+                                [
+                                  "contractor",
+                                  "Contractor",
+                                ],
+                                [
+                                  "company",
+                                  "Company",
+                                ],
+                              ] as const
+                            ).map(
+                              ([value, label]) => {
+                                const active =
+                                  requesterType ===
+                                  value;
+
+                                return (
+                                  <button
+                                    key={value}
+                                    type="button"
+                                    onClick={() => {
+                                      setRequesterType(
+                                        value,
+                                      );
+
+                                      if (
+                                        value ===
+                                        "individual"
+                                      ) {
+                                        setCompanyName(
+                                          "",
+                                        );
+
+                                        setGstin("");
+                                      }
+                                    }}
+                                    className={`
+                                      min-h-10
+                                      rounded-xl
+                                      border
+                                      px-2
+                                      text-[10px]
+                                      font-black
+                                      transition
+                                      active:scale-[.98]
+                                      ${
+                                        active
+                                          ? "border-emerald-500 bg-emerald-50 text-emerald-700 shadow-sm"
+                                          : "border-gray-200 bg-gray-50 text-gray-600 hover:border-emerald-200"
+                                      }
+                                    `}
+                                  >
+                                    {label}
+                                  </button>
+                                );
+                              },
+                            )}
+                          </div>
+                        </div>
+
+                        <div className="grid gap-2 sm:grid-cols-2">
+                          <InputField
+                            label={
+                              requesterType ===
+                              "company"
+                                ? "Contact Person Name"
+                                : requesterType ===
+                                    "contractor"
+                                  ? "Contractor Name"
+                                  : "Full Name"
+                            }
+                            required
+                            placeholder={
+                              requesterType ===
+                              "company"
+                                ? "Enter contact person name"
+                                : requesterType ===
+                                    "contractor"
+                                  ? "Enter contractor name"
+                                  : "Enter your full name"
+                            }
+                            value={
+                              requesterName
+                            }
+                            onChange={(
+                              event,
+                            ) =>
+                              setRequesterName(
+                                event.target
+                                  .value,
+                              )
+                            }
+                            enterKeyHint="next"
+                            autoComplete="name"
+                          />
+
+                          <InputField
+                            label="Mobile Number"
+                            required
+                            placeholder="10-digit mobile number"
+                            value={
+                              requesterMobile
+                            }
+                            onChange={(
+                              event,
+                            ) =>
+                              setRequesterMobile(
+                                event.target.value
+                                  .replace(
+                                    /\D/g,
+                                    "",
+                                  )
+                                  .slice(
+                                    0,
+                                    10,
+                                  ),
+                              )
+                            }
+                            inputMode="numeric"
+                            maxLength={10}
+                            prefix="+91"
+                            enterKeyHint="next"
+                            autoComplete="tel"
+                          />
+                        </div>
+
+                        <InputField
+                          label="Email Address"
+                          placeholder="example@email.com"
+                          value={
+                            requesterEmail
+                          }
+                          onChange={(
+                            event,
+                          ) =>
+                            setRequesterEmail(
+                              event.target
+                                .value,
+                            )
+                          }
+                          enterKeyHint="next"
+                          autoComplete="email"
+                        />
+
+                        {(
+                          requesterType ===
+                            "contractor" ||
+                          requesterType ===
+                            "company"
+                        ) && (
+                          <div className="grid gap-2 sm:grid-cols-2">
+                            <InputField
+                              label={
+                                requesterType ===
+                                "company"
+                                  ? "Company Name"
+                                  : "Contractor / Firm Name"
+                              }
+                              required
+                              placeholder={
+                                requesterType ===
+                                "company"
+                                  ? "Enter company name"
+                                  : "Enter contractor / firm name"
+                              }
+                              value={
+                                companyName
+                              }
+                              onChange={(
+                                event,
+                              ) =>
+                                setCompanyName(
+                                  event.target
+                                    .value,
+                                )
+                              }
+                              enterKeyHint="next"
+                              autoComplete="organization"
+                            />
+
+                            <InputField
+                              label="GSTIN"
+                              placeholder="Optional GSTIN"
+                              value={gstin}
+                              onChange={(
+                                event,
+                              ) =>
+                                setGstin(
+                                  event.target.value
+                                    .replace(
+                                      /\s/g,
+                                      "",
+                                    )
+                                    .toUpperCase()
+                                    .slice(
+                                      0,
+                                      15,
+                                    ),
+                                )
+                              }
+                              maxLength={15}
+                              enterKeyHint="next"
+                            />
+                          </div>
+                        )}
 
                         <div>
                           <FieldLabel
                             icon={
-                              <Users className="h-3.5 w-3.5" />
-                            }
-                            label="Workers Required"
-                          />
-
-                          <div className="mt-1.5 flex h-11 items-center justify-between rounded-xl border border-gray-200 bg-gray-50 px-1.5">
-                            <button
-                              type="button"
-                              onClick={
-                                decreaseWorkers
-                              }
-                              disabled={
-                                workerCount <= 1
-                              }
-                              className="flex h-8 w-8 items-center justify-center rounded-lg bg-white text-gray-600 shadow-sm transition hover:bg-gray-100 disabled:opacity-30"
-                            >
-                              <Minus className="h-3.5 w-3.5" />
-                            </button>
-
-                            <div className="flex items-center justify-center">
-                              <input
-                                type="number"
-                                min={1}
-                                max={50}
-                                value={
-                                  workerCount
-                                }
-                                onChange={(
-                                  event,
-                                ) => {
-                                  const value =
-                                    event.target
-                                      .value;
-
-                                  if (!value) {
-                                    setWorkerCount(
-                                      1,
-                                    );
-                                    return;
-                                  }
-
-                                  const number =
-                                    Number(
-                                      value,
-                                    );
-
-                                  if (
-                                    !Number.isNaN(
-                                      number,
-                                    )
-                                  ) {
-                                    setWorkerCount(
-                                      Math.min(
-                                        Math.max(
-                                          number,
-                                          1,
-                                        ),
-                                        50,
-                                      ),
-                                    );
-                                  }
-                                }}
-                                inputMode="numeric"
-                                enterKeyHint="next"
-                                aria-label="Number of workers"
-                                className="w-12 bg-transparent text-center text-base font-black text-gray-950 outline-none"
-                              />
-
-                              <span className="text-[10px] text-gray-500">
-                                Worker
-                                {workerCount >
-                                1
-                                  ? "s"
-                                  : ""}
-                              </span>
-                            </div>
-
-                            <button
-                              type="button"
-                              onClick={
-                                increaseWorkers
-                              }
-                              disabled={
-                                workerCount >=
-                                50
-                              }
-                              className="flex h-8 w-8 items-center justify-center rounded-lg bg-emerald-600 text-white shadow-sm transition hover:bg-emerald-700 disabled:opacity-30"
-                            >
-                              <span className="text-lg leading-none">
-                                +
-                              </span>
-                            </button>
-                          </div>
-                        </div>
-
-                        {/* LOCATION */}
-
-                        <div className="relative">
-                          <FieldLabel
-                            icon={
                               <MapPin className="h-3.5 w-3.5" />
                             }
-                            label="Work Location"
-                            required
+                            label="Contact Address"
                           />
 
-                          <button
-                            type="button"
-                            onClick={() => {
-                              setLocationOpen(
-                                (open) =>
-                                  !open,
-                              );
-
-                              setCategoryOpen(
-                                false,
-                              );
-
-                              setLocationSearch(
-                                "",
-                              );
-                            }}
-                            className={`mt-1.5 flex h-11 w-full items-center gap-2 rounded-xl border px-3 text-left transition ${
-                              locationOpen
-                                ? "border-emerald-500 bg-emerald-50/30"
-                                : "border-gray-200 bg-white"
-                            }`}
-                          >
-                            <MapPin className="h-4 w-4 shrink-0 text-emerald-600" />
-
-                            <span
-                              className={`min-w-0 flex-1 truncate text-xs font-bold ${
-                                selectedLocation
-                                  ? "text-gray-900"
-                                  : "text-gray-400"
-                              }`}
-                            >
-                              {selectedLocation ||
-                                "Search / select location"}
-                            </span>
-
-                            <ChevronDown
-                              className={`h-4 w-4 shrink-0 text-gray-400 transition ${
-                                locationOpen
-                                  ? "rotate-180"
-                                  : ""
-                              }`}
-                            />
-                          </button>
-
-                          {locationOpen && (
-                            <div className="absolute left-0 right-0 top-[calc(100%+5px)] z-50 overflow-hidden rounded-xl border border-gray-200 bg-white shadow-2xl">
-                              <div className="border-b border-gray-100 p-2">
-                                <div className="flex h-9 items-center gap-2 rounded-lg border border-gray-200 bg-gray-50 px-2.5">
-                                  <Search className="h-3.5 w-3.5 text-gray-400" />
-
-                                  <input
-                                    autoFocus
-                                    value={
-                                      locationSearch
-                                    }
-                                    onChange={(
-                                      event,
-                                    ) =>
-                                      setLocationSearch(
-                                        event
-                                          .target
-                                          .value,
-                                      )
-                                    }
-                                    placeholder="Search location..."
-                                    inputMode="search"
-                                    enterKeyHint="done"
-                                    className="min-w-0 flex-1 bg-transparent text-xs outline-none"
-                                  />
-                                </div>
-                              </div>
-
-                              <div className="max-h-44 overflow-y-auto p-1.5">
-                                {filteredLocations.length >
-                                0 ? (
-                                  filteredLocations.map(
-                                    (
-                                      location,
-                                    ) => (
-                                      <button
-                                        key={
-                                          location
-                                        }
-                                        type="button"
-                                        onClick={() => {
-                                          setSelectedLocation(
-                                            location,
-                                          );
-
-                                          setLocationOpen(
-                                            false,
-                                          );
-
-                                          setLocationSearch(
-                                            "",
-                                          );
-                                        }}
-                                        className={`flex w-full items-center gap-2 rounded-lg px-2.5 py-2 text-left transition ${
-                                          selectedLocation ===
-                                          location
-                                            ? "bg-emerald-50 text-emerald-700"
-                                            : "text-gray-700 hover:bg-gray-50"
-                                        }`}
-                                      >
-                                        <MapPin className="h-3.5 w-3.5 shrink-0" />
-
-                                        <span className="truncate text-xs font-bold">
-                                          {
-                                            location
-                                          }
-                                        </span>
-
-                                        {selectedLocation ===
-                                          location && (
-                                          <Check className="ml-auto h-3.5 w-3.5" />
-                                        )}
-                                      </button>
-                                    ),
-                                  )
-                                ) : (
-                                  <p className="px-3 py-4 text-center text-xs text-gray-400">
-                                    No location found
-                                  </p>
-                                )}
-                              </div>
-                            </div>
-                          )}
-                        </div>
-
-                        {/* CATEGORY */}
-
-                        <div className="relative md:col-span-2">
-                          <FieldLabel
-                            icon={
-                              <Users className="h-3.5 w-3.5" />
+                          <textarea
+                            value={
+                              requesterAddress
                             }
-                            label="Work Category"
-                            required
+                            onChange={(
+                              event,
+                            ) =>
+                              setRequesterAddress(
+                                event.target
+                                  .value,
+                              )
+                            }
+                            rows={2}
+                            placeholder="Optional contact / office address"
+                            className="
+                              mt-1.5 w-full
+                              resize-none
+                              rounded-xl
+                              border border-gray-200
+                              bg-gray-50
+                              px-3 py-2.5
+                              text-xs
+                              font-medium
+                              text-gray-900
+                              outline-none
+                              placeholder:text-gray-400
+                              focus:border-emerald-500
+                              focus:bg-white
+                              focus:ring-2
+                              focus:ring-emerald-500/10
+                            "
                           />
-
-                          <button
-                            type="button"
-                            onClick={() => {
-                              setCategoryOpen(
-                                (open) =>
-                                  !open,
-                              );
-
-                              setLocationOpen(
-                                false,
-                              );
-
-                              setCategorySearch(
-                                "",
-                              );
-                            }}
-                            className={`mt-1.5 flex h-11 w-full items-center gap-2 rounded-xl border px-3 text-left transition ${
-                              categoryOpen
-                                ? "border-emerald-500 bg-emerald-50/30"
-                                : "border-gray-200 bg-white"
-                            }`}
-                          >
-                            <div className="relative h-7 w-7 shrink-0 overflow-hidden rounded-lg bg-emerald-50">
-                              {selectedCategory !==
-                                "all" &&
-                              categoryImages[
-                                selectedCategoryLabel
-                              ] ? (
-                                <Image
-                                  src={
-                                    categoryImages[
-                                      selectedCategoryLabel
-                                    ]
-                                  }
-                                  alt={
-                                    selectedCategoryLabel
-                                  }
-                                  fill
-                                  sizes="28px"
-                                  className="object-contain p-0.5"
-                                />
-                              ) : (
-                                <div className="flex h-full items-center justify-center">
-                                  <Users className="h-3.5 w-3.5 text-emerald-600" />
-                                </div>
-                              )}
-                            </div>
-
-                            <span
-                              className={`min-w-0 flex-1 truncate text-xs font-bold ${
-                                selectedCategory ===
-                                "all"
-                                  ? "text-gray-400"
-                                  : "text-gray-900"
-                              }`}
-                            >
-                              {selectedCategory ===
-                              "all"
-                                ? "Search / select category"
-                                : selectedCategoryLabel}
-                            </span>
-
-                            <ChevronDown
-                              className={`h-4 w-4 shrink-0 text-gray-400 transition ${
-                                categoryOpen
-                                  ? "rotate-180"
-                                  : ""
-                              }`}
-                            />
-                          </button>
-
-                          {categoryOpen && (
-                            <div className="absolute left-0 right-0 top-[calc(100%+5px)] z-50 overflow-hidden rounded-xl border border-gray-200 bg-white shadow-2xl">
-                              <div className="border-b border-gray-100 p-2">
-                                <div className="flex h-9 items-center gap-2 rounded-lg border border-gray-200 bg-gray-50 px-2.5">
-                                  <Search className="h-3.5 w-3.5 text-gray-400" />
-
-                                  <input
-                                    autoFocus
-                                    value={
-                                      categorySearch
-                                    }
-                                    onChange={(
-                                      event,
-                                    ) =>
-                                      setCategorySearch(
-                                        event
-                                          .target
-                                          .value,
-                                      )
-                                    }
-                                    placeholder="Search all categories..."
-                                    inputMode="search"
-                                    enterKeyHint="done"
-                                    className="min-w-0 flex-1 bg-transparent text-xs outline-none"
-                                  />
-
-                                  {categorySearch && (
-                                    <button
-                                      type="button"
-                                      onClick={() =>
-                                        setCategorySearch(
-                                          "",
-                                        )
-                                      }
-                                      className="text-gray-400"
-                                    >
-                                      <X className="h-3.5 w-3.5" />
-                                    </button>
-                                  )}
-                                </div>
-                              </div>
-
-                              <div className="max-h-56 overflow-y-auto p-1.5">
-                                {filteredCategories.length >
-                                0 ? (
-                                  filteredCategories.map(
-                                    (
-                                      category,
-                                    ) => {
-                                      const selected =
-                                        selectedCategory ===
-                                        category.id;
-
-                                      const imageSrc =
-                                        categoryImages[
-                                          category.label
-                                        ];
-
-                                      return (
-                                        <button
-                                          key={
-                                            category.id
-                                          }
-                                          type="button"
-                                          onClick={() => {
-                                            setSelectedCategory(
-                                              category.id,
-                                            );
-
-                                            setCategoryOpen(
-                                              false,
-                                            );
-
-                                            setCategorySearch(
-                                              "",
-                                            );
-                                          }}
-                                          className={`flex w-full items-center gap-2 rounded-lg px-2 py-2 text-left transition ${
-                                            selected
-                                              ? "bg-emerald-50"
-                                              : "hover:bg-gray-50"
-                                          }`}
-                                        >
-                                          <div
-                                            className={`relative flex h-8 w-8 shrink-0 items-center justify-center overflow-hidden rounded-lg ${
-                                              selected
-                                                ? "bg-emerald-100"
-                                                : "bg-gray-100"
-                                            }`}
-                                          >
-                                            {imageSrc ? (
-                                              <Image
-                                                src={
-                                                  imageSrc
-                                                }
-                                                alt={
-                                                  category.label
-                                                }
-                                                fill
-                                                sizes="32px"
-                                                className="object-contain p-0.5"
-                                              />
-                                            ) : (
-                                              <span className="text-[10px] font-black text-gray-500">
-                                                {category.label
-                                                  .charAt(
-                                                    0,
-                                                  )
-                                                  .toUpperCase()}
-                                              </span>
-                                            )}
-                                          </div>
-
-                                          <span
-                                            className={`min-w-0 flex-1 truncate text-xs font-bold ${
-                                              selected
-                                                ? "text-emerald-700"
-                                                : "text-gray-800"
-                                            }`}
-                                          >
-                                            {
-                                              category.label
-                                            }
-                                          </span>
-
-                                          <span
-                                            className={`flex h-6 w-6 shrink-0 items-center justify-center rounded-full ${
-                                              selected
-                                                ? "bg-emerald-600 text-white"
-                                                : "bg-gray-100 text-transparent"
-                                            }`}
-                                          >
-                                            <Check className="h-3 w-3" />
-                                          </span>
-                                        </button>
-                                      );
-                                    },
-                                  )
-                                ) : (
-                                  <p className="px-3 py-4 text-center text-xs text-gray-400">
-                                    No category found
-                                  </p>
-                                )}
-                              </div>
-                            </div>
-                          )}
                         </div>
                       </div>
                     </FormSection>
 
                     {/* =================================================
-                        SECTION 02 ADDRESS
+                        02 PROJECT & WORKER REQUIREMENT
                     ================================================= */}
 
                     <FormSection
                       number="02"
+                      title="Project & Worker Requirement"
+                    >
+                      <div className="space-y-4">
+                        <div className="grid gap-2 sm:grid-cols-2">
+                          <InputField
+                            label="Project Name"
+                            required
+                            placeholder="e.g. House Construction"
+                            value={
+                              projectName
+                            }
+                            onChange={(
+                              event,
+                            ) =>
+                              setProjectName(
+                                event.target
+                                  .value,
+                              )
+                            }
+                            enterKeyHint="next"
+                            autoComplete="off"
+                          />
+
+                          <SelectField
+                            label="Project Type"
+                            required
+                            value={
+                              projectType
+                            }
+                            onChange={(
+                              event,
+                            ) =>
+                              setProjectType(
+                                event.target
+                                  .value,
+                              )
+                            }
+                            options={[
+                              "Construction",
+                              "House Work",
+                              "Commercial",
+                              "Factory",
+                              "Road Work",
+                              "Renovation",
+                              "Other",
+                            ]}
+                            placeholder="Select project type"
+                          />
+                        </div>
+
+                        <div className="rounded-2xl border border-emerald-100 bg-emerald-50/30 p-3 sm:p-4">
+                          <ProjectWorkerGroups
+                            value={
+                              workerGroups
+                            }
+                            onChange={
+                              setWorkerGroups
+                            }
+                          />
+                        </div>
+
+                        <div className="rounded-xl border border-gray-100 bg-gray-50 px-3 py-2.5">
+                          <p className="text-[10px] font-bold text-gray-700">
+                            Example
+                          </p>
+
+                          <p className="mt-0.5 text-[10px] leading-4 text-gray-500">
+                            Labour × 3, Painter × 4,
+                            Mistry × 2 — ek hi project
+                            request mein multiple worker
+                            groups add kar sakte hain.
+                          </p>
+                        </div>
+                      </div>
+                    </FormSection>
+
+                    {/* =================================================
+                        03 WORK ADDRESS
+                    ================================================= */}
+
+                    <FormSection
+                      number="03"
                       title="Work Address"
                     >
-                      <div className="grid gap-2.5">
+                      <div className="grid gap-2">
+                        <div className="relative">
+                          <FieldLabel
+                            icon={
+                              <MapPin className="h-3.5 w-3.5" />
+                            }
+                            label="Work City"
+                            required
+                          />
+
+                          <button
+                            type="button"
+                            onClick={() =>
+                              setRequestLocationOpen(
+                                (value) =>
+                                  !value,
+                              )
+                            }
+                            className="
+                              mt-1.5 flex h-11
+                              w-full
+                              items-center gap-2
+                              rounded-xl
+                              border
+                              border-gray-200
+                              bg-gray-50
+                              px-3
+                              text-left
+                              transition
+                              hover:border-emerald-300
+                            "
+                          >
+                            <MapPin className="h-4 w-4 shrink-0 text-emerald-600" />
+
+                            <span className="min-w-0 flex-1 truncate text-xs font-semibold text-gray-800">
+                              {requestLocation ||
+                                "Select work city"}
+                            </span>
+
+                            <ChevronDown
+                              className={`
+                                h-4 w-4
+                                text-gray-400
+                                transition-transform
+                                ${
+                                  requestLocationOpen
+                                    ? "rotate-180 text-emerald-600"
+                                    : ""
+                                }
+                              `}
+                            />
+                          </button>
+
+                          {requestLocationOpen && (
+                            <Dropdown>
+                              <div className="border-b border-gray-100 p-2">
+                                <input
+                                  ref={
+                                    locationSearchRef
+                                  }
+                                  value={
+                                    locationSearch
+                                  }
+                                  onChange={(
+                                    event,
+                                  ) =>
+                                    setLocationSearch(
+                                      event.target
+                                        .value,
+                                    )
+                                  }
+                                  placeholder="Search city..."
+                                  className="
+                                    h-9 w-full
+                                    rounded-lg
+                                    border
+                                    border-gray-200
+                                    bg-gray-50
+                                    px-3
+                                    text-xs
+                                    outline-none
+                                    focus:border-emerald-500
+                                  "
+                                />
+                              </div>
+
+                              <div className="max-h-52 overflow-y-auto p-1.5">
+                                {filteredLocations.map(
+                                  (
+                                    location,
+                                  ) => (
+                                    <button
+                                      key={
+                                        location
+                                      }
+                                      type="button"
+                                      onClick={() => {
+                                        setRequestLocation(
+                                          location,
+                                        );
+
+                                        setRequestLocationOpen(
+                                          false,
+                                        );
+
+                                        setLocationSearch(
+                                          "",
+                                        );
+                                      }}
+                                      className={`
+                                        flex w-full
+                                        items-center
+                                        gap-2
+                                        rounded-lg
+                                        px-3 py-2.5
+                                        text-left
+                                        text-xs
+                                        font-semibold
+                                        ${
+                                          requestLocation ===
+                                          location
+                                            ? "bg-emerald-50 text-emerald-700"
+                                            : "text-gray-700 hover:bg-gray-50"
+                                        }
+                                      `}
+                                    >
+                                      <MapPin className="h-3.5 w-3.5 shrink-0" />
+                                      {location}
+                                    </button>
+                                  ),
+                                )}
+                              </div>
+                            </Dropdown>
+                          )}
+                        </div>
+
                         <InputField
                           label="Full Address"
                           required
                           placeholder="House / Plot, Street, Building, Landmark"
-                          value={fullAddress}
-                          onChange={(event) =>
+                          value={
+                            fullAddress
+                          }
+                          onChange={(
+                            event,
+                          ) =>
                             setFullAddress(
-                              event.target.value,
+                              event.target
+                                .value,
                             )
                           }
                           enterKeyHint="next"
+                          autoComplete="street-address"
                         />
 
-                        <div className="grid gap-2.5 sm:grid-cols-2">
+                        <div className="grid gap-2 sm:grid-cols-2">
                           <InputField
                             label="Area / Locality"
                             required
                             placeholder="e.g. Thatipur"
-                            value={locality}
-                            onChange={(event) =>
+                            value={
+                              locality
+                            }
+                            onChange={(
+                              event,
+                            ) =>
                               setLocality(
-                                event.target.value,
+                                event.target
+                                  .value,
                               )
                             }
                             enterKeyHint="next"
+                            autoComplete="address-level3"
                           />
 
                           <SelectField
                             label="State"
                             required
                             value={state}
-                            onChange={(event) =>
-                              handleStateChange(
-                                event.target.value,
-                              )
-                            }
+                            onChange={(
+                              event,
+                            ) => {
+                              setState(
+                                event.target
+                                  .value,
+                              );
+
+                              setDistrict("");
+                            }}
                             options={states}
                             placeholder="Select state"
                           />
@@ -1109,10 +1611,15 @@ export default function HomeHero() {
                           <SelectField
                             label="District"
                             required
-                            value={district}
-                            onChange={(event) =>
+                            value={
+                              district
+                            }
+                            onChange={(
+                              event,
+                            ) =>
                               setDistrict(
-                                event.target.value,
+                                event.target
+                                  .value,
                               )
                             }
                             options={
@@ -1130,65 +1637,39 @@ export default function HomeHero() {
                             label="Pincode"
                             required
                             placeholder="6-digit pincode"
-                            value={pincode}
-                            onChange={(event) =>
-                              handlePincodeChange(
-                                event.target.value,
+                            value={
+                              pincode
+                            }
+                            onChange={(
+                              event,
+                            ) =>
+                              setPincode(
+                                event.target.value
+                                  .replace(
+                                    /\D/g,
+                                    "",
+                                  )
+                                  .slice(
+                                    0,
+                                    6,
+                                  ),
                               )
                             }
                             inputMode="numeric"
                             maxLength={6}
-                            enterKeyHint="next"
+                            enterKeyHint="done"
+                            autoComplete="postal-code"
                           />
                         </div>
-
-                        {(fullAddress ||
-                          locality ||
-                          district ||
-                          state ||
-                          pincode) && (
-                          <div className="flex items-start gap-2 rounded-xl border border-emerald-100 bg-emerald-50/60 px-3 py-2.5">
-                            <MapPin className="mt-0.5 h-3.5 w-3.5 shrink-0 text-emerald-600" />
-
-                            <div className="min-w-0">
-                              <p className="text-[8px] font-black uppercase tracking-wide text-emerald-600">
-                                Address Preview
-                              </p>
-
-                              {fullAddress && (
-                                <p className="mt-0.5 truncate text-[11px] font-bold text-gray-800">
-                                  {
-                                    fullAddress
-                                  }
-                                </p>
-                              )}
-
-                              <p className="text-[10px] text-gray-500">
-                                {[
-                                  locality,
-                                  district,
-                                  state,
-                                ]
-                                  .filter(
-                                    Boolean,
-                                  )
-                                  .join(", ")}
-
-                                {pincode &&
-                                  ` - ${pincode}`}
-                              </p>
-                            </div>
-                          </div>
-                        )}
                       </div>
                     </FormSection>
 
                     {/* =================================================
-                        SECTION 03 SCHEDULE
+                        04 SCHEDULE
                     ================================================= */}
 
                     <FormSection
-                      number="03"
+                      number="04"
                       title="Work Schedule"
                     >
                       <div className="grid gap-2.5 sm:grid-cols-2">
@@ -1202,15 +1683,26 @@ export default function HomeHero() {
                           <input
                             type="date"
                             min={today}
-                            value={workDate}
-                            onChange={(event) =>
+                            value={
+                              workDate
+                            }
+                            onChange={(
+                              event,
+                            ) =>
                               setWorkDate(
                                 event.target
                                   .value,
                               )
                             }
-                            enterKeyHint="next"
-                            className="mt-0.5 w-full bg-transparent text-xs font-black text-gray-900 outline-none"
+                            className="
+                              mt-0.5
+                              w-full
+                              bg-transparent
+                              text-xs
+                              font-black
+                              text-gray-900
+                              outline-none
+                            "
                           />
                         </CompactDateTime>
 
@@ -1222,15 +1714,26 @@ export default function HomeHero() {
                         >
                           <input
                             type="time"
-                            value={startTime}
-                            onChange={(event) =>
+                            value={
+                              startTime
+                            }
+                            onChange={(
+                              event,
+                            ) =>
                               setStartTime(
                                 event.target
                                   .value,
                               )
                             }
-                            enterKeyHint="next"
-                            className="mt-0.5 w-full bg-transparent text-xs font-black text-gray-900 outline-none"
+                            className="
+                              mt-0.5
+                              w-full
+                              bg-transparent
+                              text-xs
+                              font-black
+                              text-gray-900
+                              outline-none
+                            "
                           />
                         </CompactDateTime>
                       </div>
@@ -1240,56 +1743,123 @@ export default function HomeHero() {
 
                         <div className="mt-1.5 grid grid-cols-3 gap-1.5 sm:grid-cols-6">
                           {durations.map(
-                            (item) => {
-                              const active =
-                                duration ===
-                                item;
-
-                              return (
-                                <button
-                                  key={item}
-                                  type="button"
-                                  onClick={() =>
-                                    setDuration(
-                                      item,
-                                    )
+                            (item) => (
+                              <button
+                                key={item}
+                                type="button"
+                                onClick={() =>
+                                  setDuration(
+                                    item,
+                                  )
+                                }
+                                className={`
+                                  min-h-9
+                                  rounded-lg
+                                  border
+                                  px-2
+                                  text-[10px]
+                                  font-black
+                                  transition
+                                  active:scale-95
+                                  ${
+                                    duration ===
+                                    item
+                                      ? "border-emerald-500 bg-emerald-50 text-emerald-700 shadow-sm"
+                                      : "border-gray-200 bg-white text-gray-600 hover:border-emerald-200"
                                   }
-                                  className={`h-9 rounded-lg border px-2 text-[10px] font-black transition ${
-                                    active
-                                      ? "border-emerald-500 bg-emerald-50 text-emerald-700"
-                                      : "border-gray-200 bg-white text-gray-600 hover:border-emerald-300 hover:bg-emerald-50"
-                                  }`}
-                                >
-                                  {item}
-                                </button>
-                              );
-                            },
+                                `}
+                              >
+                                {item}
+                              </button>
+                            ),
                           )}
+                        </div>
+                      </div>
+
+                      <div
+                        className="
+                          mt-2.5
+                          rounded-xl
+                          border
+                          border-emerald-100
+                          bg-emerald-50/60
+                          px-3 py-2.5
+                        "
+                      >
+                        <div className="flex items-center gap-2">
+                          <div
+                            className="
+                              flex h-8 w-8
+                              shrink-0
+                              items-center
+                              justify-center
+                              rounded-lg
+                              bg-white
+                              text-emerald-600
+                              shadow-sm
+                            "
+                          >
+                            <CalendarDays className="h-4 w-4" />
+                          </div>
+
+                          <div className="min-w-0 flex-1">
+                            <p
+                              className="
+                                text-[9px]
+                                font-bold
+                                uppercase
+                                tracking-wide
+                                text-emerald-600
+                              "
+                            >
+                              Schedule
+                            </p>
+
+                            <p className="truncate text-xs font-black text-gray-900">
+                              {workDate ||
+                                "Select date"}{" "}
+                              ·{" "}
+                              {startTime ||
+                                "Select time"}{" "}
+                              ·{" "}
+                              {duration ||
+                                "Select duration"}
+                            </p>
+                          </div>
+
+                          <CheckCircle2 className="h-4 w-4 shrink-0 text-emerald-600" />
                         </div>
                       </div>
                     </FormSection>
 
                     {/* =================================================
-                        SECTION 04 DETAILS
+                        05 BUDGET & DETAILS
                     ================================================= */}
 
                     <FormSection
-                      number="04"
+                      number="05"
                       title="Budget & Work Details"
                     >
                       <div className="grid gap-2.5 sm:grid-cols-2">
                         <InputField
                           label="Approx Budget"
                           placeholder="e.g. 1500"
-                          value={budget}
-                          onChange={(event) =>
+                          value={
+                            budget
+                          }
+                          onChange={(
+                            event,
+                          ) =>
                             setBudget(
-                              event.target.value,
+                              event.target.value.replace(
+                                /\D/g,
+                                "",
+                              ),
                             )
                           }
                           inputMode="numeric"
-                          enterKeyHint="next"
                           prefix="₹"
+                          enterKeyHint="next"
                         />
 
                         <div>
@@ -1299,26 +1869,64 @@ export default function HomeHero() {
                           />
 
                           <textarea
-                            value={requirement}
-                            onChange={(event) =>
+                            value={
+                              requirement
+                            }
+                            onChange={(
+                              event,
+                            ) =>
                               setRequirement(
-                                event.target
-                                  .value,
+                                event.target.value.slice(
+                                  0,
+                                  500,
+                                ),
                               )
                             }
                             rows={3}
-                            placeholder="Example: 3 labour chahiye construction site ke liye..."
                             enterKeyHint="done"
-                            className="mt-1.5 w-full resize-none rounded-xl border border-gray-200 bg-gray-50 px-3 py-2.5 text-xs font-medium text-gray-900 outline-none placeholder:text-gray-400 transition focus:border-emerald-500 focus:bg-white focus:ring-2 focus:ring-emerald-50"
+                            placeholder="Example: 3 labour chahiye construction site ke liye..."
+                            className="
+                              mt-1.5 w-full
+                              resize-none
+                              rounded-xl
+                              border border-gray-200
+                              bg-gray-50
+                              px-3 py-2.5
+                              text-xs
+                              font-medium
+                              text-gray-900
+                              outline-none
+                              placeholder:text-gray-400
+                              focus:border-emerald-500
+                              focus:bg-white
+                            "
                           />
+
+                          <div className="mt-1 flex justify-end">
+                            <span className="text-[8px] font-medium text-gray-400">
+                              {requirement.length}/500
+                            </span>
+                          </div>
                         </div>
                       </div>
                     </FormSection>
 
-                    {/* ERROR */}
+                    {/* =================================================
+                        ERROR
+                    ================================================= */}
 
                     {error && (
-                      <div className="mx-3 mb-3 rounded-xl border border-red-100 bg-red-50 px-3 py-2.5 sm:mx-5">
+                      <div
+                        data-request-error
+                        className="
+                          mx-3 mb-3
+                          rounded-xl
+                          border border-red-100
+                          bg-red-50
+                          px-3 py-2.5
+                          sm:mx-5
+                        "
+                      >
                         <p className="text-[11px] font-bold text-red-600">
                           {error}
                         </p>
@@ -1326,33 +1934,131 @@ export default function HomeHero() {
                     )}
 
                     {/* =================================================
+                        SUCCESS
+                    ================================================= */}
+
+                    {submitted && (
+                      <div
+                        className="
+                          mx-3 mb-3
+                          flex items-center gap-2
+                          rounded-xl
+                          border border-emerald-100
+                          bg-emerald-50
+                          px-3 py-3
+                          sm:mx-5
+                        "
+                      >
+                        <CheckCircle2 className="h-5 w-5 shrink-0 text-emerald-600" />
+
+                        <div>
+                          <p className="text-xs font-black text-emerald-800">
+                            Request submitted
+                            successfully
+                          </p>
+
+                          <p className="text-[9px] font-medium text-emerald-600">
+                            Our team will review
+                            your requirement.
+                          </p>
+                        </div>
+                      </div>
+                    )}
+
+                    {/* =================================================
                         STICKY SUBMIT
                     ================================================= */}
 
-                    <div className="sticky bottom-0 border-t border-gray-100 bg-white/95 p-2.5 backdrop-blur-md sm:p-3">
-                      <button
-                        type="submit"
-                        disabled={submitting}
-                        className="flex h-11 w-full items-center justify-center gap-2 rounded-xl bg-emerald-600 text-xs font-black text-white shadow-lg shadow-emerald-600/20 transition hover:bg-emerald-700 disabled:cursor-not-allowed disabled:opacity-60"
+                    {!keyboardOpen && (
+                      <div
+                        className="
+                          fixed
+                          inset-x-0
+                          bottom-0
+                          z-[100]
+                          border-t
+                          border-gray-100
+                          bg-white/95
+                          p-2.5
+                          pb-[calc(10px+env(safe-area-inset-bottom))]
+                          shadow-[0_-6px_25px_rgba(0,0,0,0.08)]
+                          backdrop-blur-xl
+                          sm:p-3
+                        "
                       >
-                        {submitting ? (
-                          <>
-                            <span className="h-4 w-4 animate-spin rounded-full border-2 border-white/30 border-t-white" />
-                            Submitting...
-                          </>
-                        ) : (
-                          <>
-                            Submit Worker Request
-                            <ArrowRight className="h-4 w-4" />
-                          </>
-                        )}
-                      </button>
+                        <button
+                          type="submit"
+                          disabled={
+                            submitting ||
+                            submitted
+                          }
+                          className="
+                            flex h-12 w-full
+                            items-center
+                            justify-center
+                            gap-2
+                            rounded-xl
+                            bg-gradient-to-r
+                            from-[#078c43]
+                            to-[#09b653]
+                            text-xs
+                            font-black
+                            text-white
+                            shadow-lg
+                            shadow-emerald-600/20
+                            transition-all
+                            duration-200
+                            active:scale-[0.99]
+                            hover:brightness-105
+                            disabled:cursor-not-allowed
+                            disabled:opacity-60
+                          "
+                        >
+                          {submitting ? (
+                            <>
+                              <span
+                                className="
+                                  h-4 w-4
+                                  animate-spin
+                                  rounded-full
+                                  border-2
+                                  border-white/30
+                                  border-t-white
+                                "
+                              />
 
-                      <div className="mt-1.5 flex items-center justify-center gap-1.5 text-[9px] font-medium text-gray-400">
-                        <ShieldCheck className="h-3 w-3 text-emerald-600" />
-                        No advance payment required
+                              Submitting...
+                            </>
+                          ) : submitted ? (
+                            <>
+                              <Check className="h-4 w-4" />
+                              Request Submitted
+                            </>
+                          ) : (
+                            <>
+                              Submit Worker Request
+                              <ArrowRight className="h-4 w-4" />
+                            </>
+                          )}
+                        </button>
+
+                        <div
+                          className="
+                            mt-1.5
+                            flex
+                            items-center
+                            justify-center
+                            gap-1.5
+                            text-[9px]
+                            font-medium
+                            text-gray-400
+                          "
+                        >
+                          <ShieldCheck className="h-3 w-3 text-emerald-600" />
+                          No advance payment required
+                        </div>
                       </div>
-                    </div>
+                    )}
                   </div>
                 </form>
               </div>
@@ -1380,7 +2086,17 @@ function FormSection({
   return (
     <section className="border-b border-gray-100 p-3.5 sm:p-5">
       <div className="mb-3 flex items-center gap-2">
-        <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-emerald-50 text-[9px] font-black text-emerald-600">
+        <div
+          className="
+            flex h-7 w-7 shrink-0
+            items-center justify-center
+            rounded-lg
+            bg-emerald-50
+            text-[9px]
+            font-black
+            text-emerald-600
+          "
+        >
           {number}
         </div>
 
@@ -1401,7 +2117,7 @@ function FormSection({
 function FieldLabel({
   icon,
   label,
-  required = false,
+  required,
 }: {
   icon?: ReactNode;
   label: string;
@@ -1442,6 +2158,7 @@ function InputField({
   maxLength,
   prefix,
   enterKeyHint,
+  autoComplete,
 }: {
   label: string;
   required?: boolean;
@@ -1453,7 +2170,15 @@ function InputField({
   inputMode?: React.HTMLAttributes<HTMLInputElement>["inputMode"];
   maxLength?: number;
   prefix?: string;
-  enterKeyHint?: React.HTMLAttributes<HTMLInputElement>["enterKeyHint"];
+  enterKeyHint?:
+    | "enter"
+    | "done"
+    | "go"
+    | "next"
+    | "previous"
+    | "search"
+    | "send";
+  autoComplete?: string;
 }) {
   return (
     <div>
@@ -1462,7 +2187,21 @@ function InputField({
         required={required}
       />
 
-      <div className="mt-1.5 flex h-10 items-center rounded-xl border border-gray-200 bg-gray-50 px-3 transition focus-within:border-emerald-500 focus-within:bg-white focus-within:ring-2 focus-within:ring-emerald-50">
+      <div
+        className="
+          mt-1.5 flex h-11
+          items-center
+          rounded-xl
+          border border-gray-200
+          bg-gray-50
+          px-3
+          transition
+          focus-within:border-emerald-500
+          focus-within:bg-white
+          focus-within:ring-2
+          focus-within:ring-emerald-500/10
+        "
+      >
         {prefix && (
           <span className="mr-1.5 text-sm font-black text-gray-500">
             {prefix}
@@ -1476,7 +2215,17 @@ function InputField({
           inputMode={inputMode}
           maxLength={maxLength}
           enterKeyHint={enterKeyHint}
-          className="min-w-0 w-full bg-transparent text-xs font-medium text-gray-900 outline-none placeholder:text-gray-400"
+          autoComplete={autoComplete}
+          className="
+            min-w-0
+            w-full
+            bg-transparent
+            text-xs
+            font-medium
+            text-gray-900
+            outline-none
+            placeholder:text-gray-400
+          "
         />
       </div>
     </div>
@@ -1494,7 +2243,7 @@ function SelectField({
   onChange,
   options,
   placeholder,
-  disabled = false,
+  disabled,
 }: {
   label: string;
   required?: boolean;
@@ -1518,7 +2267,21 @@ function SelectField({
           value={value}
           onChange={onChange}
           disabled={disabled}
-          className="h-10 w-full appearance-none rounded-xl border border-gray-200 bg-gray-50 px-3 pr-8 text-xs font-semibold text-gray-800 outline-none transition focus:border-emerald-500 focus:bg-white focus:ring-2 focus:ring-emerald-50 disabled:cursor-not-allowed disabled:opacity-50"
+          className="
+            h-11 w-full
+            appearance-none
+            rounded-xl
+            border border-gray-200
+            bg-gray-50
+            px-3 pr-8
+            text-xs
+            font-semibold
+            text-gray-800
+            outline-none
+            focus:border-emerald-500
+            focus:bg-white
+            disabled:opacity-50
+          "
         >
           <option value="">
             {placeholder}
@@ -1534,7 +2297,17 @@ function SelectField({
           ))}
         </select>
 
-        <ChevronDown className="pointer-events-none absolute right-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-gray-400" />
+        <ChevronDown
+          className="
+            pointer-events-none
+            absolute
+            right-2.5
+            top-1/2
+            h-3.5 w-3.5
+            -translate-y-1/2
+            text-gray-400
+          "
+        />
       </div>
     </div>
   );
@@ -1556,15 +2329,42 @@ function CompactDateTime({
   children: ReactNode;
 }) {
   return (
-    <div className="rounded-xl border border-gray-200 bg-white p-2.5">
+    <div
+      className="
+        rounded-xl
+        border border-gray-200
+        bg-white
+        p-2.5
+        transition
+        focus-within:border-emerald-400
+      "
+    >
       <div className="flex items-center gap-2">
-        <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-emerald-50 text-emerald-600">
+        <div
+          className="
+            flex h-8 w-8
+            shrink-0
+            items-center
+            justify-center
+            rounded-lg
+            bg-emerald-50
+            text-emerald-600
+          "
+        >
           {icon}
         </div>
 
         <div className="min-w-0 flex-1">
           <div className="flex items-center gap-1">
-            <span className="text-[9px] font-black uppercase tracking-wide text-gray-400">
+            <span
+              className="
+                text-[9px]
+                font-black
+                uppercase
+                tracking-wide
+                text-gray-400
+              "
+            >
               {label}
             </span>
 
@@ -1583,196 +2383,29 @@ function CompactDateTime({
 }
 
 /* =========================================================
-   TRUST
+   DROPDOWN
 ========================================================= */
 
-function TrustBadge({
-  icon,
-  text,
+function Dropdown({
+  children,
 }: {
-  icon: ReactNode;
-  text: string;
+  children: ReactNode;
 }) {
   return (
-    <div className="flex items-center gap-1.5 text-gray-500">
-      <span className="text-emerald-600">
-        {icon}
-      </span>
-
-      <span className="text-[10px] font-semibold">
-        {text}
-      </span>
-    </div>
-  );
-}
-
-/* =========================================================
-   SUCCESS
-========================================================= */
-
-function SuccessScreen({
-  workerCount,
-  selectedCategoryLabel,
-  selectedLocation,
-  duration,
-  fullAddress,
-  locality,
-  district,
-  state,
-  pincode,
-  onReset,
-  onClose,
-}: {
-  workerCount: number;
-  selectedCategoryLabel: string;
-  selectedLocation: string;
-  duration: string;
-  fullAddress: string;
-  locality: string;
-  district: string;
-  state: string;
-  pincode: string;
-  onReset: () => void;
-  onClose: () => void;
-}) {
-  return (
-    <section className="bg-[#f7faf8] px-3 py-5 sm:px-5 sm:py-8">
-      <div className="mx-auto w-full max-w-2xl overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-[0_15px_60px_rgba(0,0,0,0.08)]">
-        {/* SUCCESS HEADER */}
-
-        <div className="bg-emerald-600 px-4 py-6 text-center text-white sm:px-8">
-          <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-white">
-            <CheckCircle2 className="h-8 w-8 text-emerald-600" />
-          </div>
-
-          <p className="mt-3 text-[9px] font-black uppercase tracking-[0.18em] text-emerald-100">
-            Request Submitted
-          </p>
-
-          <h2 className="mt-1 text-xl font-black sm:text-2xl">
-            Worker request received
-          </h2>
-
-          <p className="mx-auto mt-2 max-w-lg text-xs leading-5 text-emerald-50">
-            Aapki requirement Workkerz team ko
-            receive ho gayi hai. Team availability
-            check karke aapse contact karegi.
-          </p>
-        </div>
-
-        {/* SUMMARY */}
-
-        <div className="p-3.5 sm:p-6">
-          <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
-            <SummaryItem
-              label="Workers"
-              value={`${workerCount}`}
-            />
-
-            <SummaryItem
-              label="Category"
-              value={selectedCategoryLabel}
-            />
-
-            <SummaryItem
-              label="Location"
-              value={selectedLocation}
-            />
-
-            <SummaryItem
-              label="Duration"
-              value={duration}
-            />
-          </div>
-
-          {/* ADDRESS */}
-
-          <div className="mt-3 rounded-xl border border-gray-200 bg-gray-50 p-3">
-            <div className="flex gap-2.5">
-              <MapPin className="mt-0.5 h-4 w-4 shrink-0 text-emerald-600" />
-
-              <div className="min-w-0">
-                <p className="text-[8px] font-black uppercase tracking-wide text-gray-400">
-                  Work Address
-                </p>
-
-                <p className="mt-0.5 text-xs font-bold leading-5 text-gray-800">
-                  {fullAddress}
-                </p>
-
-                <p className="text-[10px] leading-4 text-gray-500">
-                  {locality},{" "}
-                  {district},{" "}
-                  {state} - {pincode}
-                </p>
-              </div>
-            </div>
-          </div>
-
-          {/* PAYMENT */}
-
-          <div className="mt-3 flex gap-2.5 rounded-xl border border-emerald-100 bg-emerald-50 p-3">
-            <ShieldCheck className="mt-0.5 h-4 w-4 shrink-0 text-emerald-600" />
-
-            <div>
-              <p className="text-[11px] font-bold text-emerald-800">
-                No advance payment required
-              </p>
-
-              <p className="mt-0.5 text-[10px] leading-4 text-emerald-700">
-                Request submit karne ke liye koi
-                advance payment required nahi hai.
-              </p>
-            </div>
-          </div>
-
-          {/* ACTIONS */}
-
-          <div className="mt-3 grid gap-2 sm:grid-cols-2">
-            <button
-              type="button"
-              onClick={onReset}
-              className="flex h-10 items-center justify-center gap-2 rounded-xl bg-gray-950 text-xs font-bold text-white transition hover:bg-emerald-600"
-            >
-              Submit Another Request
-
-              <ArrowRight className="h-3.5 w-3.5" />
-            </button>
-
-            <button
-              type="button"
-              onClick={onClose}
-              className="flex h-10 items-center justify-center rounded-xl border border-gray-200 bg-white text-xs font-bold text-gray-700 transition hover:bg-gray-50"
-            >
-              Close
-            </button>
-          </div>
-        </div>
-      </div>
-    </section>
-  );
-}
-
-/* =========================================================
-   SUMMARY ITEM
-========================================================= */
-
-function SummaryItem({
-  label,
-  value,
-}: {
-  label: string;
-  value: string;
-}) {
-  return (
-    <div className="rounded-lg border border-gray-200 bg-gray-50 p-2">
-      <p className="text-[8px] font-bold uppercase tracking-wide text-gray-400">
-        {label}
-      </p>
-
-      <p className="mt-0.5 truncate text-[10px] font-black text-gray-800">
-        {value}
-      </p>
+    <div
+      className="
+        absolute
+        left-0 right-0
+        top-[calc(100%+6px)]
+        z-[100]
+        overflow-hidden
+        rounded-2xl
+        border border-gray-200
+        bg-white
+        shadow-[0_20px_50px_rgba(0,0,0,0.15)]
+      "
+    >
+      {children}
     </div>
   );
 }
