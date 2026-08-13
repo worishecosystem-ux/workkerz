@@ -5,6 +5,7 @@ import { PlatformProvider } from "./components/context/PlatformContext";
 import { AdminProvider } from "./components/context/AdminContext";
 import { Toaster } from "sonner";
 import BackButtonHandler from "./components/BackButtonHandler";
+import CapacitorRouteGuard from "./components/CapacitorRouteGuard";
 import AutoAppUpdate from "./components/AutoAppUpdate";
 
 export const metadata: Metadata = {
@@ -34,12 +35,15 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning className="h-full">
       <body className="min-h-dvh overflow-x-hidden bg-white antialiased">
-        <AutoAppUpdate />
-
         <PlatformProvider>
           <AdminProvider>
             <BackButtonHandler />
-            {children}
+
+            <AutoAppUpdate />
+
+            <CapacitorRouteGuard>
+              {children}
+            </CapacitorRouteGuard>
           </AdminProvider>
         </PlatformProvider>
 

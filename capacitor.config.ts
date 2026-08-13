@@ -1,4 +1,5 @@
 import type { CapacitorConfig } from "@capacitor/cli";
+import { KeyboardResize } from "@capacitor/keyboard";
 
 const config: CapacitorConfig = {
   appId: "com.workkerz.app",
@@ -11,7 +12,22 @@ const config: CapacitorConfig = {
   },
 
   android: {
-    allowMixedContent: true,
+    appendUserAgent: " WorkkerzApp",
+  },
+
+  plugins: {
+    SplashScreen: {
+      launchShowDuration: 3000,
+      launchAutoHide: true,
+      backgroundColor: "#ffffff",
+      androidSplashResourceName: "splash",
+      showSpinner: false,
+    },
+
+    Keyboard: {
+      resize: KeyboardResize.Body,
+      resizeOnFullScreen: true,
+    },
   },
 };
 
