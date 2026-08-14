@@ -7,6 +7,8 @@ import { Toaster } from "sonner";
 import BackButtonHandler from "./components/BackButtonHandler";
 import CapacitorRouteGuard from "./components/CapacitorRouteGuard";
 import AutoAppUpdate from "./components/AutoAppUpdate";
+import PushNotificationInitializer from "./components/PushNotificationInitializer";
+import OfflineGuard from "./components/OfflineGuard";
 
 export const metadata: Metadata = {
   title: "Workkerz",
@@ -41,9 +43,13 @@ export default function RootLayout({
 
             <AutoAppUpdate />
 
-            <CapacitorRouteGuard>
-              {children}
-            </CapacitorRouteGuard>
+            <PushNotificationInitializer />
+
+            <OfflineGuard>
+              <CapacitorRouteGuard>
+                {children}
+              </CapacitorRouteGuard>
+            </OfflineGuard>
           </AdminProvider>
         </PlatformProvider>
 

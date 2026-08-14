@@ -6,10 +6,10 @@ const config: CapacitorConfig = {
   appName: "Workkerz Admin",
   webDir: "www",
 
- server: {
-  url: "http://192.168.1.11:3000/admin",
-  cleartext: true,
-},
+  server: {
+    url: "https://workkerz.com/admin",
+    cleartext: false,
+  },
 
   android: {
     appendUserAgent: " WorkkerzAdmin",

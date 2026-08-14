@@ -231,15 +231,7 @@ function EAurixPageSkeleton() {
           </div>
         </section>
 
-        {/* FEATURED */}
-        <section className="bg-sky-100 py-3">
-          <FeaturedProductsSkeleton />
-        </section>
-
-        {/* SHOPS */}
-        <section className="bg-sky-100 py-3">
-          <ShopLiveSkeleton />
-        </section>
+    
 
         {/* PRODUCTS HEADER */}
         <section className="bg-sky-100 px-3 py-3">

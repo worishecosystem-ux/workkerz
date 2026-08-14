@@ -34,7 +34,7 @@ const categoryImages: Record<string, string> = {
   Labour: "/categories/workkerz/Labour.png",
   Driver: "/categories/workkerz/Driver.png",
   Mechanic: "/categories/workkerz/Mechanic.png",
-  Painter: "/categories/workkerz/painter.png",
+  Painter: "/categories/workkerz/Painter.png",
   Washer: "/categories/workkerz/Washer.png",
 
   "Office Worker": "/categories/workkerz/Office worker.png",

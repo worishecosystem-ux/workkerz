@@ -1,0 +1,66 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<LinearLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:padding="12dp"
+    android:background="@android:color/white">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="center_vertical">
+
+        <ImageView
+            android:id="@+id/notification_icon"
+            android:layout_width="32dp"
+            android:layout_height="32dp"
+            android:scaleType="centerCrop"
+            android:src="@drawable/ic_notification" />
+
+        <TextView
+            android:id="@+id/notification_title"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:layout_marginStart="10dp"
+            android:text="Workkerz"
+            android:textColor="#202124"
+            android:textSize="14sp"
+            android:textStyle="bold"
+            android:maxLines="1"
+            android:ellipsize="end" />
+
+        <TextView
+            android:id="@+id/notification_time"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Now"
+            android:textColor="#777777"
+            android:textSize="11sp" />
+
+    </LinearLayout>
+
+    <TextView
+        android:id="@+id/notification_message"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="6dp"
+        android:text="Your notification message"
+        android:textColor="#333333"
+        android:textSize="13sp"
+        android:maxLines="3"
+        android:ellipsize="end" />
+
+    <ImageView
+        android:id="@+id/notification_banner"
+        android:layout_width="match_parent"
+        android:layout_height="150dp"
+        android:layout_marginTop="10dp"
+        android:scaleType="centerCrop"
+        android:visibility="gone" />
+
+</LinearLayout>

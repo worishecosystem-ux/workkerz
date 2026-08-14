@@ -1,61 +1,146 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useEffect } from "react";
 import { Capacitor } from "@capacitor/core";
-import {
-  AppUpdate,
-  AppUpdateAvailability,
-} from "@capawesome/capacitor-app-update";
 
 export default function AutoAppUpdate() {
-  const checkingRef = useRef(false);
-
   useEffect(() => {
-    if (checkingRef.current) return;
-    checkingRef.current = true;
+    let mounted = true;
 
     const checkForUpdate = async () => {
-      // Only Android native app
-      if (!Capacitor.isNativePlatform()) return;
-      if (Capacitor.getPlatform() !== "android") return;
+      /*
+       * Only run inside native Android app.
+       */
+
+      if (!Capacitor.isNativePlatform()) {
+        return;
+      }
+
+      /*
+       * Android only.
+       */
+
+      if (Capacitor.getPlatform() !== "android") {
+        return;
+      }
 
       try {
-        const updateInfo = await AppUpdate.getAppUpdateInfo();
+        /*
+         * Import dynamically so web build does not
+         * try to load the native Google Play module.
+         */
 
-        const updateAvailable =
-          updateInfo.updateAvailability ===
-          AppUpdateAvailability.UPDATE_AVAILABLE;
+        const { AppUpdate } = await import(
+          "@capawesome/capacitor-app-update"
+        );
 
-        if (!updateAvailable) return;
-
-        console.log("Workkerz update available:", {
-          currentVersion: updateInfo.currentVersionName,
-          currentBuild: updateInfo.currentVersionCode,
-          availableVersion: updateInfo.availableVersionName,
-          availableBuild: updateInfo.availableVersionCode,
-          immediateAllowed: updateInfo.immediateUpdateAllowed,
-        });
-
-        // Preferred: force/update immediately when Play allows it
-        if (updateInfo.immediateUpdateAllowed) {
-          await AppUpdate.performImmediateUpdate();
+        if (!mounted) {
           return;
         }
 
-        // Fallback: open Workkerz Play Store page
-        await AppUpdate.openAppStore();
+        const result =
+          await AppUpdate.getAppUpdateInfo();
+
+        console.log(
+          "Workkerz app update info:",
+          result
+        );
+
+        /*
+         * If no update is available, simply stop.
+         */
+
+        if (
+          !result.updateAvailability ||
+          result.updateAvailability === 1
+        ) {
+          return;
+        }
+
+        /*
+         * Start update only when Play Store
+         * reports an available update.
+         */
+
+        if (
+          result.updateAvailability === 2 ||
+          result.updateAvailability === 3
+        ) {
+          try {
+            await AppUpdate.performImmediateUpdate();
+          } catch (updateError) {
+            const message =
+              updateError instanceof Error
+                ? updateError.message
+                : String(updateError);
+
+            /*
+             * -10 means the app was not installed
+             * from Google Play.
+             *
+             * Do not show this as a real app error
+             * during local development.
+             */
+
+            if (
+              message.includes("-10") ||
+              message.includes(
+                "ERROR_APP_NOT_OWNED"
+              ) ||
+              message.includes(
+                "not owned by any user"
+              )
+            ) {
+              console.info(
+                "Workkerz update skipped: app was not installed from Google Play."
+              );
+
+              return;
+            }
+
+            console.error(
+              "Workkerz app update failed:",
+              updateError
+            );
+          }
+        }
       } catch (error) {
-        console.warn("Workkerz auto-update check failed:", error);
+        const message =
+          error instanceof Error
+            ? error.message
+            : String(error);
+
+        /*
+         * Ignore Play Store ownership error.
+         */
+
+        if (
+          message.includes("-10") ||
+          message.includes(
+            "ERROR_APP_NOT_OWNED"
+          ) ||
+          message.includes(
+            "not owned by any user"
+          )
+        ) {
+          console.info(
+            "Workkerz auto-update unavailable for this installation."
+          );
+
+          return;
+        }
+
+        console.error(
+          "Workkerz auto-update check failed:",
+          error
+        );
       }
     };
 
-    // Let the app UI/native startup finish first
-    const timer = window.setTimeout(() => {
-      checkForUpdate();
-    }, 1500);
+    void checkForUpdate();
 
     return () => {
-      window.clearTimeout(timer);
+      mounted = false;
     };
   }, []);
 
