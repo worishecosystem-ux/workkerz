@@ -2,10 +2,15 @@
 
 import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase";
-import { X } from "lucide-react";
-import { App } from "@capacitor/app";
+import { X, MapPin, LocateFixed, Loader2 } from "lucide-react";
 import type { AddressItem } from "./AddressSelectorModal";
+
 import { Capacitor } from "@capacitor/core";
+import {
+  Geolocation,
+  type Position,
+} from "@capacitor/geolocation";
+
 import { Keyboard } from "@capacitor/keyboard";
 
 interface Props {
@@ -35,24 +40,53 @@ export default function AddressFormModal({
   const [country, setCountry] = useState("India");
   const [customerName, setCustomerName] = useState("");
   const [pincode, setPincode] = useState("");
-  const [addressType, setAddressType] = useState<"home" | "office" | "other">(
-    "home",
-  );
-  const [keyboardVisible, setKeyboardVisible] = useState(false);
-  useEffect(() => {
-    if (!Capacitor.isNativePlatform()) return;
 
-    let showListener: any;
-    let hideListener: any;
+  const [addressType, setAddressType] = useState<
+    "home" | "office" | "other"
+  >("home");
+
+  const [keyboardVisible, setKeyboardVisible] =
+    useState(false);
+
+  const [locationLoading, setLocationLoading] =
+    useState(false);
+
+  const [locationError, setLocationError] =
+    useState("");
+
+  /* =====================================================
+     KEYBOARD
+  ===================================================== */
+
+  useEffect(() => {
+    if (!Capacitor.isNativePlatform()) {
+      return;
+    }
+
+    let showListener:
+      | { remove: () => void }
+      | undefined;
+
+    let hideListener:
+      | { remove: () => void }
+      | undefined;
 
     (async () => {
-      showListener = await Keyboard.addListener("keyboardDidShow", () => {
-        setKeyboardVisible(true);
-      });
+      showListener =
+        await Keyboard.addListener(
+          "keyboardDidShow",
+          () => {
+            setKeyboardVisible(true);
+          },
+        );
 
-      hideListener = await Keyboard.addListener("keyboardDidHide", () => {
-        setKeyboardVisible(false);
-      });
+      hideListener =
+        await Keyboard.addListener(
+          "keyboardDidHide",
+          () => {
+            setKeyboardVisible(false);
+          },
+        );
     })();
 
     return () => {
@@ -61,29 +95,71 @@ export default function AddressFormModal({
     };
   }, []);
 
+  /* =====================================================
+     EDIT / NEW ADDRESS
+  ===================================================== */
+
   useEffect(() => {
     if (!open) return;
 
+    setLocationError("");
+
     if (editingAddress) {
-      setCustomerName(editingAddress.customer_name || "");
-      setHouseNo(editingAddress.house_no || "");
-      setAddress(editingAddress.address || "");
-      setLandmark(editingAddress.landmark || "");
+      setCustomerName(
+        editingAddress.customer_name || "",
+      );
 
-      setCity(editingAddress.city || "");
-      setDistrict(editingAddress.district || "");
-      setState(editingAddress.state || "");
-      setCountry(editingAddress.country || "India");
+      setHouseNo(
+        editingAddress.house_no || "",
+      );
 
-      setPincode(editingAddress.pincode || "");
+      setAddress(
+        editingAddress.address || "",
+      );
 
-      setAddressType(editingAddress.address_type);
-    } else {
-      resetForm();
+      setLandmark(
+        editingAddress.landmark || "",
+      );
+
+      setCity(
+        editingAddress.city || "",
+      );
+
+      setDistrict(
+        editingAddress.district || "",
+      );
+
+      setState(
+        editingAddress.state || "",
+      );
+
+      setCountry(
+        editingAddress.country || "India",
+      );
+
+      setPincode(
+        editingAddress.pincode || "",
+      );
+
+      setAddressType(
+        editingAddress.address_type,
+      );
+
+      return;
     }
+
+    resetForm();
+
+    /*
+     * New address:
+     * automatically detect current location.
+     */
+    void useCurrentLocation();
   }, [editingAddress, open]);
 
-
+  /* =====================================================
+     RESET
+  ===================================================== */
 
   function resetForm() {
     setCustomerName("");
@@ -99,35 +175,366 @@ export default function AddressFormModal({
     setPincode("");
 
     setAddressType("home");
+
+    setLocationError("");
   }
 
-  async function fetchPincode(pin: string) {
-    if (pin.length !== 6) return;
+  /* =====================================================
+     CURRENT LOCATION
+  ===================================================== */
+
+  async function useCurrentLocation() {
+    if (locationLoading) {
+      return;
+    }
+
+    setLocationLoading(true);
+    setLocationError("");
 
     try {
-      const res = await fetch(`https://api.postalpincode.in/pincode/${pin}`);
+      let latitude = 0;
+      let longitude = 0;
 
-      const json = await res.json();
+      /* ===============================================
+         NATIVE ANDROID
+      =============================================== */
 
-      if (json[0]?.Status === "Success" && json[0]?.PostOffice?.length) {
-        const office = json[0].PostOffice[0];
+      if (Capacitor.isNativePlatform()) {
+        let permission =
+          await Geolocation.checkPermissions();
 
-        setCity(office.Block || office.Name || "");
-        setDistrict(office.District || "");
-        setState(office.State || "");
-        setCountry(office.Country || "India");
+        if (
+          permission.location !==
+          "granted"
+        ) {
+          permission =
+            await Geolocation.requestPermissions();
+        }
+
+        if (
+          permission.location !==
+          "granted"
+        ) {
+          throw new Error(
+            "Location permission was denied. Please allow location access.",
+          );
+        }
+
+        const position: Position =
+          await Geolocation.getCurrentPosition(
+            {
+              enableHighAccuracy: true,
+              timeout: 15000,
+              maximumAge: 30000,
+            },
+          );
+
+        latitude =
+          position.coords.latitude;
+
+        longitude =
+          position.coords.longitude;
       }
-    } catch (err) {
-      console.error(err);
+
+      /* ===============================================
+         WEB
+      =============================================== */
+
+      else {
+        if (!navigator.geolocation) {
+          throw new Error(
+            "Location is not supported on this device.",
+          );
+        }
+
+        const position =
+          await new Promise<GeolocationPosition>(
+            (resolve, reject) => {
+              navigator.geolocation.getCurrentPosition(
+                resolve,
+                reject,
+                {
+                  enableHighAccuracy: true,
+                  timeout: 15000,
+                  maximumAge: 30000,
+                },
+              );
+            },
+          );
+
+        latitude =
+          position.coords.latitude;
+
+        longitude =
+          position.coords.longitude;
+      }
+
+      console.log(
+        "[Address] Current location:",
+        {
+          latitude,
+          longitude,
+        },
+      );
+
+      /* ===============================================
+         REVERSE GEOCODING
+      =============================================== */
+
+      const response =
+        await fetch(
+          `https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=${latitude}&longitude=${longitude}&localityLanguage=en`,
+        );
+
+      if (!response.ok) {
+        throw new Error(
+          "Unable to detect your address.",
+        );
+      }
+
+      const data =
+        await response.json();
+
+      console.log(
+        "[Address] Reverse geocode:",
+        data,
+      );
+
+      /* ===============================================
+         ADDRESS PARTS
+      =============================================== */
+
+      const informative =
+        Array.isArray(
+          data.localityInfo
+            ?.informative,
+        )
+          ? data.localityInfo
+              .informative
+          : [];
+
+      const findInformative = (
+        description: string,
+      ) => {
+        const item =
+          informative.find(
+            (entry: {
+              name?: string;
+              description?: string;
+            }) =>
+              entry.description
+                ?.toLowerCase() ===
+              description.toLowerCase(),
+          );
+
+        return item?.name || "";
+      };
+
+      const road =
+        findInformative("road");
+
+      const neighbourhood =
+        findInformative(
+          "neighbourhood",
+        );
+
+      const detectedAddress =
+        [
+          road,
+          neighbourhood,
+          data.locality,
+        ]
+          .filter(Boolean)
+          .filter(
+            (
+              value,
+              index,
+              array,
+            ) =>
+              array.indexOf(
+                value,
+              ) === index,
+          )
+          .join(", ");
+
+      /* ===============================================
+         DISTRICT
+      =============================================== */
+
+      const administrative =
+        Array.isArray(
+          data.localityInfo
+            ?.administrative,
+        )
+          ? data.localityInfo
+              .administrative
+          : [];
+
+      const districtItem =
+        administrative.find(
+          (item: {
+            name?: string;
+            description?: string;
+          }) =>
+            item.description
+              ?.toLowerCase()
+              .includes(
+                "district",
+              ),
+        );
+
+      /* ===============================================
+         AUTO FILL
+      =============================================== */
+
+      setAddress(
+        detectedAddress ||
+          data.locality ||
+          "",
+      );
+
+      setCity(
+        data.city ||
+          data.locality ||
+          "",
+      );
+
+      setDistrict(
+        districtItem?.name ||
+          data.district ||
+          "",
+      );
+
+      setState(
+        data.principalSubdivision ||
+          "",
+      );
+
+      setCountry(
+        data.countryName ||
+          "India",
+      );
+
+      setPincode(
+        data.postcode ||
+          "",
+      );
+
+      setLocationError("");
+
+      console.log(
+        "[Address] Auto-filled successfully",
+      );
+    } catch (error) {
+      console.error(
+        "[Address] Location error:",
+        error,
+      );
+
+      if (
+        error instanceof Error
+      ) {
+        setLocationError(
+          error.message,
+        );
+      } else {
+        setLocationError(
+          "Unable to detect your current location.",
+        );
+      }
+    } finally {
+      setLocationLoading(false);
     }
   }
 
+  /* =====================================================
+     PINCODE
+  ===================================================== */
+
+  async function fetchPincode(
+    pin: string,
+  ) {
+    if (pin.length !== 6) {
+      return;
+    }
+
+    try {
+      const res =
+        await fetch(
+          `https://api.postalpincode.in/pincode/${pin}`,
+        );
+
+      const json =
+        await res.json();
+
+      if (
+        json[0]?.Status ===
+          "Success" &&
+        json[0]?.PostOffice
+          ?.length
+      ) {
+        const office =
+          json[0].PostOffice[0];
+
+        setCity(
+          office.Block ||
+            office.Name ||
+            "",
+        );
+
+        setDistrict(
+          office.District ||
+            "",
+        );
+
+        setState(
+          office.State ||
+            "",
+        );
+
+        setCountry(
+          office.Country ||
+            "India",
+        );
+      }
+    } catch (error) {
+      console.error(
+        "[Address] Pincode error:",
+        error,
+      );
+    }
+  }
+
+  /* =====================================================
+     SAVE ADDRESS
+  ===================================================== */
+
   async function saveAddress() {
-    console.log("editingAddress:", editingAddress);
-    console.log("source:", editingAddress?.source);
-    console.log("id:", editingAddress?.id);
-    if (!customerName || !houseNo || !address || !pincode) {
-      alert("Please fill all required fields.");
+    console.log(
+      "editingAddress:",
+      editingAddress,
+    );
+
+    console.log(
+      "source:",
+      editingAddress?.source,
+    );
+
+    console.log(
+      "id:",
+      editingAddress?.id,
+    );
+
+    if (
+      !customerName.trim() ||
+      !houseNo.trim() ||
+      !address.trim() ||
+      !pincode.trim()
+    ) {
+      alert(
+        "Please fill all required fields.",
+      );
+
       return;
     }
 
@@ -136,124 +543,441 @@ export default function AddressFormModal({
     try {
       const {
         data: { user },
-      } = await supabase.auth.getUser();
+      } =
+        await supabase.auth.getUser();
 
       if (!user?.email) {
-        alert("Please login first");
+        alert(
+          "Please login first",
+        );
+
         return;
       }
 
       const payload = {
-        customer_email: user.email,
-        customer_name: customerName,
-        house_no: houseNo,
-        address,
-        landmark,
+        customer_email:
+          user.email,
 
-        city,
-        district,
-        state,
-        country,
+        customer_name:
+          customerName.trim(),
 
-        pincode,
+        house_no:
+          houseNo.trim(),
 
-        address_type: addressType,
+        address:
+          address.trim(),
+
+        landmark:
+          landmark.trim(),
+
+        city:
+          city.trim(),
+
+        district:
+          district.trim(),
+
+        state:
+          state.trim(),
+
+        country:
+          country.trim() ||
+          "India",
+
+        pincode:
+          pincode.trim(),
+
+        address_type:
+          addressType,
       };
 
-      // Update existing address
+      /* ===============================================
+         UPDATE
+      =============================================== */
+
       if (editingAddress) {
-        console.log("UPDATE MODE", editingAddress.id);
+        console.log(
+          "UPDATE MODE",
+          editingAddress.id,
+        );
 
-        const { data, error } = await supabase
-          .from("customer_addresses")
-          .update(payload)
-          .eq("id", editingAddress.id)
-          .select();
+        const {
+          data,
+          error,
+        } =
+          await supabase
+            .from(
+              "customer_addresses",
+            )
+            .update(payload)
+            .eq(
+              "id",
+              editingAddress.id,
+            )
+            .select();
 
-        if (error) throw error;
+        if (error) {
+          throw error;
+        }
 
-        console.log("Updated:", data);
+        console.log(
+          "Updated:",
+          data,
+        );
 
         onSaved();
         onClose();
         resetForm();
-        return; // <-- IMPORTANT
+
+        return;
       }
 
-      // Insert new address
-      console.log("INSERT MODE");
+      /* ===============================================
+         CHECK EXISTING
+      =============================================== */
 
-      const { data: existing } = await supabase
-        .from("customer_addresses")
-        .select("id")
-        .eq("customer_email", user.email);
+      console.log(
+        "INSERT MODE",
+      );
 
-      const { error } = await supabase.from("customer_addresses").insert({
-        ...payload,
-        is_default: !existing?.length,
-      });
+      const {
+        data: existing,
+        error:
+          existingError,
+      } =
+        await supabase
+          .from(
+            "customer_addresses",
+          )
+          .select("id")
+          .eq(
+            "customer_email",
+            user.email,
+          );
 
-      if (error) throw error;
+      if (existingError) {
+        throw existingError;
+      }
+
+      /* ===============================================
+         INSERT
+      =============================================== */
+
+      const {
+        error,
+      } =
+        await supabase
+          .from(
+            "customer_addresses",
+          )
+          .insert({
+            ...payload,
+            is_default:
+              !existing?.length,
+          });
+
+      if (error) {
+        throw error;
+      }
 
       onSaved();
       onClose();
       resetForm();
-    } catch (err) {
-      console.error(err);
+    } catch (error) {
+      console.error(
+        "[Address] Save error:",
+        error,
+      );
 
-      alert("Unable to save address.");
+      alert(
+        error instanceof Error
+          ? error.message
+          : "Unable to save address.",
+      );
     } finally {
       setSaving(false);
     }
   }
 
-  if (!open) return null;
+  /* =====================================================
+     CLOSED
+  ===================================================== */
+
+  if (!open) {
+    return null;
+  }
+
+  /* =====================================================
+     UI
+  ===================================================== */
 
   return (
     <div
       data-modal-open="true"
-      className="fixed inset-0 z-999 bg-black/40 flex items-end justify-center"
+      className="
+        fixed
+        inset-0
+        z-[999]
+        flex
+        items-end
+        justify-center
+        bg-black/40
+      "
     >
-      <div className="w-full max-w-md bg-white rounded-t-2xl shadow-xl overflow-hidden flex flex-col max-h-[90vh]">
-        {/* Header */}
-        <div className="relative flex items-center justify-center px-4 py-6 border-b">
+      <div
+        className="
+          flex
+          max-h-[92vh]
+          w-full
+          max-w-md
+          flex-col
+          overflow-hidden
+          rounded-t-2xl
+          bg-white
+          shadow-xl
+        "
+      >
+        {/* =================================================
+            HEADER
+        ================================================= */}
+
+        <div
+          className="
+            relative
+            flex
+            h-14
+            shrink-0
+            items-center
+            justify-center
+            border-b
+            border-gray-100
+            bg-white
+          "
+        >
+          <h2 className="text-sm font-bold text-gray-900">
+            {editingAddress
+              ? "Edit Address"
+              : "Add New Address"}
+          </h2>
+
           <button
-            onClick={onBack} // ya onClose
-            className="absolute right-4 flex h-12 w-12 items-center justify-center rounded-full transition"
+            type="button"
+            onClick={onBack}
+            aria-label="Close"
+            className="
+              absolute
+              right-3
+              flex
+              h-10
+              w-10
+              items-center
+              justify-center
+              rounded-full
+              text-gray-500
+              transition
+              active:scale-95
+              active:bg-gray-100
+            "
           >
-            <X size={30} className="text-gray-500" />
+            <X
+              size={24}
+              strokeWidth={2}
+            />
           </button>
         </div>
 
-        {/* Body */}
-        <div className="flex-1 overflow-y-auto px-4 py-3 space-y-3">
-          {/* Address Type */}
+        {/* =================================================
+            BODY
+        ================================================= */}
+
+        <div
+          className="
+            flex-1
+            space-y-3
+            overflow-y-auto
+            px-4
+            py-3
+          "
+        >
+          {/* =================================================
+              CURRENT LOCATION
+          ================================================= */}
+
+          {!editingAddress && (
+            <div
+              className="
+                rounded-2xl
+                border
+                border-orange-100
+                bg-orange-50/70
+                p-3
+              "
+            >
+              <button
+                type="button"
+                onClick={() =>
+                  void useCurrentLocation()
+                }
+                disabled={
+                  locationLoading
+                }
+                className="
+                  flex
+                  w-full
+                  items-center
+                  justify-between
+                  gap-3
+                  text-left
+                  disabled:opacity-60
+                "
+              >
+                <div className="flex min-w-0 items-center gap-3">
+                  <div
+                    className="
+                      flex
+                      h-10
+                      w-10
+                      shrink-0
+                      items-center
+                      justify-center
+                      rounded-xl
+                      bg-white
+                      text-orange-600
+                      shadow-sm
+                    "
+                  >
+                    {locationLoading ? (
+                      <Loader2
+                        size={19}
+                        className="animate-spin"
+                      />
+                    ) : (
+                      <LocateFixed
+                        size={19}
+                      />
+                    )}
+                  </div>
+
+                  <div className="min-w-0">
+                    <p className="text-sm font-bold text-gray-900">
+                      {locationLoading
+                        ? "Detecting your location..."
+                        : "Use current location"}
+                    </p>
+
+                    <p className="mt-0.5 truncate text-[11px] text-gray-500">
+                      {locationLoading
+                        ? "Please allow location access"
+                        : "Automatically fill your address"}
+                    </p>
+                  </div>
+                </div>
+
+                {!locationLoading && (
+                  <span
+                    className="
+                      shrink-0
+                      rounded-lg
+                      bg-white
+                      px-3
+                      py-2
+                      text-[11px]
+                      font-bold
+                      text-orange-600
+                      shadow-sm
+                    "
+                  >
+                    Detect
+                  </span>
+                )}
+              </button>
+
+              {locationError && (
+                <div className="mt-2 flex items-start gap-2 rounded-lg bg-red-50 px-2.5 py-2">
+                  <MapPin
+                    size={14}
+                    className="mt-0.5 shrink-0 text-red-500"
+                  />
+
+                  <p className="text-[11px] leading-4 text-red-600">
+                    {locationError}
+                  </p>
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* =================================================
+              ADDRESS TYPE
+          ================================================= */}
+
           <div>
             <div className="rounded-xl bg-gray-100 p-1">
               <div className="grid grid-cols-3 gap-1">
                 {(
                   [
-                    { value: "home", label: "Home", icon: "🏠" },
-                    { value: "office", label: "Office", icon: "🏢" },
-                    { value: "other", label: "Other", icon: "📍" },
+                    {
+                      value: "home",
+                      label: "Home",
+                      icon: "🏠",
+                    },
+                    {
+                      value: "office",
+                      label: "Office",
+                      icon: "🏢",
+                    },
+                    {
+                      value: "other",
+                      label: "Other",
+                      icon: "📍",
+                    },
                   ] as const
                 ).map((item) => (
                   <button
-                    key={item.value}
+                    key={
+                      item.value
+                    }
                     type="button"
-                    onClick={() => setAddressType(item.value)}
-                    className={`flex h-10 items-center justify-center gap-1.5 rounded-lg text-sm font-medium transition-all duration-200 ${addressType === item.value
-                      ? "bg-white text-orange-600 shadow-sm ring-1 ring-orange-200"
-                      : "text-gray-600 hover:bg-white/70"
-                      }`}
+                    onClick={() =>
+                      setAddressType(
+                        item.value,
+                      )
+                    }
+                    className={`
+                      flex
+                      h-10
+                      items-center
+                      justify-center
+                      gap-1.5
+                      rounded-lg
+                      text-sm
+                      font-medium
+                      transition-all
+                      duration-200
+                      ${
+                        addressType ===
+                        item.value
+                          ? "bg-white text-orange-600 shadow-sm ring-1 ring-orange-200"
+                          : "text-gray-600 hover:bg-white/70"
+                      }
+                    `}
                   >
-                    <span className="text-base">{item.icon}</span>
-                    <span>{item.label}</span>
+                    <span className="text-base">
+                      {item.icon}
+                    </span>
+
+                    <span>
+                      {item.label}
+                    </span>
                   </button>
                 ))}
               </div>
             </div>
           </div>
+
+          {/* =================================================
+              FULL NAME
+          ================================================= */}
+
           <div>
             <label className="text-xs font-medium text-gray-700">
               Full Name
@@ -261,18 +985,45 @@ export default function AddressFormModal({
 
             <input
               enterKeyHint="done"
-              onKeyDown={(e) => {
-                if (e.key === "Enter") {
-                  (e.target as HTMLInputElement).blur();
+              onKeyDown={(event) => {
+                if (
+                  event.key ===
+                  "Enter"
+                ) {
+                  (
+                    event.target as HTMLInputElement
+                  ).blur();
                 }
               }}
               value={customerName}
-              onChange={(e) => setCustomerName(e.target.value)}
+              onChange={(event) =>
+                setCustomerName(
+                  event.target.value,
+                )
+              }
               placeholder="Enter full name"
-              className="mt-1 h-10 w-full rounded-lg border px-3 text-sm focus:outline-none focus:ring-2 focus:ring-orange-500 text-black"
+              className="
+                mt-1
+                h-10
+                w-full
+                rounded-lg
+                border
+                border-gray-200
+                px-3
+                text-sm
+                text-black
+                outline-none
+                focus:border-orange-400
+                focus:ring-2
+                focus:ring-orange-100
+              "
             />
           </div>
-          {/* House */}
+
+          {/* =================================================
+              HOUSE
+          ================================================= */}
+
           <div>
             <label className="text-xs font-medium text-gray-700">
               House / Flat No
@@ -280,18 +1031,45 @@ export default function AddressFormModal({
 
             <input
               enterKeyHint="done"
-              onKeyDown={(e) => {
-                if (e.key === "Enter") {
-                  (e.target as HTMLInputElement).blur();
+              onKeyDown={(event) => {
+                if (
+                  event.key ===
+                  "Enter"
+                ) {
+                  (
+                    event.target as HTMLInputElement
+                  ).blur();
                 }
               }}
               value={houseNo}
-              onChange={(e) => setHouseNo(e.target.value)}
-              className="mt-1 h-10 w-full rounded-lg border px-3 text-sm focus:outline-none focus:ring-2 focus:ring-orange-500 text-black"
+              onChange={(event) =>
+                setHouseNo(
+                  event.target.value,
+                )
+              }
+              placeholder="House / Flat / Shop No."
+              className="
+                mt-1
+                h-10
+                w-full
+                rounded-lg
+                border
+                border-gray-200
+                px-3
+                text-sm
+                text-black
+                outline-none
+                focus:border-orange-400
+                focus:ring-2
+                focus:ring-orange-100
+              "
             />
           </div>
 
-          {/* Address */}
+          {/* =================================================
+              ADDRESS
+          ================================================= */}
+
           <div>
             <label className="text-xs font-medium text-gray-700">
               Street / Area
@@ -299,19 +1077,46 @@ export default function AddressFormModal({
 
             <textarea
               enterKeyHint="done"
-              onKeyDown={(e) => {
-                if (e.key === "Enter") {
-                  (e.target as HTMLInputElement).blur();
+              onKeyDown={(event) => {
+                if (
+                  event.key ===
+                  "Enter"
+                ) {
+                  (
+                    event.target as HTMLTextAreaElement
+                  ).blur();
                 }
               }}
               rows={2}
               value={address}
-              onChange={(e) => setAddress(e.target.value)}
-              className="mt-1 w-full rounded-lg border p-3 text-sm resize-none focus:outline-none focus:ring-2 focus:ring-orange-500 text-black"
+              onChange={(event) =>
+                setAddress(
+                  event.target.value,
+                )
+              }
+              placeholder="Street, area, locality"
+              className="
+                mt-1
+                w-full
+                resize-none
+                rounded-lg
+                border
+                border-gray-200
+                p-3
+                text-sm
+                text-black
+                outline-none
+                focus:border-orange-400
+                focus:ring-2
+                focus:ring-orange-100
+              "
             />
           </div>
 
-          {/* Landmark + Pincode */}
+          {/* =================================================
+              LANDMARK + PINCODE
+          ================================================= */}
+
           <div className="grid grid-cols-2 gap-2">
             <div>
               <label className="text-xs font-medium text-gray-700">
@@ -320,14 +1125,38 @@ export default function AddressFormModal({
 
               <input
                 enterKeyHint="done"
-                onKeyDown={(e) => {
-                  if (e.key === "Enter") {
-                    (e.target as HTMLInputElement).blur();
+                onKeyDown={(event) => {
+                  if (
+                    event.key ===
+                    "Enter"
+                  ) {
+                    (
+                      event.target as HTMLInputElement
+                    ).blur();
                   }
                 }}
                 value={landmark}
-                onChange={(e) => setLandmark(e.target.value)}
-                className="mt-1 h-10 w-full rounded-lg border px-3 text-sm text-black"
+                onChange={(event) =>
+                  setLandmark(
+                    event.target.value,
+                  )
+                }
+                placeholder="Nearby landmark"
+                className="
+                  mt-1
+                  h-10
+                  w-full
+                  rounded-lg
+                  border
+                  border-gray-200
+                  px-3
+                  text-sm
+                  text-black
+                  outline-none
+                  focus:border-orange-400
+                  focus:ring-2
+                  focus:ring-orange-100
+                "
               />
             </div>
 
@@ -338,71 +1167,189 @@ export default function AddressFormModal({
 
               <input
                 enterKeyHint="done"
-                onKeyDown={(e) => {
-                  if (e.key === "Enter") {
-                    (e.target as HTMLInputElement).blur();
-                  }
-                }}
+                inputMode="numeric"
                 maxLength={6}
                 value={pincode}
-                onChange={(e) => {
-                  const pin = e.target.value.replace(/\D/g, "");
+                onChange={(event) => {
+                  const pin =
+                    event.target.value.replace(
+                      /\D/g,
+                      "",
+                    );
+
                   setPincode(pin);
 
-                  if (pin.length === 6) fetchPincode(pin);
+                  if (
+                    pin.length === 6
+                  ) {
+                    void fetchPincode(
+                      pin,
+                    );
+                  }
                 }}
-                className="mt-1 h-10 w-full rounded-lg border px-3 text-sm text-black"
+                placeholder="6 digit PIN"
+                className="
+                  mt-1
+                  h-10
+                  w-full
+                  rounded-lg
+                  border
+                  border-gray-200
+                  px-3
+                  text-sm
+                  text-black
+                  outline-none
+                  focus:border-orange-400
+                  focus:ring-2
+                  focus:ring-orange-100
+                "
               />
             </div>
           </div>
 
-          {/* Auto Filled */}
-          <div className="grid grid-cols-2 gap-2">
-            <div>
-              <label className="text-[11px] text-gray-500">City</label>
-              <input
-                readOnly
-                value={city}
-                className="mt-1 h-9 w-full rounded-lg border bg-gray-100 px-3 text-sm text-black"
-              />
-            </div>
+          {/* =================================================
+              AUTO FILLED LOCATION
+          ================================================= */}
 
-            <div>
-              <label className="text-[11px] text-gray-500">District</label>
-              <input
-                readOnly
-                value={district}
-                className="mt-1 h-9 w-full rounded-lg border bg-gray-100 px-3 text-sm text-black"
-              />
-            </div>
+          <div>
+            <p className="mb-2 text-[11px] font-semibold uppercase tracking-wide text-gray-400">
+              Location details
+            </p>
 
-            <div>
-              <label className="text-[11px] text-gray-500">State</label>
-              <input
-                readOnly
-                value={state}
-                className="mt-1 h-9 w-full rounded-lg border bg-gray-100 px-3 text-sm text-black"
-              />
-            </div>
+            <div className="grid grid-cols-2 gap-2">
+              <div>
+                <label className="text-[11px] text-gray-500">
+                  City
+                </label>
 
-            <div>
-              <label className="text-[11px] text-gray-500">Country</label>
-              <input
-                readOnly
-                value={country}
-                className="mt-1 h-9 w-full rounded-lg border bg-gray-100 px-3 text-sm text-black"
-              />
+                <input
+                  readOnly
+                  value={city}
+                  className="
+                    mt-1
+                    h-9
+                    w-full
+                    rounded-lg
+                    border
+                    border-gray-200
+                    bg-gray-100
+                    px-3
+                    text-sm
+                    text-black
+                  "
+                />
+              </div>
+
+              <div>
+                <label className="text-[11px] text-gray-500">
+                  District
+                </label>
+
+                <input
+                  readOnly
+                  value={district}
+                  className="
+                    mt-1
+                    h-9
+                    w-full
+                    rounded-lg
+                    border
+                    border-gray-200
+                    bg-gray-100
+                    px-3
+                    text-sm
+                    text-black
+                  "
+                />
+              </div>
+
+              <div>
+                <label className="text-[11px] text-gray-500">
+                  State
+                </label>
+
+                <input
+                  readOnly
+                  value={state}
+                  className="
+                    mt-1
+                    h-9
+                    w-full
+                    rounded-lg
+                    border
+                    border-gray-200
+                    bg-gray-100
+                    px-3
+                    text-sm
+                    text-black
+                  "
+                />
+              </div>
+
+              <div>
+                <label className="text-[11px] text-gray-500">
+                  Country
+                </label>
+
+                <input
+                  readOnly
+                  value={country}
+                  className="
+                    mt-1
+                    h-9
+                    w-full
+                    rounded-lg
+                    border
+                    border-gray-200
+                    bg-gray-100
+                    px-3
+                    text-sm
+                    text-black
+                  "
+                />
+              </div>
             </div>
           </div>
         </div>
 
-        {/* Footer */}
+        {/* =================================================
+            FOOTER
+        ================================================= */}
+
         {!keyboardVisible && (
-          <div className="border-t bg-white p-3 flex gap-2 shrink-0">
+          <div
+            className="
+              flex
+              shrink-0
+              gap-2
+              border-t
+              border-gray-100
+              bg-white
+              p-3
+            "
+          >
             <button
+              type="button"
               onClick={saveAddress}
               disabled={saving}
-              className="flex-1 h-11 rounded-xl border border-orange-200 bg-linear-to-b from-orange-50 to-orange-100 text-orange-700 text-sm font-semibold shadow-sm transition-all duration-200 hover:shadow-md hover:border-orange-300 active:scale-[0.98] disabled:opacity-60"
+              className="
+                flex
+                h-11
+                flex-1
+                items-center
+                justify-center
+                rounded-xl
+                bg-gradient-to-b
+                from-orange-500
+                to-orange-600
+                text-sm
+                font-semibold
+                text-white
+                shadow-sm
+                transition
+                active:scale-[0.98]
+                disabled:opacity-60
+              "
             >
               {saving
                 ? "Saving..."

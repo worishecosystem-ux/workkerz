@@ -469,7 +469,7 @@ export default function Confirmation() {
       `💳 *Payment Summary*`,
       `┃────────────────────`,
       `┃ Worker Charges : ₹${Number(totalCost).toFixed(2)}`,
-      `┃ Platform Fee : ₹${Number(serviceFee).toFixed(2)}`,
+    
 
       materialsCost > 0
         ? `┃ Materials Cost : ₹${Number(materialsCost).toFixed(2)}`
@@ -652,8 +652,6 @@ export default function Confirmation() {
                 label="Worker Fee"
                 value={`₹${Number(totalCost).toLocaleString("en-IN")}`}
               />
-
-              <PriceRow label="Platform Fee" value={`₹${serviceFee}`} />
 
               {materialsCost > 0 && (
                 <PriceRow label="Materials" value={`₹${materialsCost}`} />

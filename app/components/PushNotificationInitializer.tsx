@@ -5,9 +5,30 @@ import { initPushNotifications } from "@/lib/pushNotifications";
 
 export default function PushNotificationInitializer() {
   useEffect(() => {
-    console.log("[PushInit] component mounted");
+    let mounted = true;
 
-    void initPushNotifications();
+    const initialize = async () => {
+      try {
+        if (!mounted) return;
+
+        console.log("[PushInit] Starting push initialization...");
+
+        await initPushNotifications();
+
+        console.log("[PushInit] Push initialization completed.");
+      } catch (error) {
+        console.error(
+          "[PushInit] Push initialization failed:",
+          error
+        );
+      }
+    };
+
+    void initialize();
+
+    return () => {
+      mounted = false;
+    };
   }, []);
 
   return null;

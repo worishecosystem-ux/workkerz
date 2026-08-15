@@ -9,6 +9,7 @@ export type AdminModule =
   | "orders"
   | "shops"
   | "bookings"
+  | "marketing"
   | "admins";
 
 export type AdminSubRole =
@@ -16,7 +17,8 @@ export type AdminSubRole =
   | "worker_request_admin"
   | "order_admin"
   | "shop_admin"
-  | "booking_admin";
+  | "booking_admin"
+  | "marketing_admin";
 
 export const ROLE_MODULES: Record<
   AdminSubRole,
@@ -25,7 +27,6 @@ export const ROLE_MODULES: Record<
   worker_admin: [
     "dashboard",
     "workers",
-    "worker_requests",
   ],
 
   worker_request_admin: [
@@ -46,6 +47,11 @@ export const ROLE_MODULES: Record<
   booking_admin: [
     "dashboard",
     "bookings",
+  ],
+
+  marketing_admin: [
+    "dashboard",
+    "marketing",
   ],
 };
 

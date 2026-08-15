@@ -41,6 +41,8 @@ function getSupabaseAdmin() {
 
 /* =====================================================
    GET
+   - Normal GET: notifications
+   - ?users=true: real Auth users
 ===================================================== */
 
 export async function GET(
@@ -49,6 +51,251 @@ export async function GET(
   try {
     const supabase =
       getSupabaseAdmin();
+
+    const usersRequested =
+      request.nextUrl.searchParams.get(
+        "users"
+      ) === "true";
+
+    /* =================================================
+       USERS
+    ================================================= */
+
+    if (usersRequested) {
+      const allUsers: Array<{
+        id: string;
+        email: string | null;
+        name: string | null;
+        created_at: string | null;
+      }> = [];
+
+      let page = 1;
+      const perPage = 1000;
+
+      while (true) {
+        const {
+          data,
+          error,
+        } =
+          await supabase.auth.admin.listUsers({
+            page,
+            perPage,
+          });
+
+        if (error) {
+          console.error(
+            "[Notifications GET USERS] Auth users error:",
+            error
+          );
+
+          return NextResponse.json(
+            {
+              error:
+                error.message ||
+                "Unable to load users.",
+            },
+            {
+              status: 500,
+            }
+          );
+        }
+
+        const authUsers =
+          data?.users || [];
+
+        for (const authUser of authUsers) {
+          const metadata =
+            authUser.user_metadata || {};
+
+          const fullName =
+            typeof metadata.full_name ===
+            "string"
+              ? metadata.full_name.trim()
+              : "";
+
+          const name =
+            fullName ||
+            (typeof metadata.name ===
+            "string"
+              ? metadata.name.trim()
+              : "") ||
+            (typeof metadata.display_name ===
+            "string"
+              ? metadata.display_name.trim()
+              : "") ||
+            null;
+
+          allUsers.push({
+            id: authUser.id,
+
+            email:
+              authUser.email || null,
+
+            name,
+
+            created_at:
+              authUser.created_at || null,
+          });
+        }
+
+        if (
+          authUsers.length <
+          perPage
+        ) {
+          break;
+        }
+
+        page++;
+      }
+
+      /* =================================================
+         GET CUSTOMER PROFILE NAMES
+      ================================================= */
+
+      const emails =
+        allUsers
+          .map((user) =>
+            user.email
+              ?.trim()
+              .toLowerCase()
+          )
+          .filter(
+            (
+              email
+            ): email is string =>
+              Boolean(email)
+          );
+
+      if (emails.length > 0) {
+        const {
+          data:
+            customerProfiles,
+          error:
+            profileError,
+        } =
+          await supabase
+            .from(
+              "customer_profiles"
+            )
+            .select(
+              "customer_email,customer_name"
+            )
+            .in(
+              "customer_email",
+              emails
+            );
+
+        if (profileError) {
+          console.warn(
+            "[Notifications GET USERS] customer_profiles lookup warning:",
+            profileError
+          );
+        } else {
+          const profileMap =
+            new Map<
+              string,
+              string
+            >();
+
+          (
+            customerProfiles ||
+            []
+          ).forEach(
+            (profile) => {
+              const email =
+                typeof profile.customer_email ===
+                "string"
+                  ? profile.customer_email
+                      .trim()
+                      .toLowerCase()
+                  : "";
+
+              const name =
+                typeof profile.customer_name ===
+                "string"
+                  ? profile.customer_name.trim()
+                  : "";
+
+              if (
+                email &&
+                name
+              ) {
+                profileMap.set(
+                  email,
+                  name
+                );
+              }
+            }
+          );
+
+          allUsers.forEach(
+            (user) => {
+              const email =
+                user.email
+                  ?.trim()
+                  .toLowerCase();
+
+              if (!email) {
+                return;
+              }
+
+              const profileName =
+                profileMap.get(
+                  email
+                );
+
+              if (
+                profileName
+              ) {
+                user.name =
+                  profileName;
+              }
+            }
+          );
+        }
+      }
+
+      /* =================================================
+         SORT
+      ================================================= */
+
+      allUsers.sort(
+        (a, b) => {
+          const aName =
+            (
+              a.name ||
+              a.email ||
+              ""
+            ).toLowerCase();
+
+          const bName =
+            (
+              b.name ||
+              b.email ||
+              ""
+            ).toLowerCase();
+
+          return aName.localeCompare(
+            bName
+          );
+        }
+      );
+
+      return NextResponse.json(
+        {
+          success: true,
+          users: allUsers,
+          count: allUsers.length,
+        },
+        {
+          status: 200,
+        }
+      );
+    }
+
+    /* =================================================
+       NOTIFICATIONS
+    ================================================= */
 
     const {
       data,
@@ -99,7 +346,7 @@ export async function GET(
         error:
           error instanceof Error
             ? error.message
-            : "Unable to load notifications.",
+            : "Unable to load data.",
       },
       {
         status: 500,
@@ -139,10 +386,12 @@ export async function POST(
     }
 
     const token =
-      authorization.replace(
-        /^Bearer\s+/i,
-        ""
-      ).trim();
+      authorization
+        .replace(
+          /^Bearer\s+/i,
+          ""
+        )
+        .trim();
 
     if (!token) {
       return NextResponse.json(
@@ -157,7 +406,7 @@ export async function POST(
     }
 
     /* =================================================
-       SUPABASE ADMIN
+       ADMIN CLIENT
     ================================================= */
 
     const supabase =
@@ -198,7 +447,7 @@ export async function POST(
     }
 
     /* =================================================
-       READ BODY
+       BODY
     ================================================= */
 
     let body: Record<
@@ -226,46 +475,54 @@ export async function POST(
     ================================================= */
 
     const title =
-      typeof body.title === "string"
+      typeof body.title ===
+      "string"
         ? body.title.trim()
         : "";
 
     const message =
-      typeof body.message === "string"
+      typeof body.message ===
+      "string"
         ? body.message.trim()
         : "";
 
     const type =
-      typeof body.type === "string"
+      typeof body.type ===
+      "string"
         ? body.type.trim()
         : "system";
 
     const image_url =
-      typeof body.image_url === "string" &&
+      typeof body.image_url ===
+        "string" &&
       body.image_url.trim()
         ? body.image_url.trim()
         : null;
 
     const icon =
-      typeof body.icon === "string" &&
+      typeof body.icon ===
+        "string" &&
       body.icon.trim()
         ? body.icon.trim()
         : "📢";
 
     const action_url =
-      typeof body.action_url === "string" &&
+      typeof body.action_url ===
+        "string" &&
       body.action_url.trim()
         ? body.action_url.trim()
         : null;
 
     const booking_id =
-      typeof body.booking_id === "string" &&
+      typeof body.booking_id ===
+        "string" &&
       body.booking_id.trim()
         ? body.booking_id.trim()
         : null;
 
     const user_id =
-      typeof body.user_id === "string" &&
+      typeof body.user_id ===
+        "string" &&
       body.user_id.trim()
         ? body.user_id.trim()
         : null;
@@ -317,7 +574,7 @@ export async function POST(
     }
 
     /* =================================================
-       TARGET USER EMAIL
+       TARGET USER
     ================================================= */
 
     let customer_email:
@@ -347,7 +604,6 @@ export async function POST(
           {
             error:
               "Selected user could not be found.",
-
             details:
               authUserError?.message,
           },
@@ -368,17 +624,11 @@ export async function POST(
 
     const notification = {
       title,
-
       message,
-
       type,
-
       image_url,
-
       icon,
-
       action_url,
-
       booking_id,
 
       user_id:
@@ -397,7 +647,8 @@ export async function POST(
       "[Notifications POST] Creating notification:",
       {
         ...notification,
-        created_by: user.id,
+        created_by:
+          user.id,
       }
     );
 
@@ -424,13 +675,10 @@ export async function POST(
           error:
             error.message ||
             "Unable to create notification.",
-
           details:
             error.details,
-
           hint:
             error.hint,
-
           code:
             error.code,
         },
@@ -453,10 +701,6 @@ export async function POST(
     ================================================= */
 
     try {
-      /* ===============================================
-         FIND ANDROID TOKENS
-      =============================================== */
-
       let tokenQuery =
         supabase
           .from("device_tokens")
@@ -469,9 +713,9 @@ export async function POST(
             null
           );
 
-      /* ===============================================
+      /* =================================================
          GLOBAL
-      =============================================== */
+      ================================================= */
 
       if (is_global) {
         tokenQuery =
@@ -481,9 +725,9 @@ export async function POST(
           );
       }
 
-      /* ===============================================
+      /* =================================================
          SPECIFIC USER
-      =============================================== */
+      ================================================= */
 
       else {
         tokenQuery =
@@ -513,18 +757,15 @@ export async function POST(
           deviceTokenError
         );
       } else {
-        /* =============================================
-           UNIQUE TOKENS
-        ============================================= */
-
         const tokens =
           Array.from(
             new Set(
-              (deviceRows || [])
+              (
+                deviceRows ||
+                []
+              )
                 .map(
-                  (
-                    row
-                  ) =>
+                  (row) =>
                     row.fcm_token
                 )
                 .filter(
@@ -546,73 +787,45 @@ export async function POST(
           `[FCM] Sending to ${tokens.length} device(s).`
         );
 
-        /* =============================================
-           NO DEVICE
-        ============================================= */
-
         if (
           tokens.length === 0
         ) {
           console.log(
             "[FCM] No Android device tokens found."
           );
-        }
-
-        /* =============================================
-           SEND
-        ============================================= */
-
-        else {
+        } else {
           const messaging =
             getFirebaseMessaging();
 
-          /* =========================================
+          /* =================================================
              DATA PAYLOAD
-             
-             IMPORTANT:
-             Only DATA is sent.
-             
-             Android WorkkerzFirebaseMessagingService
-             will create the notification UI.
-          ========================================= */
+          ================================================= */
 
           const dataPayload: Record<
             string,
             string
           > = {
             title,
-
-            body:
-              message,
-
+            body: message,
             type,
-
             icon,
-
             notification_id:
               String(
-                data?.id ||
-                  ""
+                data?.id || ""
               ),
           };
 
-          if (
-            image_url
-          ) {
+          if (image_url) {
             dataPayload.image_url =
               image_url;
           }
 
-          if (
-            action_url
-          ) {
+          if (action_url) {
             dataPayload.action_url =
               action_url;
           }
 
-          if (
-            booking_id
-          ) {
+          if (booking_id) {
             dataPayload.booking_id =
               booking_id;
           }
@@ -622,9 +835,9 @@ export async function POST(
             dataPayload
           );
 
-          /* =========================================
-             MAX 500 TOKENS PER MULTICAST
-          ========================================= */
+          /* =================================================
+             BATCH 500
+          ================================================= */
 
           for (
             let i = 0;
@@ -636,18 +849,6 @@ export async function POST(
                 i,
                 i + 500
               );
-
-            console.log(
-              `[FCM] Sending batch ${
-                Math.floor(
-                  i / 500
-                ) + 1
-              }`
-            );
-
-            /* =======================================
-               SEND DATA-ONLY MESSAGE
-            ======================================= */
 
             const response =
               await messaging.sendEachForMulticast(
@@ -676,15 +877,14 @@ export async function POST(
               {
                 success:
                   response.successCount,
-
                 failed:
                   response.failureCount,
               }
             );
 
-            /* =======================================
-               PROCESS FAILURES
-            ======================================= */
+            /* =================================================
+               FAILED TOKENS
+            ================================================= */
 
             for (
               let index = 0;
@@ -720,18 +920,12 @@ export async function POST(
                 {
                   token:
                     failedToken,
-
                   code:
                     errorCode,
-
                   error:
                     errorMessage,
                 }
               );
-
-              /* =====================================
-                 INVALID TOKEN DETECTION
-              ===================================== */
 
               const invalidToken =
                 errorCode ===
@@ -746,43 +940,18 @@ export async function POST(
                   "NotRegistered"
                 );
 
-              /* =====================================
-                 DELETE INVALID TOKEN
-              ===================================== */
-
               if (
                 invalidToken
               ) {
-                console.log(
-                  "[FCM] Removing invalid token from database..."
-                );
-
-                const {
-                  error:
-                    deleteTokenError,
-                } =
-                  await supabase
-                    .from(
-                      "device_tokens"
-                    )
-                    .delete()
-                    .eq(
-                      "fcm_token",
-                      failedToken
-                    );
-
-                if (
-                  deleteTokenError
-                ) {
-                  console.error(
-                    "[FCM] Failed to delete invalid token:",
-                    deleteTokenError
+                await supabase
+                  .from(
+                    "device_tokens"
+                  )
+                  .delete()
+                  .eq(
+                    "fcm_token",
+                    failedToken
                   );
-                } else {
-                  console.log(
-                    "[FCM] Invalid token deleted successfully."
-                  );
-                }
               }
             }
           }
@@ -798,7 +967,7 @@ export async function POST(
     }
 
     /* =================================================
-       SUCCESS RESPONSE
+       RESPONSE
     ================================================= */
 
     return NextResponse.json(
@@ -814,10 +983,8 @@ export async function POST(
         push: {
           targetCount:
             pushTargetCount,
-
           sent:
             pushSent,
-
           failed:
             pushFailed,
         },
@@ -826,9 +993,7 @@ export async function POST(
         status: 201,
       }
     );
-  } catch (
-    error
-  ) {
+  } catch (error) {
     console.error(
       "[Notifications POST] Exception:",
       error
@@ -878,10 +1043,12 @@ export async function DELETE(
     }
 
     const token =
-      authorization.replace(
-        /^Bearer\s+/i,
-        ""
-      ).trim();
+      authorization
+        .replace(
+          /^Bearer\s+/i,
+          ""
+        )
+        .trim();
 
     if (!token) {
       return NextResponse.json(
@@ -896,7 +1063,7 @@ export async function DELETE(
     }
 
     /* =================================================
-       SUPABASE ADMIN
+       ADMIN CLIENT
     ================================================= */
 
     const supabase =
@@ -957,7 +1124,8 @@ export async function DELETE(
     }
 
     const id =
-      typeof body.id === "string"
+      typeof body.id ===
+      "string"
         ? body.id.trim()
         : "";
 
@@ -974,7 +1142,7 @@ export async function DELETE(
     }
 
     /* =================================================
-       DELETE NOTIFICATION
+       DELETE
     ================================================= */
 
     const {
@@ -998,13 +1166,10 @@ export async function DELETE(
         {
           error:
             error.message,
-
           details:
             error.details,
-
           hint:
             error.hint,
-
           code:
             error.code,
         },
@@ -1017,7 +1182,6 @@ export async function DELETE(
     return NextResponse.json(
       {
         success: true,
-
         message:
           "Notification deleted successfully.",
       },
@@ -1025,9 +1189,7 @@ export async function DELETE(
         status: 200,
       }
     );
-  } catch (
-    error
-  ) {
+  } catch (error) {
     console.error(
       "[Notifications DELETE] Exception:",
       error

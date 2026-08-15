@@ -278,8 +278,9 @@ export function EAurixCheckout() {
     [reviewCart],
   );
 
-  const delivery =
-    form.deliveryOption === "express" ? 99 : reviewCartTotal > 1000 ? 0 : 40;
+  const isFreeDeliveryEligible = reviewCartTotal >= 2000;
+
+  const delivery = 0;
 
   const tax = parseFloat((reviewCartTotal * 0.08).toFixed(2));
 
@@ -934,7 +935,6 @@ export function EAurixCheckout() {
                   <div className="space-y-2.5 text-sm">
                     <div className="flex justify-between text-slate-600">
                       <span>Items Total</span>
-
                       <span>₹{reviewCartTotal.toFixed(2)}</span>
                     </div>
 
@@ -946,23 +946,11 @@ export function EAurixCheckout() {
                           delivery === 0 ? "text-emerald-600" : "text-slate-900"
                         }`}
                       >
-                        {delivery === 0 ? "FREE" : `₹${delivery.toFixed(2)}`}
+                        {isFreeDeliveryEligible ? "FREE" : "To be confirmed"}
                       </span>
                     </div>
 
-                    <div className="flex justify-between text-slate-600">
-                      <span>Discount</span>
-
-                      <span className="font-medium text-emerald-600">
-                        -₹0.00
-                      </span>
-                    </div>
-
-                    <div className="flex justify-between text-slate-600">
-                      <span>GST</span>
-
-                      <span>₹{tax.toFixed(2)}</span>
-                    </div>
+                    {/* TOTAL */}
 
                     <div className="my-2 border-t border-dashed border-slate-300" />
 
@@ -976,14 +964,20 @@ export function EAurixCheckout() {
                       </span>
                     </div>
 
-                    <div className="rounded-xl bg-emerald-50 px-3 py-2 text-xs text-emerald-700">
-                      {delivery === 0 ? (
+                    {/* DELIVERY MESSAGE */}
+
+                    <div className="rounded-xl bg-emerald-50 px-3 py-2 text-xs leading-4 text-emerald-700">
+                      {reviewCartTotal >= 2000 ? (
                         <>
-                          Your order is eligible for <b>FREE Delivery</b>.
+                          <b>FREE Delivery within 2 km.</b> Beyond 2 km, final
+                          delivery charges will be confirmed by the Workkerz
+                          team after coordinating with the shop.
                         </>
                       ) : (
                         <>
-                          Delivery Charge: <b>₹{delivery.toFixed(2)}</b>
+                          Free delivery within 2 km on orders of <b>₹2,000+</b>.
+                          Final delivery charges will be confirmed by the
+                          Workkerz team after coordinating with the shop.
                         </>
                       )}
                     </div>
@@ -1094,7 +1088,6 @@ export function EAurixCheckout() {
                     cart={reviewCart}
                     cartTotal={reviewCartTotal}
                     delivery={delivery}
-                    tax={tax}
                     grandTotal={grandTotal}
                     step={step}
                     onClose={() => setShowOrderSummary(false)}
