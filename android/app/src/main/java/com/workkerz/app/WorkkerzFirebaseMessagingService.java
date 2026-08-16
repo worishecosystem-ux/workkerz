@@ -49,6 +49,7 @@ public class WorkkerzFirebaseMessagingService
         String imageUrl = data.get("image_url");
         String notificationId = data.get("notification_id");
         String bookingId = data.get("booking_id");
+        String notificationType = data.get("type");
 
         if (title == null || title.trim().isEmpty()) {
             title = "Workkerz";
@@ -66,7 +67,8 @@ public class WorkkerzFirebaseMessagingService
                 actionUrl,
                 imageUrl,
                 notificationId,
-                bookingId
+                bookingId,
+                notificationType
         );
     }
 
@@ -123,41 +125,55 @@ public class WorkkerzFirebaseMessagingService
             String actionUrl,
             String imageUrl,
             String notificationId,
-            String bookingId
+            String bookingId,
+            String notificationType
     ) {
+        /*
+         * UPDATE NOTIFICATION
+         *
+         * Update notifications open the Workkerz
+         * Google Play Store page directly.
+         */
+        boolean isUpdateNotification =
+                "update".equalsIgnoreCase(notificationType) ||
+                "app_update".equalsIgnoreCase(notificationType) ||
+                "force_update".equalsIgnoreCase(notificationType);
+
         Intent intent;
 
-        if (actionUrl != null &&
-                !actionUrl.trim().isEmpty()) {
+        if (isUpdateNotification) {
 
-            try {
-                Uri uri = Uri.parse(actionUrl);
+            Uri playStoreUri = Uri.parse(
+                    "https://play.google.com/store/apps/details?id=com.workkerz.app"
+            );
 
-                intent = new Intent(
-                        Intent.ACTION_VIEW,
-                        uri
-                );
-
-                intent.setPackage(getPackageName());
-
-            } catch (Exception error) {
-                Log.e(
-                        TAG,
-                        "Invalid action URL",
-                        error
-                );
-
-                intent = new Intent(
-                        this,
-                        MainActivity.class
-                );
-            }
+            intent = new Intent(
+                    Intent.ACTION_VIEW,
+                    playStoreUri
+            );
 
         } else {
+
+            /*
+             * NORMAL NOTIFICATION
+             *
+             * Always open Workkerz MainActivity.
+             * action_url is passed to the app for
+             * future in-app navigation.
+             */
             intent = new Intent(
                     this,
                     MainActivity.class
             );
+
+            if (actionUrl != null &&
+                    !actionUrl.trim().isEmpty()) {
+
+                intent.putExtra(
+                        "action_url",
+                        actionUrl
+                );
+            }
         }
 
         intent.addFlags(
