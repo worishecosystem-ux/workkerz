@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { Eye, ShoppingCart } from "lucide-react";
+import { Eye, ShoppingCart, ChevronRight } from "lucide-react";
 import {
   useMemo,
   type Dispatch,
@@ -9,6 +9,37 @@ import {
   type SetStateAction,
 } from "react";
 import ProductImage from "./ProductImage";
+
+interface ProductVariant {
+  id: string;
+  productId?: string;
+  variantName: string;
+  watt?: number | null;
+  price: number;
+  originalPrice?: number | null;
+  stock: number;
+  sku?: string | null;
+  unit?: string | null;
+  specs?: Record<string, unknown>;
+  image?: string;
+  images?: string[];
+  isActive: boolean;
+}
+
+interface ProductItem {
+  id: string;
+  name: string;
+  brand?: string;
+  price: number;
+  originalPrice?: number;
+  image?: string;
+  color?: string;
+  unit?: string;
+  category?: string;
+  variants?: ProductVariant[];
+  hasVariants?: boolean;
+  stock?: number;
+}
 
 interface ProductsGridProps {
   loading: boolean;
@@ -28,13 +59,13 @@ interface ProductsGridProps {
   sidebarOpen: boolean;
   setSidebarOpen: Dispatch<SetStateAction<boolean>>;
 
-  products: any[];
+  products: ProductItem[];
 
   search: string;
   setSearch: Dispatch<SetStateAction<string>>;
 
-  paginatedProducts: any[];
-  visibleProducts: any[];
+  paginatedProducts: ProductItem[];
+  visibleProducts: ProductItem[];
 
   cart: any[];
 
@@ -42,6 +73,7 @@ interface ProductsGridProps {
 
   loadMoreRef: RefObject<HTMLDivElement | null>;
 }
+
 export default function ProductsGrid({
   loading,
   sort,
@@ -62,12 +94,21 @@ export default function ProductsGrid({
   addToCart,
   loadMoreRef,
 }: ProductsGridProps) {
+  /* =====================================================
+     MIX PRODUCTS BY CATEGORY
+     
+     IMPORTANT:
+     Only paginated products are mixed.
+  ===================================================== */
+
   const mixedTopProducts = useMemo(() => {
-    if (activeCategory) return paginatedProducts;
+    if (activeCategory) {
+      return paginatedProducts;
+    }
 
-    const grouped = new Map<string, any[]>();
+    const grouped = new Map<string, ProductItem[]>();
 
-    for (const product of products) {
+    for (const product of paginatedProducts) {
       const category = product.category ?? "other";
 
       if (!grouped.has(category)) {
@@ -77,7 +118,7 @@ export default function ProductsGrid({
       grouped.get(category)!.push(product);
     }
 
-    const result: any[] = [];
+    const result: ProductItem[] = [];
     const groups = Array.from(grouped.values());
 
     let added = true;
@@ -87,55 +128,134 @@ export default function ProductsGrid({
 
       for (const group of groups) {
         if (group.length > 0) {
-          result.push(group.shift());
+          result.push(group.shift()!);
           added = true;
         }
       }
     }
 
     return result;
-  }, [products, paginatedProducts, activeCategory]);
+  }, [paginatedProducts, activeCategory]);
+
+  /* =====================================================
+     ACTIVE VARIANTS
+  ===================================================== */
+
+  function getActiveVariants(product: ProductItem) {
+    return Array.isArray(product.variants)
+      ? product.variants.filter(
+          (variant) => variant && variant.isActive,
+        )
+      : [];
+  }
+
+  /* =====================================================
+     DISPLAY PRICE
+     
+     If variants exist:
+     show the lowest active variant price.
+  ===================================================== */
+
+  function getDisplayPrice(product: ProductItem) {
+    const variants = getActiveVariants(product);
+
+    if (variants.length > 0) {
+      return Math.min(
+        ...variants.map(
+          (variant) => Number(variant.price) || 0,
+        ),
+      );
+    }
+
+    return Number(product.price) || 0;
+  }
+
+  /* =====================================================
+     VARIANT COUNT
+  ===================================================== */
+
+  function getVariantCount(product: ProductItem) {
+    return getActiveVariants(product).length;
+  }
+
   return (
     <>
       <div className="px-4 pb-8">
-        {activeCategory && !loading && visibleProducts.length === 0 && (
-          <div className="flex items-center gap-3 rounded-xl border border-slate-200 bg-white px-3 py-2.5 shadow-sm">
-            {/* ICON */}
-            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-slate-100 text-lg">
-              📦
+        {/* =================================================
+            NO PRODUCTS
+        ================================================= */}
+
+        {activeCategory &&
+          !loading &&
+          visibleProducts.length === 0 && (
+            <div className="flex items-center gap-3 rounded-xl border border-slate-200 bg-white px-3 py-2.5 shadow-sm">
+              <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-slate-100 text-lg">
+                📦
+              </div>
+
+              <div className="min-w-0 flex-1">
+                <h2 className="text-[12px] font-bold leading-4 text-slate-900">
+                  No Products Found
+                </h2>
+
+                <p className="truncate text-[9px] leading-3.5 text-slate-500">
+                  {categories.find(
+                    (c) => c.id === activeCategory,
+                  )?.name}{" "}
+                  products coming soon.
+                </p>
+              </div>
+
+              <button
+                onClick={() => setActiveCategory(null)}
+                className="shrink-0 rounded-lg bg-emerald-500 px-2.5 py-1.5 text-[9px] font-bold text-white active:scale-95"
+              >
+                View All
+              </button>
             </div>
+          )}
 
-            {/* TEXT */}
-            <div className="min-w-0 flex-1">
-              <h2 className="text-[12px] font-bold leading-4 text-slate-900">
-                No Products Found
-              </h2>
+        {/* =================================================
+            PRODUCTS GRID
+        ================================================= */}
 
-              <p className="truncate text-[9px] leading-3.5 text-slate-500">
-                {categories.find((c) => c.id === activeCategory)?.name} products
-                coming soon.
-              </p>
-            </div>
-
-            {/* BUTTON */}
-            <button
-              onClick={() => setActiveCategory(null)}
-              className="shrink-0 rounded-lg bg-emerald-500 px-2.5 py-1.5 text-[9px] font-bold text-white active:scale-95"
-            >
-              View All
-            </button>
-          </div>
-        )}
         {visibleProducts.length > 0 && (
-          <div className="grid grid-cols-2 gap-3 md:grid-cols-4 md:gap-4 pb-10">
+          <div className="grid grid-cols-2 gap-3 pb-10 md:grid-cols-4 md:gap-4">
             {mixedTopProducts.map((product) => {
-              const inCart = cart.some((item) => item.productId === product.id);
+              const activeVariants =
+                getActiveVariants(product);
+
+              const hasVariants =
+                activeVariants.length > 0;
+
+              const displayPrice =
+                getDisplayPrice(product);
+
+              /*
+               * Product-level cart item.
+               *
+               * Variant products are NOT considered
+               * product-level cart items.
+               */
+              const inCart = cart.some(
+                (item) =>
+                  item.productId === product.id &&
+                  !item.variantId,
+              );
+
+              const productUrl =
+                `/eaurix/product/${product.id}`;
+
               return (
                 <div
                   key={product.id}
-                  className="group overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm transition-all hover:shadow-md "
+                  className="group overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm transition-all hover:shadow-md"
                 >
-                  <Link href={`/eaurix/product/${product.id}`}>
+                  {/* =================================================
+                      PRODUCT IMAGE
+                  ================================================= */}
+
+                  <Link href={productUrl}>
                     <div className="relative overflow-hidden">
                       <div className="p-2">
                         <div className="h-32 w-full overflow-hidden rounded-xl border border-slate-200 bg-white p-2 shadow-sm md:h-64">
@@ -154,59 +274,153 @@ export default function ProductsGrid({
                         </div>
                       </div>
 
-                      <span className="absolute right-2 top-2 rounded-full bg-black/70 px-2 py-0.5 text-[9px] font-medium text-white md:text-[10px]">
-                        {product.brand}
-                      </span>
+                      {/* BRAND */}
+
+                      {product.brand && (
+                        <span className="absolute right-2 top-2 max-w-[45%] truncate rounded-full bg-black/70 px-2 py-0.5 text-[9px] font-medium text-white md:text-[10px]">
+                          {product.brand}
+                        </span>
+                      )}
+
+                      {/* VARIANT COUNT */}
+
+                      {hasVariants && (
+                        <span className="absolute bottom-3 left-3 rounded-full bg-white/95 px-2 py-1 text-[9px] font-bold text-slate-800 shadow-sm">
+                          {activeVariants.length}{" "}
+                          {activeVariants.length === 1
+                            ? "Option"
+                            : "Options"}
+                        </span>
+                      )}
                     </div>
                   </Link>
 
+                  {/* =================================================
+                      PRODUCT DETAILS
+                  ================================================= */}
+
                   <div className="p-2 md:p-3">
-                    <Link href={`/eaurix/product/${product.id}`}>
+                    <Link href={productUrl}>
                       <div className="flex items-start justify-between gap-2">
                         <h3 className="line-clamp-2 flex-1 text-xs font-semibold text-slate-900 md:text-sm">
                           {product.name}
                         </h3>
 
                         <span className="shrink-0 text-sm font-bold text-emerald-600 md:text-lg">
-                          ₹{product.price}
+                          ₹{displayPrice}
                         </span>
                       </div>
                     </Link>
 
-                    <div className="mt-3 flex gap-2">
-                      <button
-                        onClick={(e) => {
-                          e.preventDefault();
-                          e.stopPropagation();
+                    {/* =================================================
+                        VARIANT PREVIEW
+                    ================================================= */}
 
-                          if (!inCart) {
-                            addToCart({
-                              productId: product.id,
-                              name: product.name,
-                              brand: product.brand,
-                              price: product.price,
-                              qty: 1,
-                              icon: product.image || "",
-                              color: product.color ?? "#10b981",
-                              unit: product.unit ?? "pcs",
-                            });
-                          }
-                        }}
-                        className={`flex h-8 w-8 items-center justify-center rounded-xl transition-all active:scale-95 ${
-                          inCart
-                            ? "bg-black text-white"
-                            : "border border-slate-200 bg-white text-slate-700 hover:border-emerald-500 hover:text-emerald-600"
-                        }`}
+                    {hasVariants && (
+                      <Link
+                        href={productUrl}
+                        className="mt-2 flex items-center justify-between rounded-lg border border-slate-200 bg-slate-50 px-2.5 py-2 transition hover:border-emerald-300 hover:bg-emerald-50"
                       >
-                        <ShoppingCart
-                          size={16}
-                          className={inCart ? "fill-white" : ""}
+                        <div className="min-w-0">
+                          <p className="text-[9px] font-medium text-slate-500">
+                            Available options
+                          </p>
+
+                          <p className="mt-0.5 truncate text-[10px] font-semibold text-slate-800">
+                            {activeVariants
+                              .slice(0, 3)
+                              .map(
+                                (variant) =>
+                                  variant.variantName,
+                              )
+                              .join(" • ")}
+
+                            {activeVariants.length > 3 &&
+                              ` +${
+                                activeVariants.length - 3
+                              }`}
+                          </p>
+                        </div>
+
+                        <ChevronRight
+                          size={14}
+                          className="shrink-0 text-slate-400"
                         />
-                      </button>
+                      </Link>
+                    )}
+
+                    {/* =================================================
+                        CART + VIEW
+                    ================================================= */}
+
+                    <div className="mt-3 flex gap-2">
+                      {hasVariants ? (
+                        /*
+                         * Variant products:
+                         * Don't add directly to cart.
+                         * Open product page to select option.
+                         */
+                        <Link
+                          href={productUrl}
+                          className="flex h-8 flex-1 items-center justify-center gap-1 rounded-lg border border-emerald-200 bg-emerald-50 px-2 text-[10px] font-semibold text-emerald-700 transition-all hover:bg-emerald-100 active:scale-95"
+                        >
+                          <ShoppingCart size={13} />
+                          <span>Select Option</span>
+                        </Link>
+                      ) : (
+                        /*
+                         * Normal products:
+                         * Add directly to cart.
+                         */
+                        <button
+                          onClick={(e) => {
+                            e.preventDefault();
+                            e.stopPropagation();
+
+                            if (!inCart) {
+                              addToCart({
+                                productId: product.id,
+                                name: product.name,
+                                brand: product.brand,
+                                price: displayPrice,
+                                qty: 1,
+                                icon:
+                                  product.image || "",
+                                color:
+                                  product.color ??
+                                  "#10b981",
+                                unit:
+                                  product.unit ??
+                                  "pcs",
+                              });
+                            }
+                          }}
+                          className={`flex h-8 w-8 items-center justify-center rounded-xl transition-all active:scale-95 ${
+                            inCart
+                              ? "bg-black text-white"
+                              : "border border-slate-200 bg-white text-slate-700 hover:border-emerald-500 hover:text-emerald-600"
+                          }`}
+                        >
+                          <ShoppingCart
+                            size={16}
+                            className={
+                              inCart
+                                ? "fill-white"
+                                : ""
+                            }
+                          />
+                        </button>
+                      )}
+
+                      {/* VIEW BUTTON */}
 
                       <Link
-                        href={`/eaurix/product/${product.id}`}
-                        className="flex h-8 flex-1 items-center justify-center gap-1 rounded-lg bg-emerald-500 px-2 text-[11px] font-semibold text-white transition-all hover:bg-emerald-600 active:scale-95"
+                        href={productUrl}
+                        className={`flex h-8 items-center justify-center gap-1 rounded-lg bg-emerald-500 px-2 text-[11px] font-semibold text-white transition-all hover:bg-emerald-600 active:scale-95 ${
+                          hasVariants
+                            ? "w-20"
+                            : "flex-1"
+                        }`}
                       >
                         <Eye size={13} />
                         <span>View</span>
@@ -218,11 +432,16 @@ export default function ProductsGrid({
             })}
           </div>
         )}
+
+        {/* =================================================
+            FEW PRODUCTS MESSAGE
+        ================================================= */}
+
         {activeCategory &&
           visibleProducts.length > 0 &&
           visibleProducts.length < 6 && (
             <div className="mx-4 rounded-2xl border border-slate-200 bg-white px-5 py-3 text-center shadow-sm">
-              <div className=" flex items-center justify-center gap-3">
+              <div className="flex items-center justify-center gap-3">
                 <div className="flex h-12 w-12 items-center justify-center rounded-full bg-slate-100 text-2xl">
                   📦
                 </div>
@@ -234,8 +453,15 @@ export default function ProductsGrid({
 
               <p className="mx-auto mt-2 max-w-xs text-sm leading-6 text-slate-500">
                 Only {visibleProducts.length} product
-                {visibleProducts.length !== 1 ? "s are" : " is"} available in{" "}
-                {categories.find((c) => c.id === activeCategory)?.name}{" "}
+                {visibleProducts.length !== 1
+                  ? "s are"
+                  : " is"}{" "}
+                available in{" "}
+                {
+                  categories.find(
+                    (c) => c.id === activeCategory,
+                  )?.name
+                }{" "}
                 category.
               </p>
 
@@ -249,8 +475,13 @@ export default function ProductsGrid({
           )}
       </div>
 
+      {/* =====================================================
+          LOAD MORE
+      ===================================================== */}
+
       {visibleProducts.length > 0 &&
-        paginatedProducts.length < visibleProducts.length && (
+        paginatedProducts.length <
+          visibleProducts.length && (
           <div
             ref={loadMoreRef}
             className="flex h-20 items-center justify-center"

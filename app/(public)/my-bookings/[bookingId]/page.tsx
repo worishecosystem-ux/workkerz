@@ -1,32 +1,28 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useParams } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
 import Image from "next/image";
 
 import {
   CheckCircle,
-  User,
   MapPin,
-  Calendar,
-  Clock,
-  Phone,
-  Mail,
-  IndianRupee,
-  Star,
   BadgeCheck,
   Clock3,
   CheckCircle2,
   XCircle,
+  ArrowRight,
 } from "lucide-react";
 
 import { supabase } from "@/lib/supabase";
 
 export default function BookingDetailsPage() {
   const params = useParams();
+  const router = useRouter();
 
   const [booking, setBooking] = useState<any>(null);
   const [loading, setLoading] = useState(true);
+
   const formatDate = (dateStr: string) => {
     if (!dateStr) return "—";
 
@@ -51,17 +47,17 @@ export default function BookingDetailsPage() {
       .from("bookings")
       .select(
         `
-      *,
-      customer_addresses (
-        house_no,
-        address,
-        landmark,
-        city,
-        district,
-        state,
-        pincode
-      )
-    `,
+        *,
+        customer_addresses (
+          house_no,
+          address,
+          landmark,
+          city,
+          district,
+          state,
+          pincode
+        )
+      `,
       )
       .eq("booking_id", params.bookingId)
       .single();
@@ -75,13 +71,53 @@ export default function BookingDetailsPage() {
     setLoading(false);
   }
 
-  if (!booking) return <div className="p-5">Loading...</div>;
+  // AGAIN BOOK
+  function handleAgainBook() {
+    if (!booking) return;
+
+    // Worker page par worker_id ke through bhejo
+    if (booking.worker_id) {
+      router.push(`/workers/${booking.worker_id}`);
+      return;
+    }
+
+    // Agar worker_id available nahi hai to service page
+    if (booking.service_type) {
+      router.push(
+        `/workers?service=${encodeURIComponent(booking.service_type)}`
+      );
+      return;
+    }
+
+    router.push("/workers");
+  }
+
+  if (loading) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-slate-100">
+        <div className="rounded-xl bg-white px-5 py-3 text-sm font-medium text-slate-600 shadow-sm">
+          Loading...
+        </div>
+      </div>
+    );
+  }
+
+  if (!booking) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-slate-100 p-5">
+        <div className="rounded-2xl bg-white p-6 text-center shadow-sm">
+          <p className="font-semibold text-slate-900">
+            Booking not found
+          </p>
+        </div>
+      </div>
+    );
+  }
 
   return (
-    <div className="bg-slate-100 min-h-screen">
+    <div className="min-h-screen bg-slate-100">
       <div className="sticky top-0 z-50 bg-white/90 backdrop-blur-xl border-b">
         <div className="sticky top-0 z-20 mt-15 overflow-hidden rounded-2xl border border-emerald-100 bg-white shadow-sm">
-          {/* Top Accent */}
           <div className="h-1 bg-linear-to-r from-emerald-500 via-green-500 to-lime-400" />
 
           <div className="p-4">
@@ -90,7 +126,7 @@ export default function BookingDetailsPage() {
                 <CheckCircle className="h-6 w-6 text-emerald-600" />
               </div>
 
-              <div className="flex-1 min-w-0">
+              <div className="min-w-0 flex-1">
                 <div className="flex items-center gap-2">
                   <h1 className="text-[16px] font-bold text-slate-900">
                     Booking ID :
@@ -105,11 +141,9 @@ export default function BookingDetailsPage() {
 
             <div className="mt-3 rounded-2xl border border-slate-100 bg-slate-50 px-4 py-3">
               <div className="flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  <p className="text-[13px] font-semibold text-slate-500">
-                    Booking Status
-                  </p>
-                </div>
+                <p className="text-[13px] font-semibold text-slate-500">
+                  Booking Status
+                </p>
 
                 <div className="flex items-center gap-2">
                   {booking.booking_status === "confirmed" && (
@@ -148,19 +182,21 @@ export default function BookingDetailsPage() {
         </div>
       </div>
 
-      <div className="max-w-3xl mx-auto p-3 sm:p-4 md:p-6 space-y-4 md:space-y-5">
+      <div className="mx-auto max-w-3xl space-y-4 p-3 sm:p-4 md:p-6">
+        {/* WORKER */}
         <div className="rounded-2xl border border-emerald-100 bg-linear-to-r from-white to-emerald-50 p-3 shadow-sm">
           <div className="flex gap-3">
             <div className="relative">
               <img
                 src={booking.worker_photo}
-                className="h-16 w-16 rounded-2xl object-fill ring-2 ring-emerald-100"
+                alt={booking.worker_name || "Worker"}
+                className="h-16 w-16 rounded-2xl object-cover ring-2 ring-emerald-100"
               />
 
-              <span className="absolute bottom-2 -right-1 h-4 w-4 rounded-full border-2 border-white bg-green-500"></span>
+              <span className="absolute bottom-2 -right-1 h-4 w-4 rounded-full border-2 border-white bg-green-500" />
             </div>
 
-            <div className="flex-1 min-w-0">
+            <div className="min-w-0 flex-1">
               <div className="flex items-start justify-between gap-2">
                 <div className="min-w-0">
                   <h2 className="truncate text-[15px] font-bold text-gray-900">
@@ -172,9 +208,8 @@ export default function BookingDetailsPage() {
                   </p>
                 </div>
 
-                <div className="bg-green-600 text-white px-2 py-0.5 rounded text-[11px] font-medium flex items-center gap-1">
-                  {" "}
-                  ⭐ {booking.worker_rating}{" "}
+                <div className="flex items-center gap-1 rounded bg-green-600 px-2 py-0.5 text-[11px] font-medium text-white">
+                  ⭐ {booking.worker_rating}
                 </div>
               </div>
 
@@ -192,19 +227,20 @@ export default function BookingDetailsPage() {
           </div>
         </div>
 
+        {/* DETAILS */}
         <div className="mt-2 rounded-2xl border border-slate-100 bg-white p-3 shadow-sm">
           <div className="space-y-1.5">
             <MiniRow label="Service" value={booking.service_type} />
-
             <MiniRow label="Date" value={formatDate(booking.booking_date)} />
-
             <MiniRow label="Time" value={booking.booking_time} />
-
             <MiniRow label="Customer" value={booking.customer_name} />
-
             <MiniRow label="Phone" value={booking.customer_phone} />
-            <MiniRow label="Description" value={booking.description || "—"} />
+            <MiniRow
+              label="Description"
+              value={booking.description || "—"}
+            />
             <MiniRow label="Notes" value={booking.notes || "—"} />
+
             <div className="flex items-start gap-2 rounded-xl bg-slate-50 px-2.5 py-2">
               <MapPin className="mt-0.5 h-3.5 w-3.5 shrink-0 text-emerald-600" />
 
@@ -225,73 +261,89 @@ export default function BookingDetailsPage() {
           </div>
         </div>
 
+        {/* PRICE */}
         <div className="mt-2 rounded-2xl bg-[#072566] p-3.5 text-white shadow-xl">
-          <div>
-            <PriceRow
-              label="Worker Fee"
-              value={`₹${Number(booking.total_cost || 0).toLocaleString("en-IN")}`}
-            />
+          <PriceRow
+            label="Worker Fee"
+            value={`₹${Number(
+              booking.total_cost || 0
+            ).toLocaleString("en-IN")}`}
+          />
 
-            <PriceRow
-              label="Platform Fee"
-              value={`₹${Number(booking.service_fee || 0).toLocaleString("en-IN")}`}
-            />
-          </div>
+          <PriceRow
+            label="Platform Fee"
+            value={`₹${Number(
+              booking.service_fee || 0
+            ).toLocaleString("en-IN")}`}
+          />
 
           <div className="my-3 h-px bg-white/10" />
 
           <div className="flex items-center justify-between">
-            <div className="flex items-center justify-between gap-3">
+            <div className="flex items-center gap-3">
               <span className="text-[15px] font-medium text-white/60">
                 Grand Total
               </span>
 
               <span className="text-[15px] font-bold text-white">
-                ₹{Number(booking.grand_total || 0).toLocaleString("en-IN")}
+                ₹
+                {Number(booking.grand_total || 0).toLocaleString(
+                  "en-IN"
+                )}
               </span>
             </div>
 
             <div className="rounded-lg bg-white/10 px-2.5 py-1.5 backdrop-blur-sm">
-              <p className="mt-0.5 text-[11px] font-semibold leading-none text-white">
-                {booking.booking_type?.replaceAll("_", " ") || "Quick Service"}
+              <p className="text-[11px] font-semibold capitalize leading-none text-white">
+                {booking.booking_type?.replaceAll("_", " ") ||
+                  "Quick Service"}
               </p>
             </div>
           </div>
         </div>
+
+        {/* AGAIN BOOK BUTTON */}
+        <button
+          type="button"
+          onClick={handleAgainBook}
+          className="group flex w-full items-center justify-center gap-2 rounded-2xl bg-emerald-600 px-4 py-3.5 text-[14px] font-bold text-white shadow-lg shadow-emerald-600/20 transition active:scale-[0.98] hover:bg-emerald-700"
+        >
+          <span>Book Again</span>
+
+          <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5" />
+        </button>
       </div>
     </div>
   );
 }
 
-// DETAIL ROW
-function Detail({ label, value }: { label: string; value?: string }) {
+function PriceRow({
+  label,
+  value,
+}: {
+  label: string;
+  value: string;
+}) {
   return (
-    <div className="flex items-start justify-between gap-4 px-4 py-2 border-b border-slate-100 last:border-b-0">
-      <span className="shrink-0 text-[13px] font-medium text-slate-500">
+    <div className="flex items-center justify-between py-1">
+      <span className="text-[13px] leading-none text-white/65">
         {label}
       </span>
 
-      <span className="max-w-[90%] text-right text-[14px] font-semibold text-slate-900 wrap-break-word leading-5">
-        {value || "—"}
-      </span>
-    </div>
-  );
-}
-
-// PRICE ROW
-function PriceRow({ label, value }: { label: string; value: string }) {
-  return (
-    <div className="flex items-center justify-between py-1">
-      <span className="text-[13px] leading-none text-white/65">{label}</span>
-
-      <span className="text-[13px] leading-none font-semibold text-white">
+      <span className="text-[13px] font-semibold leading-none text-white">
         {value}
       </span>
     </div>
   );
 }
 
-function MiniRow({ label, value }: { label: string; value: React.ReactNode }) {
+function MiniRow({
+  label,
+  value,
+}: {
+  label: string;
+  value: React.ReactNode;
+}) {
   return (
     <div className="flex items-center justify-between rounded-lg px-2 py-1.5">
       <span className="text-[11px] text-slate-500">{label}</span>

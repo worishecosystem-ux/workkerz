@@ -64,8 +64,9 @@ export default function EditWorkerModal({
   onClose,
   onUpdated,
 }: EditWorkerModalProps) {
-  const fileInputRef =
-    useRef<HTMLInputElement | null>(null);
+  const fileInputRef = useRef<HTMLInputElement | null>(
+    null,
+  );
 
   /* =====================================================
      BASIC
@@ -75,18 +76,15 @@ export default function EditWorkerModal({
   const [phone, setPhone] = useState("");
 
   const [category, setCategory] = useState("");
-  const [subcategory, setSubcategory] =
-    useState("");
-  const [specialty, setSpecialty] =
-    useState("");
+  const [subcategory, setSubcategory] = useState("");
+  const [specialty, setSpecialty] = useState("");
 
-  const [location, setLocation] =
-    useState("");
-  const [labourChauk, setLabourChauk] =
-    useState("");
+  const [location, setLocation] = useState("");
+  const [labourChauk, setLabourChauk] = useState("");
 
   const [yearsExperience, setYearsExperience] =
     useState("");
+
   const [completedJobs, setCompletedJobs] =
     useState("");
 
@@ -106,18 +104,17 @@ export default function EditWorkerModal({
   const [photoUploading, setPhotoUploading] =
     useState(false);
 
-  const [photoError, setPhotoError] =
-    useState("");
+  const [photoError, setPhotoError] = useState("");
 
   /* =====================================================
      ARRAYS
   ===================================================== */
 
-  const [services, setServices] =
-    useState<string[]>([]);
+  const [services, setServices] = useState<string[]>(
+    [],
+  );
 
-  const [skills, setSkills] =
-    useState<string[]>([]);
+  const [skills, setSkills] = useState<string[]>([]);
 
   const [certifications, setCertifications] =
     useState<string[]>([]);
@@ -127,9 +124,7 @@ export default function EditWorkerModal({
   ===================================================== */
 
   const [pricingType, setPricingType] =
-    useState<Worker["pricingType"]>(
-      "custom",
-    );
+    useState<Worker["pricingType"]>("custom");
 
   const [startingPrice, setStartingPrice] =
     useState("");
@@ -143,8 +138,7 @@ export default function EditWorkerModal({
   const [monthlyPrice, setMonthlyPrice] =
     useState("");
 
-  const [visitCharge, setVisitCharge] =
-    useState("");
+  const [visitCharge, setVisitCharge] = useState("");
 
   /* =====================================================
      OTHER
@@ -154,17 +148,15 @@ export default function EditWorkerModal({
     useState("Within 1 hour");
 
   const [rating, setRating] = useState("");
+
   const [reviewCount, setReviewCount] =
     useState("");
 
-  const [available, setAvailable] =
-    useState(true);
+  const [available, setAvailable] = useState(true);
 
-  const [loading, setLoading] =
-    useState(false);
+  const [loading, setLoading] = useState(false);
 
-  const [error, setError] =
-    useState("");
+  const [error, setError] = useState("");
 
   /* =====================================================
      LOAD WORKER
@@ -177,15 +169,11 @@ export default function EditWorkerModal({
     setPhone(worker.phone ?? "");
 
     setCategory(worker.category ?? "");
-    setSubcategory(
-      worker.subcategory ?? "",
-    );
+    setSubcategory(worker.subcategory ?? "");
     setSpecialty(worker.specialty ?? "");
 
     setLocation(worker.location ?? "");
-    setLabourChauk(
-      worker.labourChauk ?? "",
-    );
+    setLabourChauk(worker.labourChauk ?? "");
 
     setYearsExperience(
       worker.yearsExperience != null
@@ -201,7 +189,7 @@ export default function EditWorkerModal({
 
     setBio(worker.bio ?? "");
 
-    /* Photo */
+    /* PHOTO */
 
     setPhoto(worker.photo ?? "");
     setPhotoPreview(worker.photo ?? "");
@@ -212,7 +200,7 @@ export default function EditWorkerModal({
       fileInputRef.current.value = "";
     }
 
-    /* Arrays */
+    /* ARRAYS */
 
     setServices(
       Array.isArray(worker.services)
@@ -227,18 +215,14 @@ export default function EditWorkerModal({
     );
 
     setCertifications(
-      Array.isArray(
-        worker.certifications,
-      )
+      Array.isArray(worker.certifications)
         ? [...worker.certifications]
         : [],
     );
 
-    /* Pricing */
+    /* PRICING */
 
-    setPricingType(
-      worker.pricingType ?? "custom",
-    );
+    setPricingType(worker.pricingType ?? "custom");
 
     setStartingPrice(
       worker.startingPrice != null
@@ -270,9 +254,10 @@ export default function EditWorkerModal({
         : "",
     );
 
+    /* OTHER */
+
     setResponseTime(
-      worker.responseTime ||
-        "Within 1 hour",
+      worker.responseTime || "Within 1 hour",
     );
 
     setRating(
@@ -287,9 +272,7 @@ export default function EditWorkerModal({
         : "",
     );
 
-    setAvailable(
-      worker.available ?? true,
-    );
+    setAvailable(worker.available ?? true);
 
     setError("");
   }, [worker]);
@@ -301,9 +284,7 @@ export default function EditWorkerModal({
   useEffect(() => {
     if (!worker) return;
 
-    const handleKeyDown = (
-      event: KeyboardEvent,
-    ) => {
+    const handleKeyDown = (event: KeyboardEvent) => {
       if (event.key === "Escape" && !loading) {
         onClose();
       }
@@ -350,9 +331,7 @@ export default function EditWorkerModal({
         photoPreview &&
         photoPreview.startsWith("blob:")
       ) {
-        URL.revokeObjectURL(
-          photoPreview,
-        );
+        URL.revokeObjectURL(photoPreview);
       }
     };
   }, [photoPreview]);
@@ -364,8 +343,7 @@ export default function EditWorkerModal({
   const handlePhotoSelect = (
     event: ChangeEvent<HTMLInputElement>,
   ) => {
-    const file =
-      event.target.files?.[0];
+    const file = event.target.files?.[0];
 
     if (!file) return;
 
@@ -377,9 +355,7 @@ export default function EditWorkerModal({
       "image/webp",
     ];
 
-    if (
-      !allowedTypes.includes(file.type)
-    ) {
+    if (!allowedTypes.includes(file.type)) {
       setPhotoError(
         "Only JPG, PNG and WebP images are allowed.",
       );
@@ -403,9 +379,7 @@ export default function EditWorkerModal({
       photoPreview &&
       photoPreview.startsWith("blob:")
     ) {
-      URL.revokeObjectURL(
-        photoPreview,
-      );
+      URL.revokeObjectURL(photoPreview);
     }
 
     const previewUrl =
@@ -424,9 +398,7 @@ export default function EditWorkerModal({
       photoPreview &&
       photoPreview.startsWith("blob:")
     ) {
-      URL.revokeObjectURL(
-        photoPreview,
-      );
+      URL.revokeObjectURL(photoPreview);
     }
 
     setSelectedPhoto(null);
@@ -474,15 +446,11 @@ export default function EditWorkerModal({
         error: uploadError,
       } = await supabase.storage
         .from(WORKER_IMAGE_BUCKET)
-        .upload(
-          filePath,
-          file,
-          {
-            cacheControl: "3600",
-            upsert: false,
-            contentType: file.type,
-          },
-        );
+        .upload(filePath, file, {
+          cacheControl: "3600",
+          upsert: false,
+          contentType: file.type,
+        });
 
       if (uploadError) {
         throw uploadError;
@@ -533,11 +501,7 @@ export default function EditWorkerModal({
       return "Mobile number is required.";
     }
 
-    if (
-      !/^[6-9]\d{9}$/.test(
-        phone.trim(),
-      )
-    ) {
+    if (!/^[6-9]\d{9}$/.test(phone.trim())) {
       return "Enter valid 10 digit mobile number.";
     }
 
@@ -569,12 +533,29 @@ export default function EditWorkerModal({
   ) => {
     event.preventDefault();
 
-    if (!worker || loading) return;
+    console.log(
+      "EDIT WORKER: SUBMIT STARTED",
+    );
 
-    const validationError =
-      validate();
+    if (!worker) {
+      console.error(
+        "EDIT WORKER: Worker not found",
+      );
+      return;
+    }
+
+    if (loading) {
+      return;
+    }
+
+    const validationError = validate();
 
     if (validationError) {
+      console.error(
+        "EDIT WORKER VALIDATION:",
+        validationError,
+      );
+
       setError(validationError);
       return;
     }
@@ -583,97 +564,114 @@ export default function EditWorkerModal({
       setLoading(true);
       setError("");
 
-      /* PHOTO */
+      /* =================================================
+         PHOTO
+      ================================================= */
 
-      let finalPhoto =
-        photo.trim();
+      let finalPhoto = photo.trim();
 
       if (selectedPhoto) {
+        console.log(
+          "EDIT WORKER: Uploading photo...",
+        );
+
         finalPhoto =
           await uploadWorkerPhoto(
             selectedPhoto,
           );
       }
 
-      /* LABOUR CHAUK */
+      /* =================================================
+         LABOUR CHAUK
+      ================================================= */
 
       const cleanLabourChauk =
         labourChauk.trim();
 
-      /* DATA */
+      /* =================================================
+         WORKER DATA
+      ================================================= */
 
-      const workerData: WorkerFormData =
-        {
-          name: name.trim(),
-          phone: phone.trim(),
+      const workerData: WorkerFormData = {
+        name: name.trim(),
 
-          category: category.trim(),
-          subcategory:
-            subcategory.trim(),
-          specialty:
-            specialty.trim(),
+        phone: phone.trim(),
 
-          services: [...services],
+        category: category.trim(),
 
-          pricingType,
+        subcategory:
+          subcategory.trim(),
 
-          startingPrice:
-            Number(startingPrice) ||
-            0,
+        specialty:
+          specialty.trim(),
 
-          halfDayPrice:
-            Number(halfDayPrice) ||
-            0,
+        services: [...services],
 
-          fullDayPrice:
-            Number(fullDayPrice) ||
-            0,
+        pricingType,
 
-          monthlyPrice:
-            Number(monthlyPrice) ||
-            0,
+        startingPrice:
+          Number(startingPrice) || 0,
 
-          visitCharge:
-            Number(visitCharge) ||
-            0,
+        halfDayPrice:
+          Number(halfDayPrice) || 0,
 
-          rating:
-            Number(rating) || 0,
+        fullDayPrice:
+          Number(fullDayPrice) || 0,
 
-          reviewCount:
-            Number(reviewCount) ||
-            0,
+        monthlyPrice:
+          Number(monthlyPrice) || 0,
 
-          location:
-            location.trim(),
+        visitCharge:
+          Number(visitCharge) || 0,
 
-          labourChauk:
-            cleanLabourChauk,
+        rating:
+          Number(rating) || 0,
 
-          available,
+        reviewCount:
+          Number(reviewCount) || 0,
 
-          yearsExperience:
-            Number(yearsExperience) ||
-            0,
+        location:
+          location.trim(),
 
-          completedJobs:
-            Number(completedJobs) ||
-            0,
+        labourChauk:
+          cleanLabourChauk,
 
-          bio: bio.trim(),
+        available,
 
-          skills: [...skills],
+        yearsExperience:
+          Number(yearsExperience) || 0,
 
-          photo: finalPhoto,
+        completedJobs:
+          Number(completedJobs) || 0,
 
-          responseTime:
-            responseTime.trim() ||
-            "Within 1 hour",
+        bio: bio.trim(),
 
-          certifications: [
-            ...certifications,
-          ],
-        };
+        skills: [...skills],
+
+        photo: finalPhoto,
+
+        responseTime:
+          responseTime.trim() ||
+          "Within 1 hour",
+
+        certifications: [
+          ...certifications,
+        ],
+      };
+
+      console.log(
+        "EDIT WORKER: DATA TO UPDATE",
+        workerData,
+      );
+
+      console.log(
+        "EDIT WORKER: ID",
+        worker.id,
+      );
+
+      /* =================================================
+         UPDATE DATABASE
+      ================================================= */
 
       const updatedWorker =
         await updateWorker(
@@ -681,7 +679,21 @@ export default function EditWorkerModal({
           workerData,
         );
 
+      console.log(
+        "EDIT WORKER: UPDATE SUCCESS",
+        updatedWorker,
+      );
+
+      /* =================================================
+         UPDATE PARENT STATE
+      ================================================= */
+
       onUpdated(updatedWorker);
+
+      /* =================================================
+         CLOSE MODAL
+      ================================================= */
+
       onClose();
     } catch (error) {
       console.error(
@@ -799,6 +811,7 @@ export default function EditWorkerModal({
         ================================================= */}
 
         <form
+          id="edit-worker-form"
           onSubmit={handleSubmit}
           className="
             flex-1
@@ -806,9 +819,7 @@ export default function EditWorkerModal({
             overscroll-contain
             p-4
             pb-6
-
             sm:p-5
-
             lg:p-6
           "
         >
@@ -825,6 +836,7 @@ export default function EditWorkerModal({
               />
 
               <div className="mt-2 flex flex-col gap-3 rounded-2xl border border-gray-200 bg-[#F8FAFC] p-3 sm:flex-row sm:items-center sm:p-4">
+
                 {/* PREVIEW */}
 
                 <div className="relative mx-auto flex h-24 w-24 shrink-0 items-center justify-center overflow-hidden rounded-2xl border border-gray-200 bg-orange-50 sm:mx-0 sm:h-28 sm:w-28">
@@ -920,6 +932,7 @@ export default function EditWorkerModal({
               icon={User}
             >
               <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 sm:gap-4">
+
                 <InputField
                   label="Worker Name"
                   icon={User}
@@ -989,6 +1002,7 @@ export default function EditWorkerModal({
                   onChange={setLabourChauk}
                   placeholder="Enter labour chauk"
                 />
+
               </div>
             </FormSection>
 
@@ -1001,6 +1015,7 @@ export default function EditWorkerModal({
               icon={BriefcaseBusiness}
             >
               <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 sm:gap-4">
+
                 <InputField
                   label="Years Experience"
                   icon={BriefcaseBusiness}
@@ -1020,6 +1035,7 @@ export default function EditWorkerModal({
                   type="number"
                   inputMode="numeric"
                 />
+
               </div>
             </FormSection>
 
@@ -1059,6 +1075,7 @@ export default function EditWorkerModal({
               icon={IndianRupee}
             >
               <div className="grid grid-cols-2 gap-3 sm:grid-cols-2 sm:gap-4">
+
                 <InputField
                   label="Starting Price"
                   icon={IndianRupee}
@@ -1109,6 +1126,7 @@ export default function EditWorkerModal({
                   inputMode="numeric"
                   fullOnMobile
                 />
+
               </div>
             </FormSection>
 
@@ -1121,6 +1139,7 @@ export default function EditWorkerModal({
               icon={Star}
             >
               <div className="grid grid-cols-1 gap-3 sm:grid-cols-3 sm:gap-4">
+
                 <InputField
                   label="Rating"
                   icon={Star}
@@ -1181,6 +1200,7 @@ export default function EditWorkerModal({
                     </select>
                   </div>
                 </div>
+
               </div>
             </FormSection>
 
@@ -1189,6 +1209,7 @@ export default function EditWorkerModal({
             ================================================= */}
 
             <div className="flex items-center justify-between gap-3 rounded-2xl border border-gray-200 bg-[#F8FAFC] p-3 sm:p-4">
+
               <div className="min-w-0">
                 <p className="text-xs font-bold text-[#0F172A] sm:text-sm">
                   Worker Availability
@@ -1221,6 +1242,7 @@ export default function EditWorkerModal({
                   }`}
                 />
               </button>
+
             </div>
 
             {/* =================================================
@@ -1234,13 +1256,15 @@ export default function EditWorkerModal({
                 </p>
               </div>
             )}
+
           </div>
 
           {/* =================================================
               FOOTER
           ================================================= */}
 
-          <div className="flex shrink-0 items-center justify-end gap-2 border-t border-gray-100 bg-white px-4 py-3 pb-[calc(12px+env(safe-area-inset-bottom))] sm:px-5 sm:py-4 sm:pb-4 lg:px-6">
+          <div className="sticky bottom-0 mt-5 flex shrink-0 items-center justify-end gap-2 border-t border-gray-100 bg-white px-4 py-3 pb-[calc(12px+env(safe-area-inset-bottom))] sm:px-5 sm:py-4 sm:pb-4 lg:px-6">
+
             <button
               type="button"
               onClick={onClose}
@@ -1270,13 +1294,9 @@ export default function EditWorkerModal({
                   ? "Saving..."
                   : "Save Changes"}
             </button>
+
           </div>
         </form>
-
-        {/* 
-          Form submit button above uses form="edit-worker-form".
-          Add id to form using the replacement below if needed.
-        */}
       </div>
     </div>
   );

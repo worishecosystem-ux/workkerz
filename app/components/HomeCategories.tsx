@@ -90,7 +90,7 @@ const descriptions: Record<string, string> = {
    FEATURED
 ========================================= */
 
-const featuredCategories = ["Labour", "Driver", "Mechanic", "Painter"];
+const featuredCategories = ["Labour", "Driver", "Mechanic", "Restaurant"];
 
 /* =========================================
    SEARCH DROPDOWN

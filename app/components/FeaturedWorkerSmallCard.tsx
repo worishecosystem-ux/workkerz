@@ -95,34 +95,49 @@ export function FeaturedWorkerSmallCard({ worker }: { worker: Worker }) {
       <div className="overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-xl">
         {/* Image */}
         <div className="relative bg-gray-50">
-          <div className="flex h-36 items-center justify-center p-4">
+          <div className="relative h-36 w-full overflow-hidden rounded-xl border border-gray-200 bg-white">
+            {/* Full box background */}
+            <img
+              src={worker.photo || "/placeholder-worker.png"}
+              alt=""
+              aria-hidden="true"
+              className="absolute inset-0 h-full w-full object-cover opacity-20 blur-md"
+            />
+
+            {/* Full worker image - NO CROP */}
             <img
               src={worker.photo || "/placeholder-worker.png"}
               alt={worker.name}
               loading="lazy"
               draggable={false}
-              className="h-full w-full object-contain transition duration-300 group-hover:scale-105"
+              className="relative z-10 h-full w-full object-cover object-top"
             />
-          </div>
 
-          {worker.available && (
-            <span className="absolute left-2 top-2 flex items-center gap-1 rounded-full bg-emerald-600 px-2 py-2 text-[10px] font-semibold text-white shadow"></span>
-          )}
+            {/* Available */}
+            {worker.available && (
+              <span className="absolute left-2 top-2 z-20 h-2 w-2 rounded-full bg-emerald-500 ring-2 ring-white" />
+            )}
 
-          <button
-            onClick={handleFavourite}
-            className={`absolute right-2 top-2 flex h-8 w-8 items-center justify-center rounded-full bg-white shadow-md transition
-        ${saved ? "text-red-500" : "text-gray-500 hover:text-red-500"}`}
-          >
-            <Heart
-              className={`h-4 w-4 ${saved ? "fill-red-500 text-red-500" : ""}`}
-            />
-          </button>
+            {/* Favourite */}
+            <button
+              onClick={handleFavourite}
+              className={`absolute right-2 top-2 z-20 flex h-8 w-8 items-center justify-center rounded-full bg-white shadow-md transition ${
+                saved ? "text-red-500" : "text-gray-500 hover:text-red-500"
+              }`}
+            >
+              <Heart
+                className={`h-4 w-4 ${
+                  saved ? "fill-red-500 text-red-500" : ""
+                }`}
+              />
+            </button>
 
-          <div className="absolute bottom-2 left-2 rounded-md bg-white px-2 py-1 shadow">
-            <div className="flex items-center gap-1">
-              <span className="text-yellow-500">★</span>
-              <span className="text-xs font-bold">{worker.rating}</span>
+            {/* Rating */}
+            <div className="absolute bottom-2 left-2 z-20 rounded-md bg-white px-2 py-1 shadow">
+              <div className="flex items-center gap-1">
+                <span className="text-yellow-500">★</span>
+                <span className="text-xs font-bold">{worker.rating}</span>
+              </div>
             </div>
           </div>
         </div>

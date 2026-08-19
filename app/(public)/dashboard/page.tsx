@@ -378,7 +378,7 @@ export default function DashboardPage() {
               />
 
               <QuickAction
-                href="/profile"
+                href="/eaurix"
                 title="Buy Material"
                 icon="🧱"
                 color="from-emerald-950 via-emerald-900 to-green-950"

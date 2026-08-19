@@ -52,6 +52,11 @@ const categoryColors: Record<
     bg: "#ECFEFF",
     label: "Washer",
   },
+  Painter: {
+    color: "#8B5CF6",
+    bg: "#F5F3FF",
+    label: "Painter",
+  },
 
   "Computer Operator": {
     color: "#7C3AED",
@@ -408,13 +413,6 @@ export default function WorkerProfile() {
 
   const cat = categoryColors[worker.category];
 
-  // Portfolio items (placeholder)
-  const portfolioItems = [
-    "https://images.unsplash.com/photo-1774600166432-ba8ac640b318?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&w=400",
-    "https://images.unsplash.com/photo-1676210133055-eab6ef033ce3?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&w=400",
-    "https://images.unsplash.com/photo-1660330590022-9f4ff56b63f6?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&w=400",
-  ];
-
   return (
     <div className="min-h-dvh w-full bg-white overflow-x-hidden">
       <div className="w-screen max-w-none m-0 p-0 lg:max-w-7xl lg:mx-auto lg:px-6 lg:py-8">
@@ -429,7 +427,9 @@ export default function WorkerProfile() {
     pt-[env(safe-area-inset-top)]
   "
                 style={{
-                  background: `linear-gradient(135deg, ${cat.color}20, ${cat.color}40)`,
+                  background: cat?.color
+                    ? `linear-gradient(135deg, ${cat.color}20, ${cat.color}40)`
+                    : "linear-gradient(135deg, #10b98120, #10b98140)",
                 }}
               />
 
@@ -443,7 +443,7 @@ export default function WorkerProfile() {
                         <img
                           src={worker.photo}
                           alt={worker.name}
-                          className="h-20 w-20 rounded-2xl border-2 border-white bg-slate-100 object-cover-contain shadow-lg"
+                          className="h-20 w-20 rounded-2xl border-2 border-white bg-slate-100 object-cover object-top shadow-lg"
                           onError={(e) => {
                             e.currentTarget.style.display = "none";
                           }}
@@ -856,29 +856,6 @@ export default function WorkerProfile() {
                         No reviews yet for this worker.
                       </div>
                     )}
-                  </div>
-                )}
-
-                {/* Portfolio Tab */}
-                {activeTab === "portfolio" && (
-                  <div>
-                    <p className="text-[#64748B] text-sm mb-5">
-                      Past work samples from {worker.name}
-                    </p>
-                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                      {portfolioItems.map((img, i) => (
-                        <div
-                          key={i}
-                          className="aspect-square rounded-xl overflow-hidden bg-gray-100 group cursor-pointer"
-                        >
-                          <img
-                            src={img}
-                            alt={`Portfolio ${i + 1}`}
-                            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-                          />
-                        </div>
-                      ))}
-                    </div>
                   </div>
                 )}
               </div>

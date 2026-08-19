@@ -327,3 +327,13 @@ html {
   animation: bellRing 0.8s ease-in-out infinite;
   transform-origin: top center;
 }
+
+@keyframes notificationProgress {
+  from {
+    width: 100%;
+  }
+
+  to {
+    width: 0%;
+  }
+}

@@ -18,8 +18,6 @@ import { useAdmin } from "@/app/components/context/AdminContext";
 import BookingPaymentStep from "./components/BookingPaymentStep";
 import BookingSuccessScreen from "./components/BookingSuccessScreen";
 const timeSlots = [
-  "06:00 AM",
-  "07:00 AM",
   "08:00 AM",
   "09:00 AM",
   "10:00 AM",
@@ -32,8 +30,6 @@ const timeSlots = [
   "05:00 PM",
   "06:00 PM",
   "07:00 PM",
-  "08:00 PM",
-  "09:00 PM",
 ];
 
 export default function BookingPage() {
@@ -370,7 +366,10 @@ export default function BookingPage() {
   const grandTotal = Number(totalCost || 0) + Number(serviceFee || 0);
 
   const payableAmount = paymentType === "full" ? grandTotal : serviceFee;
-
+const handleCancel = () => {
+  localStorage.removeItem(STORAGE_KEY);
+  router.back();
+};
   const handleNext = () => {
     if (step < 5) {
       setStep((prev) => prev + 1);
@@ -447,15 +446,7 @@ export default function BookingPage() {
     return true;
   };
 
-  const formatDate = (dateStr: string) => {
-    if (!dateStr) return "";
-    return new Date(dateStr + "T00:00:00").toLocaleDateString("en-US", {
-      weekday: "long",
-      month: "long",
-      day: "numeric",
-      year: "numeric",
-    });
-  };
+ 
 
   const inp =
     "w-full bg-[#F8FAFC] border border-gray-200 rounded-xl px-4 py-3 text-sm text-[#0F172A] placeholder-gray-400 outline-none focus:border-[#FF5C39] transition-colors";
@@ -466,9 +457,11 @@ export default function BookingPage() {
       <div className="fixed top-0 left-0 right-0 z-50 bg-linear-to-br from-emerald-950 via-emerald-800 to-green-600">
         <div className="relative mx-auto px-4 pt-safe pt-4 pb-5">
           {/* Cancel Button */}
+          {/* Cancel Button */}
           <button
-            onClick={handleBack} // ya onCancel
-            className="absolute top-10 right-3 z-20 flex h-10 w-10 items-center justify-center rounded-2xl  backdrop-blur-xl transition hover:bg-white/15 active:scale-95"
+            onClick={handleCancel}
+            aria-label="Cancel booking"
+            className="absolute top-10 right-3 z-20 flex h-10 w-10 items-center justify-center rounded-2xl backdrop-blur-xl transition hover:bg-white/15 active:scale-95"
           >
             <X className="h-5 w-5 text-white" />
           </button>
