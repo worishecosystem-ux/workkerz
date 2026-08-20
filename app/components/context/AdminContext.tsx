@@ -424,7 +424,7 @@ export function AdminProvider({ children }: { children: ReactNode }) {
   /* ===================================================== */
 
   const getProductById = (id: string) => {
-    return visibleProducts.find((product) => product.id === id);
+    return products.find((product) => product.id === id);
   };
 
   /* ===================================================== */
