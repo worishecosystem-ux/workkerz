@@ -27,89 +27,26 @@ type Props = {
   };
 };
 
-const tabs: {
-  key: BookingTab;
-  label: string;
-  mobileLabel: string;
-  icon: typeof ClipboardList;
-}[] = [
-  {
-    key: "pending",
-    label: "Pending",
-    mobileLabel: "New",
-    icon: ClipboardList,
-  },
-  {
-    key: "confirmed",
-    label: "Confirmed",
-    mobileLabel: "Confirmed",
-    icon: CheckCircle2,
-  },
-  {
-    key: "outOfWork",
-    label: "Out of Work",
-    mobileLabel: "Working",
-    icon: Clock3,
-  },
-  {
-    key: "completed",
-    label: "Completed",
-    mobileLabel: "Done",
-    icon: CircleCheckBig,
-  },
-  {
-    key: "rejected",
-    label: "Cancelled",
-    mobileLabel: "Cancelled",
-    icon: XCircle,
-  },
+const tabs: { key: BookingTab; label: string; icon: typeof ClipboardList }[] = [
+  { key: "pending", label: "New Booking", icon: ClipboardList },
+  { key: "confirmed", label: "Confirmed", icon: CheckCircle2 },
+  { key: "outOfWork", label: "Out of Work", icon: Clock3 },
+  { key: "completed", label: "Completed", icon: CircleCheckBig },
+  { key: "rejected", label: "Cancelled", icon: XCircle },
 ];
 
-const colors: Record<
-  BookingTab,
-  {
-    text: string;
-    underline: string;
-  }
-> = {
-  pending: {
-    text: "text-red-600",
-    underline: "bg-red-500",
-  },
-  confirmed: {
-    text: "text-blue-600",
-    underline: "bg-blue-500",
-  },
-  outOfWork: {
-    text: "text-orange-600",
-    underline: "bg-orange-500",
-  },
-  completed: {
-    text: "text-emerald-600",
-    underline: "bg-emerald-500",
-  },
-  rejected: {
-    text: "text-rose-600",
-    underline: "bg-rose-500",
-  },
+const colors: Record<BookingTab, { text: string; underline: string }> = {
+  pending: { text: "text-red-600", underline: "bg-red-500" },
+  confirmed: { text: "text-blue-600", underline: "bg-blue-500" },
+  outOfWork: { text: "text-orange-600", underline: "bg-orange-500" },
+  completed: { text: "text-emerald-600", underline: "bg-emerald-500" },
+  rejected: { text: "text-rose-600", underline: "bg-rose-500" },
 };
 
-export default function BookingTabs({
-  active,
-  onChange,
-  counts,
-}: Props) {
+export default function BookingTabs({ active, onChange, counts }: Props) {
   return (
     <nav className="w-full border-b border-slate-200">
-      <div
-        className="
-          flex
-          w-full
-          items-end
-          overflow-x-auto
-          scrollbar-none
-        "
-      >
+      <div className="grid w-full grid-cols-3 md:flex md:items-end">
         {tabs.map((tab) => {
           const selected = active === tab.key;
           const Icon = tab.icon;
@@ -122,111 +59,20 @@ export default function BookingTabs({
               type="button"
               onClick={() => onChange(tab.key)}
               aria-current={selected ? "page" : undefined}
-              className={`
-                group
-                relative
-                flex
-                min-w-0
-                flex-1
-                items-center
-                justify-center
-                gap-1
-                px-1.5
-                py-2.5
-                sm:gap-1.5
-                sm:px-2
-                sm:py-3
-                md:gap-2
-                md:py-3
-                lg:py-3.5
-                transition-colors
-                duration-200
-                focus:outline-none
-
-                ${
-                  selected
-                    ? color.text
-                    : "text-slate-500 hover:text-slate-800"
-                }
-              `}
+              className={`group relative flex min-w-0 items-center justify-center gap-1 px-1 py-2.5 transition-colors duration-200 focus:outline-none md:flex-1 md:gap-1.5 md:px-2 md:py-3 lg:gap-2 lg:px-3 lg:py-3.5 ${selected ? color.text : "text-slate-500 hover:text-slate-800"}`}
             >
-              {/* ICON */}
+              <Icon className="h-3.5 w-3.5 shrink-0 md:h-4 md:w-4 lg:h-[17px] lg:w-[17px]" strokeWidth={2.3} />
 
-              <Icon
-                className="
-                  h-3.5
-                  w-3.5
-                  shrink-0
-                  sm:h-4
-                  sm:w-4
-                "
-                strokeWidth={2.3}
-              />
-
-              {/* LABEL */}
-
-              <span
-                className="
-                  min-w-0
-                  truncate
-                  text-[9px]
-                  font-bold
-                  sm:text-[10px]
-                  md:text-[11px]
-                  lg:text-xs
-                "
-              >
-                {/* MOBILE LABEL */}
-
-                <span className="sm:hidden">
-                  {tab.mobileLabel}
-                </span>
-
-                {/* TABLET / DESKTOP LABEL */}
-
-                <span className="hidden sm:inline">
-                  {tab.label}
-                </span>
+              <span className="min-w-0 truncate text-[9px] font-bold md:text-[10px] lg:text-xs">
+                {tab.label}
               </span>
 
-              {/* COUNT */}
-
-              <span
-                className={`
-                  shrink-0
-                  text-[9px]
-                  font-black
-                  sm:text-[10px]
-                  md:text-[11px]
-                  ${
-                    selected
-                      ? color.text
-                      : "text-slate-400"
-                  }
-                `}
-              >
+              <span className={`shrink-0 text-[9px] font-black md:text-[10px] lg:text-[11px] ${selected ? color.text : "text-slate-400"}`}>
                 {count}
               </span>
 
-              {/* ACTIVE UNDERLINE */}
-
               {selected && (
-                <span
-                  className={`
-                    absolute
-                    bottom-0
-                    left-1/2
-                    h-[3px]
-                    -translate-x-1/2
-                    rounded-full
-                    transition-all
-                    duration-200
-                    w-[75%]
-                    sm:w-[65%]
-                    md:w-[60%]
-                    ${color.underline}
-                  `}
-                />
+                <span className={`absolute bottom-0 left-1/2 h-[2px] w-[72%] -translate-x-1/2 rounded-full transition-all duration-200 md:h-[3px] md:w-[65%] lg:w-[60%] ${color.underline}`} />
               )}
             </button>
           );

@@ -15,8 +15,9 @@ import {
   type LucideIcon,
 } from "lucide-react";
 
-import type { NotificationForm } from "./NotificationCreateDrawer";
 import { useState } from "react";
+import type { NotificationForm } from "./NotificationCreateDrawer";
+
 /* =====================================================
    TEMPLATE TYPES
 ===================================================== */
@@ -39,7 +40,6 @@ export type NotificationTemplate = {
     | "general";
 
   icon: string;
-
   message: string;
 
   type:
@@ -54,15 +54,9 @@ export type NotificationTemplate = {
 };
 
 type Props = {
-  onApply: (
-    template: NotificationTemplate
-  ) => void;
-
+  onApply: (template: NotificationTemplate) => void;
   currentVersion?: string;
-
-  onSend?: (
-    template: NotificationTemplate
-  ) => void;
+  onSend?: (template: NotificationTemplate) => void;
 };
 
 /* =====================================================
@@ -155,7 +149,6 @@ const categories: CategoryConfig[] = [
 ===================================================== */
 
 const templates: NotificationTemplate[] = [
-
   /* ===================================================
      APP VERSION — 10
   =================================================== */
@@ -172,7 +165,6 @@ const templates: NotificationTemplate[] = [
     action_url:
       "https://play.google.com/store/apps/details?id=com.workkerz.app",
   },
-
   {
     id: "version-2",
     category: "version",
@@ -185,7 +177,6 @@ const templates: NotificationTemplate[] = [
     action_url:
       "https://play.google.com/store/apps/details?id=com.workkerz.app",
   },
-
   {
     id: "version-3",
     category: "version",
@@ -198,7 +189,6 @@ const templates: NotificationTemplate[] = [
     action_url:
       "https://play.google.com/store/apps/details?id=com.workkerz.app",
   },
-
   {
     id: "version-4",
     category: "version",
@@ -211,7 +201,6 @@ const templates: NotificationTemplate[] = [
     action_url:
       "https://play.google.com/store/apps/details?id=com.workkerz.app",
   },
-
   {
     id: "version-5",
     category: "version",
@@ -224,7 +213,6 @@ const templates: NotificationTemplate[] = [
     action_url:
       "https://play.google.com/store/apps/details?id=com.workkerz.app",
   },
-
   {
     id: "version-6",
     category: "version",
@@ -237,7 +225,6 @@ const templates: NotificationTemplate[] = [
     action_url:
       "https://play.google.com/store/apps/details?id=com.workkerz.app",
   },
-
   {
     id: "version-7",
     category: "version",
@@ -250,7 +237,6 @@ const templates: NotificationTemplate[] = [
     action_url:
       "https://play.google.com/store/apps/details?id=com.workkerz.app",
   },
-
   {
     id: "version-8",
     category: "version",
@@ -263,7 +249,6 @@ const templates: NotificationTemplate[] = [
     action_url:
       "https://play.google.com/store/apps/details?id=com.workkerz.app",
   },
-
   {
     id: "version-9",
     category: "version",
@@ -276,7 +261,6 @@ const templates: NotificationTemplate[] = [
     action_url:
       "https://play.google.com/store/apps/details?id=com.workkerz.app",
   },
-
   {
     id: "version-10",
     category: "version",
@@ -305,7 +289,6 @@ const templates: NotificationTemplate[] = [
     type: "system",
     action_url: "/",
   },
-
   {
     id: "announcement-2",
     category: "announcement",
@@ -317,7 +300,6 @@ const templates: NotificationTemplate[] = [
     type: "system",
     action_url: "/",
   },
-
   {
     id: "announcement-3",
     category: "announcement",
@@ -329,7 +311,6 @@ const templates: NotificationTemplate[] = [
     type: "system",
     action_url: "/",
   },
-
   {
     id: "announcement-4",
     category: "announcement",
@@ -341,7 +322,6 @@ const templates: NotificationTemplate[] = [
     type: "system",
     action_url: "/",
   },
-
   {
     id: "announcement-5",
     category: "announcement",
@@ -353,7 +333,6 @@ const templates: NotificationTemplate[] = [
     type: "system",
     action_url: "/",
   },
-
   {
     id: "announcement-6",
     category: "announcement",
@@ -365,7 +344,6 @@ const templates: NotificationTemplate[] = [
     type: "system",
     action_url: "/",
   },
-
   {
     id: "announcement-7",
     category: "announcement",
@@ -377,7 +355,6 @@ const templates: NotificationTemplate[] = [
     type: "system",
     action_url: "/",
   },
-
   {
     id: "announcement-8",
     category: "announcement",
@@ -389,7 +366,6 @@ const templates: NotificationTemplate[] = [
     type: "system",
     action_url: "/",
   },
-
   {
     id: "announcement-9",
     category: "announcement",
@@ -401,7 +377,6 @@ const templates: NotificationTemplate[] = [
     type: "system",
     action_url: "/",
   },
-
   {
     id: "announcement-10",
     category: "announcement",
@@ -429,7 +404,6 @@ const templates: NotificationTemplate[] = [
     type: "offer",
     action_url: "/",
   },
-
   {
     id: "offer-2",
     category: "offer",
@@ -441,7 +415,6 @@ const templates: NotificationTemplate[] = [
     type: "offer",
     action_url: "/",
   },
-
   {
     id: "offer-3",
     category: "offer",
@@ -453,7 +426,6 @@ const templates: NotificationTemplate[] = [
     type: "offer",
     action_url: "/",
   },
-
   {
     id: "offer-4",
     category: "offer",
@@ -465,7 +437,6 @@ const templates: NotificationTemplate[] = [
     type: "offer",
     action_url: "/",
   },
-
   {
     id: "offer-5",
     category: "offer",
@@ -477,7 +448,6 @@ const templates: NotificationTemplate[] = [
     type: "offer",
     action_url: "/",
   },
-
   {
     id: "offer-6",
     category: "offer",
@@ -489,7 +459,6 @@ const templates: NotificationTemplate[] = [
     type: "offer",
     action_url: "/",
   },
-
   {
     id: "offer-7",
     category: "offer",
@@ -501,7 +470,6 @@ const templates: NotificationTemplate[] = [
     type: "offer",
     action_url: "/",
   },
-
   {
     id: "offer-8",
     category: "offer",
@@ -513,7 +481,6 @@ const templates: NotificationTemplate[] = [
     type: "offer",
     action_url: "/",
   },
-
   {
     id: "offer-9",
     category: "offer",
@@ -525,7 +492,6 @@ const templates: NotificationTemplate[] = [
     type: "offer",
     action_url: "/",
   },
-
   {
     id: "offer-10",
     category: "offer",
@@ -553,7 +519,6 @@ const templates: NotificationTemplate[] = [
     type: "system",
     action_url: "/",
   },
-
   {
     id: "important-2",
     category: "important",
@@ -565,7 +530,6 @@ const templates: NotificationTemplate[] = [
     type: "system",
     action_url: "/",
   },
-
   {
     id: "important-3",
     category: "important",
@@ -577,7 +541,6 @@ const templates: NotificationTemplate[] = [
     type: "system",
     action_url: "/",
   },
-
   {
     id: "important-4",
     category: "important",
@@ -589,7 +552,6 @@ const templates: NotificationTemplate[] = [
     type: "system",
     action_url: "/",
   },
-
   {
     id: "important-5",
     category: "important",
@@ -601,7 +563,6 @@ const templates: NotificationTemplate[] = [
     type: "system",
     action_url: "/",
   },
-
   {
     id: "important-6",
     category: "important",
@@ -613,7 +574,6 @@ const templates: NotificationTemplate[] = [
     type: "system",
     action_url: "/",
   },
-
   {
     id: "important-7",
     category: "important",
@@ -625,19 +585,16 @@ const templates: NotificationTemplate[] = [
     type: "system",
     action_url: "/",
   },
-
   {
     id: "important-8",
     category: "important",
     title: "User Notice",
     description: "User communication",
     icon: "👋",
-    message:
-      "Please review this important notice from Workkerz.",
+    message: "Please review this important notice from Workkerz.",
     type: "system",
     action_url: "/",
   },
-
   {
     id: "important-9",
     category: "important",
@@ -649,21 +606,19 @@ const templates: NotificationTemplate[] = [
     type: "system",
     action_url: "/",
   },
-
   {
     id: "important-10",
     category: "important",
     title: "Important Workkerz Alert",
     description: "Important alert",
     icon: "🚨",
-    message:
-      "Please review this important alert from Workkerz.",
+    message: "Please review this important alert from Workkerz.",
     type: "system",
     action_url: "/",
   },
 
   /* ===================================================
-     APP ERRORS / TECHNICAL — 10
+     TECHNICAL — 10
   =================================================== */
 
   {
@@ -677,7 +632,6 @@ const templates: NotificationTemplate[] = [
     type: "system",
     action_url: "/",
   },
-
   {
     id: "technical-2",
     category: "technical",
@@ -689,7 +643,6 @@ const templates: NotificationTemplate[] = [
     type: "system",
     action_url: "/",
   },
-
   {
     id: "technical-3",
     category: "technical",
@@ -701,7 +654,6 @@ const templates: NotificationTemplate[] = [
     type: "system",
     action_url: "/",
   },
-
   {
     id: "technical-4",
     category: "technical",
@@ -713,7 +665,6 @@ const templates: NotificationTemplate[] = [
     type: "system",
     action_url: "/",
   },
-
   {
     id: "technical-5",
     category: "technical",
@@ -725,7 +676,6 @@ const templates: NotificationTemplate[] = [
     type: "booking",
     action_url: "/bookings",
   },
-
   {
     id: "technical-6",
     category: "technical",
@@ -737,7 +687,6 @@ const templates: NotificationTemplate[] = [
     type: "payment",
     action_url: "/",
   },
-
   {
     id: "technical-7",
     category: "technical",
@@ -749,7 +698,6 @@ const templates: NotificationTemplate[] = [
     type: "system",
     action_url: "/",
   },
-
   {
     id: "technical-8",
     category: "technical",
@@ -761,7 +709,6 @@ const templates: NotificationTemplate[] = [
     type: "system",
     action_url: "/",
   },
-
   {
     id: "technical-9",
     category: "technical",
@@ -773,7 +720,6 @@ const templates: NotificationTemplate[] = [
     type: "system",
     action_url: "/",
   },
-
   {
     id: "technical-10",
     category: "technical",
@@ -801,7 +747,6 @@ const templates: NotificationTemplate[] = [
     type: "system",
     action_url: "/",
   },
-
   {
     id: "maintenance-2",
     category: "maintenance",
@@ -813,7 +758,6 @@ const templates: NotificationTemplate[] = [
     type: "system",
     action_url: "/",
   },
-
   {
     id: "maintenance-3",
     category: "maintenance",
@@ -825,7 +769,6 @@ const templates: NotificationTemplate[] = [
     type: "system",
     action_url: "/",
   },
-
   {
     id: "maintenance-4",
     category: "maintenance",
@@ -837,7 +780,6 @@ const templates: NotificationTemplate[] = [
     type: "system",
     action_url: "/",
   },
-
   {
     id: "maintenance-5",
     category: "maintenance",
@@ -849,7 +791,6 @@ const templates: NotificationTemplate[] = [
     type: "system",
     action_url: "/",
   },
-
   {
     id: "maintenance-6",
     category: "maintenance",
@@ -861,7 +802,6 @@ const templates: NotificationTemplate[] = [
     type: "system",
     action_url: "/",
   },
-
   {
     id: "maintenance-7",
     category: "maintenance",
@@ -873,7 +813,6 @@ const templates: NotificationTemplate[] = [
     type: "system",
     action_url: "/",
   },
-
   {
     id: "maintenance-8",
     category: "maintenance",
@@ -885,7 +824,6 @@ const templates: NotificationTemplate[] = [
     type: "system",
     action_url: "/",
   },
-
   {
     id: "maintenance-9",
     category: "maintenance",
@@ -897,7 +835,6 @@ const templates: NotificationTemplate[] = [
     type: "system",
     action_url: "/",
   },
-
   {
     id: "maintenance-10",
     category: "maintenance",
@@ -920,12 +857,10 @@ const templates: NotificationTemplate[] = [
     title: "Booking Confirmed",
     description: "Booking confirmation",
     icon: "✅",
-    message:
-      "Your Workkerz booking has been confirmed successfully.",
+    message: "Your Workkerz booking has been confirmed successfully.",
     type: "booking",
     action_url: "/bookings",
   },
-
   {
     id: "booking-2",
     category: "booking",
@@ -937,19 +872,16 @@ const templates: NotificationTemplate[] = [
     type: "booking",
     action_url: "/bookings",
   },
-
   {
     id: "booking-3",
     category: "booking",
     title: "Booking Accepted",
     description: "Booking accepted",
     icon: "👍",
-    message:
-      "Your Workkerz booking has been accepted.",
+    message: "Your Workkerz booking has been accepted.",
     type: "booking",
     action_url: "/bookings",
   },
-
   {
     id: "booking-4",
     category: "booking",
@@ -961,19 +893,16 @@ const templates: NotificationTemplate[] = [
     type: "booking",
     action_url: "/bookings",
   },
-
   {
     id: "booking-5",
     category: "booking",
     title: "Booking Reminder",
     description: "Upcoming booking",
     icon: "⏰",
-    message:
-      "This is a reminder about your upcoming Workkerz booking.",
+    message: "This is a reminder about your upcoming Workkerz booking.",
     type: "booking",
     action_url: "/bookings",
   },
-
   {
     id: "booking-6",
     category: "booking",
@@ -985,7 +914,6 @@ const templates: NotificationTemplate[] = [
     type: "booking",
     action_url: "/bookings",
   },
-
   {
     id: "booking-7",
     category: "booking",
@@ -997,7 +925,6 @@ const templates: NotificationTemplate[] = [
     type: "booking",
     action_url: "/bookings",
   },
-
   {
     id: "booking-8",
     category: "booking",
@@ -1009,7 +936,6 @@ const templates: NotificationTemplate[] = [
     type: "booking",
     action_url: "/bookings",
   },
-
   {
     id: "booking-9",
     category: "booking",
@@ -1021,7 +947,6 @@ const templates: NotificationTemplate[] = [
     type: "booking",
     action_url: "/bookings",
   },
-
   {
     id: "booking-10",
     category: "booking",
@@ -1049,7 +974,6 @@ const templates: NotificationTemplate[] = [
     type: "work",
     action_url: "/",
   },
-
   {
     id: "worker-2",
     category: "worker",
@@ -1061,7 +985,6 @@ const templates: NotificationTemplate[] = [
     type: "work",
     action_url: "/",
   },
-
   {
     id: "worker-3",
     category: "worker",
@@ -1073,7 +996,6 @@ const templates: NotificationTemplate[] = [
     type: "work",
     action_url: "/",
   },
-
   {
     id: "worker-4",
     category: "worker",
@@ -1085,7 +1007,6 @@ const templates: NotificationTemplate[] = [
     type: "work",
     action_url: "/",
   },
-
   {
     id: "worker-5",
     category: "worker",
@@ -1097,7 +1018,6 @@ const templates: NotificationTemplate[] = [
     type: "work",
     action_url: "/",
   },
-
   {
     id: "worker-6",
     category: "worker",
@@ -1109,7 +1029,6 @@ const templates: NotificationTemplate[] = [
     type: "work",
     action_url: "/",
   },
-
   {
     id: "worker-7",
     category: "worker",
@@ -1121,7 +1040,6 @@ const templates: NotificationTemplate[] = [
     type: "work",
     action_url: "/",
   },
-
   {
     id: "worker-8",
     category: "worker",
@@ -1133,7 +1051,6 @@ const templates: NotificationTemplate[] = [
     type: "work",
     action_url: "/",
   },
-
   {
     id: "worker-9",
     category: "worker",
@@ -1145,7 +1062,6 @@ const templates: NotificationTemplate[] = [
     type: "work",
     action_url: "/",
   },
-
   {
     id: "worker-10",
     category: "worker",
@@ -1168,12 +1084,10 @@ const templates: NotificationTemplate[] = [
     title: "Payment Successful",
     description: "Successful payment",
     icon: "✅",
-    message:
-      "Your Workkerz payment has been completed successfully.",
+    message: "Your Workkerz payment has been completed successfully.",
     type: "payment",
     action_url: "/",
   },
-
   {
     id: "payment-2",
     category: "payment",
@@ -1185,7 +1099,6 @@ const templates: NotificationTemplate[] = [
     type: "payment",
     action_url: "/",
   },
-
   {
     id: "payment-3",
     category: "payment",
@@ -1197,7 +1110,6 @@ const templates: NotificationTemplate[] = [
     type: "payment",
     action_url: "/",
   },
-
   {
     id: "payment-4",
     category: "payment",
@@ -1209,7 +1121,6 @@ const templates: NotificationTemplate[] = [
     type: "payment",
     action_url: "/",
   },
-
   {
     id: "payment-5",
     category: "payment",
@@ -1221,7 +1132,6 @@ const templates: NotificationTemplate[] = [
     type: "payment",
     action_url: "/",
   },
-
   {
     id: "payment-6",
     category: "payment",
@@ -1233,7 +1143,6 @@ const templates: NotificationTemplate[] = [
     type: "payment",
     action_url: "/",
   },
-
   {
     id: "payment-7",
     category: "payment",
@@ -1245,7 +1154,6 @@ const templates: NotificationTemplate[] = [
     type: "payment",
     action_url: "/",
   },
-
   {
     id: "payment-8",
     category: "payment",
@@ -1257,7 +1165,6 @@ const templates: NotificationTemplate[] = [
     type: "payment",
     action_url: "/",
   },
-
   {
     id: "payment-9",
     category: "payment",
@@ -1269,7 +1176,6 @@ const templates: NotificationTemplate[] = [
     type: "payment",
     action_url: "/",
   },
-
   {
     id: "payment-10",
     category: "payment",
@@ -1297,7 +1203,6 @@ const templates: NotificationTemplate[] = [
     type: "system",
     action_url: "/",
   },
-
   {
     id: "general-2",
     category: "general",
@@ -1309,7 +1214,6 @@ const templates: NotificationTemplate[] = [
     type: "message",
     action_url: "/",
   },
-
   {
     id: "general-3",
     category: "general",
@@ -1321,7 +1225,6 @@ const templates: NotificationTemplate[] = [
     type: "system",
     action_url: "/",
   },
-
   {
     id: "general-4",
     category: "general",
@@ -1333,7 +1236,6 @@ const templates: NotificationTemplate[] = [
     type: "message",
     action_url: "/",
   },
-
   {
     id: "general-5",
     category: "general",
@@ -1345,7 +1247,6 @@ const templates: NotificationTemplate[] = [
     type: "system",
     action_url: "/",
   },
-
   {
     id: "general-6",
     category: "general",
@@ -1357,7 +1258,6 @@ const templates: NotificationTemplate[] = [
     type: "system",
     action_url: "/",
   },
-
   {
     id: "general-7",
     category: "general",
@@ -1369,7 +1269,6 @@ const templates: NotificationTemplate[] = [
     type: "system",
     action_url: "/",
   },
-
   {
     id: "general-8",
     category: "general",
@@ -1381,7 +1280,6 @@ const templates: NotificationTemplate[] = [
     type: "system",
     action_url: "/",
   },
-
   {
     id: "general-9",
     category: "general",
@@ -1393,7 +1291,6 @@ const templates: NotificationTemplate[] = [
     type: "offer",
     action_url: "/",
   },
-
   {
     id: "general-10",
     category: "general",
@@ -1422,47 +1319,38 @@ const colorClasses: Record<
     icon: "bg-green-50 text-green-600",
     active: "border-green-400 bg-green-50",
   },
-
   blue: {
     icon: "bg-blue-50 text-blue-600",
     active: "border-blue-400 bg-blue-50",
   },
-
   pink: {
     icon: "bg-pink-50 text-pink-600",
     active: "border-pink-400 bg-pink-50",
   },
-
   purple: {
     icon: "bg-purple-50 text-purple-600",
     active: "border-purple-400 bg-purple-50",
   },
-
   red: {
     icon: "bg-red-50 text-red-600",
     active: "border-red-400 bg-red-50",
   },
-
   orange: {
     icon: "bg-orange-50 text-orange-600",
     active: "border-orange-400 bg-orange-50",
   },
-
   cyan: {
     icon: "bg-cyan-50 text-cyan-600",
     active: "border-cyan-400 bg-cyan-50",
   },
-
   amber: {
     icon: "bg-amber-50 text-amber-600",
     active: "border-amber-400 bg-amber-50",
   },
-
   emerald: {
     icon: "bg-emerald-50 text-emerald-600",
     active: "border-emerald-400 bg-emerald-50",
   },
-
   gray: {
     icon: "bg-gray-50 text-gray-600",
     active: "border-gray-400 bg-gray-50",
@@ -1478,77 +1366,44 @@ export default function NotificationTemplates({
   currentVersion = "1.0.0",
 }: Props) {
   const [category, setCategory] =
-    useState<
-      NotificationTemplate["category"]
-    >("version");
+    useState<NotificationTemplate["category"]>("version");
 
-  const [search, setSearch] =
-    useState("");
+  const [search, setSearch] = useState("");
 
-  const selectedCategory =
-    categories.find(
-      (item) =>
-        item.id === category
-    );
+  const selectedCategory = categories.find(
+    (item) => item.id === category
+  );
 
-  const filteredTemplates =
-    templates.filter(
-      (template) => {
-        const matchesCategory =
-          template.category ===
-          category;
+  const filteredTemplates = templates.filter((template) => {
+    const matchesCategory = template.category === category;
 
-        const query =
-          search
-            .trim()
-            .toLowerCase();
+    const query = search.trim().toLowerCase();
 
-        const matchesSearch =
-          !query ||
-          template.title
-            .toLowerCase()
-            .includes(query) ||
-          template.description
-            .toLowerCase()
-            .includes(query);
+    const matchesSearch =
+      !query ||
+      template.title.toLowerCase().includes(query) ||
+      template.description.toLowerCase().includes(query) ||
+      template.message.toLowerCase().includes(query);
 
-        return (
-          matchesCategory &&
-          matchesSearch
-        );
-      }
-    );
+    return matchesCategory && matchesSearch;
+  });
 
-  const applyTemplate = (
-    template: NotificationTemplate
-  ) => {
-    /*
-     * Version template:
-     * automatically insert current version.
-     */
-
-    if (
-      template.category ===
-      "version"
-    ) {
-      const version =
-        currentVersion ||
-        "1.0.0";
+  const applyTemplate = (template: NotificationTemplate) => {
+    if (template.category === "version") {
+      const version = currentVersion || "1.0.0";
 
       onApply({
         ...template,
 
         title:
-          template.title ===
-          "New App Version"
+          template.title === "New App Version"
             ? `Workkerz App ${version} is now live`
             : template.title,
 
-        message:
-          template.message.replace(
-            "latest version",
-            `version ${version}`
-          ),
+        message: template.message.replace(
+          "latest version",
+          `version ${version}`
+        ),
       });
 
       return;
@@ -1560,15 +1415,19 @@ export default function NotificationTemplates({
   return (
     <section
       className="
+        w-full
         overflow-hidden
-        rounded-2xl
+        rounded-xl
         border
         border-green-100
         bg-gradient-to-br
         from-green-50
         via-white
         to-white
-        shadow-[0_4px_24px_rgba(0,0,0,0.035)]
+        shadow-[0_3px_18px_rgba(0,0,0,0.035)]
+
+        sm:rounded-2xl
+        lg:shadow-[0_4px_24px_rgba(0,0,0,0.035)]
       "
     >
       {/* =================================================
@@ -1579,74 +1438,94 @@ export default function NotificationTemplates({
         className="
           border-b
           border-green-100
-          px-5
-          py-4
-          sm:px-6
+          px-3
+          py-3
+
+          sm:px-4
+          sm:py-4
+
+          md:px-5
+
+          lg:px-6
         "
       >
         <div
           className="
             flex
             flex-col
-            gap-3
-            sm:flex-row
-            sm:items-center
-            sm:justify-between
+            gap-2.5
+
+            sm:gap-3
+
+            md:flex-row
+            md:items-center
+            md:justify-between
           "
         >
-          <div className="flex items-center gap-2">
+          <div className="flex min-w-0 items-center gap-2">
             <div
               className="
                 flex
-                h-8
-                w-8
+                h-7
+                w-7
+                shrink-0
                 items-center
                 justify-center
                 rounded-lg
                 bg-green-600
                 text-white
+
+                sm:h-8
+                sm:w-8
               "
             >
-              <Sparkles size={15} />
+              <Sparkles
+                size={13}
+                className="sm:h-4 sm:w-4"
+              />
             </div>
 
-            <div>
-              <h2 className="text-sm font-black text-gray-900">
+            <div className="min-w-0">
+              <h2 className="truncate text-xs font-black text-gray-900 sm:text-sm">
                 Notification Templates
               </h2>
 
-              <p className="text-[10px] text-gray-400">
+              <p className="truncate text-[9px] text-gray-400 sm:text-[10px]">
                 100 ready-to-use notification designs
               </p>
             </div>
           </div>
 
-          <div className="text-[10px] font-bold text-green-600">
+          <div className="text-[9px] font-bold text-green-600 sm:text-[10px]">
             {templates.length} Templates
           </div>
         </div>
 
         {/* SEARCH */}
 
-        <div className="mt-4">
+        <div className="mt-2.5 sm:mt-4">
           <input
             value={search}
             onChange={(event) =>
-              setSearch(
-                event.target.value
-              )
+              setSearch(event.target.value)
             }
             placeholder="Search templates..."
             className="
-              h-10
+              h-9
               w-full
-              rounded-xl
+              rounded-lg
               border
               border-gray-200
               bg-white
               px-3
-              text-xs
+              text-[11px]
               outline-none
+              transition
+
+              sm:h-10
+              sm:rounded-xl
+              sm:text-xs
+
               focus:border-green-500
               focus:ring-4
               focus:ring-green-50
@@ -1665,95 +1544,104 @@ export default function NotificationTemplates({
           border-b
           border-gray-100
           bg-white/70
+          scrollbar-none
         "
       >
         <div
           className="
             flex
             min-w-max
-            gap-2
-            p-3
+            gap-1.5
+            p-2
+
+            sm:gap-2
+            sm:p-3
           "
         >
-          {categories.map(
-            (item) => {
-              const Icon =
-                item.icon;
+          {categories.map((item) => {
+            const Icon = item.icon;
+            const active = category === item.id;
+            const colors = colorClasses[item.color];
 
-              const active =
-                category ===
-                item.id;
+            return (
+              <button
+                key={item.id}
+                type="button"
+                onClick={() => setCategory(item.id)}
+                className={`
+                  flex
+                  min-h-[40px]
+                  items-center
+                  gap-1.5
+                  rounded-lg
+                  border
+                  px-2
+                  py-1.5
+                  text-left
+                  transition
+                  active:scale-[0.98]
 
-              const colors =
-                colorClasses[
-                  item.color
-                ];
+                  sm:min-h-[44px]
+                  sm:gap-2
+                  sm:rounded-xl
+                  sm:px-3
+                  sm:py-2
 
-              return (
-                <button
-                  key={item.id}
-                  type="button"
-                  onClick={() =>
-                    setCategory(
-                      item.id
-                    )
+                  ${
+                    active
+                      ? colors.active
+                      : "border-gray-200 bg-white hover:bg-gray-50"
                   }
+                `}
+              >
+                <span
                   className={`
                     flex
+                    h-6
+                    w-6
+                    shrink-0
                     items-center
-                    gap-2
-                    rounded-xl
-                    border
-                    px-3
-                    py-2
-                    text-left
-                    transition
-                    ${
-                      active
-                        ? colors.active
-                        : "border-gray-200 bg-white hover:bg-gray-50"
-                    }
+                    justify-center
+                    rounded-md
+                    ${colors.icon}
+
+                    sm:h-7
+                    sm:w-7
+                    sm:rounded-lg
                   `}
                 >
+                  <Icon
+                    size={12}
+                    className="sm:h-3.5 sm:w-3.5"
+                  />
+                </span>
+
+                <span>
                   <span
                     className={`
-                      flex
-                      h-7
-                      w-7
-                      shrink-0
-                      items-center
-                      justify-center
-                      rounded-lg
-                      ${colors.icon}
+                      block
+                      text-[9px]
+                      font-black
+
+                      sm:text-[10px]
+
+                      ${
+                        active
+                          ? "text-gray-900"
+                          : "text-gray-700"
+                      }
                     `}
                   >
-                    <Icon size={14} />
+                    {item.label}
                   </span>
 
-                  <span>
-                    <span
-                      className={`
-                        block
-                        text-[10px]
-                        font-black
-                        ${
-                          active
-                            ? "text-gray-900"
-                            : "text-gray-700"
-                        }
-                      `}
-                    >
-                      {item.label}
-                    </span>
-
-                    <span className="hidden text-[8px] text-gray-400 sm:block">
-                      {item.description}
-                    </span>
+                  <span className="hidden text-[8px] text-gray-400 md:block">
+                    {item.description}
                   </span>
-                </button>
-              );
-            }
-          )}
+                </span>
+              </button>
+            );
+          })}
         </div>
       </div>
 
@@ -1767,40 +1655,46 @@ export default function NotificationTemplates({
             flex
             items-center
             justify-between
-            gap-3
+            gap-2
             border-b
             border-gray-100
             bg-white/50
-            px-5
-            py-3
-            sm:px-6
+            px-3
+            py-2.5
+
+            sm:gap-3
+            sm:px-4
+            sm:py-3
+
+            md:px-5
+
+            lg:px-6
           "
         >
-          <div className="flex items-center gap-2">
+          <div className="flex min-w-0 items-center gap-2">
             <selectedCategory.icon
-              size={15}
-              className="text-gray-500"
+              size={14}
+              className="shrink-0 text-gray-500 sm:h-4 sm:w-4"
             />
 
-            <div>
-              <p className="text-xs font-black text-gray-800">
+            <div className="min-w-0">
+              <p className="truncate text-[10px] font-black text-gray-800 sm:text-xs">
                 {selectedCategory.label}
               </p>
 
-              <p className="text-[9px] text-gray-400">
+              <p className="hidden truncate text-[9px] text-gray-400 sm:block">
                 {selectedCategory.description}
               </p>
             </div>
           </div>
 
-          <span className="rounded-full bg-gray-100 px-2.5 py-1 text-[9px] font-bold text-gray-500">
+          <span className="shrink-0 rounded-full bg-gray-100 px-2 py-1 text-[8px] font-bold text-gray-500 sm:px-2.5 sm:text-[9px]">
             {
               templates.filter(
-                (item) =>
-                  item.category ===
-                  category
+                (item) => item.category === category
               ).length
-            } templates
+            }{" "}
+            templates
           </span>
         </div>
       )}
@@ -1812,34 +1706,32 @@ export default function NotificationTemplates({
       <div
         className="
           grid
-          gap-3
-          p-4
-          sm:grid-cols-2
-          sm:p-5
+          grid-cols-2
+          gap-2
+          p-2.5
+
+          sm:gap-3
+          sm:p-4
+
+          md:grid-cols-2
+          md:gap-4
+          md:p-5
+
           lg:grid-cols-3
+          lg:p-6
+
           xl:grid-cols-4
         "
       >
-        {filteredTemplates.map(
-          (template) => (
-            <TemplateCard
-              key={
-                template.id
-              }
-              template={
-                template
-              }
-              onApply={() =>
-                applyTemplate(
-                  template
-                )
-              }
-            />
-          )
-        )}
+        {filteredTemplates.map((template) => (
+          <TemplateCard
+            key={template.id}
+            template={template}
+            onApply={() => applyTemplate(template)}
+          />
+        ))}
 
-        {filteredTemplates.length ===
-          0 && (
+        {filteredTemplates.length === 0 && (
           <div
             className="
               col-span-full
@@ -1848,20 +1740,22 @@ export default function NotificationTemplates({
               border-dashed
               border-gray-200
               bg-white
-              p-10
+              p-6
               text-center
+
+              sm:p-10
             "
           >
             <Sparkles
-              size={24}
-              className="mx-auto text-gray-300"
+              size={22}
+              className="mx-auto text-gray-300 sm:h-6 sm:w-6"
             />
 
-            <p className="mt-3 text-xs font-bold text-gray-500">
+            <p className="mt-2 text-[11px] font-bold text-gray-500 sm:mt-3 sm:text-xs">
               No templates found
             </p>
 
-            <p className="mt-1 text-[10px] text-gray-400">
+            <p className="mt-1 text-[9px] text-gray-400 sm:text-[10px]">
               Try another search.
             </p>
           </div>
@@ -1889,21 +1783,35 @@ function TemplateCard({
       className="
         group
         flex
-        min-h-[165px]
+        min-h-[145px]
+        w-full
         flex-col
         items-start
         rounded-xl
         border
         border-gray-200
         bg-white
-        p-4
+        p-2.5
         text-left
         shadow-sm
         transition
+
+        active:scale-[0.98]
+
         hover:-translate-y-0.5
         hover:border-green-300
         hover:bg-green-50/30
         hover:shadow-md
+
+        sm:min-h-[160px]
+        sm:rounded-2xl
+        sm:p-3.5
+
+        md:min-h-[175px]
+        md:p-4
+
+        lg:min-h-[185px]
+        lg:p-4
       "
     >
       {/* ICON */}
@@ -1912,43 +1820,99 @@ function TemplateCard({
         <div
           className="
             flex
-            h-10
-            w-10
+            h-8
+            w-8
+            shrink-0
             items-center
             justify-center
-            rounded-xl
+            rounded-lg
             bg-green-50
-            text-xl
+            text-base
+
+            sm:h-9
+            sm:w-9
+            sm:rounded-xl
+            sm:text-lg
+
+            md:h-10
+            md:w-10
+            md:text-xl
           "
         >
           {template.icon}
         </div>
 
         <Tag
-          size={13}
+          size={11}
           className="
+            shrink-0
             text-gray-300
             transition
             group-hover:text-green-500
+
+            sm:h-3.5
+            sm:w-3.5
+
+            md:h-4
+            md:w-4
           "
         />
       </div>
 
       {/* CONTENT */}
 
-      <div className="mt-3 min-w-0">
-        <p className="line-clamp-2 text-xs font-black text-gray-800">
+      <div className="mt-2 w-full min-w-0 sm:mt-3">
+        <p
+          className="
+            line-clamp-2
+            text-[10px]
+            font-black
+            leading-4
+            text-gray-800
+
+            sm:text-xs
+            sm:leading-4
+
+            md:text-sm
+          "
+        >
           {template.title}
         </p>
 
-        <p className="mt-1 line-clamp-2 text-[10px] leading-4 text-gray-400">
+        <p
+          className="
+            mt-0.5
+            line-clamp-2
+            text-[8px]
+            leading-3.5
+            text-gray-400
+
+            sm:mt-1
+            sm:text-[10px]
+            sm:leading-4
+          "
+        >
           {template.description}
         </p>
       </div>
 
       {/* MESSAGE PREVIEW */}
 
-      <p className="mt-3 line-clamp-2 text-[9px] leading-4 text-gray-500">
+      <p
+        className="
+          mt-2
+          line-clamp-2
+          text-[8px]
+          leading-3.5
+          text-gray-500
+
+          sm:mt-3
+          sm:text-[9px]
+          sm:leading-4
+
+          md:text-[10px]
+        "
+      >
         {template.message}
       </p>
 
@@ -1961,19 +1925,30 @@ function TemplateCard({
           w-full
           items-center
           justify-between
-          pt-4
+          gap-1
+          pt-2
+
+          sm:pt-3
+
+          md:pt-4
         "
       >
         <span
           className="
+            max-w-[45%]
+            truncate
             rounded-full
             bg-gray-50
-            px-2
-            py-1
-            text-[8px]
+            px-1.5
+            py-0.5
+            text-[7px]
             font-bold
             uppercase
             text-gray-400
+
+            sm:px-2
+            sm:py-1
+            sm:text-[8px]
           "
         >
           {template.type}
@@ -1981,11 +1956,14 @@ function TemplateCard({
 
         <span
           className="
-            text-[9px]
+            truncate
+            text-[8px]
             font-black
             text-green-600
             transition
             group-hover:translate-x-0.5
+
+            sm:text-[9px]
           "
         >
           Use Template →

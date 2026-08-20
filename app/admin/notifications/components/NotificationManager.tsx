@@ -25,6 +25,7 @@ import NotificationCreateDrawer, {
 } from "./NotificationCreateDrawer";
 
 import NotificationDetailDrawer from "./NotificationDetailDrawer";
+
 /* =====================================================
    INITIAL FORM
 ===================================================== */
@@ -149,99 +150,88 @@ export default function NotificationManager() {
     );
 
   /* ===================================================
-   LOAD USERS
-   REAL SUPABASE AUTH USERS
-=================================================== */
+     LOAD USERS
+     REAL SUPABASE AUTH USERS
+  =================================================== */
 
-const loadUsers = useCallback(
-  async () => {
-    try {
-      const {
-        data: sessionData,
-        error: sessionError,
-      } = await supabase.auth.getSession();
+  const loadUsers = useCallback(
+    async () => {
+      try {
+        const {
+          data: sessionData,
+          error: sessionError,
+        } = await supabase.auth.getSession();
 
-      if (sessionError) {
-        console.error(
-          "[Notifications] Session error:",
-          sessionError
-        );
-
-        setUsers([]);
-        return;
-      }
-
-      const session =
-        sessionData.session;
-
-      if (!session?.access_token) {
-        console.error(
-          "[Notifications] No active session."
-        );
-
-        setUsers([]);
-        return;
-      }
-
-      const response = await fetch(
-        "/api/admin/notifications?users=true",
-        {
-          method: "GET",
-
-          headers: {
-            Accept:
-              "application/json",
-
-            Authorization:
-              `Bearer ${session.access_token}`,
-          },
-
-          cache: "no-store",
-        }
-      );
-
-      const responseText =
-        await response.text();
-
-      let result:
-        | {
-            success?: boolean;
-            users?: UserOption[];
-            count?: number;
-            error?: string;
-          }
-        | null = null;
-
-      if (responseText.trim()) {
-        try {
-          result =
-            JSON.parse(
-              responseText
-            );
-        } catch {
+        if (sessionError) {
           console.error(
-            "[Notifications] Invalid users API response:",
-            responseText
+            "[Notifications] Session error:",
+            sessionError
           );
 
           setUsers([]);
           return;
         }
-      }
 
-      console.log(
-        "[Notifications] Users API response:",
-        {
-          status:
-            response.status,
+        const session =
+          sessionData.session;
 
-          result,
+        if (!session?.access_token) {
+          console.error(
+            "[Notifications] No active session."
+          );
+
+          setUsers([]);
+          return;
         }
-      );
 
-      if (!response.ok) {
-        console.error(
-          "[Notifications] Users API error:",
+        const response = await fetch(
+          "/api/admin/notifications?users=true",
+          {
+            method: "GET",
+
+            headers: {
+              Accept:
+                "application/json",
+
+              Authorization:
+                `Bearer ${session.access_token}`,
+            },
+
+            cache: "no-store",
+          }
+        );
+
+        const responseText =
+          await response.text();
+
+        let result:
+          | {
+              success?: boolean;
+              users?: UserOption[];
+              count?: number;
+              error?: string;
+            }
+          | null = null;
+
+        if (responseText.trim()) {
+          try {
+            result =
+              JSON.parse(
+                responseText
+              );
+          } catch {
+            console.error(
+              "[Notifications] Invalid users API response:",
+              responseText
+            );
+
+            setUsers([]);
+            return;
+          }
+        }
+
+        console.log(
+          "[Notifications] Users API response:",
           {
             status:
               response.status,
@@ -250,68 +240,76 @@ const loadUsers = useCallback(
           }
         );
 
-        setUsers([]);
-        return;
-      }
+        if (!response.ok) {
+          console.error(
+            "[Notifications] Users API error:",
+            {
+              status:
+                response.status,
 
-      const nextUsers =
-        Array.isArray(
-          result?.users
-        )
-          ? result.users
-          : [];
-
-      /* ---------------------------------------------
-         VALID USER FILTER
-      ---------------------------------------------- */
-
-      const validUsers =
-        nextUsers.filter(
-          (user) => {
-            if (
-              !user ||
-              typeof user.id !==
-                "string"
-            ) {
-              return false;
+              result,
             }
+          );
 
-            if (
-              !isValidUUID(
-                user.id
-              )
-            ) {
-              console.warn(
-                "[Notifications] Invalid Auth user ID:",
-                user.id
-              );
+          setUsers([]);
+          return;
+        }
 
-              return false;
+        const nextUsers =
+          Array.isArray(
+            result?.users
+          )
+            ? result.users
+            : [];
+
+        const validUsers =
+          nextUsers.filter(
+            (user) => {
+              if (
+                !user ||
+                typeof user.id !==
+                  "string"
+              ) {
+                return false;
+              }
+
+              if (
+                !isValidUUID(
+                  user.id
+                )
+              ) {
+                console.warn(
+                  "[Notifications] Invalid Auth user ID:",
+                  user.id
+                );
+
+                return false;
+              }
+
+              return true;
             }
+          );
 
-            return true;
-          }
+        console.log(
+          "[Notifications] Real Auth users loaded:",
+          validUsers.length
         );
 
-      console.log(
-        "[Notifications] Real Auth users loaded:",
-        validUsers.length
-      );
+        setUsers(
+          validUsers
+        );
+      } catch (error) {
+        console.error(
+          "[Notifications] User loading error:",
+          error
+        );
 
-      setUsers(
-        validUsers
-      );
-    } catch (error) {
-      console.error(
-        "[Notifications] User loading error:",
-        error
-      );
+        setUsers([]);
+      }
+    },
+    []
+  );
 
-      setUsers([]);
-    }
-  },
-  []
-);
   /* ===================================================
      INITIAL LOAD
   =================================================== */
@@ -548,17 +546,8 @@ const loadUsers = useCallback(
     async (
       overrideForm?: NotificationForm
     ) => {
-      /*
-       * Version Update can pass
-       * an override form directly.
-       */
-
       const currentForm =
         overrideForm || form;
-
-      /* ---------------------------------------------
-         VALIDATION
-      ---------------------------------------------- */
 
       const title =
         currentForm.title.trim();
@@ -581,10 +570,6 @@ const loadUsers = useCallback(
 
         return;
       }
-
-      /* ---------------------------------------------
-         USER VALIDATION
-      ---------------------------------------------- */
 
       let safeUserId:
         | string
@@ -649,10 +634,6 @@ const loadUsers = useCallback(
       try {
         setSending(true);
 
-        /* ---------------------------------------------
-           SESSION
-        ---------------------------------------------- */
-
         const {
           data:
             sessionData,
@@ -688,25 +669,13 @@ const loadUsers = useCallback(
           return;
         }
 
-        /* ---------------------------------------------
-           IMAGE
-        ---------------------------------------------- */
-
         const imageUrl =
           currentForm.image_url
             ?.trim() || null;
 
-        /* ---------------------------------------------
-           ACTION URL
-        ---------------------------------------------- */
-
         const actionUrl =
           currentForm.action_url
             ?.trim() || null;
-
-        /* ---------------------------------------------
-           PAYLOAD
-        ---------------------------------------------- */
 
         const payload = {
           title,
@@ -752,10 +721,6 @@ const loadUsers = useCallback(
           payload
         );
 
-        /* ---------------------------------------------
-           API REQUEST
-        ---------------------------------------------- */
-
         const response =
           await fetch(
             "/api/admin/notifications",
@@ -779,10 +744,6 @@ const loadUsers = useCallback(
                 ),
             }
           );
-
-        /* ---------------------------------------------
-           RESPONSE
-        ---------------------------------------------- */
 
         const responseText =
           await response.text();
@@ -819,10 +780,6 @@ const loadUsers = useCallback(
             result,
           }
         );
-
-        /* ---------------------------------------------
-           API ERROR
-        ---------------------------------------------- */
 
         if (!response.ok) {
           console.error(
@@ -898,10 +855,6 @@ const loadUsers = useCallback(
 
           return;
         }
-
-        /* ---------------------------------------------
-           SUCCESS
-        ---------------------------------------------- */
 
         console.log(
           "[Notifications] Sent successfully:",
@@ -1150,9 +1103,90 @@ const loadUsers = useCallback(
             <>
 
               {/* =================================================
-                  LARGE TABLET / LAPTOP / DESKTOP
+                  MOBILE
+                  0px - 639px
+              ================================================= */}
 
-                  lg = 1024px+
+              <div className="block sm:hidden">
+                <div className="divide-y divide-gray-100">
+                  {filteredNotifications.map(
+                    (
+                      notification
+                    ) => (
+                      <NotificationMobileCard
+                        key={
+                          notification.id
+                        }
+                        notification={
+                          notification
+                        }
+                        onView={() =>
+                          viewNotification(
+                            notification
+                          )
+                        }
+                        onDelete={() =>
+                          deleteNotification(
+                            notification
+                          )
+                        }
+                      />
+                    )
+                  )}
+                </div>
+              </div>
+
+              {/* =================================================
+                  ANDROID / TABLET
+                  640px - 1023px
+              ================================================= */}
+
+              <div className="hidden sm:block lg:hidden">
+                <div
+                  className="
+                    divide-y
+                    divide-gray-100
+                    bg-gray-50/30
+                  "
+                >
+                  {filteredNotifications.map(
+                    (
+                      notification
+                    ) => (
+                      <div
+                        key={
+                          notification.id
+                        }
+                        className="
+                          px-2
+                          sm:px-3
+                          md:px-4
+                        "
+                      >
+                        <NotificationMobileCard
+                          notification={
+                            notification
+                          }
+                          onView={() =>
+                            viewNotification(
+                              notification
+                            )
+                          }
+                          onDelete={() =>
+                            deleteNotification(
+                              notification
+                            )
+                          }
+                        />
+                      </div>
+                    )
+                  )}
+                </div>
+              </div>
+
+              {/* =================================================
+                  DESKTOP
+                  1024px+
               ================================================= */}
 
               <div className="hidden lg:block">
@@ -1257,45 +1291,6 @@ const loadUsers = useCallback(
                     </tbody>
 
                   </table>
-
-                </div>
-
-              </div>
-
-              {/* =================================================
-                  MOBILE + SMALL TABLET
-
-                  < 1024px
-              ================================================= */}
-
-              <div className="block lg:hidden">
-
-                <div className="divide-y divide-gray-100">
-
-                  {filteredNotifications.map(
-                    (
-                      notification
-                    ) => (
-                      <NotificationMobileCard
-                        key={
-                          notification.id
-                        }
-                        notification={
-                          notification
-                        }
-                        onView={() =>
-                          viewNotification(
-                            notification
-                          )
-                        }
-                        onDelete={() =>
-                          deleteNotification(
-                            notification
-                          )
-                        }
-                      />
-                    )
-                  )}
 
                 </div>
 

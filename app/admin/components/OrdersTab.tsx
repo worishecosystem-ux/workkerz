@@ -13,6 +13,39 @@ import OutForDeliveryBoard from "./orders/OutForDeliveryBoard";
 import DeliveredBoard from "./orders/DeliveredBoard";
 import OperationsDashboard from "./orders/OperationsDashboard";
 import NewOrderNotification from "./orders/NewOrderNotification";
+import OrdersManagementPage from "./orders/OrdersManagementPage";
+type DeviceType = "mobile" | "tablet" | "desktop";
+
+function useDeviceType(): DeviceType {
+  const getDevice = (): DeviceType => {
+    if (typeof window === "undefined") return "desktop";
+
+    const width = window.innerWidth;
+
+    if (width < 768) return "mobile";
+    if (width < 1200) return "tablet";
+
+    return "desktop";
+  };
+
+  const [device, setDevice] = useState<DeviceType>(getDevice);
+
+  useEffect(() => {
+    const updateDevice = () => {
+      setDevice(getDevice());
+    };
+
+    updateDevice();
+
+    window.addEventListener("resize", updateDevice);
+
+    return () => {
+      window.removeEventListener("resize", updateDevice);
+    };
+  }, []);
+
+  return device;
+}
 
 type Order = {
   id: string | number;
@@ -54,6 +87,8 @@ const REJECTION_REASONS = [
   "Other",
 ];
 
+type OrderBoardTab = "new" | "confirmed" | "dispatch" | "delivered";
+
 export default function OrdersTab({
   notificationOrder,
   notificationAction,
@@ -61,6 +96,12 @@ export default function OrdersTab({
   onNotificationHandled,
   onNotificationStatusChanged,
 }: Props) {
+  const device = useDeviceType();
+
+  const isMobile = device === "mobile";
+  const isTablet = device === "tablet";
+  const isDesktop = device === "desktop";
+
   const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -82,7 +123,12 @@ export default function OrdersTab({
   const [customRejectReason, setCustomRejectReason] = useState("");
   const [rejectLoading, setRejectLoading] = useState(false);
 
-  /* ---------------- FILTER ---------------- */
+  const [activeBoard, setActiveBoard] =
+    useState<OrderBoardTab>("new");
+
+  /* =========================================================
+     FILTER
+  ========================================================= */
 
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase();
@@ -93,16 +139,21 @@ export default function OrdersTab({
       const phone = String(order.customer_phone ?? "").toLowerCase();
 
       return (
-        (!q || number.includes(q) || name.includes(q) || phone.includes(q)) &&
-        (statusFilter === "All" || order.status === statusFilter) &&
-        (paymentFilter === "All" || order.payment_status === paymentFilter)
+        (!q ||
+          number.includes(q) ||
+          name.includes(q) ||
+          phone.includes(q)) &&
+        (statusFilter === "All" ||
+          order.status === statusFilter) &&
+        (paymentFilter === "All" ||
+          order.payment_status === paymentFilter)
       );
     });
   }, [orders, search, statusFilter, paymentFilter]);
-  type OrderBoardTab = "new" | "confirmed" | "dispatch" | "delivered";
 
-  const [activeBoard, setActiveBoard] = useState<OrderBoardTab>("new");
-  /* ---------------- FETCH ---------------- */
+  /* =========================================================
+     FETCH
+  ========================================================= */
 
   const fetchOrders = useCallback(async () => {
     try {
@@ -130,7 +181,9 @@ export default function OrdersTab({
     fetchOrders();
   }, [fetchOrders]);
 
-  /* ---------------- OPEN ORDER ---------------- */
+  /* =========================================================
+     OPEN ORDER
+  ========================================================= */
 
   const openOrder = useCallback(async (order: Order) => {
     if (order?.id == null) return;
@@ -153,18 +206,31 @@ export default function OrdersTab({
     setOrderItems(data ?? []);
   }, []);
 
-  /* ---------------- STATUS ---------------- */
+  /* =========================================================
+     STATUS
+  ========================================================= */
 
   const updateOrderStatus = useCallback(
-    async (id: string | number, status: string): Promise<boolean> => {
-      const current = orders.find((o) => String(o.id) === String(id));
+    async (
+      id: string | number,
+      status: string,
+    ): Promise<boolean> => {
+      const current = orders.find(
+        (o) => String(o.id) === String(id),
+      );
 
       if (!current) return false;
 
       const currentStatus = current.status;
 
-      if (["Delivered", "Cancelled"].includes(currentStatus ?? "")) {
-        alert(`Order is already ${currentStatus}. Status cannot be changed.`);
+      if (
+        ["Delivered", "Cancelled"].includes(
+          currentStatus ?? "",
+        )
+      ) {
+        alert(
+          `Order is already ${currentStatus}. Status cannot be changed.`,
+        );
         return false;
       }
 
@@ -172,7 +238,9 @@ export default function OrdersTab({
         currentStatus === "Out For Delivery" &&
         ["Pending", "Confirmed"].includes(status)
       ) {
-        alert("Out For Delivery orders cannot be moved back.");
+        alert(
+          "Out For Delivery orders cannot be moved back.",
+        );
         return false;
       }
 
@@ -183,22 +251,35 @@ export default function OrdersTab({
 
       if (error) {
         console.error("[Orders] Status error:", error);
-        alert(error.message || "Unable to update order status.");
+        alert(
+          error.message ||
+            "Unable to update order status.",
+        );
         return false;
       }
 
-      await supabase.from("order_status_history").insert({
-        order_id: id,
-        status,
-        note: STATUS_MESSAGES[status] ?? status,
-      });
+      await supabase
+        .from("order_status_history")
+        .insert({
+          order_id: id,
+          status,
+          note:
+            STATUS_MESSAGES[status] ?? status,
+        });
 
       setOrders((prev) =>
-        prev.map((o) => (String(o.id) === String(id) ? { ...o, status } : o)),
+        prev.map((o) =>
+          String(o.id) === String(id)
+            ? { ...o, status }
+            : o,
+        ),
       );
 
       setSelectedOrder((prev) =>
-        prev && String(prev.id) === String(id) ? { ...prev, status } : prev,
+        prev &&
+        String(prev.id) === String(id)
+          ? { ...prev, status }
+          : prev,
       );
 
       return true;
@@ -206,38 +287,57 @@ export default function OrdersTab({
     [orders],
   );
 
-  /* ---------------- PAYMENT ---------------- */
+  /* =========================================================
+     PAYMENT
+  ========================================================= */
 
   const updatePaymentStatus = useCallback(
-    async (id: string | number, paymentStatus: string) => {
+    async (
+      id: string | number,
+      paymentStatus: string,
+    ) => {
       const { error } = await supabase
         .from("orders")
-        .update({ payment_status: paymentStatus })
+        .update({
+          payment_status: paymentStatus,
+        })
         .eq("id", id);
 
       if (error) {
-        alert(error.message || "Unable to update payment status.");
+        alert(
+          error.message ||
+            "Unable to update payment status.",
+        );
         return;
       }
 
       setOrders((prev) =>
         prev.map((o) =>
           String(o.id) === String(id)
-            ? { ...o, payment_status: paymentStatus }
+            ? {
+                ...o,
+                payment_status: paymentStatus,
+              }
             : o,
         ),
       );
 
       setSelectedOrder((prev) =>
-        prev && String(prev.id) === String(id)
-          ? { ...prev, payment_status: paymentStatus }
+        prev &&
+        String(prev.id) === String(id)
+          ? {
+              ...prev,
+              payment_status: paymentStatus,
+            }
           : prev,
       );
     },
     [],
   );
 
-  /* ---------------- REJECTION ---------------- */
+  /* =========================================================
+     REJECTION
+  ========================================================= */
 
   const getFinalReason = useCallback(
     () =>
@@ -257,7 +357,12 @@ export default function OrdersTab({
   }, [rejectLoading]);
 
   const openReject = useCallback((order: Order) => {
-    if (!order || ["Delivered", "Cancelled"].includes(order.status ?? "")) {
+    if (
+      !order ||
+      ["Delivered", "Cancelled"].includes(
+        order.status ?? "",
+      )
+    ) {
       alert(`Order is already ${order.status}.`);
       return;
     }
@@ -294,19 +399,26 @@ export default function OrdersTab({
           .in("id", ids);
 
         if (error) {
-          alert(error.message || "Unable to reject orders.");
+          alert(
+            error.message ||
+              "Unable to reject orders.",
+          );
           return;
         }
 
-        await supabase.from("order_status_history").insert(
-          ids.map((id) => ({
-            order_id: id,
-            status: "Cancelled",
-            note: `Order rejected. Reason: ${reason}`,
-          })),
-        );
+        await supabase
+          .from("order_status_history")
+          .insert(
+            ids.map((id) => ({
+              order_id: id,
+              status: "Cancelled",
+              note: `Order rejected. Reason: ${reason}`,
+            })),
+          );
 
-        const idSet = new Set(ids.map(String));
+        const idSet = new Set(
+          ids.map(String),
+        );
 
         setOrders((prev) =>
           prev.map((o) =>
@@ -321,7 +433,8 @@ export default function OrdersTab({
         );
 
         setSelectedOrder((prev) =>
-          prev && idSet.has(String(prev.id))
+          prev &&
+          idSet.has(String(prev.id))
             ? {
                 ...prev,
                 status: "Cancelled",
@@ -336,21 +449,36 @@ export default function OrdersTab({
         setRejectReason("");
         setCustomRejectReason("");
 
-        ids.forEach((id) => onNotificationStatusChanged?.(id));
+        ids.forEach((id) =>
+          onNotificationStatusChanged?.(id),
+        );
       } catch (error) {
-        console.error("[Orders] Reject error:", error);
+        console.error(
+          "[Orders] Reject error:",
+          error,
+        );
         alert("Unable to reject orders.");
       } finally {
         setRejectLoading(false);
       }
     },
-    [getFinalReason, rejectReason, onNotificationStatusChanged],
+    [
+      getFinalReason,
+      rejectReason,
+      onNotificationStatusChanged,
+    ],
   );
 
-  const rejectSingle = useCallback(async () => {
-    if (!rejectingOrder) return;
-    await rejectOrders([rejectingOrder.id]);
-  }, [rejectingOrder, rejectOrders]);
+  const rejectSingle = useCallback(
+    async () => {
+      if (!rejectingOrder) return;
+
+      await rejectOrders([
+        rejectingOrder.id,
+      ]);
+    },
+    [rejectingOrder, rejectOrders],
+  );
 
   const openBulkReject = useCallback(() => {
     if (!selectedOrders.length) return;
@@ -360,44 +488,76 @@ export default function OrdersTab({
     setBulkRejecting(true);
   }, [selectedOrders.length]);
 
-  /* ---------------- SELECTION ---------------- */
+  /* =========================================================
+     SELECTION
+  ========================================================= */
 
-  const toggleOrder = useCallback((id: string) => {
-    setSelectedOrders((prev) =>
-      prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id],
-    );
-  }, []);
+  const toggleOrder = useCallback(
+    (id: string) => {
+      setSelectedOrders((prev) =>
+        prev.includes(id)
+          ? prev.filter((x) => x !== id)
+          : [...prev, id],
+      );
+    },
+    [],
+  );
 
   const toggleSelectAll = useCallback(() => {
-    const ids = filtered.map((o) => String(o.id));
+    const ids = filtered.map((o) =>
+      String(o.id),
+    );
 
-    if (ids.length && ids.every((id) => selectedOrders.includes(id))) {
+    if (
+      ids.length &&
+      ids.every((id) =>
+        selectedOrders.includes(id),
+      )
+    ) {
       setSelectedOrders([]);
     } else {
       setSelectedOrders(ids);
     }
   }, [filtered, selectedOrders]);
 
-  /* ---------------- BULK STATUS ---------------- */
+  /* =========================================================
+     BULK STATUS
+  ========================================================= */
 
   const bulkUpdateStatus = useCallback(
     async (status: string) => {
       if (!selectedOrders.length) return;
 
       const invalid = orders.some((order) => {
-        if (!selectedOrders.includes(String(order.id))) return false;
+        if (
+          !selectedOrders.includes(
+            String(order.id),
+          )
+        ) {
+          return false;
+        }
 
-        if (["Delivered", "Cancelled"].includes(order.status ?? ""))
+        if (
+          ["Delivered", "Cancelled"].includes(
+            order.status ?? "",
+          )
+        ) {
           return true;
+        }
 
         return (
-          order.status === "Out For Delivery" &&
-          ["Pending", "Confirmed"].includes(status)
+          order.status ===
+            "Out For Delivery" &&
+          ["Pending", "Confirmed"].includes(
+            status,
+          )
         );
       });
 
       if (invalid) {
-        alert("Some selected orders cannot be moved to this status.");
+        alert(
+          "Some selected orders cannot be moved to this status.",
+        );
         return;
       }
 
@@ -407,22 +567,35 @@ export default function OrdersTab({
         .in("id", selectedOrders);
 
       if (error) {
-        alert(error.message || "Unable to update selected orders.");
+        alert(
+          error.message ||
+            "Unable to update selected orders.",
+        );
         return;
       }
 
-      await supabase.from("order_status_history").insert(
-        selectedOrders.map((id) => ({
-          order_id: id,
-          status,
-          note: STATUS_MESSAGES[status] ?? status,
-        })),
+      await supabase
+        .from("order_status_history")
+        .insert(
+          selectedOrders.map((id) => ({
+            order_id: id,
+            status,
+            note:
+              STATUS_MESSAGES[status] ??
+              status,
+          })),
+        );
+
+      const ids = new Set(
+        selectedOrders,
       );
 
-      const ids = new Set(selectedOrders);
-
       setOrders((prev) =>
-        prev.map((o) => (ids.has(String(o.id)) ? { ...o, status } : o)),
+        prev.map((o) =>
+          ids.has(String(o.id))
+            ? { ...o, status }
+            : o,
+        ),
       );
 
       setSelectedOrders([]);
@@ -430,7 +603,9 @@ export default function OrdersTab({
     [orders, selectedOrders],
   );
 
-  /* ---------------- NOTIFICATION ACTION ---------------- */
+  /* =========================================================
+     NOTIFICATION
+  ========================================================= */
 
   useEffect(() => {
     if (!notificationOrder?.id) return;
@@ -438,29 +613,43 @@ export default function OrdersTab({
     let cancelled = false;
 
     const run = async () => {
-      if (notificationAction === "reject") {
+      if (
+        notificationAction === "reject"
+      ) {
         openReject(notificationOrder);
         onNotificationHandled?.();
         return;
       }
 
-      if (notificationAction === "accept") {
-        const success = await updateOrderStatus(
-          notificationOrder.id,
-          "Confirmed",
-        );
+      if (
+        notificationAction === "accept"
+      ) {
+        const success =
+          await updateOrderStatus(
+            notificationOrder.id,
+            "Confirmed",
+          );
 
         if (!cancelled && success) {
-          onNotificationStatusChanged?.(notificationOrder.id);
+          onNotificationStatusChanged?.(
+            notificationOrder.id,
+          );
         }
 
-        if (!cancelled) onNotificationHandled?.();
+        if (!cancelled) {
+          onNotificationHandled?.();
+        }
+
         return;
       }
 
-      await openOrder(notificationOrder);
+      await openOrder(
+        notificationOrder,
+      );
 
-      if (!cancelled) onNotificationHandled?.();
+      if (!cancelled) {
+        onNotificationHandled?.();
+      }
     };
 
     run();
@@ -479,7 +668,9 @@ export default function OrdersTab({
     onNotificationStatusChanged,
   ]);
 
-  /* ---------------- LOADING ---------------- */
+  /* =========================================================
+     LOADING
+  ========================================================= */
 
   if (loading) {
     return (
@@ -494,18 +685,72 @@ export default function OrdersTab({
 
   const allSelected =
     filtered.length > 0 &&
-    filtered.every((o) => selectedOrders.includes(String(o.id)));
+    filtered.every((o) =>
+      selectedOrders.includes(
+        String(o.id),
+      ),
+    );
+
+  const newCount = orders.filter(
+    (o) => o.status === "Pending",
+  ).length;
+
+  const confirmedCount = orders.filter(
+    (o) => o.status === "Confirmed",
+  ).length;
+
+  const dispatchCount = orders.filter(
+    (o) =>
+      o.status === "Ready to Dispatch",
+  ).length;
+
+  const deliveredCount = orders.filter(
+    (o) => o.status === "Delivered",
+  ).length;
 
   return (
-    <div className="min-h-screen w-full overflow-x-hidden bg-slate-50/50 px-3 py-4 sm:px-5 sm:py-6 lg:px-8 lg:py-8">
-      {/* HEADER */}
-      <header className="mb-5 flex flex-col gap-4 sm:mb-6 sm:flex-row sm:items-center sm:justify-between">
+    <div
+      className={
+        isMobile
+          ? "min-h-screen w-full overflow-x-hidden bg-slate-50/50 px-3 pt-15 pb-24"
+          : isTablet
+            ? "min-h-screen w-full overflow-x-hidden bg-slate-50/50 px-5 pt-5 pb-8"
+            : "min-h-screen w-full overflow-x-hidden bg-slate-50/50 px-8 pt-8 pb-8"
+      }
+    >
+      {/* =====================================================
+          HEADER
+      ===================================================== */}
+
+      <header
+        className={
+          isMobile
+            ? "mb-4 flex flex-col gap-3"
+            : isTablet
+              ? "mb-5 flex items-center justify-between gap-5"
+              : "mb-6 flex items-center justify-between gap-6"
+        }
+      >
         <div className="min-w-0">
-          <h1 className="text-xl font-bold tracking-tight text-slate-900 sm:text-2xl lg:text-3xl">
+          <h1
+            className={
+              isMobile
+                ? "text-xl font-bold tracking-tight text-slate-900"
+                : isTablet
+                  ? "text-2xl font-bold tracking-tight text-slate-900"
+                  : "text-3xl font-bold tracking-tight text-slate-900"
+            }
+          >
             Orders Management
           </h1>
 
-          <p className="mt-1 text-xs text-slate-500 sm:text-sm">
+          <p
+            className={
+              isMobile
+                ? "mt-1 text-xs text-slate-500"
+                : "mt-1 text-sm text-slate-500"
+            }
+          >
             {orders.length} total orders
           </p>
         </div>
@@ -513,144 +758,103 @@ export default function OrdersTab({
         <button
           type="button"
           onClick={() => setShowMore(true)}
-          className="w-full rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-semibold text-slate-700 shadow-sm transition hover:border-orange-300 hover:bg-orange-50 hover:text-orange-600 sm:w-auto"
+          className={
+            isMobile
+              ? "w-full rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-semibold text-slate-700 shadow-sm"
+              : "rounded-xl border border-slate-200 bg-white px-5 py-2.5 text-sm font-semibold text-slate-700 shadow-sm transition hover:border-orange-300 hover:bg-orange-50 hover:text-orange-600"
+          }
         >
           ☰ More Details
         </button>
       </header>
 
-      {/* OPERATIONS */}
-      <OperationsDashboard orders={orders} />
+      {/* =====================================================
+          OPERATIONS
+      ===================================================== */}
 
-     {/* =========================================================
-    ORDER BOARD HEADER — ZOMATO STYLE
-========================================================= */}
-<div className="mb-4 border-b border-slate-200 bg-white">
-  <div className="overflow-x-auto scrollbar-hide">
-    <div className="flex min-w-max items-center gap-1 px-1">
+      <OperationsDashboard
+        orders={orders}
+      />
 
-      {/* NEW */}
-      <button
-        type="button"
-        onClick={() => setActiveBoard("new")}
-        className={`relative flex items-center gap-1.5 px-3 py-3 text-[13px] font-semibold transition-colors ${
-          activeBoard === "new"
-            ? "text-blue-600"
-            : "text-slate-500 hover:text-slate-800"
-        }`}
+      {/* =====================================================
+          BOARD TABS
+      ===================================================== */}
+
+      <div
+        className={
+          isMobile
+            ? "mb-4 mt-4 overflow-x-auto border-b border-slate-200 bg-white"
+            : isTablet
+              ? "mb-5 mt-5 overflow-x-auto border-b border-slate-200 bg-white"
+              : "mb-6 mt-6 overflow-x-auto border-b border-slate-200 bg-white"
+        }
       >
-        <span>New</span>
+        <div className="flex min-w-max items-center">
+          <BoardTab
+            label="New"
+            count={newCount}
+            active={activeBoard === "new"}
+            color="blue"
+            onClick={() =>
+              setActiveBoard("new")
+            }
+            mobile={isMobile}
+          />
 
-        {orders.filter((o) => o.status === "Pending").length > 0 && (
-          <span
-            className={`flex h-[18px] min-w-[18px] items-center justify-center rounded-full px-1 text-[9px] font-bold ${
-              activeBoard === "new"
-                ? "bg-blue-600 text-white"
-                : "bg-slate-100 text-slate-600"
-            }`}
-          >
-            {orders.filter((o) => o.status === "Pending").length}
-          </span>
-        )}
-
-        {activeBoard === "new" && (
-          <span className="absolute bottom-0 left-2 right-2 h-[2px] rounded-full bg-blue-600" />
-        )}
-      </button>
-
-      {/* CONFIRMED */}
-      <button
-        type="button"
-        onClick={() => setActiveBoard("confirmed")}
-        className={`relative flex items-center gap-1.5 px-3 py-3 text-[13px] font-semibold transition-colors ${
-          activeBoard === "confirmed"
-            ? "text-indigo-600"
-            : "text-slate-500 hover:text-slate-800"
-        }`}
-      >
-        <span>Confirmed</span>
-
-        {orders.filter((o) => o.status === "Confirmed").length > 0 && (
-          <span
-            className={`flex h-[18px] min-w-[18px] items-center justify-center rounded-full px-1 text-[9px] font-bold ${
+          <BoardTab
+            label="Confirmed"
+            count={confirmedCount}
+            active={
               activeBoard === "confirmed"
-                ? "bg-indigo-600 text-white"
-                : "bg-slate-100 text-slate-600"
-            }`}
-          >
-            {orders.filter((o) => o.status === "Confirmed").length}
-          </span>
-        )}
+            }
+            color="indigo"
+            onClick={() =>
+              setActiveBoard("confirmed")
+            }
+            mobile={isMobile}
+          />
 
-        {activeBoard === "confirmed" && (
-          <span className="absolute bottom-0 left-2 right-2 h-[2px] rounded-full bg-indigo-600" />
-        )}
-      </button>
-
-      {/* DISPATCH */}
-      <button
-        type="button"
-        onClick={() => setActiveBoard("dispatch")}
-        className={`relative flex items-center gap-1.5 px-3 py-3 text-[13px] font-semibold transition-colors ${
-          activeBoard === "dispatch"
-            ? "text-orange-600"
-            : "text-slate-500 hover:text-slate-800"
-        }`}
-      >
-        <span>Dispatch</span>
-
-        {orders.filter((o) => o.status === "Ready to Dispatch").length > 0 && (
-          <span
-            className={`flex h-[18px] min-w-[18px] items-center justify-center rounded-full px-1 text-[9px] font-bold ${
+          <BoardTab
+            label="Dispatch"
+            count={dispatchCount}
+            active={
               activeBoard === "dispatch"
-                ? "bg-orange-600 text-white"
-                : "bg-slate-100 text-slate-600"
-            }`}
-          >
-            {orders.filter((o) => o.status === "Ready to Dispatch").length}
-          </span>
-        )}
+            }
+            color="orange"
+            onClick={() =>
+              setActiveBoard("dispatch")
+            }
+            mobile={isMobile}
+          />
 
-        {activeBoard === "dispatch" && (
-          <span className="absolute bottom-0 left-2 right-2 h-[2px] rounded-full bg-orange-600" />
-        )}
-      </button>
-
-      {/* DELIVERED */}
-      <button
-        type="button"
-        onClick={() => setActiveBoard("delivered")}
-        className={`relative flex items-center gap-1.5 px-3 py-3 text-[13px] font-semibold transition-colors ${
-          activeBoard === "delivered"
-            ? "text-green-600"
-            : "text-slate-500 hover:text-slate-800"
-        }`}
-      >
-        <span>Delivered</span>
-
-        {orders.filter((o) => o.status === "Delivered").length > 0 && (
-          <span
-            className={`flex h-[18px] min-w-[18px] items-center justify-center rounded-full px-1 text-[9px] font-bold ${
+          <BoardTab
+            label="Delivered"
+            count={deliveredCount}
+            active={
               activeBoard === "delivered"
-                ? "bg-green-600 text-white"
-                : "bg-slate-100 text-slate-600"
-            }`}
-          >
-            {orders.filter((o) => o.status === "Delivered").length}
-          </span>
-        )}
+            }
+            color="green"
+            onClick={() =>
+              setActiveBoard("delivered")
+            }
+            mobile={isMobile}
+          />
+        </div>
+      </div>
 
-        {activeBoard === "delivered" && (
-          <span className="absolute bottom-0 left-2 right-2 h-[2px] rounded-full bg-green-600" />
-        )}
-      </button>
+      {/* =====================================================
+          ACTIVE BOARD
+      ===================================================== */}
 
-    </div>
-  </div>
-</div>
-
-      {/* ACTIVE BOARD */}
-      <div className="space-y-4 sm:space-y-5">
+      <div
+        className={
+          isMobile
+            ? "space-y-3"
+            : isTablet
+              ? "space-y-4"
+              : "space-y-5"
+        }
+      >
         {activeBoard === "new" && (
           <NewOrdersBoard
             orders={orders}
@@ -660,196 +864,265 @@ export default function OrdersTab({
           />
         )}
 
-        {activeBoard === "confirmed" && (
+        {activeBoard ===
+          "confirmed" && (
           <ConfirmedOrdersBoard
             orders={orders}
             onView={openOrder}
-            onDispatch={updateOrderStatus}
+            onDispatch={
+              updateOrderStatus
+            }
           />
         )}
 
-        {activeBoard === "dispatch" && (
+        {activeBoard ===
+          "dispatch" && (
           <OutForDeliveryBoard
             orders={orders}
             onView={openOrder}
-            onDelivered={updateOrderStatus}
+            onDelivered={
+              updateOrderStatus
+            }
           />
         )}
 
-        {activeBoard === "delivered" && (
-          <DeliveredBoard orders={orders} onView={openOrder} />
+        {activeBoard ===
+          "delivered" && (
+          <DeliveredBoard
+            orders={orders}
+            onView={openOrder}
+          />
         )}
       </div>
 
-      {/* MORE DETAILS */}
+      {/* =====================================================
+          MORE DETAILS
+      ===================================================== */}
+
       {showMore && (
-        <div
-          className="fixed inset-0 z-9999 flex items-end justify-center bg-black/50 p-0 backdrop-blur-sm sm:items-center sm:p-4 lg:p-6"
-          onClick={() => setShowMore(false)}
-        >
-          <section
-            className="flex h-[96vh] w-full flex-col overflow-hidden rounded-t-3xl bg-white shadow-2xl sm:h-[92vh] sm:max-w-7xl sm:rounded-3xl"
-            onClick={(e) => e.stopPropagation()}
-          >
-            {/* MODAL HEADER */}
-            <div className="flex shrink-0 items-center justify-between gap-3 border-b border-slate-100 px-4 py-4 sm:px-6 lg:px-8 lg:py-5">
-              <div className="min-w-0">
-                <h2 className="truncate text-lg font-bold text-slate-900 sm:text-xl lg:text-2xl">
-                  Order Management
-                </h2>
-                <p className="mt-0.5 hidden text-sm text-slate-500 sm:block">
-                  Search, filter and manage all orders
-                </p>
-              </div>
-
-              <button
-                type="button"
-                onClick={() => setShowMore(false)}
-                className="shrink-0 rounded-xl border border-slate-200 px-3 py-2 text-sm font-semibold text-slate-600 hover:bg-slate-50"
-              >
-                ✕<span className="ml-1 hidden sm:inline">Close</span>
-              </button>
-            </div>
-
-            {/* MODAL CONTENT */}
-            <div className="min-h-0 flex-1 overflow-y-auto px-3 py-4 sm:px-5 sm:py-5 lg:px-8 lg:py-7">
-              <OrdersSearch
-                search={search}
-                status={statusFilter}
-                payment={paymentFilter}
-                onSearch={setSearch}
-                onStatus={setStatusFilter}
-                onPayment={setPaymentFilter}
-                onRefresh={fetchOrders}
-              />
-
-              <div className="mt-4 sm:mt-5">
-                <OrdersStats
-                  orders={orders}
-                  selectedStatus={statusFilter}
-                  onSelectStatus={setStatusFilter}
-                />
-              </div>
-
-              <div className="mt-4 overflow-x-auto sm:mt-6">
-                <OrdersTable
-                  orders={filtered}
-                  onView={openOrder}
-                  highlightOrderId={highlightOrderId}
-                  selectedOrders={selectedOrders}
-                  onSelect={toggleOrder}
-                  allSelected={allSelected}
-                  onSelectAll={toggleSelectAll}
-                />
-              </div>
-            </div>
-          </section>
-        </div>
+        <OrdersManagementPage
+      isMobile={isMobile}
+      isTablet={isTablet}
+      orders={orders}
+      filtered={filtered}
+      search={search}
+      statusFilter={statusFilter}
+      paymentFilter={paymentFilter}
+      highlightOrderId={highlightOrderId}
+      selectedOrders={selectedOrders}
+      allSelected={allSelected}
+      onSearch={setSearch}
+      onStatus={setStatusFilter}
+      onPayment={setPaymentFilter}
+      onRefresh={fetchOrders}
+      onView={openOrder}
+      onSelect={toggleOrder}
+      onSelectAll={toggleSelectAll}
+      onClose={() => setShowMore(false)}
+    />
       )}
 
-      {/* NEW ORDER NOTIFICATION */}
+      {/* =====================================================
+          NEW ORDER NOTIFICATION
+      ===================================================== */}
+
       {notificationOrder && (
-        <div className="fixed left-3 right-3 top-3 z-10002 sm:left-auto sm:right-5 sm:top-5 sm:w-105">
+        <div
+          className={
+            isMobile
+              ? "fixed left-3 right-3 top-3 z-[10002]"
+              : "fixed right-5 top-5 z-[10002] w-[420px]"
+          }
+        >
           <NewOrderNotification
             order={notificationOrder}
-            onClose={() => onNotificationHandled?.()}
+            onClose={() =>
+              onNotificationHandled?.()
+            }
             onView={async () => {
-              await openOrder(notificationOrder);
+              await openOrder(
+                notificationOrder,
+              );
               onNotificationHandled?.();
             }}
             onAccept={async () => {
-              const success = await updateOrderStatus(
-                notificationOrder.id,
-                "Confirmed",
-              );
+              const success =
+                await updateOrderStatus(
+                  notificationOrder.id,
+                  "Confirmed",
+                );
 
               if (success) {
-                onNotificationStatusChanged?.(notificationOrder.id);
+                onNotificationStatusChanged?.(
+                  notificationOrder.id,
+                );
+
                 onNotificationHandled?.();
               }
             }}
             onReject={() => {
-              openReject(notificationOrder);
+              openReject(
+                notificationOrder,
+              );
               onNotificationHandled?.();
             }}
           />
         </div>
       )}
 
-      {/* ORDER DRAWER */}
+      {/* =====================================================
+          ORDER DRAWER
+      ===================================================== */}
+
       <OrderViewDrawer
         open={showOrder}
         order={selectedOrder}
         items={orderItems}
-        onClose={() => setShowOrder(false)}
-        onStatusChange={updateOrderStatus}
-        onPaymentStatusChange={updatePaymentStatus}
+        onClose={() =>
+          setShowOrder(false)
+        }
+        onStatusChange={
+          updateOrderStatus
+        }
+        onPaymentStatusChange={
+          updatePaymentStatus
+        }
       />
 
-      {/* REJECT MODAL */}
-      {(rejectingOrder || bulkRejecting) && (
+      {/* =====================================================
+          REJECT MODAL
+      ===================================================== */}
+
+      {(rejectingOrder ||
+        bulkRejecting) && (
         <RejectModal
           bulk={bulkRejecting}
           order={rejectingOrder}
-          count={selectedOrders.length}
+          count={
+            selectedOrders.length
+          }
           reason={rejectReason}
-          customReason={customRejectReason}
+          customReason={
+            customRejectReason
+          }
           loading={rejectLoading}
           onReasonChange={(value) => {
             setRejectReason(value);
-            if (value !== "Other") setCustomRejectReason("");
+
+            if (value !== "Other") {
+              setCustomRejectReason(
+                "",
+              );
+            }
           }}
-          onCustomReasonChange={setCustomRejectReason}
+          onCustomReasonChange={
+            setCustomRejectReason
+          }
           onClose={resetReject}
           onSubmit={
-            rejectingOrder ? rejectSingle : () => rejectOrders(selectedOrders)
+            rejectingOrder
+              ? rejectSingle
+              : () =>
+                  rejectOrders(
+                    selectedOrders,
+                  )
           }
-          finalReason={getFinalReason()}
+          finalReason={
+            getFinalReason()
+          }
         />
       )}
 
-      {/* BULK ACTION BAR */}
-      {selectedOrders.length > 0 && (
-        <div className="fixed inset-x-3 bottom-3 z-[999] sm:inset-x-auto sm:bottom-5 sm:left-1/2 sm:-translate-x-1/2">
-          <div className="flex flex-col gap-3 rounded-2xl border border-orange-100 bg-white p-3 shadow-2xl sm:flex-row sm:items-center sm:gap-4 sm:px-5 sm:py-3">
-            <div className="flex items-center justify-between sm:block">
-              <div>
-                <p className="text-[11px] text-slate-500">Selected Orders</p>
-                <p className="text-sm font-bold text-slate-900">
-                  {selectedOrders.length} Selected
-                </p>
-              </div>
+      {/* =====================================================
+          BULK ACTION BAR
+      ===================================================== */}
+
+      {selectedOrders.length >
+        0 && (
+        <div
+          className={
+            isMobile
+              ? "fixed inset-x-3 bottom-3 z-[999]"
+              : "fixed bottom-5 left-1/2 z-[999] -translate-x-1/2"
+          }
+        >
+          <div
+            className={
+              isMobile
+                ? "rounded-2xl border border-orange-100 bg-white p-3 shadow-2xl"
+                : "flex items-center gap-4 rounded-2xl border border-orange-100 bg-white px-5 py-3 shadow-2xl"
+            }
+          >
+            <div
+              className={
+                isMobile
+                  ? "mb-3"
+                  : "shrink-0"
+              }
+            >
+              <p className="text-[11px] text-slate-500">
+                Selected Orders
+              </p>
+
+              <p className="text-sm font-bold text-slate-900">
+                {selectedOrders.length}{" "}
+                Selected
+              </p>
             </div>
 
-            <div className="grid grid-cols-2 gap-2 sm:flex">
+            <div
+              className={
+                isMobile
+                  ? "grid grid-cols-2 gap-2"
+                  : "flex items-center gap-2"
+              }
+            >
               <ActionButton
                 label="Confirm"
                 className="bg-blue-600 hover:bg-blue-700"
-                onClick={() => bulkUpdateStatus("Confirmed")}
+                onClick={() =>
+                  bulkUpdateStatus(
+                    "Confirmed",
+                  )
+                }
               />
 
               <ActionButton
                 label="Dispatch"
                 className="bg-orange-600 hover:bg-orange-700"
-                onClick={() => bulkUpdateStatus("Ready to Dispatch")}
+                onClick={() =>
+                  bulkUpdateStatus(
+                    "Ready to Dispatch",
+                  )
+                }
               />
 
               <ActionButton
                 label="Delivered"
                 className="bg-green-600 hover:bg-green-700"
-                onClick={() => bulkUpdateStatus("Delivered")}
+                onClick={() =>
+                  bulkUpdateStatus(
+                    "Delivered",
+                  )
+                }
               />
 
               <ActionButton
                 label="Reject"
                 className="bg-red-600 hover:bg-red-700"
-                onClick={openBulkReject}
+                onClick={
+                  openBulkReject
+                }
               />
 
               <button
                 type="button"
-                onClick={() => setSelectedOrders([])}
-                className="rounded-xl border border-slate-200 px-3 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-50 sm:px-4 sm:text-sm"
+                onClick={() =>
+                  setSelectedOrders(
+                    [],
+                  )
+                }
+                className="rounded-xl border border-slate-200 px-3 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-50"
               >
                 Clear
               </button>
@@ -858,6 +1131,91 @@ export default function OrdersTab({
         </div>
       )}
     </div>
+  );
+}
+
+/* =========================================================
+   BOARD TAB
+========================================================= */
+
+function BoardTab({
+  label,
+  count,
+  active,
+  color,
+  onClick,
+  mobile,
+}: {
+  label: string;
+  count: number;
+  active: boolean;
+  color:
+    | "blue"
+    | "indigo"
+    | "orange"
+    | "green";
+  onClick: () => void;
+  mobile: boolean;
+}) {
+  const colors = {
+    blue: {
+      text: "text-blue-600",
+      bg: "bg-blue-600",
+    },
+    indigo: {
+      text: "text-indigo-600",
+      bg: "bg-indigo-600",
+    },
+    orange: {
+      text: "text-orange-600",
+      bg: "bg-orange-600",
+    },
+    green: {
+      text: "text-green-600",
+      bg: "bg-green-600",
+    },
+  };
+
+  const c = colors[color];
+
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className={`relative flex shrink-0 items-center font-semibold transition-colors ${
+        mobile
+          ? "gap-1.5 px-3 py-3 text-[12px]"
+          : "gap-1.5 px-4 py-3 text-[13px]"
+      } ${
+        active
+          ? c.text
+          : "text-slate-500 hover:text-slate-800"
+      }`}
+    >
+      <span>{label}</span>
+
+      {count > 0 && (
+        <span
+          className={`flex items-center justify-center rounded-full px-1 font-bold ${
+            mobile
+              ? "h-[17px] min-w-[17px] text-[8px]"
+              : "h-[18px] min-w-[18px] text-[9px]"
+          } ${
+            active
+              ? `${c.bg} text-white`
+              : "bg-slate-100 text-slate-600"
+          }`}
+        >
+          {count}
+        </span>
+      )}
+
+      {active && (
+        <span
+          className={`absolute bottom-0 left-2 right-2 h-[2px] rounded-full ${c.bg}`}
+        />
+      )}
+    </button>
   );
 }
 
@@ -878,7 +1236,7 @@ function ActionButton({
     <button
       type="button"
       onClick={onClick}
-      className={`rounded-xl px-3 py-2 text-xs font-semibold text-white transition sm:px-4 sm:text-sm ${className}`}
+      className={`rounded-xl px-3 py-2 text-xs font-semibold text-white transition ${className}`}
     >
       {label}
     </button>
@@ -908,28 +1266,36 @@ function RejectModal({
   reason: string;
   customReason: string;
   loading: boolean;
-  onReasonChange: (value: string) => void;
-  onCustomReasonChange: (value: string) => void;
+  onReasonChange: (
+    value: string,
+  ) => void;
+  onCustomReasonChange: (
+    value: string,
+  ) => void;
   onClose: () => void;
   onSubmit: () => void;
   finalReason: string;
 }) {
   return (
     <div
-      className="fixed inset-0 z-10000 flex items-end justify-center bg-black/50 p-0 backdrop-blur-sm sm:items-center sm:p-4"
+      className="fixed inset-0 z-[10000] flex items-end justify-center bg-black/50 backdrop-blur-sm md:items-center md:p-4"
       onClick={onClose}
     >
       <div
-        className="max-h-[92vh] w-full overflow-y-auto rounded-t-3xl bg-white p-4 shadow-2xl sm:max-w-md sm:rounded-2xl sm:p-6"
-        onClick={(e) => e.stopPropagation()}
+        className="max-h-[92vh] w-full overflow-y-auto rounded-t-3xl bg-white p-4 shadow-2xl md:max-w-md md:rounded-2xl md:p-6"
+        onClick={(e) =>
+          e.stopPropagation()
+        }
       >
         <div className="flex items-start justify-between gap-3">
           <div className="min-w-0">
-            <h2 className="text-lg font-bold text-slate-900 sm:text-xl">
-              {bulk ? "Reject Selected Orders" : "Reject Order"}
+            <h2 className="text-lg font-bold text-slate-900">
+              {bulk
+                ? "Reject Selected Orders"
+                : "Reject Order"}
             </h2>
 
-            <p className="mt-1 text-xs text-slate-500 sm:text-sm">
+            <p className="mt-1 text-xs text-slate-500">
               {bulk
                 ? `${count} orders selected`
                 : order?.order_number
@@ -956,16 +1322,27 @@ function RejectModal({
           <select
             value={reason}
             disabled={loading}
-            onChange={(e) => onReasonChange(e.target.value)}
+            onChange={(e) =>
+              onReasonChange(
+                e.target.value,
+              )
+            }
             className="mt-2 h-11 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm outline-none focus:border-red-500 focus:ring-2 focus:ring-red-100"
           >
-            <option value="">Select a reason</option>
+            <option value="">
+              Select a reason
+            </option>
 
-            {REJECTION_REASONS.map((item) => (
-              <option key={item} value={item}>
-                {item}
-              </option>
-            ))}
+            {REJECTION_REASONS.map(
+              (item) => (
+                <option
+                  key={item}
+                  value={item}
+                >
+                  {item}
+                </option>
+              ),
+            )}
           </select>
         </div>
 
@@ -973,7 +1350,11 @@ function RejectModal({
           <textarea
             value={customReason}
             disabled={loading}
-            onChange={(e) => onCustomReasonChange(e.target.value)}
+            onChange={(e) =>
+              onCustomReasonChange(
+                e.target.value,
+              )
+            }
             rows={4}
             placeholder="Enter rejection reason..."
             className="mt-4 w-full resize-none rounded-xl border border-slate-200 px-3 py-3 text-sm outline-none focus:border-red-500 focus:ring-2 focus:ring-red-100"
@@ -992,7 +1373,7 @@ function RejectModal({
           </div>
         )}
 
-        <div className="mt-5 grid grid-cols-2 gap-2 sm:gap-3">
+        <div className="mt-5 grid grid-cols-2 gap-2">
           <button
             type="button"
             disabled={loading}
@@ -1004,7 +1385,9 @@ function RejectModal({
 
           <button
             type="button"
-            disabled={loading || !finalReason}
+            disabled={
+              loading || !finalReason
+            }
             onClick={onSubmit}
             className="rounded-xl bg-red-600 px-3 py-3 text-sm font-bold text-white hover:bg-red-700 disabled:cursor-not-allowed disabled:opacity-50"
           >

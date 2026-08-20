@@ -80,60 +80,48 @@ export default function DashboardStats({
   ];
 
   return (
-    <div className="grid grid-cols-2 xl:grid-cols-3 2xl:grid-cols-6 gap-4 mb-8">
+    <div className="mb-6 grid grid-cols-2 gap-3 px-3 sm:gap-4 sm:px-4 md:grid-cols-3 md:px-8 lg:px-6 xl:grid-cols-3 2xl:grid-cols-6">
       {statCards.map((stat) => {
         const Icon = stat.icon;
 
         return (
           <div
             key={stat.label}
-            className="bg-white rounded-2xl border border-gray-100 p-5 shadow-sm"
+            className="min-w-0 rounded-2xl border border-gray-100 bg-white p-3.5 shadow-sm transition-shadow hover:shadow-md sm:p-4 md:p-4"
           >
-            {/* TOP */}
-            <div className="flex items-start justify-between mb-4">
+            {/* Top */}
+            <div className="mb-3 flex items-start justify-between gap-2">
               <div
-                className="w-10 h-10 rounded-xl flex items-center justify-center"
+                className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl sm:h-10 sm:w-10"
                 style={{
                   backgroundColor: stat.bg,
                 }}
               >
                 <Icon
-                  className="w-5 h-5"
+                  className="h-[18px] w-[18px] sm:h-5 sm:w-5"
                   style={{
                     color: stat.color,
                   }}
                 />
               </div>
 
-              <span className="text-xs text-[#64748B]">
-                Total
+              <span className="truncate pt-1 text-[9px] font-medium text-[#94A3B8] sm:text-[10px]">
+                Overview
               </span>
             </div>
 
-            {/* VALUE */}
-            <div
-              className="text-[#0F172A]"
-              style={{
-                fontWeight: 900,
-                fontSize: "2rem",
-                lineHeight: 1,
-              }}
-            >
+            {/* Value */}
+            <div className="text-[25px] font-black leading-none tracking-tight text-[#0F172A] sm:text-[30px]">
               {stat.value}
             </div>
 
-            {/* LABEL */}
-            <div
-              className="text-[#0F172A] text-sm mt-2"
-              style={{
-                fontWeight: 600,
-              }}
-            >
+            {/* Label */}
+            <div className="mt-2 truncate text-[12px] font-bold text-[#0F172A] sm:text-sm">
               {stat.label}
             </div>
 
-            {/* SUB */}
-            <div className="text-[#94A3B8] text-xs mt-0.5">
+            {/* Sub */}
+            <div className="mt-0.5 truncate text-[10px] text-[#94A3B8] sm:text-xs">
               {stat.sub}
             </div>
           </div>

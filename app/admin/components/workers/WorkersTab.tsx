@@ -18,11 +18,8 @@ import {
   MapPin,
   Phone,
   BriefcaseBusiness,
-  ChevronRight,
 } from "lucide-react";
-type WorkersTabProps = {
-  onFormOpenChange?: (open: boolean) => void;
-};
+
 import { useEffect, useMemo, useState } from "react";
 
 import WorkerDrawer from "./WorkerDrawer";
@@ -30,8 +27,11 @@ import EditWorkerModal from "./EditWorkerModal";
 import WorkerOnboardForm from "./WorkerOnboardForm";
 
 import { supabase } from "@/lib/supabase";
-
 import type { Worker, PricingType } from "@/app/data/workers";
+
+type WorkersTabProps = {
+  onFormOpenChange?: (open: boolean) => void;
+};
 
 /* =====================================================
    API WORKER TYPE
@@ -41,6 +41,7 @@ type ApiWorker = {
   id: string;
   worker_code?: string | null;
   workerCode?: string | null;
+
   name?: string | null;
   phone?: string | null;
 
@@ -125,18 +126,14 @@ function pricingValue(value: string | null | undefined): PricingType {
 }
 
 /* =====================================================
-   NORMALIZE API WORKER
+   NORMALIZE WORKER
 ===================================================== */
 
 function normalizeWorker(row: ApiWorker): Worker {
-  const labourChauk = row.labourChauk ?? row.labour_chauk ?? "";
-
-  const workerCode = row.workerCode ?? row.worker_code ?? "";
-
   return {
     id: row.id,
 
-    workerCode,
+    workerCode: row.workerCode ?? row.worker_code ?? "",
 
     name: row.name ?? "",
     phone: row.phone ?? "",
@@ -165,7 +162,7 @@ function normalizeWorker(row: ApiWorker): Worker {
 
     location: row.location ?? "",
 
-    labourChauk,
+    labourChauk: row.labourChauk ?? row.labour_chauk ?? "",
 
     available: row.available ?? true,
 
@@ -228,9 +225,7 @@ export default function WorkersTab({ onFormOpenChange }: WorkersTabProps) {
         data: { session },
       } = await supabase.auth.getSession();
 
-      if (!session?.access_token) {
-        return;
-      }
+      if (!session?.access_token) return;
 
       const response = await fetch("/api/admin/me", {
         headers: {
@@ -298,9 +293,7 @@ export default function WorkersTab({ onFormOpenChange }: WorkersTabProps) {
         ? data.workers
         : [];
 
-      const normalizedWorkers = apiWorkers.map(normalizeWorker);
-
-      setWorkers(normalizedWorkers);
+      setWorkers(apiWorkers.map(normalizeWorker));
     } catch (error) {
       console.error("Load workers error:", error);
 
@@ -335,24 +328,21 @@ export default function WorkersTab({ onFormOpenChange }: WorkersTabProps) {
   }, [search]);
 
   /* =====================================================
-     CATEGORY LIST
+     CATEGORIES
   ===================================================== */
 
   const categories = useMemo(() => {
-    const uniqueCategories = new Set<string>();
+    const unique = new Set<string>();
 
     workers.forEach((worker) => {
       const category = worker.category?.trim();
 
       if (category) {
-        uniqueCategories.add(category);
+        unique.add(category);
       }
     });
 
-    return [
-      "All",
-      ...Array.from(uniqueCategories).sort((a, b) => a.localeCompare(b)),
-    ];
+    return ["All", ...Array.from(unique).sort((a, b) => a.localeCompare(b))];
   }, [workers]);
 
   /* =====================================================
@@ -372,7 +362,7 @@ export default function WorkersTab({ onFormOpenChange }: WorkersTabProps) {
   }, [workers]);
 
   /* =====================================================
-     FILTERED WORKERS
+     FILTER
   ===================================================== */
 
   const filteredWorkers = useMemo(() => {
@@ -450,7 +440,7 @@ export default function WorkersTab({ onFormOpenChange }: WorkersTabProps) {
   }, [workers, selectedCategory]);
 
   /* =====================================================
-     DELETE WORKER
+     DELETE
   ===================================================== */
 
   const deleteWorker = async (worker: Worker) => {
@@ -458,9 +448,7 @@ export default function WorkersTab({ onFormOpenChange }: WorkersTabProps) {
       `Delete ${getWorkerName(worker)}? This action cannot be undone.`,
     );
 
-    if (!confirmed) {
-      return;
-    }
+    if (!confirmed) return;
 
     try {
       setActionLoading(true);
@@ -502,7 +490,7 @@ export default function WorkersTab({ onFormOpenChange }: WorkersTabProps) {
   };
 
   /* =====================================================
-     TOGGLE AVAILABILITY
+     TOGGLE STATUS
   ===================================================== */
 
   const toggleWorkerStatus = async (worker: Worker) => {
@@ -570,6 +558,7 @@ export default function WorkersTab({ onFormOpenChange }: WorkersTabProps) {
   /* =====================================================
      ONBOARD FORM
   ===================================================== */
+
   if (showOnboardForm) {
     return (
       <WorkerOnboardForm
@@ -596,42 +585,44 @@ export default function WorkersTab({ onFormOpenChange }: WorkersTabProps) {
           HEADER
       ================================================= */}
 
-      <header className="border-b border-gray-100 bg-white">
-        <div className="flex min-h-20 flex-col gap-4 px-4 py-4 sm:px-6 sm:py-5 lg:flex-row lg:items-center lg:justify-between lg:px-8 lg:py-0">
-          <div className="min-w-0">
-            <div className="flex flex-wrap items-center gap-2 sm:gap-3">
-              <h1 className="text-xl font-black text-[#0F172A] sm:text-2xl">
+      <header className="fixed inset-x-0  z-40 border-b border-gray-100 bg-white sm:top-0">
+        <div className="flex h-24 items-center justify-between  px-3 pt-18 pb-8  sm:h-20 sm:px-6 sm:pt-0 lg:px-8 sm:pb-2">
+          {/* LEFT */}
+          <div className="min-w-0 flex-1">
+            <div className="flex min-w-0 items-center gap-2">
+              <h1 className="shrink-0 text-lg font-black leading-none text-[#0F172A] sm:text-2xl">
                 Workers
               </h1>
 
               {selectedCategory !== "All" && (
                 <>
-                  <span className="text-[#CBD5E1]">/</span>
+                  <span className="shrink-0 text-sm text-[#CBD5E1]">/</span>
 
-                  <span className="max-w-[180px] truncate rounded-lg bg-orange-50 px-2.5 py-1 text-xs font-bold text-[#FF5C39] sm:px-3 sm:text-sm">
+                  <span className="min-w-0 max-w-32.5 truncate rounded-md bg-orange-50 px-2 py-1 text-[10px] font-bold leading-none text-[#FF5C39] sm:max-w-[180px] sm:rounded-lg sm:px-3 sm:py-1.5 sm:text-sm">
                     {selectedCategory}
                   </span>
                 </>
               )}
             </div>
 
-            <p className="mt-1 line-clamp-2 text-xs text-[#64748B] sm:text-sm">
+            <p className="mt-1.5 truncate text-[10px] leading-tight text-[#64748B] sm:text-sm">
               {selectedCategory === "All"
                 ? "Manage all Workkerz workers and their profiles."
                 : `Manage ${selectedCategory} workers and their profiles.`}
             </p>
           </div>
 
+          {/* ADD WORKER */}
           <button
             type="button"
             onClick={() => {
               setShowOnboardForm(true);
               onFormOpenChange?.(true);
             }}
-            className="flex h-11 w-full items-center justify-center gap-2 rounded-xl bg-[#FF5C39] px-5 text-sm font-bold text-white shadow-sm transition hover:bg-[#e54e2e] sm:w-auto"
+            className="flex h-9 shrink-0 items-center justify-center gap-1.5 rounded-lg bg-[#FF5C39] px-3 text-[11px] font-bold text-white shadow-sm transition active:scale-[0.98] hover:bg-[#e54e2e] sm:h-11 sm:gap-2 sm:rounded-xl sm:px-5 sm:text-sm"
           >
-            <UserPlus className="h-4 w-4" />
-            Add Worker
+            <UserPlus className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
+            <span>Add Worker</span>
           </button>
         </div>
       </header>
@@ -640,13 +631,11 @@ export default function WorkersTab({ onFormOpenChange }: WorkersTabProps) {
           CONTENT
       ================================================= */}
 
-      <main className="p-3 sm:p-5 lg:p-8">
-        {/* =================================================
-            ERROR
-        ================================================= */}
+      <main className="p-2.5 pt-28 sm:p-5 sm:pt-20 lg:p-8 lg:pt-25">
+        {/* ERROR */}
 
         {error && (
-          <div className="mb-4 flex flex-col gap-2 rounded-xl border border-red-200 bg-red-50 px-3 py-3 sm:flex-row sm:items-center sm:justify-between sm:px-4">
+          <div className="mb-3 flex flex-col gap-2 rounded-xl border border-red-200 bg-red-50 px-3 py-3 sm:mb-4 sm:flex-row sm:items-center sm:justify-between sm:px-4">
             <p className="text-xs text-red-600 sm:text-sm">{error}</p>
 
             <button
@@ -663,7 +652,7 @@ export default function WorkersTab({ onFormOpenChange }: WorkersTabProps) {
             STATS
         ================================================= */}
 
-        <div className="mb-4 grid grid-cols-2 gap-2.5 sm:mb-6 sm:grid-cols-2 sm:gap-4 lg:grid-cols-4 lg:gap-5">
+        <div className="mb-3 grid grid-cols-2 gap-2 sm:mb-6 sm:gap-4 lg:grid-cols-4 lg:gap-5">
           <WorkerStat label="Total Workers" value={stats.total} icon={Users} />
 
           <WorkerStat
@@ -690,12 +679,10 @@ export default function WorkersTab({ onFormOpenChange }: WorkersTabProps) {
         ================================================= */}
 
         <div className="overflow-hidden rounded-xl border border-gray-100 bg-white shadow-sm sm:rounded-2xl">
-          {/* =================================================
-              TOOLBAR
-          ================================================= */}
+          {/* TOOLBAR */}
 
           <div className="border-b border-gray-100 bg-white">
-            <div className="flex flex-col gap-3 p-3 sm:p-5 lg:flex-row lg:items-center lg:justify-between">
+            <div className="flex flex-col gap-2.5 p-2.5 sm:gap-3 sm:p-5 lg:flex-row lg:items-center lg:justify-between">
               {/* SEARCH */}
 
               <div className="relative w-full lg:max-w-md">
@@ -713,8 +700,7 @@ export default function WorkersTab({ onFormOpenChange }: WorkersTabProps) {
                   <button
                     type="button"
                     onClick={() => setSearch("")}
-                    className="absolute right-2.5 top-1/2 flex h-6 w-6 -translate-y-1/2 items-center justify-center rounded-md text-[#94A3B8] hover:bg-gray-100 hover:text-[#334155]"
-                    title="Clear search"
+                    className="absolute right-2.5 top-1/2 flex h-6 w-6 -translate-y-1/2 items-center justify-center rounded-md text-[#94A3B8] hover:bg-gray-100"
                   >
                     <XCircle className="h-4 w-4" />
                   </button>
@@ -729,7 +715,7 @@ export default function WorkersTab({ onFormOpenChange }: WorkersTabProps) {
                   className="flex h-10 flex-1 items-center justify-center gap-2 rounded-xl border border-gray-200 px-3 text-xs font-semibold text-[#64748B] hover:bg-[#F8FAFC] sm:h-11 sm:flex-none sm:px-4 sm:text-sm"
                 >
                   <SlidersHorizontal className="h-4 w-4" />
-                  <span>Filters</span>
+                  Filters
                 </button>
 
                 <button
@@ -737,7 +723,6 @@ export default function WorkersTab({ onFormOpenChange }: WorkersTabProps) {
                   onClick={() => loadWorkers(true)}
                   disabled={refreshing}
                   className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-gray-200 bg-white hover:bg-[#F8FAFC] disabled:opacity-50 sm:h-11 sm:w-11"
-                  title="Refresh"
                 >
                   <RefreshCw
                     className={`h-4 w-4 text-[#64748B] ${
@@ -752,41 +737,43 @@ export default function WorkersTab({ onFormOpenChange }: WorkersTabProps) {
                 CATEGORY TABS
             ================================================= */}
 
-            <div className="overflow-x-auto px-3 pb-3 sm:px-5 sm:pb-4">
-              <div className="flex min-w-max items-center gap-1.5 sm:gap-2">
-                {categories.map((category) => {
-                  const active = selectedCategory === category;
+            <div className="relative overflow-hidden">
+              <div className="overflow-x-auto px-2.5 pb-2.5 scrollbar-none sm:px-5 sm:pb-4">
+                <div className="flex w-max min-w-full items-center gap-1.5 sm:gap-2">
+                  {categories.map((category) => {
+                    const active = selectedCategory === category;
 
-                  const count =
-                    category === "All"
-                      ? workers.length
-                      : categoryCounts[category] || 0;
+                    const count =
+                      category === "All"
+                        ? workers.length
+                        : categoryCounts[category] || 0;
 
-                  return (
-                    <button
-                      key={category}
-                      type="button"
-                      onClick={() => setSelectedCategory(category)}
-                      className={`group flex h-9 items-center gap-1.5 rounded-lg px-3 text-xs font-bold transition sm:h-10 sm:gap-2 sm:rounded-xl sm:px-4 sm:text-sm ${
-                        active
-                          ? "bg-[#FF5C39] text-white shadow-sm"
-                          : "border border-gray-200 bg-white text-[#64748B] hover:border-orange-200 hover:bg-orange-50 hover:text-[#FF5C39]"
-                      }`}
-                    >
-                      <span>{category}</span>
-
-                      <span
-                        className={`rounded-md px-1.5 py-0.5 text-[10px] font-black sm:rounded-lg sm:px-2 sm:text-[11px] ${
+                    return (
+                      <button
+                        key={category}
+                        type="button"
+                        onClick={() => setSelectedCategory(category)}
+                        className={`flex h-8 shrink-0 items-center gap-1.5 rounded-lg px-2.5 text-[11px] font-bold transition sm:h-10 sm:gap-2 sm:rounded-xl sm:px-4 sm:text-sm ${
                           active
-                            ? "bg-white/20 text-white"
-                            : "bg-[#F1F5F9] text-[#64748B] group-hover:bg-orange-100 group-hover:text-[#FF5C39]"
+                            ? "bg-[#FF5C39] text-white shadow-sm"
+                            : "border border-gray-200 bg-white text-[#64748B] hover:border-orange-200 hover:bg-orange-50 hover:text-[#FF5C39]"
                         }`}
                       >
-                        {count}
-                      </span>
-                    </button>
-                  );
-                })}
+                        <span>{category}</span>
+
+                        <span
+                          className={`rounded-md px-1.5 py-0.5 text-[9px] font-black sm:rounded-lg sm:px-2 sm:text-[11px] ${
+                            active
+                              ? "bg-white/20 text-white"
+                              : "bg-[#F1F5F9] text-[#64748B]"
+                          }`}
+                        >
+                          {count}
+                        </span>
+                      </button>
+                    );
+                  })}
+                </div>
               </div>
             </div>
           </div>
@@ -796,17 +783,13 @@ export default function WorkersTab({ onFormOpenChange }: WorkersTabProps) {
           ================================================= */}
 
           {loading ? (
-            <div className="flex min-h-[320px] flex-col items-center justify-center px-4">
+            <div className="flex min-h-[300px] flex-col items-center justify-center px-4">
               <Loader2 className="h-7 w-7 animate-spin text-[#FF5C39]" />
 
               <p className="mt-3 text-sm text-[#64748B]">Loading workers...</p>
             </div>
           ) : filteredWorkers.length === 0 ? (
-            /* =================================================
-               EMPTY
-            ================================================= */
-
-            <div className="flex min-h-[320px] flex-col items-center justify-center px-5 text-center">
+            <div className="flex min-h-[300px] flex-col items-center justify-center px-5 text-center">
               <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-orange-50">
                 <Users className="h-7 w-7 text-[#FF5C39]" />
               </div>
@@ -832,7 +815,7 @@ export default function WorkersTab({ onFormOpenChange }: WorkersTabProps) {
                     setSearch("");
                     setSelectedCategory("All");
                   }}
-                  className="mt-4 rounded-xl bg-[#FF5C39] px-4 py-2 text-xs font-bold text-white hover:bg-[#e54e2e]"
+                  className="mt-4 rounded-xl bg-[#FF5C39] px-4 py-2 text-xs font-bold text-white"
                 >
                   Clear Filters
                 </button>
@@ -887,8 +870,6 @@ export default function WorkersTab({ onFormOpenChange }: WorkersTabProps) {
                           key={worker.id}
                           className="transition hover:bg-[#FAFAFA]"
                         >
-                          {/* WORKER */}
-
                           <td className="px-6 py-4">
                             <div className="flex items-center gap-3">
                               <WorkerAvatar worker={worker} size="md" />
@@ -905,15 +886,9 @@ export default function WorkersTab({ onFormOpenChange }: WorkersTabProps) {
                             </div>
                           </td>
 
-                          {/* CONTACT */}
-
-                          <td className="px-6 py-4">
-                            <p className="text-sm text-[#334155]">
-                              {getPhone(worker)}
-                            </p>
+                          <td className="px-6 py-4 text-sm text-[#334155]">
+                            {getPhone(worker)}
                           </td>
-
-                          {/* CATEGORY */}
 
                           <td className="px-6 py-4">
                             <p className="text-sm font-semibold text-[#334155]">
@@ -927,8 +902,6 @@ export default function WorkersTab({ onFormOpenChange }: WorkersTabProps) {
                             )}
                           </td>
 
-                          {/* LOCATION */}
-
                           <td className="px-6 py-4">
                             <p className="max-w-[180px] truncate text-sm text-[#334155]">
                               {getLocation(worker)}
@@ -940,8 +913,6 @@ export default function WorkersTab({ onFormOpenChange }: WorkersTabProps) {
                               </p>
                             )}
                           </td>
-
-                          {/* RATING */}
 
                           <td className="px-6 py-4">
                             <div className="flex items-center gap-1.5">
@@ -957,13 +928,9 @@ export default function WorkersTab({ onFormOpenChange }: WorkersTabProps) {
                             </div>
                           </td>
 
-                          {/* STATUS */}
-
                           <td className="px-6 py-4">
                             <WorkerStatus active={active} />
                           </td>
-
-                          {/* ACTION */}
 
                           <td className="px-6 py-4">
                             <div className="flex items-center justify-end gap-1">
@@ -997,7 +964,7 @@ export default function WorkersTab({ onFormOpenChange }: WorkersTabProps) {
               </div>
 
               {/* =================================================
-                  MOBILE + TABLET CARDS
+                  MOBILE + TABLET
               ================================================= */}
 
               <div className="divide-y divide-gray-100 lg:hidden">
@@ -1005,11 +972,11 @@ export default function WorkersTab({ onFormOpenChange }: WorkersTabProps) {
                   const active = isWorkerActive(worker);
 
                   return (
-                    <div key={worker.id} className="p-3 sm:p-4">
-                      <div className="rounded-xl border border-gray-100 bg-white p-3 transition hover:border-gray-200 hover:shadow-sm sm:rounded-2xl sm:p-4">
+                    <div key={worker.id} className="p-2.5 sm:p-4">
+                      <div className="rounded-xl border border-gray-100 bg-white p-2.5 transition hover:border-gray-200 hover:shadow-sm sm:rounded-2xl sm:p-4">
                         {/* TOP */}
 
-                        <div className="flex items-start gap-3">
+                        <div className="flex items-start gap-2.5 sm:gap-3">
                           <WorkerAvatar worker={worker} size="lg" />
 
                           <div className="min-w-0 flex-1">
@@ -1019,7 +986,7 @@ export default function WorkersTab({ onFormOpenChange }: WorkersTabProps) {
                                   {getWorkerName(worker)}
                                 </h3>
 
-                                <p className="mt-0.5 truncate text-xs text-[#64748B]">
+                                <p className="mt-0.5 truncate text-[11px] text-[#64748B] sm:text-xs">
                                   {getSpecialty(worker)}
                                 </p>
                               </div>
@@ -1027,15 +994,13 @@ export default function WorkersTab({ onFormOpenChange }: WorkersTabProps) {
                               <WorkerStatus active={active} compact />
                             </div>
 
-                            {/* CATEGORY */}
-
-                            <div className="mt-2 flex flex-wrap items-center gap-1.5">
-                              <span className="rounded-md bg-orange-50 px-2 py-1 text-[10px] font-bold text-[#FF5C39] sm:text-[11px]">
+                            <div className="mt-2 flex flex-wrap items-center gap-1">
+                              <span className="rounded-md bg-orange-50 px-1.5 py-0.5 text-[9px] font-bold text-[#FF5C39] sm:px-2 sm:py-1 sm:text-[11px]">
                                 {getCategory(worker)}
                               </span>
 
                               {worker.subcategory && (
-                                <span className="max-w-[150px] truncate rounded-md bg-gray-50 px-2 py-1 text-[10px] font-medium text-[#64748B] sm:text-[11px]">
+                                <span className="max-w-[130px] truncate rounded-md bg-gray-50 px-1.5 py-0.5 text-[9px] font-medium text-[#64748B] sm:max-w-[150px] sm:px-2 sm:py-1 sm:text-[11px]">
                                   {worker.subcategory}
                                 </span>
                               )}
@@ -1043,9 +1008,9 @@ export default function WorkersTab({ onFormOpenChange }: WorkersTabProps) {
                           </div>
                         </div>
 
-                        {/* INFO GRID */}
+                        {/* INFO */}
 
-                        <div className="mt-3 grid grid-cols-2 gap-2 border-t border-gray-100 pt-3 sm:grid-cols-4">
+                        <div className="mt-2.5 grid grid-cols-2 gap-1.5 border-t border-gray-100 pt-2.5 sm:mt-3 sm:grid-cols-4 sm:gap-2 sm:pt-3">
                           <MobileInfo
                             icon={Phone}
                             label="Phone"
@@ -1061,9 +1026,9 @@ export default function WorkersTab({ onFormOpenChange }: WorkersTabProps) {
                           <MobileInfo
                             icon={Star}
                             label="Rating"
-                            value={`${getRating(worker)} (${
-                              worker.reviewCount ?? 0
-                            })`}
+                            value={`${getRating(
+                              worker,
+                            )} (${worker.reviewCount ?? 0})`}
                             rating
                           />
 
@@ -1076,29 +1041,24 @@ export default function WorkersTab({ onFormOpenChange }: WorkersTabProps) {
 
                         {/* BOTTOM */}
 
-                        <div className="mt-3 flex items-center justify-between gap-2 border-t border-gray-100 pt-3">
+                        <div className="mt-2.5 flex items-center justify-between gap-2 border-t border-gray-100 pt-2.5 sm:mt-3 sm:pt-3">
                           <div className="min-w-0">
-                            {worker.labourChauk ? (
-                              <p className="truncate text-[11px] text-[#94A3B8] sm:text-xs">
-                                Chauk: {worker.labourChauk}
-                              </p>
-                            ) : (
-                              <p className="text-[11px] text-[#94A3B8] sm:text-xs">
-                                Worker ID: {worker.workerCode || "—"}
-                              </p>
-                            )}
+                            <p className="truncate text-[10px] text-[#94A3B8] sm:text-xs">
+                              {worker.labourChauk
+                                ? `Chauk: ${worker.labourChauk}`
+                                : `Worker ID: ${worker.workerCode || "—"}`}
+                            </p>
                           </div>
 
                           <div className="flex shrink-0 items-center gap-1.5">
                             <button
                               type="button"
                               onClick={() => setSelectedWorker(worker)}
-                              className="flex h-9 items-center gap-1.5 rounded-lg border border-gray-200 px-2.5 text-xs font-semibold text-[#64748B] transition hover:border-orange-200 hover:bg-orange-50 hover:text-[#FF5C39] sm:h-10 sm:px-3"
+                              className="flex h-8 items-center gap-1 rounded-lg border border-gray-200 px-2 text-[11px] font-semibold text-[#64748B] transition hover:border-orange-200 hover:bg-orange-50 hover:text-[#FF5C39] sm:h-10 sm:gap-1.5 sm:px-3 sm:text-xs"
                             >
                               <Eye className="h-3.5 w-3.5" />
-                              <span className="hidden xs:inline sm:inline">
-                                View
-                              </span>
+
+                              <span>View</span>
                             </button>
 
                             <button
@@ -1107,13 +1067,11 @@ export default function WorkersTab({ onFormOpenChange }: WorkersTabProps) {
                                 setActionError("");
                                 setActionWorker(worker);
                               }}
-                              className="flex h-9 w-9 items-center justify-center rounded-lg border border-gray-200 text-[#64748B] transition hover:border-gray-300 hover:bg-gray-50 sm:h-10 sm:w-10"
+                              className="flex h-8 w-8 items-center justify-center rounded-lg border border-gray-200 text-[#64748B] transition hover:border-gray-300 hover:bg-gray-50 sm:h-10 sm:w-10"
                               title="More actions"
                             >
                               <MoreHorizontal className="h-4 w-4" />
                             </button>
-
-                            <ChevronRight className="hidden h-4 w-4 text-[#CBD5E1] sm:block" />
                           </div>
                         </div>
                       </div>
@@ -1124,13 +1082,11 @@ export default function WorkersTab({ onFormOpenChange }: WorkersTabProps) {
             </>
           )}
 
-          {/* =================================================
-              FOOTER
-          ================================================= */}
+          {/* FOOTER */}
 
           {!loading && filteredWorkers.length > 0 && (
-            <div className="flex flex-col gap-1.5 border-t border-gray-100 bg-[#FAFAFA] px-3 py-3 sm:flex-row sm:items-center sm:justify-between sm:px-6">
-              <p className="text-[11px] font-medium text-[#64748B] sm:text-xs">
+            <div className="flex flex-col gap-1.5 border-t border-gray-100 bg-[#FAFAFA] px-3 py-2.5 sm:flex-row sm:items-center sm:justify-between sm:px-6 sm:py-3">
+              <p className="text-[10px] font-medium text-[#64748B] sm:text-xs">
                 Showing{" "}
                 <span className="font-bold text-[#334155]">
                   {filteredWorkers.length}
@@ -1149,7 +1105,7 @@ export default function WorkersTab({ onFormOpenChange }: WorkersTabProps) {
               </p>
 
               {search && (
-                <p className="truncate text-[11px] text-[#94A3B8] sm:text-xs">
+                <p className="truncate text-[10px] text-[#94A3B8] sm:text-xs">
                   Search:{" "}
                   <span className="font-semibold text-[#64748B]">
                     "{search}"
@@ -1174,9 +1130,9 @@ export default function WorkersTab({ onFormOpenChange }: WorkersTabProps) {
             className="absolute inset-0 bg-black/30 backdrop-blur-[1px]"
           />
 
-          {/* DESKTOP MENU */}
+          {/* DESKTOP */}
 
-          <div className="absolute right-4 top-20 hidden w-72 rounded-2xl border border-gray-100 bg-white p-2 shadow-2xl sm:right-6 sm:top-24 sm:block lg:right-8">
+          <div className="absolute right-4 top-20 hidden w-72 rounded-2xl border border-gray-100 bg-white p-2 shadow-2xl sm:block lg:right-8">
             <ActionMenuContent
               worker={actionWorker}
               isSuperAdmin={isSuperAdmin}
@@ -1210,6 +1166,7 @@ export default function WorkersTab({ onFormOpenChange }: WorkersTabProps) {
               }}
               onToggle={() => toggleWorkerStatus(actionWorker)}
               onDelete={() => deleteWorker(actionWorker)}
+              onCancel={() => setActionWorker(null)}
             />
           </div>
         </div>
@@ -1256,7 +1213,7 @@ function WorkerAvatar({
   worker: Worker;
   size?: "md" | "lg";
 }) {
-  const sizeClass = size === "lg" ? "h-12 w-12 sm:h-14 sm:w-14" : "h-11 w-11";
+  const sizeClass = size === "lg" ? "h-11 w-11 sm:h-14 sm:w-14" : "h-11 w-11";
 
   return (
     <div
@@ -1286,23 +1243,19 @@ function WorkerStatus({
   active: boolean;
   compact?: boolean;
 }) {
-  if (active) {
-    return (
-      <span
-        className={`inline-flex shrink-0 items-center gap-1.5 rounded-full bg-emerald-50 font-bold text-emerald-700 ${
-          compact ? "px-2 py-1 text-[10px]" : "px-2.5 py-1 text-xs"
-        }`}
-      >
-        <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
-        Available
-      </span>
-    );
-  }
-
-  return (
+  return active ? (
+    <span
+      className={`inline-flex shrink-0 items-center gap-1.5 rounded-full bg-emerald-50 font-bold text-emerald-700 ${
+        compact ? "px-2 py-1 text-[9px]" : "px-2.5 py-1 text-xs"
+      }`}
+    >
+      <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
+      Available
+    </span>
+  ) : (
     <span
       className={`inline-flex shrink-0 items-center gap-1.5 rounded-full bg-gray-100 font-bold text-gray-600 ${
-        compact ? "px-2 py-1 text-[10px]" : "px-2.5 py-1 text-xs"
+        compact ? "px-2 py-1 text-[9px]" : "px-2.5 py-1 text-xs"
       }`}
     >
       <span className="h-1.5 w-1.5 rounded-full bg-gray-400" />
@@ -1327,7 +1280,7 @@ function MobileInfo({
   rating?: boolean;
 }) {
   return (
-    <div className="min-w-0 rounded-lg bg-[#F8FAFC] px-2 py-2">
+    <div className="min-w-0 rounded-lg bg-[#F8FAFC] px-1.5 py-1.5 sm:px-2 sm:py-2">
       <div className="flex items-center gap-1">
         <Icon
           className={`h-3 w-3 shrink-0 ${
@@ -1335,12 +1288,12 @@ function MobileInfo({
           }`}
         />
 
-        <span className="text-[9px] font-semibold uppercase tracking-wide text-[#94A3B8]">
+        <span className="truncate text-[8px] font-semibold uppercase tracking-wide text-[#94A3B8] sm:text-[9px]">
           {label}
         </span>
       </div>
 
-      <p className="mt-1 truncate text-[11px] font-bold text-[#334155]">
+      <p className="mt-0.5 truncate text-[10px] font-bold text-[#334155] sm:mt-1 sm:text-[11px]">
         {value}
       </p>
     </div>
@@ -1348,7 +1301,7 @@ function MobileInfo({
 }
 
 /* =====================================================
-   ACTION MENU CONTENT
+   ACTION MENU
 ===================================================== */
 
 function ActionMenuContent({
@@ -1360,6 +1313,7 @@ function ActionMenuContent({
   onEdit,
   onToggle,
   onDelete,
+  onCancel,
 }: {
   worker: Worker;
   isSuperAdmin: boolean;
@@ -1369,6 +1323,7 @@ function ActionMenuContent({
   onEdit: () => void;
   onToggle: () => void;
   onDelete: () => void;
+  onCancel?: () => void;
 }) {
   const active = worker.available === true;
 
@@ -1406,7 +1361,7 @@ function ActionMenuContent({
         </div>
       </button>
 
-      {/* AVAILABILITY */}
+      {/* STATUS */}
 
       <button
         type="button"
@@ -1473,16 +1428,14 @@ function ActionMenuContent({
         </div>
       )}
 
+      {/* CANCEL */}
+
       {mobile && (
         <button
           type="button"
           disabled={actionLoading}
-          onClick={() => {
-            const event = new CustomEvent("close-worker-actions");
-
-            window.dispatchEvent(event);
-          }}
-          className="mt-1 w-full rounded-xl bg-gray-100 py-3 text-sm font-bold text-[#475569]"
+          onClick={onCancel}
+          className="mt-1 w-full rounded-xl bg-gray-100 py-3 text-sm font-bold text-[#475569] disabled:opacity-50"
         >
           Cancel
         </button>
@@ -1505,20 +1458,20 @@ function WorkerStat({
   icon: typeof Users;
 }) {
   return (
-    <div className="rounded-xl border border-gray-100 bg-white p-3 shadow-sm sm:rounded-2xl sm:p-5">
+    <div className="rounded-xl border border-gray-100 bg-white p-2.5 shadow-sm sm:rounded-2xl sm:p-5">
       <div className="flex items-center justify-between gap-2">
         <div className="min-w-0">
-          <p className="truncate text-[10px] font-medium text-[#64748B] sm:text-sm">
+          <p className="truncate text-[9px] font-medium text-[#64748B] sm:text-sm">
             {label}
           </p>
 
-          <p className="mt-1 text-2xl font-black text-[#0F172A] sm:mt-2 sm:text-3xl">
+          <p className="mt-0.5 text-xl font-black text-[#0F172A] sm:mt-2 sm:text-3xl">
             {value}
           </p>
         </div>
 
-        <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-orange-50 sm:h-11 sm:w-11 sm:rounded-xl">
-          <Icon className="h-4 w-4 text-[#FF5C39] sm:h-5 sm:w-5" />
+        <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-orange-50 sm:h-11 sm:w-11 sm:rounded-xl">
+          <Icon className="h-3.5 w-3.5 text-[#FF5C39] sm:h-5 sm:w-5" />
         </div>
       </div>
     </div>

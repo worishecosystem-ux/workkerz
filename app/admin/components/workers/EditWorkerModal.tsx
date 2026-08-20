@@ -1,12 +1,6 @@
 "use client";
 
-import {
-  ChangeEvent,
-  FormEvent,
-  useEffect,
-  useRef,
-  useState,
-} from "react";
+import { ChangeEvent, FormEvent, useEffect, useRef, useState } from "react";
 
 import {
   X,
@@ -25,6 +19,9 @@ import {
 } from "lucide-react";
 
 import type { LucideIcon } from "lucide-react";
+
+import { Capacitor } from "@capacitor/core";
+import { Keyboard } from "@capacitor/keyboard";
 
 import {
   updateWorker,
@@ -64,9 +61,7 @@ export default function EditWorkerModal({
   onClose,
   onUpdated,
 }: EditWorkerModalProps) {
-  const fileInputRef = useRef<HTMLInputElement | null>(
-    null,
-  );
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
 
   /* =====================================================
      BASIC
@@ -82,11 +77,8 @@ export default function EditWorkerModal({
   const [location, setLocation] = useState("");
   const [labourChauk, setLabourChauk] = useState("");
 
-  const [yearsExperience, setYearsExperience] =
-    useState("");
-
-  const [completedJobs, setCompletedJobs] =
-    useState("");
+  const [yearsExperience, setYearsExperience] = useState("");
+  const [completedJobs, setCompletedJobs] = useState("");
 
   const [bio, setBio] = useState("");
 
@@ -95,29 +87,19 @@ export default function EditWorkerModal({
   ===================================================== */
 
   const [photo, setPhoto] = useState("");
-  const [selectedPhoto, setSelectedPhoto] =
-    useState<File | null>(null);
+  const [selectedPhoto, setSelectedPhoto] = useState<File | null>(null);
 
-  const [photoPreview, setPhotoPreview] =
-    useState("");
-
-  const [photoUploading, setPhotoUploading] =
-    useState(false);
-
+  const [photoPreview, setPhotoPreview] = useState("");
+  const [photoUploading, setPhotoUploading] = useState(false);
   const [photoError, setPhotoError] = useState("");
 
   /* =====================================================
      ARRAYS
   ===================================================== */
 
-  const [services, setServices] = useState<string[]>(
-    [],
-  );
-
+  const [services, setServices] = useState<string[]>([]);
   const [skills, setSkills] = useState<string[]>([]);
-
-  const [certifications, setCertifications] =
-    useState<string[]>([]);
+  const [certifications, setCertifications] = useState<string[]>([]);
 
   /* =====================================================
      PRICING
@@ -126,37 +108,29 @@ export default function EditWorkerModal({
   const [pricingType, setPricingType] =
     useState<Worker["pricingType"]>("custom");
 
-  const [startingPrice, setStartingPrice] =
-    useState("");
-
-  const [halfDayPrice, setHalfDayPrice] =
-    useState("");
-
-  const [fullDayPrice, setFullDayPrice] =
-    useState("");
-
-  const [monthlyPrice, setMonthlyPrice] =
-    useState("");
-
+  const [startingPrice, setStartingPrice] = useState("");
+  const [halfDayPrice, setHalfDayPrice] = useState("");
+  const [fullDayPrice, setFullDayPrice] = useState("");
+  const [monthlyPrice, setMonthlyPrice] = useState("");
   const [visitCharge, setVisitCharge] = useState("");
 
   /* =====================================================
      OTHER
   ===================================================== */
 
-  const [responseTime, setResponseTime] =
-    useState("Within 1 hour");
-
+  const [responseTime, setResponseTime] = useState("Within 1 hour");
   const [rating, setRating] = useState("");
-
-  const [reviewCount, setReviewCount] =
-    useState("");
-
+  const [reviewCount, setReviewCount] = useState("");
   const [available, setAvailable] = useState(true);
 
   const [loading, setLoading] = useState(false);
-
   const [error, setError] = useState("");
+
+  /* =====================================================
+     ANDROID KEYBOARD
+  ===================================================== */
+
+  const [keyboardOpen, setKeyboardOpen] = useState(false);
 
   /* =====================================================
      LOAD WORKER
@@ -176,20 +150,14 @@ export default function EditWorkerModal({
     setLabourChauk(worker.labourChauk ?? "");
 
     setYearsExperience(
-      worker.yearsExperience != null
-        ? String(worker.yearsExperience)
-        : "",
+      worker.yearsExperience != null ? String(worker.yearsExperience) : "",
     );
 
     setCompletedJobs(
-      worker.completedJobs != null
-        ? String(worker.completedJobs)
-        : "",
+      worker.completedJobs != null ? String(worker.completedJobs) : "",
     );
 
     setBio(worker.bio ?? "");
-
-    /* PHOTO */
 
     setPhoto(worker.photo ?? "");
     setPhotoPreview(worker.photo ?? "");
@@ -200,81 +168,114 @@ export default function EditWorkerModal({
       fileInputRef.current.value = "";
     }
 
-    /* ARRAYS */
+    setServices(Array.isArray(worker.services) ? [...worker.services] : []);
 
-    setServices(
-      Array.isArray(worker.services)
-        ? [...worker.services]
-        : [],
-    );
-
-    setSkills(
-      Array.isArray(worker.skills)
-        ? [...worker.skills]
-        : [],
-    );
+    setSkills(Array.isArray(worker.skills) ? [...worker.skills] : []);
 
     setCertifications(
-      Array.isArray(worker.certifications)
-        ? [...worker.certifications]
-        : [],
+      Array.isArray(worker.certifications) ? [...worker.certifications] : [],
     );
-
-    /* PRICING */
 
     setPricingType(worker.pricingType ?? "custom");
 
     setStartingPrice(
-      worker.startingPrice != null
-        ? String(worker.startingPrice)
-        : "",
+      worker.startingPrice != null ? String(worker.startingPrice) : "",
     );
 
     setHalfDayPrice(
-      worker.halfDayPrice != null
-        ? String(worker.halfDayPrice)
-        : "",
+      worker.halfDayPrice != null ? String(worker.halfDayPrice) : "",
     );
 
     setFullDayPrice(
-      worker.fullDayPrice != null
-        ? String(worker.fullDayPrice)
-        : "",
+      worker.fullDayPrice != null ? String(worker.fullDayPrice) : "",
     );
 
     setMonthlyPrice(
-      worker.monthlyPrice != null
-        ? String(worker.monthlyPrice)
-        : "",
+      worker.monthlyPrice != null ? String(worker.monthlyPrice) : "",
     );
 
     setVisitCharge(
-      worker.visitCharge != null
-        ? String(worker.visitCharge)
-        : "",
+      worker.visitCharge != null ? String(worker.visitCharge) : "",
     );
 
-    /* OTHER */
+    setResponseTime(worker.responseTime || "Within 1 hour");
 
-    setResponseTime(
-      worker.responseTime || "Within 1 hour",
-    );
-
-    setRating(
-      worker.rating != null
-        ? String(worker.rating)
-        : "",
-    );
+    setRating(worker.rating != null ? String(worker.rating) : "");
 
     setReviewCount(
-      worker.reviewCount != null
-        ? String(worker.reviewCount)
-        : "",
+      worker.reviewCount != null ? String(worker.reviewCount) : "",
     );
 
     setAvailable(worker.available ?? true);
 
     setError("");
+    setKeyboardOpen(false);
+  }, [worker]);
+
+  /* =====================================================
+     CAPACITOR ANDROID KEYBOARD LISTENER
+  ===================================================== */
+
+  useEffect(() => {
+    if (!worker) return;
+
+    if (!Capacitor.isNativePlatform()) {
+      setKeyboardOpen(false);
+      return;
+    }
+
+    let showListener: {
+      remove: () => Promise<void>;
+    } | null = null;
+
+    let hideListener: {
+      remove: () => Promise<void>;
+    } | null = null;
+
+    let didCancel = false;
+
+    const setupKeyboardListeners = async () => {
+      try {
+        showListener = await Keyboard.addListener("keyboardWillShow", () => {
+          if (!didCancel) {
+            setKeyboardOpen(true);
+          }
+        });
+
+        hideListener = await Keyboard.addListener("keyboardWillHide", () => {
+          if (!didCancel) {
+            setKeyboardOpen(false);
+          }
+        });
+
+        /*
+         * Android can sometimes fire only the "Did" events
+         * depending on WebView/keyboard configuration.
+         */
+        await Keyboard.addListener("keyboardDidShow", () => {
+          if (!didCancel) {
+            setKeyboardOpen(true);
+          }
+        });
+
+        await Keyboard.addListener("keyboardDidHide", () => {
+          if (!didCancel) {
+            setKeyboardOpen(false);
+          }
+        });
+      } catch (error) {
+        console.error("KEYBOARD LISTENER ERROR:", error);
+      }
+    };
+
+    setupKeyboardListeners();
+
+    return () => {
+      didCancel = true;
+
+      showListener?.remove();
+      hideListener?.remove();
+    };
   }, [worker]);
 
   /* =====================================================
@@ -290,16 +291,10 @@ export default function EditWorkerModal({
       }
     };
 
-    document.addEventListener(
-      "keydown",
-      handleKeyDown,
-    );
+    document.addEventListener("keydown", handleKeyDown);
 
     return () => {
-      document.removeEventListener(
-        "keydown",
-        handleKeyDown,
-      );
+      document.removeEventListener("keydown", handleKeyDown);
     };
   }, [worker, loading, onClose]);
 
@@ -310,14 +305,12 @@ export default function EditWorkerModal({
   useEffect(() => {
     if (!worker) return;
 
-    const originalOverflow =
-      document.body.style.overflow;
+    const originalOverflow = document.body.style.overflow;
 
     document.body.style.overflow = "hidden";
 
     return () => {
-      document.body.style.overflow =
-        originalOverflow;
+      document.body.style.overflow = originalOverflow;
     };
   }, [worker]);
 
@@ -327,10 +320,7 @@ export default function EditWorkerModal({
 
   useEffect(() => {
     return () => {
-      if (
-        photoPreview &&
-        photoPreview.startsWith("blob:")
-      ) {
+      if (photoPreview && photoPreview.startsWith("blob:")) {
         URL.revokeObjectURL(photoPreview);
       }
     };
@@ -340,25 +330,17 @@ export default function EditWorkerModal({
      SELECT PHOTO
   ===================================================== */
 
-  const handlePhotoSelect = (
-    event: ChangeEvent<HTMLInputElement>,
-  ) => {
+  const handlePhotoSelect = (event: ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
 
     if (!file) return;
 
     setPhotoError("");
 
-    const allowedTypes = [
-      "image/jpeg",
-      "image/png",
-      "image/webp",
-    ];
+    const allowedTypes = ["image/jpeg", "image/png", "image/webp"];
 
     if (!allowedTypes.includes(file.type)) {
-      setPhotoError(
-        "Only JPG, PNG and WebP images are allowed.",
-      );
+      setPhotoError("Only JPG, PNG and WebP images are allowed.");
 
       event.target.value = "";
       return;
@@ -367,23 +349,17 @@ export default function EditWorkerModal({
     const maxSize = 5 * 1024 * 1024;
 
     if (file.size > maxSize) {
-      setPhotoError(
-        "Image size must be less than 5 MB.",
-      );
+      setPhotoError("Image size must be less than 5 MB.");
 
       event.target.value = "";
       return;
     }
 
-    if (
-      photoPreview &&
-      photoPreview.startsWith("blob:")
-    ) {
+    if (photoPreview && photoPreview.startsWith("blob:")) {
       URL.revokeObjectURL(photoPreview);
     }
 
-    const previewUrl =
-      URL.createObjectURL(file);
+    const previewUrl = URL.createObjectURL(file);
 
     setSelectedPhoto(file);
     setPhotoPreview(previewUrl);
@@ -394,10 +370,7 @@ export default function EditWorkerModal({
   ===================================================== */
 
   const handleRemovePhoto = () => {
-    if (
-      photoPreview &&
-      photoPreview.startsWith("blob:")
-    ) {
+    if (photoPreview && photoPreview.startsWith("blob:")) {
       URL.revokeObjectURL(photoPreview);
     }
 
@@ -415,36 +388,25 @@ export default function EditWorkerModal({
      UPLOAD PHOTO
   ===================================================== */
 
-  const uploadWorkerPhoto = async (
-    file: File,
-  ): Promise<string> => {
+  const uploadWorkerPhoto = async (file: File): Promise<string> => {
     setPhotoUploading(true);
     setPhotoError("");
 
     try {
-      const extension =
-        file.name
-          .split(".")
-          .pop()
-          ?.toLowerCase() || "jpg";
+      const extension = file.name.split(".").pop()?.toLowerCase() || "jpg";
 
       const safeName =
         name
           .trim()
           .toLowerCase()
           .replace(/[^a-z0-9]+/g, "-")
-          .replace(/^-+|-+$/g, "") ||
-        "worker";
+          .replace(/^-+|-+$/g, "") || "worker";
 
-      const fileName =
-        `${safeName}-${Date.now()}.${extension}`;
+      const fileName = `${safeName}-${Date.now()}.${extension}`;
 
-      const filePath =
-        `workers/${fileName}`;
+      const filePath = `workers/${fileName}`;
 
-      const {
-        error: uploadError,
-      } = await supabase.storage
+      const { error: uploadError } = await supabase.storage
         .from(WORKER_IMAGE_BUCKET)
         .upload(filePath, file, {
           cacheControl: "3600",
@@ -456,27 +418,19 @@ export default function EditWorkerModal({
         throw uploadError;
       }
 
-      const {
-        data: publicUrlData,
-      } = supabase.storage
+      const { data: publicUrlData } = supabase.storage
         .from(WORKER_IMAGE_BUCKET)
         .getPublicUrl(filePath);
 
-      const publicUrl =
-        publicUrlData?.publicUrl;
+      const publicUrl = publicUrlData?.publicUrl;
 
       if (!publicUrl) {
-        throw new Error(
-          "Unable to generate image URL.",
-        );
+        throw new Error("Unable to generate image URL.");
       }
 
       return publicUrl;
     } catch (error) {
-      console.error(
-        "PHOTO UPLOAD ERROR:",
-        error,
-      );
+      console.error("PHOTO UPLOAD ERROR:", error);
 
       throw new Error(
         error instanceof Error
@@ -528,34 +482,15 @@ export default function EditWorkerModal({
      SUBMIT
   ===================================================== */
 
-  const handleSubmit = async (
-    event: FormEvent<HTMLFormElement>,
-  ) => {
+  const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
 
-    console.log(
-      "EDIT WORKER: SUBMIT STARTED",
-    );
-
-    if (!worker) {
-      console.error(
-        "EDIT WORKER: Worker not found",
-      );
-      return;
-    }
-
-    if (loading) {
-      return;
-    }
+    if (!worker) return;
+    if (loading) return;
 
     const validationError = validate();
 
     if (validationError) {
-      console.error(
-        "EDIT WORKER VALIDATION:",
-        validationError,
-      );
-
       setError(validationError);
       return;
     }
@@ -564,33 +499,13 @@ export default function EditWorkerModal({
       setLoading(true);
       setError("");
 
-      /* =================================================
-         PHOTO
-      ================================================= */
-
       let finalPhoto = photo.trim();
 
       if (selectedPhoto) {
-        console.log(
-          "EDIT WORKER: Uploading photo...",
-        );
-
-        finalPhoto =
-          await uploadWorkerPhoto(
-            selectedPhoto,
-          );
+        finalPhoto = await uploadWorkerPhoto(selectedPhoto);
       }
 
-      /* =================================================
-         LABOUR CHAUK
-      ================================================= */
-
-      const cleanLabourChauk =
-        labourChauk.trim();
-
-      /* =================================================
-         WORKER DATA
-      ================================================= */
+      const cleanLabourChauk = labourChauk.trim();
 
       const workerData: WorkerFormData = {
         name: name.trim(),
@@ -599,50 +514,37 @@ export default function EditWorkerModal({
 
         category: category.trim(),
 
-        subcategory:
-          subcategory.trim(),
+        subcategory: subcategory.trim(),
 
-        specialty:
-          specialty.trim(),
+        specialty: specialty.trim(),
 
         services: [...services],
 
         pricingType,
 
-        startingPrice:
-          Number(startingPrice) || 0,
+        startingPrice: Number(startingPrice) || 0,
 
-        halfDayPrice:
-          Number(halfDayPrice) || 0,
+        halfDayPrice: Number(halfDayPrice) || 0,
 
-        fullDayPrice:
-          Number(fullDayPrice) || 0,
+        fullDayPrice: Number(fullDayPrice) || 0,
 
-        monthlyPrice:
-          Number(monthlyPrice) || 0,
+        monthlyPrice: Number(monthlyPrice) || 0,
 
-        visitCharge:
-          Number(visitCharge) || 0,
+        visitCharge: Number(visitCharge) || 0,
 
-        rating:
-          Number(rating) || 0,
+        rating: Number(rating) || 0,
 
-        reviewCount:
-          Number(reviewCount) || 0,
+        reviewCount: Number(reviewCount) || 0,
 
-        location:
-          location.trim(),
+        location: location.trim(),
 
-        labourChauk:
-          cleanLabourChauk,
+        labourChauk: cleanLabourChauk,
 
         available,
 
-        yearsExperience:
-          Number(yearsExperience) || 0,
+        yearsExperience: Number(yearsExperience) || 0,
 
-        completedJobs:
-          Number(completedJobs) || 0,
+        completedJobs: Number(completedJobs) || 0,
 
         bio: bio.trim(),
 
@@ -650,61 +552,20 @@ export default function EditWorkerModal({
 
         photo: finalPhoto,
 
-        responseTime:
-          responseTime.trim() ||
-          "Within 1 hour",
+        responseTime: responseTime.trim() || "Within 1 hour",
 
-        certifications: [
-          ...certifications,
-        ],
+        certifications: [...certifications],
       };
 
-      console.log(
-        "EDIT WORKER: DATA TO UPDATE",
-        workerData,
-      );
-
-      console.log(
-        "EDIT WORKER: ID",
-        worker.id,
-      );
-
-      /* =================================================
-         UPDATE DATABASE
-      ================================================= */
-
-      const updatedWorker =
-        await updateWorker(
-          worker.id,
-          workerData,
-        );
-
-      console.log(
-        "EDIT WORKER: UPDATE SUCCESS",
-        updatedWorker,
-      );
-
-      /* =================================================
-         UPDATE PARENT STATE
-      ================================================= */
+      const updatedWorker = await updateWorker(worker.id, workerData);
 
       onUpdated(updatedWorker);
-
-      /* =================================================
-         CLOSE MODAL
-      ================================================= */
-
       onClose();
     } catch (error) {
-      console.error(
-        "UPDATE WORKER ERROR:",
-        error,
-      );
+      console.error("UPDATE WORKER ERROR:", error);
 
       setError(
-        error instanceof Error
-          ? error.message
-          : "Unable to update worker.",
+        error instanceof Error ? error.message : "Unable to update worker.",
       );
     } finally {
       setLoading(false);
@@ -720,133 +581,73 @@ export default function EditWorkerModal({
   }
 
   /* =====================================================
-     UI
+     FULL SCREEN UI
   ===================================================== */
 
   return (
-    <div className="fixed inset-0 z-50">
-      {/* BACKDROP */}
-
-      <button
-        type="button"
-        aria-label="Close edit worker"
-        onClick={() => {
-          if (!loading) {
-            onClose();
-          }
-        }}
-        className="absolute inset-0 bg-black/40 backdrop-blur-[2px]"
-      />
-
+    <div className="fixed inset-0 z-100 flex h-dvh w-full flex-col bg-white">
       {/* =================================================
-          MODAL
+          HEADER
       ================================================= */}
 
-      <div
+      <header className="flex h-24 shrink-0 items-center justify-between border-b border-gray-100 bg-white px-4 pt-[env(safe-area-inset-top)] shadow-sm sm:h-18 sm:px-6 lg:px-8">
+        <div className="min-w-0">
+          <h2 className="truncate text-base font-black text-[#0F172A] sm:text-lg lg:text-xl">
+            Edit Worker
+          </h2>
+
+          <p className="mt-0.5 truncate text-[11px] text-[#64748B] sm:text-xs">
+            Update worker profile and pricing.
+          </p>
+        </div>
+      </header>
+
+      {/* =================================================
+          FORM
+      ================================================= */}
+
+      <form
+        id="edit-worker-form"
+        onSubmit={handleSubmit}
         className="
-          absolute
-          inset-x-0
-          bottom-0
-          mx-auto
           flex
-          h-[94dvh]
-          w-full
+          min-h-0
+          flex-1
           flex-col
-          overflow-hidden
-          rounded-t-3xl
-          bg-white
-          shadow-2xl
-
-          sm:inset-4
-          sm:bottom-auto
-          sm:h-auto
-          sm:max-h-[calc(100dvh-32px)]
-          sm:w-[calc(100%-32px)]
-          sm:max-w-2xl
-          sm:rounded-2xl
-
-          lg:inset-x-auto
-          lg:left-1/2
-          lg:top-1/2
-          lg:h-auto
-          lg:max-h-[90dvh]
-          lg:w-[700px]
-          lg:-translate-x-1/2
-          lg:-translate-y-1/2
         "
       >
-        {/* MOBILE HANDLE */}
-
-        <div className="flex shrink-0 justify-center pt-2 sm:hidden">
-          <div className="h-1 w-10 rounded-full bg-gray-200" />
-        </div>
-
         {/* =================================================
-            HEADER
+            SCROLL AREA
         ================================================= */}
 
-        <div className="flex shrink-0 items-center justify-between border-b border-gray-100 px-4 py-3 sm:px-5 sm:py-4 lg:px-6">
-          <div className="min-w-0">
-            <h2 className="truncate text-base font-black text-[#0F172A] sm:text-lg">
-              Edit Worker
-            </h2>
-
-            <p className="mt-0.5 truncate text-[11px] text-[#64748B] sm:text-xs">
-              Update worker profile and pricing.
-            </p>
-          </div>
-
-          <button
-            type="button"
-            onClick={onClose}
-            disabled={loading}
-            className="ml-3 flex h-9 w-9 shrink-0 items-center justify-center rounded-xl hover:bg-gray-100 disabled:opacity-50"
-          >
-            <X className="h-5 w-5 text-[#64748B]" />
-          </button>
-        </div>
-
-        {/* =================================================
-            FORM
-        ================================================= */}
-
-        <form
-          id="edit-worker-form"
-          onSubmit={handleSubmit}
+        <div
           className="
             flex-1
             overflow-y-auto
             overscroll-contain
-            p-4
-            pb-6
-            sm:p-5
-            lg:p-6
+            px-4
+            py-5
+            pb-24
+            sm:px-6
+            sm:py-6
+            sm:pb-28
+            lg:px-8
+            lg:py-7
+            lg:pb-28
           "
         >
-          <div className="space-y-4 sm:space-y-5">
-
-            {/* =================================================
-                PHOTO
-            ================================================= */}
+          <div className="mx-auto w-full max-w-5xl space-y-5 sm:space-y-6">
+            {/* PHOTO */}
 
             <section>
-              <SectionTitle
-                icon={Camera}
-                title="Worker Photo"
-              />
+              <SectionTitle icon={Camera} title="Worker Photo" />
 
-              <div className="mt-2 flex flex-col gap-3 rounded-2xl border border-gray-200 bg-[#F8FAFC] p-3 sm:flex-row sm:items-center sm:p-4">
-
-                {/* PREVIEW */}
-
+              <div className="mt-3 flex flex-col gap-4 rounded-2xl border border-gray-200 bg-[#F8FAFC] p-4 sm:flex-row sm:items-center sm:p-5">
                 <div className="relative mx-auto flex h-24 w-24 shrink-0 items-center justify-center overflow-hidden rounded-2xl border border-gray-200 bg-orange-50 sm:mx-0 sm:h-28 sm:w-28">
                   {photoPreview ? (
                     <img
                       src={photoPreview}
-                      alt={
-                        name ||
-                        "Worker"
-                      }
+                      alt={name || "Worker"}
                       className="h-full w-full object-cover"
                     />
                   ) : (
@@ -860,45 +661,68 @@ export default function EditWorkerModal({
                   )}
                 </div>
 
-                {/* ACTIONS */}
-
                 <div className="min-w-0 flex-1">
                   <input
                     ref={fileInputRef}
                     type="file"
                     accept="image/jpeg,image/png,image/webp"
-                    onChange={
-                      handlePhotoSelect
-                    }
+                    onChange={handlePhotoSelect}
                     className="hidden"
                   />
 
                   <div className="flex flex-wrap justify-center gap-2 sm:justify-start">
                     <button
                       type="button"
-                      onClick={() =>
-                        fileInputRef.current?.click()
-                      }
+                      onClick={() => fileInputRef.current?.click()}
                       disabled={loading}
-                      className="flex h-9 items-center gap-2 rounded-xl bg-[#FF5C39] px-3 text-xs font-bold text-white hover:bg-[#e54e2e] disabled:opacity-50 sm:h-10 sm:px-4 sm:text-sm"
+                      className="
+                        flex
+                        h-10
+                        items-center
+                        gap-2
+                        rounded-xl
+                        bg-[#FF5C39]
+                        px-4
+                        text-xs
+                        font-bold
+                        text-white
+                        transition
+                        hover:bg-[#e54e2e]
+                        active:scale-[0.98]
+                        disabled:opacity-50
+                        sm:text-sm
+                      "
                     >
-                      <Upload className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
+                      <Upload className="h-4 w-4" />
 
-                      {photoPreview
-                        ? "Change Photo"
-                        : "Upload Photo"}
+                      {photoPreview ? "Change Photo" : "Upload Photo"}
                     </button>
 
                     {photoPreview && (
                       <button
                         type="button"
-                        onClick={
-                          handleRemovePhoto
-                        }
+                        onClick={handleRemovePhoto}
                         disabled={loading}
-                        className="flex h-9 items-center gap-2 rounded-xl border border-red-200 bg-white px-3 text-xs font-bold text-red-500 hover:bg-red-50 disabled:opacity-50 sm:h-10 sm:px-4 sm:text-sm"
+                        className="
+                          flex
+                          h-10
+                          items-center
+                          gap-2
+                          rounded-xl
+                          border
+                          border-red-200
+                          bg-white
+                          px-4
+                          text-xs
+                          font-bold
+                          text-red-500
+                          transition
+                          hover:bg-red-50
+                          disabled:opacity-50
+                          sm:text-sm
+                        "
                       >
-                        <Trash2 className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
+                        <Trash2 className="h-4 w-4" />
                         Remove
                       </button>
                     )}
@@ -923,16 +747,10 @@ export default function EditWorkerModal({
               )}
             </section>
 
-            {/* =================================================
-                BASIC INFORMATION
-            ================================================= */}
+            {/* BASIC INFORMATION */}
 
-            <FormSection
-              title="Basic Information"
-              icon={User}
-            >
-              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 sm:gap-4">
-
+            <FormSection title="Basic Information" icon={User}>
+              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 sm:gap-4 lg:grid-cols-3">
                 <InputField
                   label="Worker Name"
                   icon={User}
@@ -947,11 +765,7 @@ export default function EditWorkerModal({
                   icon={Phone}
                   value={phone}
                   onChange={(value) =>
-                    setPhone(
-                      value
-                        .replace(/\D/g, "")
-                        .slice(0, 10),
-                    )
+                    setPhone(value.replace(/\D/g, "").slice(0, 10))
                   }
                   placeholder="10 digit mobile number"
                   required
@@ -983,7 +797,6 @@ export default function EditWorkerModal({
                   onChange={setSpecialty}
                   placeholder="e.g. Brick Mason"
                   required
-                  fullOnMobile
                 />
 
                 <InputField
@@ -1002,20 +815,13 @@ export default function EditWorkerModal({
                   onChange={setLabourChauk}
                   placeholder="Enter labour chauk"
                 />
-
               </div>
             </FormSection>
 
-            {/* =================================================
-                EXPERIENCE
-            ================================================= */}
+            {/* EXPERIENCE */}
 
-            <FormSection
-              title="Experience"
-              icon={BriefcaseBusiness}
-            >
-              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 sm:gap-4">
-
+            <FormSection title="Experience" icon={BriefcaseBusiness}>
+              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 sm:gap-4 lg:grid-cols-3">
                 <InputField
                   label="Years Experience"
                   icon={BriefcaseBusiness}
@@ -1035,18 +841,12 @@ export default function EditWorkerModal({
                   type="number"
                   inputMode="numeric"
                 />
-
               </div>
             </FormSection>
 
-            {/* =================================================
-                BIO
-            ================================================= */}
+            {/* BIO */}
 
-            <FormSection
-              title="About Worker"
-              icon={User}
-            >
+            <FormSection title="About Worker" icon={User}>
               <div>
                 <label className="mb-1.5 block text-xs font-semibold text-[#0F172A] sm:text-sm">
                   Bio
@@ -1054,28 +854,38 @@ export default function EditWorkerModal({
 
                 <textarea
                   value={bio}
-                  onChange={(event) =>
-                    setBio(
-                      event.target.value,
-                    )
-                  }
+                  onChange={(event) => setBio(event.target.value)}
                   placeholder="Describe worker experience..."
                   rows={4}
-                  className="w-full resize-none rounded-xl border border-gray-200 bg-[#F8FAFC] px-3 py-3 text-xs text-[#0F172A] outline-none transition focus:border-[#FF5C39] focus:bg-white focus:ring-2 focus:ring-orange-100 sm:px-4 sm:text-sm"
+                  className="
+                    w-full
+                    resize-none
+                    rounded-xl
+                    border
+                    border-gray-200
+                    bg-[#F8FAFC]
+                    px-3
+                    py-3
+                    text-xs
+                    text-[#0F172A]
+                    outline-none
+                    transition
+                    placeholder:text-[#A8B2C1]
+                    focus:border-[#FF5C39]
+                    focus:bg-white
+                    focus:ring-2
+                    focus:ring-orange-100
+                    sm:px-4
+                    sm:text-sm
+                  "
                 />
               </div>
             </FormSection>
 
-            {/* =================================================
-                PRICING
-            ================================================= */}
+            {/* PRICING */}
 
-            <FormSection
-              title="Pricing"
-              icon={IndianRupee}
-            >
-              <div className="grid grid-cols-2 gap-3 sm:grid-cols-2 sm:gap-4">
-
+            <FormSection title="Pricing" icon={IndianRupee}>
+              <div className="grid grid-cols-2 gap-3 sm:grid-cols-2 sm:gap-4 lg:grid-cols-3">
                 <InputField
                   label="Starting Price"
                   icon={IndianRupee}
@@ -1124,22 +934,14 @@ export default function EditWorkerModal({
                   placeholder="0"
                   type="number"
                   inputMode="numeric"
-                  fullOnMobile
                 />
-
               </div>
             </FormSection>
 
-            {/* =================================================
-                REVIEWS
-            ================================================= */}
+            {/* REVIEWS */}
 
-            <FormSection
-              title="Reviews & Response"
-              icon={Star}
-            >
-              <div className="grid grid-cols-1 gap-3 sm:grid-cols-3 sm:gap-4">
-
+            <FormSection title="Reviews & Response" icon={Star}>
+              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
                 <InputField
                   label="Rating"
                   icon={Star}
@@ -1171,45 +973,42 @@ export default function EditWorkerModal({
 
                     <select
                       value={responseTime}
-                      onChange={(event) =>
-                        setResponseTime(
-                          event.target.value,
-                        )
-                      }
-                      className="h-10 w-full appearance-none rounded-xl border border-gray-200 bg-[#F8FAFC] pl-10 pr-3 text-xs text-[#0F172A] outline-none focus:border-[#FF5C39] focus:bg-white focus:ring-2 focus:ring-orange-100 sm:h-11 sm:text-sm"
+                      onChange={(event) => setResponseTime(event.target.value)}
+                      className="
+                        h-10
+                        w-full
+                        appearance-none
+                        rounded-xl
+                        border
+                        border-gray-200
+                        bg-[#F8FAFC]
+                        pl-10
+                        pr-3
+                        text-xs
+                        text-[#0F172A]
+                        outline-none
+                        focus:border-[#FF5C39]
+                        focus:bg-white
+                        focus:ring-2
+                        focus:ring-orange-100
+                        sm:h-11
+                        sm:text-sm
+                      "
                     >
-                      <option>
-                        Within 30 minutes
-                      </option>
-
-                      <option>
-                        Within 1 hour
-                      </option>
-
-                      <option>
-                        Within 2 hours
-                      </option>
-
-                      <option>
-                        Within 4 hours
-                      </option>
-
-                      <option>
-                        Within 1 day
-                      </option>
+                      <option>Within 30 minutes</option>
+                      <option>Within 1 hour</option>
+                      <option>Within 2 hours</option>
+                      <option>Within 4 hours</option>
+                      <option>Within 1 day</option>
                     </select>
                   </div>
                 </div>
-
               </div>
             </FormSection>
 
-            {/* =================================================
-                AVAILABILITY
-            ================================================= */}
+            {/* AVAILABILITY */}
 
-            <div className="flex items-center justify-between gap-3 rounded-2xl border border-gray-200 bg-[#F8FAFC] p-3 sm:p-4">
-
+            <div className="flex items-center justify-between gap-3 rounded-2xl border border-gray-200 bg-[#F8FAFC] p-4 sm:p-5">
               <div className="min-w-0">
                 <p className="text-xs font-bold text-[#0F172A] sm:text-sm">
                   Worker Availability
@@ -1222,32 +1021,21 @@ export default function EditWorkerModal({
 
               <button
                 type="button"
-                onClick={() =>
-                  setAvailable(
-                    (value) => !value,
-                  )
-                }
+                onClick={() => setAvailable((value) => !value)}
                 className={`relative h-6 w-11 shrink-0 rounded-full transition ${
-                  available
-                    ? "bg-emerald-500"
-                    : "bg-gray-300"
+                  available ? "bg-emerald-500" : "bg-gray-300"
                 }`}
                 aria-label="Toggle worker availability"
               >
                 <span
                   className={`absolute top-1 h-4 w-4 rounded-full bg-white shadow transition ${
-                    available
-                      ? "left-6"
-                      : "left-1"
+                    available ? "left-6" : "left-1"
                   }`}
                 />
               </button>
-
             </div>
 
-            {/* =================================================
-                ERROR
-            ================================================= */}
+            {/* ERROR */}
 
             {error && (
               <div className="rounded-xl border border-red-200 bg-red-50 px-3 py-2.5 sm:px-4 sm:py-3">
@@ -1256,48 +1044,110 @@ export default function EditWorkerModal({
                 </p>
               </div>
             )}
-
           </div>
+        </div>
 
-          {/* =================================================
-              FOOTER
-          ================================================= */}
+        {/* =================================================
+            BOTTOM ACTION BAR
+            HIDDEN COMPLETELY WHEN ANDROID KEYBOARD OPENS
+        ================================================= */}
 
-          <div className="sticky bottom-0 mt-5 flex shrink-0 items-center justify-end gap-2 border-t border-gray-100 bg-white px-4 py-3 pb-[calc(12px+env(safe-area-inset-bottom))] sm:px-5 sm:py-4 sm:pb-4 lg:px-6">
+        {!keyboardOpen && (
+          <div
+            className="
+              absolute
+              bottom-0
+              left-0
+              right-0
+              z-40
+              shrink-0
+              border-t
+              border-gray-200
+              bg-white/95
+              px-3
+              pt-2.5
+              shadow-[0_-6px_20px_rgba(15,23,42,0.08)]
+              backdrop-blur-xl
+              pb-[calc(10px+env(safe-area-inset-bottom))]
+              sm:px-6
+              sm:pt-3
+              sm:pb-3
+              lg:px-8
+            "
+          >
+            <div className="mx-auto flex w-full max-w-5xl gap-2">
+              {/* CANCEL */}
 
-            <button
-              type="button"
-              onClick={onClose}
-              disabled={loading}
-              className="h-10 rounded-xl border border-gray-200 px-4 text-xs font-bold text-[#64748B] hover:bg-[#F8FAFC] disabled:opacity-50 sm:h-11 sm:px-5 sm:text-sm"
-            >
-              Cancel
-            </button>
+              <button
+                type="button"
+                onClick={onClose}
+                disabled={loading}
+                className="
+                  h-10
+                  flex-1
+                  rounded-xl
+                  border
+                  border-gray-200
+                  bg-white
+                  px-3
+                  text-[11px]
+                  font-bold
+                  text-[#64748B]
+                  transition
+                  hover:bg-[#F8FAFC]
+                  active:scale-[0.98]
+                  disabled:opacity-50
+                  sm:h-12
+                  sm:px-6
+                  sm:text-sm
+                "
+              >
+                Cancel
+              </button>
 
-            <button
-              type="submit"
-              form="edit-worker-form"
-              disabled={
-                loading ||
-                photoUploading
-              }
-              className="flex h-10 items-center gap-2 rounded-xl bg-[#FF5C39] px-4 text-xs font-bold text-white shadow-sm hover:bg-[#e54e2e] disabled:opacity-60 sm:h-11 sm:px-6 sm:text-sm"
-            >
-              {(loading ||
-                photoUploading) && (
-                <Loader2 className="h-4 w-4 animate-spin" />
-              )}
+              {/* SAVE */}
 
-              {photoUploading
-                ? "Uploading..."
-                : loading
-                  ? "Saving..."
-                  : "Save Changes"}
-            </button>
+              <button
+                type="submit"
+                form="edit-worker-form"
+                disabled={loading || photoUploading}
+                className="
+                  flex
+                  h-10
+                  flex-[1.5]
+                  items-center
+                  justify-center
+                  gap-1.5
+                  rounded-xl
+                  bg-[#FF5C39]
+                  px-3
+                  text-[11px]
+                  font-bold
+                  text-white
+                  shadow-sm
+                  transition
+                  hover:bg-[#e54e2e]
+                  active:scale-[0.98]
+                  disabled:opacity-60
+                  sm:h-12
+                  sm:px-7
+                  sm:text-sm
+                "
+              >
+                {(loading || photoUploading) && (
+                  <Loader2 className="h-3.5 w-3.5 animate-spin sm:h-4 sm:w-4" />
+                )}
 
+                {photoUploading
+                  ? "Uploading..."
+                  : loading
+                    ? "Saving..."
+                    : "Save Changes"}
+              </button>
+            </div>
           </div>
-        </form>
-      </div>
+        )}
+      </form>
     </div>
   );
 }
@@ -1317,7 +1167,7 @@ function FormSection({
 }) {
   return (
     <section>
-      <div className="mb-2.5 flex items-center gap-2 sm:mb-3">
+      <div className="mb-3 flex items-center gap-2">
         <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-orange-50">
           <Icon className="h-3.5 w-3.5 text-[#FF5C39]" />
         </div>
@@ -1349,9 +1199,7 @@ function SectionTitle({
         <Icon className="h-3.5 w-3.5 text-[#FF5C39]" />
       </div>
 
-      <p className="text-xs font-black text-[#0F172A] sm:text-sm">
-        {title}
-      </p>
+      <p className="text-xs font-black text-[#0F172A] sm:text-sm">{title}</p>
     </div>
   );
 }
@@ -1370,7 +1218,6 @@ function InputField({
   required = false,
   inputMode,
   step,
-  fullOnMobile = false,
 }: {
   label: string;
   icon: LucideIcon;
@@ -1389,24 +1236,13 @@ function InputField({
     | "decimal"
     | "search";
   step?: string;
-  fullOnMobile?: boolean;
 }) {
   return (
-    <div
-      className={
-        fullOnMobile
-          ? "col-span-1 sm:col-span-2"
-          : ""
-      }
-    >
+    <div>
       <label className="mb-1.5 block text-xs font-semibold text-[#0F172A] sm:text-sm">
         {label}
 
-        {required && (
-          <span className="ml-1 text-red-500">
-            *
-          </span>
-        )}
+        {required && <span className="ml-1 text-red-500">*</span>}
       </label>
 
       <div className="relative">
@@ -1415,16 +1251,34 @@ function InputField({
         <input
           type={type}
           value={value}
-          onChange={(event) =>
-            onChange(
-              event.target.value,
-            )
-          }
+          onChange={(event) => onChange(event.target.value)}
           placeholder={placeholder}
           required={required}
           inputMode={inputMode}
           step={step}
-          className="h-10 w-full rounded-xl border border-gray-200 bg-[#F8FAFC] pl-9 pr-3 text-xs text-[#0F172A] outline-none transition placeholder:text-[#A8B2C1] focus:border-[#FF5C39] focus:bg-white focus:ring-2 focus:ring-orange-100 sm:h-11 sm:pl-10 sm:pr-4 sm:text-sm"
+          className="
+            h-10
+            w-full
+            rounded-xl
+            border
+            border-gray-200
+            bg-[#F8FAFC]
+            pl-9
+            pr-3
+            text-xs
+            text-[#0F172A]
+            outline-none
+            transition
+            placeholder:text-[#A8B2C1]
+            focus:border-[#FF5C39]
+            focus:bg-white
+            focus:ring-2
+            focus:ring-orange-100
+            sm:h-11
+            sm:pl-10
+            sm:pr-4
+            sm:text-sm
+          "
         />
       </div>
     </div>
