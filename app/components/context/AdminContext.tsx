@@ -229,7 +229,10 @@ export function AdminProvider({ children }: { children: ReactNode }) {
   /* ===================================================== */
 
   const visibleProducts = products.filter(
-    (product) => product.shop_id && onlineShopIds.includes(product.shop_id),
+    (product) =>
+      product.is_active !== false &&
+      product.shop_id &&
+      onlineShopIds.includes(product.shop_id),
   );
 
   /* ===================================================== */
