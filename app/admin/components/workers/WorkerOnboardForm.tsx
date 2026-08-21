@@ -15,9 +15,6 @@ import {
   Tag,
   User,
   X,
-  Home,
-  ClipboardList,
-  Settings,
   Phone,
 } from "lucide-react";
 import { Keyboard } from "@capacitor/keyboard";
@@ -39,64 +36,185 @@ type PricingType =
   | "visit_charge";
 
 const CATEGORIES = {
-  Labour: ["Labour", "Skilled Labour", "Certified Labour"],
+  Labour: [
+    "General Labour",
+    "Skilled Labour",
+    "Certified Labour",
+    "Construction Helper",
+  ],
+
   Driver: [
     "Car Driver",
-    "Commercial Driver",
     "Taxi Driver",
+    "Commercial Driver",
+    "Truck Driver",
     "Heavy Vehicle Driver",
-    "Heavy Vehicle Helper",
+    "Auto Driver",
+    "Transport Driver",
   ],
+
   Mechanic: [
-    "Two Wheeler Mechanic",
+    "Bike Mechanic",
+    "Car Mechanic",
     "Three Wheeler Mechanic",
-    "Four Wheeler Mechanic",
     "Heavy Vehicle Mechanic",
+    "Vehicle Service Technician",
+    "Tyre Service",
+    "Vehicle Maintenance Worker",
   ],
+
+  "Electrical & Plumbing": [
+    "Electrician",
+    "Electrical Technician",
+    "Electrical Repair Worker",
+    "Plumber",
+    "Plumbing Technician",
+    "Pipe Fitter",
+  ],
+
+  "Home Repair": [
+    "Carpenter",
+    "Furniture Carpenter",
+    "Wood Worker",
+    "Painter",
+    "House Painter",
+    "Welder",
+    "Fabricator",
+    "Mason",
+    "Brick Mason",
+    "Tile Worker",
+    "Marble Worker",
+    "Flooring Worker",
+    "POP Worker",
+    "Gypsum Worker",
+    "False Ceiling Worker",
+    "Glass Worker",
+    "Aluminium Worker",
+    "Roofer",
+  ],
+
+  "AC & Appliances": [
+    "AC Technician",
+    "AC Installer",
+    "AC Repair Technician",
+    "Refrigerator Technician",
+    "Refrigerator Repair Worker",
+    "RO Technician",
+    "Water Purifier Technician",
+    "Appliance Technician",
+    "Home Appliance Repair Worker",
+  ],
+
   Washer: [
     "Two Wheeler Washer",
     "Three Wheeler Washer",
     "Four Wheeler Washer",
     "Heavy Vehicle Washer",
+    "Vehicle Cleaning Worker",
   ],
-  "Computer Operator": [
-    "Web Developer",
-    "Application Developer",
-    "Graphic Designer",
-    "Software Developer",
-    "Computer Technician",
-    "Data Entry Operator",
-  ],
-  "Office Worker": ["Peon", "Cleaner", "Helper", "Assistant"],
-  "Home Services": [
-    "Chef",
-    "Maid",
-    "Cook",
-    "Laundry Worker",
+
+  Cleaner: [
+    "Home Cleaner",
+    "Office Cleaner",
+    "Commercial Cleaner",
     "Washroom Cleaner",
+    "Laundry Worker",
   ],
+
+  "Garden & Pest Control": [
+    "Gardener",
+    "Garden Worker",
+    "Landscaping Worker",
+    "Pest Control Worker",
+    "Termite Control Worker",
+    "Pest Control Technician",
+  ],
+
+  "Office & Computer": [
+    "Office Assistant",
+    "Peon",
+    "Office Helper",
+    "Data Entry Operator",
+    "Computer Operator",
+    "Web Developer",
+    "Graphic Designer",
+    "Computer Technician",
+  ],
+
+  "Delivery & Warehouse": [
+    "Delivery Worker",
+    "Pickup & Delivery Worker",
+    "Courier Worker",
+    "Parcel Delivery Worker",
+    "Warehouse Worker",
+    "Loading Worker",
+    "Unloading Worker",
+    "Packing Worker",
+    "Material Handling Worker",
+  ],
+
   Restaurant: [
     "Chef",
+    "Cook",
     "Kitchen Helper",
+    "Kitchen Assistant",
     "Waiter",
-    "Waiter Helper",
+    "Serving Staff",
     "Captain",
-    "Manager",
+    "Restaurant Manager",
   ],
-  "Home Contractor": [
-    "Welder",
-    "Plumber",
-    "Carpenter",
-    "Electrician",
-    "Roofer",
+
+  "Salon & Beauty": [
+    "Barber",
+    "Hair Stylist",
+    "Beautician",
+    "Beauty Therapist",
+    "Makeup Artist",
+    "Bridal Makeup Artist",
   ],
+
+  "Security & Events": [
+    "Security Guard",
+    "Watchman",
+    "Residential Security Guard",
+    "Event Staff",
+    "Event Helper",
+    "Tent Worker",
+    "Decorator",
+    "Event Setup Worker",
+  ],
+
   Factory: [
-    "Assembly Line Worker",
     "Machine Operator",
+    "Production Worker",
+    "Assembly Worker",
     "Maintenance Technician",
-    "Warehouse Associate",
+    "Industrial Worker",
+    "Plant Worker",
+    "Manufacturing Worker",
   ],
-  Roads: ["Roller Operator", "General Labour", "Mason", "Concrete Finisher"],
+
+  Agriculture: [
+    "Farm Worker",
+    "Harvesting Worker",
+    "Field Worker",
+    "Tractor Operator",
+    "Agricultural Machine Operator",
+  ],
+
+  "Moving & Packing": [
+    "Moving Worker",
+    "Shifting Worker",
+    "Loading Worker",
+    "Unloading Worker",
+    "Packing Worker",
+  ],
+
+  "Other Services": [
+    "General Worker",
+    "Skilled Worker",
+    "Other Service Worker",
+  ],
 } as const;
 
 type Category = keyof typeof CATEGORIES;
