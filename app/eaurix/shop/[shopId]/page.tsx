@@ -308,47 +308,56 @@ function ProductCard({
   onAdd: () => void;
   onRemove: () => void;
 }) {
-  const name =
-    getProductName(product);
-
-  const price =
-    getProductPrice(product);
+  const name = getProductName(product);
+  const price = getProductPrice(product);
 
   const outOfStock =
-    typeof product.stock ===
-      "number" &&
+    typeof product.stock === "number" &&
     product.stock <= 0;
 
-  return (
-    <div className="overflow-hidden rounded-2xl border border-slate-100 bg-white shadow-[0_2px_9px_rgba(15,23,42,0.045)]">
-      {/* IMAGE */}
+  const hasDiscount =
+    product.originalPrice &&
+    product.originalPrice > price;
 
-      <div className="relative aspect-square overflow-hidden bg-slate-100">
-        <ProductImage
-          product={product}
-        />
+  return (
+    <div className="group overflow-hidden rounded-[18px] border border-slate-200/80 bg-white shadow-[0_2px_10px_rgba(15,23,42,0.055)] transition-all duration-200 active:scale-[0.985]">
+      {/* IMAGE */}
+      <div className="relative aspect-[1/0.92] overflow-hidden bg-slate-50">
+        <ProductImage product={product} />
+
+        {/* IMAGE GRADIENT */}
+        <div className="pointer-events-none absolute inset-x-0 bottom-0 h-12 bg-gradient-to-t from-black/10 to-transparent" />
 
         {/* CATEGORY */}
-
         {product.categoryLabel && (
-          <span className="absolute left-2 top-2 max-w-[80%] truncate rounded-md bg-white/95 px-1.5 py-1 text-[7px] font-black uppercase text-slate-600 shadow-sm backdrop-blur">
+          <span className="absolute left-2 top-2 max-w-[72%] truncate rounded-full border border-white/70 bg-white/95 px-2 py-1 text-[7px] font-extrabold uppercase tracking-wide text-slate-600 shadow-sm backdrop-blur">
             {product.categoryLabel}
           </span>
         )}
 
         {/* BADGE */}
-
         {product.badge && (
-          <span className="absolute right-2 top-2 max-w-[70%] truncate rounded-md bg-emerald-600 px-1.5 py-1 text-[7px] font-black uppercase text-white shadow-sm">
+          <span className="absolute right-2 top-2 max-w-[65%] truncate rounded-full bg-emerald-600 px-2 py-1 text-[7px] font-extrabold uppercase tracking-wide text-white shadow-sm">
             {product.badge}
           </span>
         )}
 
-        {/* OUT OF STOCK */}
+        {/* DISCOUNT */}
+        {hasDiscount && (
+          <span className="absolute bottom-2 left-2 rounded-md bg-white/95 px-1.5 py-1 text-[7px] font-black text-emerald-700 shadow-sm">
+            {Math.round(
+              ((Number(product.originalPrice) - price) /
+                Number(product.originalPrice)) *
+                100,
+            )}
+            % OFF
+          </span>
+        )}
 
+        {/* OUT OF STOCK */}
         {outOfStock && (
-          <div className="absolute inset-0 flex items-center justify-center bg-black/35">
-            <span className="rounded-lg bg-white px-2 py-1 text-[9px] font-black text-red-600">
+          <div className="absolute inset-0 flex items-center justify-center bg-slate-900/40 backdrop-blur-[1px]">
+            <span className="rounded-full bg-white px-2.5 py-1.5 text-[8px] font-black tracking-wide text-red-600 shadow-md">
               OUT OF STOCK
             </span>
           </div>
@@ -356,75 +365,74 @@ function ProductCard({
       </div>
 
       {/* DETAILS */}
-
       <div className="p-2.5">
-        <h3 className="line-clamp-2 min-h-8 text-[11px] font-extrabold leading-4 text-slate-900">
+        {/* NAME */}
+        <h3 className="line-clamp-2 min-h-[32px] text-[11px] font-extrabold leading-4 text-slate-900">
           {name}
         </h3>
 
-        {product.brand && (
-          <p className="mt-1 truncate text-[8px] font-semibold text-slate-400">
-            {product.brand}
-          </p>
-        )}
+        {/* BRAND + UNIT */}
+        <div className="mt-1 flex min-w-0 items-center gap-1.5">
+          {product.brand && (
+            <span className="max-w-[55%] truncate text-[8px] font-bold text-slate-500">
+              {product.brand}
+            </span>
+          )}
 
-        {product.unit && (
-          <p className="mt-0.5 truncate text-[8px] font-semibold text-slate-400">
-            Per {product.unit}
-          </p>
-        )}
+          {product.brand && product.unit && (
+            <span className="h-1 w-1 shrink-0 rounded-full bg-slate-300" />
+          )}
 
+          {product.unit && (
+            <span className="truncate text-[8px] font-semibold text-slate-400">
+              1 {product.unit}
+            </span>
+          )}
+        </div>
+
+        {/* PRICE + CART */}
         <div className="mt-2.5 flex items-end justify-between gap-2">
           {/* PRICE */}
-
           <div className="min-w-0">
-            <p className="text-[14px] font-black leading-4 text-emerald-700">
-              ₹
-              {price.toLocaleString(
-                "en-IN",
-              )}
-            </p>
+            <div className="flex items-baseline gap-1">
+              <span className="text-[15px] font-black leading-none text-emerald-700">
+                ₹{price.toLocaleString("en-IN")}
+              </span>
+            </div>
 
-            {product.originalPrice &&
-              product.originalPrice >
-                price && (
-                <p className="mt-0.5 text-[8px] font-semibold text-slate-400 line-through">
-                  ₹
-                  {product.originalPrice.toLocaleString(
-                    "en-IN",
-                  )}
-                </p>
-              )}
+            {hasDiscount && (
+              <p className="mt-1 text-[8px] font-semibold leading-none text-slate-400 line-through">
+                ₹
+                {Number(product.originalPrice).toLocaleString(
+                  "en-IN",
+                )}
+              </p>
+            )}
           </div>
 
           {/* QUANTITY */}
-
           {quantity === 0 ? (
             <button
               type="button"
               onClick={onAdd}
               disabled={outOfStock}
-              className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-emerald-600 text-white shadow-sm transition active:scale-90 disabled:bg-slate-300"
+              aria-label={`Add ${name}`}
+              className="flex h-8 w-8 shrink-0 items-center justify-center rounded-[10px] bg-emerald-600 text-white shadow-[0_3px_8px_rgba(5,150,105,0.22)] transition-all active:scale-90 disabled:cursor-not-allowed disabled:bg-slate-300 disabled:shadow-none"
             >
-              <Plus
-                size={16}
-                strokeWidth={3}
-              />
+              <Plus size={16} strokeWidth={3} />
             </button>
           ) : (
-            <div className="flex h-8 items-center overflow-hidden rounded-lg bg-emerald-600 text-white shadow-sm">
+            <div className="flex h-8 shrink-0 items-center overflow-hidden rounded-[10px] bg-emerald-600 text-white shadow-[0_3px_8px_rgba(5,150,105,0.22)]">
               <button
                 type="button"
                 onClick={onRemove}
-                className="flex h-8 w-7 items-center justify-center active:bg-emerald-700"
+                aria-label={`Remove ${name}`}
+                className="flex h-8 w-7 items-center justify-center transition-colors active:bg-emerald-700"
               >
-                <Minus
-                  size={13}
-                  strokeWidth={3}
-                />
+                <Minus size={13} strokeWidth={3} />
               </button>
 
-              <span className="min-w-5 text-center text-[10px] font-black">
+              <span className="flex min-w-5 items-center justify-center text-[10px] font-black">
                 {quantity}
               </span>
 
@@ -432,18 +440,14 @@ function ProductCard({
                 type="button"
                 onClick={onAdd}
                 disabled={
-                  typeof product.stock ===
-                    "number" &&
+                  typeof product.stock === "number" &&
                   product.stock > 0 &&
-                  quantity >=
-                    product.stock
+                  quantity >= product.stock
                 }
-                className="flex h-8 w-7 items-center justify-center active:bg-emerald-700 disabled:opacity-40"
+                aria-label={`Increase ${name}`}
+                className="flex h-8 w-7 items-center justify-center transition-colors active:bg-emerald-700 disabled:cursor-not-allowed disabled:opacity-40"
               >
-                <Plus
-                  size={13}
-                  strokeWidth={3}
-                />
+                <Plus size={13} strokeWidth={3} />
               </button>
             </div>
           )}
@@ -452,7 +456,6 @@ function ProductCard({
     </div>
   );
 }
-
 /* =========================================================
    MAIN PAGE
 ========================================================= */

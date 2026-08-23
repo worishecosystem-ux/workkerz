@@ -1474,7 +1474,7 @@ export function EAurixProduct() {
 
                     <button
                       type="button"
-                      onClick={() => setShowShopDetails(true)}
+                      onClick={() => router.push(`/eaurix/shop/${shopData.id}`)}
                       className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-slate-100 hover:bg-sky-100"
                     >
                       <Eye className="h-4 w-4 text-slate-700" />

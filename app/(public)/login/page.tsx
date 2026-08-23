@@ -1,68 +1,182 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase";
-import { EAurixCheckout } from "@/app/eaurix/components/EAurixCheckout";
+import { Briefcase, ArrowRight, ArrowLeft } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { GoogleSignIn } from "@capawesome/capacitor-google-sign-in";
+import { Capacitor } from "@capacitor/core";
 
-export default function CheckoutPage() {
+const WEB_CLIENT_ID =
+  process.env.NEXT_PUBLIC_GOOGLE_WEB_CLIENT_ID!;
+
+export default function LoginPage() {
   const router = useRouter();
-  const [checkingAuth, setCheckingAuth] = useState(true);
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
 
-  useEffect(() => {
-    let mounted = true;
+  const signInWithGoogle = async () => {
+    try {
+      // Native Android App
+      if (Capacitor.isNativePlatform()) {
+        await GoogleSignIn.initialize({
+          clientId: WEB_CLIENT_ID,
+        });
 
-    const checkUser = async () => {
-      const {
-        data: { session },
-      } = await supabase.auth.getSession();
+        const result = await GoogleSignIn.signIn();
 
-      if (!mounted) return;
+        if (!result.idToken) {
+          throw new Error("Google ID Token not received.");
+        }
 
-      if (!session?.user) {
-        router.replace("/login?redirect=/checkout");
+        const { error } = await supabase.auth.signInWithIdToken({
+          provider: "google",
+          token: result.idToken,
+        });
+
+        if (error) throw error;
+
+        router.replace("/");
         return;
       }
 
-      setIsAuthenticated(true);
-      setCheckingAuth(false);
-    };
+      // Website
+      const { error } = await supabase.auth.signInWithOAuth({
+        provider: "google",
+        options: {
+          redirectTo: `${window.location.origin}/auth/callback`,
+        },
+      });
 
-    checkUser();
+      if (error) throw error;
+    } catch (err: any) {
+      console.error("Google Sign-In Error:", err);
 
-    const {
-      data: { subscription },
-    } = supabase.auth.onAuthStateChange((_event, session) => {
-      if (!mounted) return;
+      alert(
+        err?.message ||
+          "Unable to sign in. Please try again."
+      );
+    }
+  };
 
-      if (!session?.user) {
-        router.replace("/login?redirect=/checkout");
-        return;
-      }
+  return (
+    <div className="min-h-screen bg-linear-to-br from-orange-50 via-white to-slate-100 flex items-center justify-center px-4">
+      <div className="w-full max-w-md">
+        {/* Card */}
+        <div className="bg-white rounded-3xl shadow-xl border border-slate-100 overflow-hidden">
+          {/* Back */}
+          <div className="p-6 pb-0">
+            <button
+              onClick={() => router.push("/")}
+              className="flex items-center gap-2 text-slate-600 hover:text-slate-900 transition"
+            >
+              <ArrowLeft className="w-5 h-5" />
+              <span className="text-sm font-medium">Back</span>
+            </button>
+          </div>
 
-      setIsAuthenticated(true);
-      setCheckingAuth(false);
-    });
+          {/* Header */}
+          <div className="p-8 text-center">
+            <div className="flex justify-center mb-5">
+              <div className="w-20 h-20 rounded-3xl bg-orange-100 flex items-center justify-center">
+                <img
+                  src="/workkerzapp.png"
+                  alt="Workkerz"
+                  className="w-14 h-14 rounded-2xl object-cover"
+                />
+              </div>
+            </div>
 
-    return () => {
-      mounted = false;
-      subscription.unsubscribe();
-    };
-  }, [router]);
+            <h1 className="text-3xl font-bold text-slate-900">
+              Welcome Back
+            </h1>
 
-  if (checkingAuth || !isAuthenticated) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-slate-50">
-        <div className="text-center">
-          <div className="w-8 h-8 border-2 border-orange-500 border-t-transparent rounded-full animate-spin mx-auto" />
-          <p className="mt-3 text-sm text-slate-500">
-            Checking login...
+            <p className="text-slate-500 mt-3 leading-relaxed">
+              Sign in to access bookings, workers,
+              projects and your Workkerz dashboard.
+            </p>
+          </div>
+
+          {/* Features */}
+          <div className="px-8 pb-6">
+            <div className="grid grid-cols-3 gap-3">
+              <div className="bg-slate-50 rounded-2xl p-3 text-center">
+                <Briefcase className="w-5 h-5 mx-auto text-orange-500 mb-2" />
+                <p className="text-xs font-medium text-slate-600">
+                  Jobs
+                </p>
+              </div>
+
+              <div className="bg-slate-50 rounded-2xl p-3 text-center">
+                <svg
+                  className="w-5 h-5 mx-auto text-orange-500 mb-2"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M17 20h5V4H2v16h5"
+                  />
+                </svg>
+
+                <p className="text-xs font-medium text-slate-600">
+                  Booking
+                </p>
+              </div>
+
+              <div className="bg-slate-50 rounded-2xl p-3 text-center">
+                <svg
+                  className="w-5 h-5 mx-auto text-orange-500 mb-2"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M12 8c-2.2 0-4 1.8-4 4s1.8 4 4 4 4-1.8 4-4-4-4-4-4z"
+                  />
+                </svg>
+
+                <p className="text-xs font-medium text-slate-600">
+                  Workers
+                </p>
+              </div>
+            </div>
+          </div>
+
+          {/* Google Login */}
+          <div className="px-8 pb-8">
+            <button
+              onClick={signInWithGoogle}
+              className="w-full h-14 rounded-2xl border border-slate-200 bg-white hover:bg-slate-50 transition-all flex items-center justify-center gap-3 font-semibold text-slate-700 shadow-sm hover:shadow-md"
+            >
+              <img
+                src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg"
+                alt="Google"
+                className="w-5 h-5"
+              />
+
+              Continue with Google
+
+              <ArrowRight className="w-4 h-4" />
+            </button>
+
+            <p className="text-center text-xs text-slate-400 mt-5">
+              By continuing, you agree to our Terms &
+              Privacy Policy.
+            </p>
+          </div>
+        </div>
+
+        {/* Footer */}
+        <div className="text-center mt-6">
+          <p className="text-sm text-slate-500">
+            Powered by Workkerz
           </p>
         </div>
       </div>
-    );
-  }
-
-  return <EAurixCheckout />;
+    </div>
+  );
 }
