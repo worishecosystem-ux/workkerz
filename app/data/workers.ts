@@ -25,113 +25,43 @@ export type PricingType =
 ========================================= */
 
 export const serviceCategories = [
-  { id: "all", label: "All", color: "#475569", bg: "#F8FAFC" },
+  { id: "all", label: "All", color: "#475569", bg: "#F8FAFC", image: "" },
 
-  { id: "Labour", label: "Labour", color: "#F97316", bg: "#FFF5EB" },
+  { id: "Labour", label: "Labour", color: "#F97316", bg: "#FFF5EB", image: "/categories/workkerz/Labour.png" },
 
-  { id: "Driver", label: "Driver", color: "#16A34A", bg: "#F0FDF4" },
+  { id: "Driver", label: "Driver", color: "#16A34A", bg: "#F0FDF4", image: "/categories/workkerz/Driver.png" },
 
-  { id: "Mechanic", label: "Mechanic", color: "#2563EB", bg: "#EFF6FF" },
+  { id: "Mechanic", label: "Mechanic", color: "#2563EB", bg: "#EFF6FF", image: "/categories/workkerz/Mechanic.png" },
 
-  {
-    id: "Electrical & Plumbing",
-    label: "Electrical & Plumbing",
-    color: "#CA8A04",
-    bg: "#FEFCE8",
-  },
+  { id: "Electrical & Plumbing", label: "Electrical & Plumbing", color: "#CA8A04", bg: "#FEFCE8", image: "/categories/workkerz/Electricianandplumber.png" },
 
-  {
-    id: "Home Repair",
-    label: "Home Repair",
-    color: "#D97706",
-    bg: "#FFF7ED",
-  },
+  { id: "Home Repair", label: "Home Repair", color: "#D97706", bg: "#FFF7ED", image: "/categories/workkerz/Home repair.png" },
 
-  {
-    id: "AC & Appliances",
-    label: "AC & Appliances",
-    color: "#0284C7",
-    bg: "#F0F9FF",
-  },
+  { id: "AC & Appliances", label: "AC & Appliances", color: "#0284C7", bg: "#F0F9FF", image: "/categories/workkerz/Ac and appliances repair.png" },
 
-  { id: "Washer", label: "Washer", color: "#0891B2", bg: "#ECFEFF" },
+  { id: "Washer", label: "Washer", color: "#0891B2", bg: "#ECFEFF", image: "/categories/workkerz/Washer.png" },
 
-  {
-    id: "Cleaner",
-    label: "Cleaner",
-    color: "#059669",
-    bg: "#ECFDF5",
-  },
+  { id: "Cleaner", label: "Cleaner", color: "#059669", bg: "#ECFDF5", image: "/categories/workkerz/Cleaner.png" },
 
-  {
-    id: "Garden & Pest Control",
-    label: "Garden & Pest Control",
-    color: "#65A30D",
-    bg: "#F7FEE7",
-  },
+  { id: "Garden & Pest Control", label: "Garden & Pest Control", color: "#65A30D", bg: "#F7FEE7", image: "/categories/workkerz/Garden and pest control.png" },
 
-  {
-    id: "Office & Computer",
-    label: "Office & Computer",
-    color: "#7C3AED",
-    bg: "#F5F3FF",
-  },
+  { id: "Office & Computer", label: "Office & Computer", color: "#7C3AED", bg: "#F5F3FF", image: "/categories/workkerz/Office and computer.png" },
 
-  {
-    id: "Delivery & Warehouse",
-    label: "Delivery & Warehouse",
-    color: "#0F766E",
-    bg: "#F0FDFA",
-  },
+  { id: "Delivery & Warehouse", label: "Delivery & Warehouse", color: "#0F766E", bg: "#F0FDFA", image: "/categories/workkerz/Delivery and warehouse.png" },
 
-  {
-    id: "Restaurant",
-    label: "Restaurant",
-    color: "#DC2626",
-    bg: "#FEF2F2",
-  },
+  { id: "Restaurant", label: "Restaurant", color: "#DC2626", bg: "#FEF2F2", image: "/categories/workkerz/Restaurant.png" },
 
-  {
-    id: "Salon & Beauty",
-    label: "Salon & Beauty",
-    color: "#E11D48",
-    bg: "#FFF1F2",
-  },
+  { id: "Salon & Beauty", label: "Salon & Beauty", color: "#E11D48", bg: "#FFF1F2", image: "/categories/workkerz/Salon and beauty.png" },
 
-  {
-    id: "Security & Events",
-    label: "Security & Events",
-    color: "#1E3A8A",
-    bg: "#EFF6FF",
-  },
+  { id: "Security & Events", label: "Security & Events", color: "#1E3A8A", bg: "#EFF6FF", image: "/categories/workkerz/Events.png" },
 
-  {
-    id: "Factory",
-    label: "Factory",
-    color: "#475569",
-    bg: "#F8FAFC",
-  },
+  { id: "Factory", label: "Factory", color: "#475569", bg: "#F8FAFC", image: "/categories/workkerz/Factory worker.png" },
 
-  {
-    id: "Agriculture",
-    label: "Agriculture",
-    color: "#15803D",
-    bg: "#F0FDF4",
-  },
+  { id: "Agriculture", label: "Agriculture", color: "#15803D", bg: "#F0FDF4", image: "/categories/workkerz/Agriculture.png" },
 
-  {
-    id: "Moving & Packing",
-    label: "Moving & Packing",
-    color: "#9333EA",
-    bg: "#FAF5FF",
-  },
+  { id: "Moving & Packing", label: "Moving & Packing", color: "#9333EA", bg: "#FAF5FF", image: "/categories/workkerz/Moving and packers.png" },
 
-  {
-    id: "Other Services",
-    label: "Other Services",
-    color: "#64748B",
-    bg: "#F1F5F9",
-  },
+  { id: "Other Services", label: "Other Services", color: "#64748B", bg: "#F1F5F9", image: "/categories/workkerz/Other services.png" },
 ] as const;
 
 export type ServiceCategory =

@@ -25,10 +25,7 @@ type PricingType =
 type Categories = Record<
   string,
   {
-    readonly subcategories: Record<
-      string,
-      readonly string[]
-    >;
+    readonly subcategories: Record<string, readonly string[]>;
   }
 >;
 
@@ -233,6 +230,14 @@ export default function WorkerOnboardSections({
 }: Props) {
   /* =====================================================
      ANDROID / CAPACITOR KEYBOARD HANDLING
+     
+     Keyboard open:
+     - Add keyboard-open class
+     - Bottom bar will hide
+
+     Keyboard close:
+     - Remove keyboard-open class
+     - Bottom bar will show
   ===================================================== */
 
   useEffect(() => {
@@ -250,67 +255,40 @@ export default function WorkerOnboardSections({
 
     const setupKeyboard = async () => {
       try {
-        const { Keyboard } = await import(
-          "@capacitor/keyboard"
-        );
+        const { Keyboard } = await import("@capacitor/keyboard");
 
         if (!mounted) return;
-
-        const root = document.documentElement;
-        const body = document.body;
 
         /* =========================
            KEYBOARD SHOW
         ========================= */
 
-        const handleShow = () => {
+        showListener = await Keyboard.addListener("keyboardDidShow", () => {
           if (!mounted) return;
 
-          root.classList.add("keyboard-open");
-          body.classList.add("keyboard-open");
-        };
+          document.documentElement.classList.add("keyboard-open");
+
+          document.body.classList.add("keyboard-open");
+        });
 
         /* =========================
            KEYBOARD HIDE
         ========================= */
 
-        const handleHide = () => {
+        hideListener = await Keyboard.addListener("keyboardDidHide", () => {
           if (!mounted) return;
 
-          root.classList.remove(
-            "keyboard-open",
-          );
+          document.documentElement.classList.remove("keyboard-open");
 
-          body.classList.remove(
-            "keyboard-open",
-          );
-        };
-
-        /* =========================
-           LISTENERS
-        ========================= */
-
-        showListener =
-          await Keyboard.addListener(
-            "keyboardDidShow",
-            handleShow,
-          );
-
-        hideListener =
-          await Keyboard.addListener(
-            "keyboardDidHide",
-            handleHide,
-          );
+          document.body.classList.remove("keyboard-open");
+        });
       } catch (error) {
         /*
          * Browser / non-Capacitor environment.
          *
          * Nothing required here.
          */
-        console.debug(
-          "Capacitor Keyboard unavailable:",
-          error,
-        );
+        console.debug("Capacitor Keyboard unavailable:", error);
       }
     };
 
@@ -326,13 +304,9 @@ export default function WorkerOnboardSections({
       showListener?.remove();
       hideListener?.remove();
 
-      document.documentElement.classList.remove(
-        "keyboard-open",
-      );
+      document.documentElement.classList.remove("keyboard-open");
 
-      document.body.classList.remove(
-        "keyboard-open",
-      );
+      document.body.classList.remove("keyboard-open");
     };
   }, [device]);
 
@@ -341,14 +315,7 @@ export default function WorkerOnboardSections({
   ===================================================== */
 
   return (
-    <div
-      className="
-        space-y-4
-        pb-28
-        md:pb-28
-        [overscroll-behavior-y:contain]
-      "
-    >
+    <div className="space-y-4 pb-28">
       {/* =================================================
           BASIC INFORMATION
       ================================================= */}
@@ -371,11 +338,7 @@ export default function WorkerOnboardSections({
           PHOTO
       ================================================= */}
 
-      <PhotoSection
-        photo={photo}
-        setPhoto={setPhoto}
-        device={device}
-      />
+      <PhotoSection photo={photo} setPhoto={setPhoto} device={device} />
 
       {/* =================================================
           CATEGORY

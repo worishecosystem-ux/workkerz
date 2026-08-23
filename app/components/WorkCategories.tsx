@@ -6,40 +6,16 @@ import { useSearchParams } from "next/navigation";
 import { LayoutGrid } from "lucide-react";
 import { serviceCategories } from "@/app/data/workers";
 
-const categoryImages: Record<string, string> = {
-  Labour: "/categories/workkerz/Labour.png",
-  Driver: "/categories/workkerz/Driver.png",
-  Mechanic: "/categories/workkerz/Mechanic.png",
-  Painter: "/categories/workkerz/Painter.png",
-  Washer: "/categories/workkerz/Washer.png",
-
-  "Office Worker": "/categories/workkerz/Office worker.png",
-
-  "Home Services": "/categories/workkerz/House service.png",
-  Restaurant: "/categories/workkerz/Restaurant.png",
-  "Home Contractor": "/categories/workkerz/Home contractor.png",
-
-  Factory: "/categories/workkerz/Factory worker.png",
-
-  "Salon & Beauty": "/categories/workkerz/Salon and beauty.png",
-
-  Construction: "/categories/workkerz/Constructionworker.png",
-
-  Security: "/categories/workkerz/Security.png",
-
-  "Event Services": "/categories/workkerz/Events.png",
-};
-
 export default function WorkCategories() {
   const searchParams = useSearchParams();
 
   const activeCategory = searchParams.get("category") || "";
 
-  // All only once + remove duplicate categories
   const categories = [
     {
       id: "all",
       label: "All",
+      image: "",
     },
     ...serviceCategories.filter(
       (category) => category.id.toLowerCase() !== "all",
@@ -60,21 +36,7 @@ export default function WorkCategories() {
         </div>
 
         {/* HORIZONTAL CATEGORY LIST */}
-        <div
-          className="
-            flex
-            w-full
-            flex-nowrap
-            gap-4
-            overflow-x-auto
-            overflow-y-hidden
-            pb-2
-            pt-2
-            scrollbar-hide
-            scroll-smooth
-            [-webkit-overflow-scrolling:touch]
-          "
-        >
+        <div className="flex w-full flex-nowrap gap-4 overflow-x-auto overflow-y-hidden pb-2 pt-2 scrollbar-hide scroll-smooth [-webkit-overflow-scrolling:touch]">
           {categories.map((category) => {
             const isAll = category.id === "all";
 
@@ -103,39 +65,32 @@ export default function WorkCategories() {
                           isActive ? "text-emerald-600" : "text-slate-500"
                         }
                       />
-                    ) : (
+                    ) : category.image ? (
                       <Image
-                        src={
-                          categoryImages[category.id] ?? "/categories/all.png"
-                        }
+                        src={category.image}
                         alt={category.label}
                         width={42}
                         height={42}
-                        className={`
-            h-10.5
-            w-10.5
-            object-contain
-            transition-transform
-            duration-200
-            ${isActive ? "scale-110" : "scale-100"}
-          `}
+                        className={`h-10.5 w-10.5 object-contain transition-transform duration-200 ${
+                          isActive ? "scale-110" : "scale-100"
+                        }`}
+                      />
+                    ) : (
+                      <LayoutGrid
+                        size={28}
+                        strokeWidth={1.8}
+                        className="text-slate-400"
                       />
                     )}
                   </div>
 
                   {/* LABEL */}
                   <span
-                    className={`
-        mt-1
-        w-full
-        overflow-hidden
-        text-center
-        text-[10px]
-        font-medium
-        leading-3.25
-        line-clamp-2
-        ${isActive ? "font-semibold text-emerald-600" : "text-slate-700"}
-      `}
+                    className={`mt-1 w-full overflow-hidden text-center text-[10px] font-medium leading-3.25 line-clamp-2 ${
+                      isActive
+                        ? "font-semibold text-emerald-600"
+                        : "text-slate-700"
+                    }`}
                   >
                     {category.label}
                   </span>

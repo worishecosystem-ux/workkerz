@@ -279,81 +279,98 @@ export default function WorkerBookingManagement() {
    */
 
   const playNotificationSound = useCallback(async () => {
-    if (typeof window === "undefined") {
+  if (typeof window === "undefined") {
+    return;
+  }
+
+  try {
+    const AudioContextClass =
+      window.AudioContext ||
+      (
+        window as typeof window & {
+          webkitAudioContext?: typeof AudioContext;
+        }
+      ).webkitAudioContext;
+
+    if (!AudioContextClass) {
+      console.error("WEB AUDIO API NOT SUPPORTED");
       return;
     }
 
-    try {
-      if (!audioContextRef.current) {
-        console.warn("NOTIFICATION SOUND SKIPPED — AUDIO CONTEXT NOT READY");
+    if (!audioContextRef.current) {
+      audioContextRef.current = new AudioContextClass();
+    }
 
+    const context = audioContextRef.current;
+
+    // IMPORTANT:
+    // Android Chrome / WebView can suspend AudioContext.
+    if (context.state !== "running") {
+      await context.resume();
+    }
+
+    if (context.state !== "running") {
+      console.error(
+        "NOTIFICATION SOUND FAILED — AUDIO CONTEXT:",
+        context.state,
+      );
+      return;
+    }
+
+    // Load sound if not already loaded
+    if (!notificationBufferRef.current) {
+      const loaded = await loadNotificationSound();
+
+      if (!loaded) {
+        console.error("NOTIFICATION SOUND — BUFFER NOT LOADED");
         return;
       }
+    }
 
-      const context = audioContextRef.current;
+    const buffer = notificationBufferRef.current;
 
-      if (context.state !== "running") {
-        console.warn(
-          "NOTIFICATION SOUND SKIPPED — AUDIO CONTEXT:",
-          context.state,
-        );
+    if (!buffer) {
+      console.error("NOTIFICATION SOUND — NO BUFFER");
+      return;
+    }
 
-        return;
+    // Stop previous sound
+    if (audioSourceRef.current) {
+      try {
+        audioSourceRef.current.stop();
+      } catch {
+        // Already stopped
       }
 
-      if (!notificationBufferRef.current) {
-        const loaded = await loadNotificationSound();
+      audioSourceRef.current = null;
+    }
 
-        if (!loaded) {
-          console.error("NOTIFICATION SOUND — BUFFER NOT LOADED");
+    const source = context.createBufferSource();
+    const gain = context.createGain();
 
-          return;
-        }
-      }
+    source.buffer = buffer;
 
-      const buffer = notificationBufferRef.current;
+    // Volume
+    gain.gain.setValueAtTime(1, context.currentTime);
 
-      if (!buffer) {
-        return;
-      }
+    source.connect(gain);
+    gain.connect(context.destination);
 
-      if (audioSourceRef.current) {
-        try {
-          audioSourceRef.current.stop();
-        } catch {
-          // Already stopped.
-        }
+    audioSourceRef.current = source;
 
+    source.onended = () => {
+      if (audioSourceRef.current === source) {
         audioSourceRef.current = null;
       }
+    };
 
-      const source = context.createBufferSource();
+    source.start(0);
 
-      const gain = context.createGain();
-
-      source.buffer = buffer;
-
-      gain.gain.value = 1;
-
-      source.connect(gain);
-
-      gain.connect(context.destination);
-
-      audioSourceRef.current = source;
-
-      source.onended = () => {
-        if (audioSourceRef.current === source) {
-          audioSourceRef.current = null;
-        }
-      };
-
-      source.start(0);
-
-      console.log("NOTIFICATION SOUND PLAYED");
-    } catch (error) {
-      console.error("NOTIFICATION SOUND PLAY ERROR:", error);
-    }
-  }, [loadNotificationSound]);
+    console.log("NOTIFICATION SOUND PLAYED SUCCESSFULLY");
+  } catch (error) {
+    console.error("NOTIFICATION SOUND PLAY ERROR:", error);
+  }
+}, [loadNotificationSound]);
 
   /*
    * =========================================================
