@@ -1075,7 +1075,7 @@ export default function AdminPanel() {
           <WorkersTab onFormOpenChange={setWorkerFormOpen} />
         )}
         {tab === "worker-requests" && hasAccess("worker-requests") && (
-          <WorkerRequestsTab />
+          <WorkerRequestsTab device={android ? "mobile" : "desktop"} />
         )}
         {tab === "orders" && hasAccess("orders") && (
           <OrdersTab
