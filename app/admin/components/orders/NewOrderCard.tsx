@@ -11,9 +11,12 @@ import {
   User,
   XCircle,
 } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+
+type DeviceType = "mobile" | "tablet" | "desktop";
 
 type Props = {
+  device: DeviceType;
   order: any;
   onView: (order: any) => void;
   onConfirm: (id: string | number, status: string) => void;
@@ -21,26 +24,21 @@ type Props = {
 };
 
 export default function NewOrderCard({
+  device,
   order,
   onView,
   onConfirm,
   onReject,
 }: Props) {
-  const [arrivalTime, setArrivalTime] = useState<number>(() => Date.now());
-  const [now, setNow] = useState<number>(() => Date.now());
+  const isMobile = device === "mobile";
+  const isTablet = device === "tablet";
+  const isDesktop = device === "desktop";
 
   /* =====================================================
-     ORDER TIMER
+     CURRENT TIME
   ===================================================== */
 
-  useEffect(() => {
-    if (!order?.id) return;
-
-    const startedAt = Date.now();
-
-    setArrivalTime(startedAt);
-    setNow(startedAt);
-  }, [order?.id]);
+  const [now, setNow] = useState<number>(() => Date.now());
 
   useEffect(() => {
     const interval = window.setInterval(() => {
@@ -50,12 +48,35 @@ export default function NewOrderCard({
     return () => window.clearInterval(interval);
   }, []);
 
+  /* =====================================================
+     ORDER CREATED TIME
+  ===================================================== */
+
+  const createdAt = useMemo(() => {
+    if (!order?.created_at) return now;
+
+    const timestamp = new Date(
+      order.created_at,
+    ).getTime();
+
+    return Number.isFinite(timestamp)
+      ? timestamp
+      : now;
+  }, [order?.created_at, now]);
+
+  /* =====================================================
+     ORDER TIMER
+  ===================================================== */
+
   const elapsedSeconds = Math.max(
     0,
-    Math.floor((now - arrivalTime) / 1000),
+    Math.floor((now - createdAt) / 1000),
   );
 
-  const minutes = Math.floor(elapsedSeconds / 60);
+  const minutes = Math.floor(
+    elapsedSeconds / 60,
+  );
+
   const seconds = elapsedSeconds % 60;
 
   const formattedTime = `${String(minutes).padStart(
@@ -72,21 +93,24 @@ export default function NewOrderCard({
 
   const timerConfig = {
     normal: {
-      wrapper: "bg-emerald-50 border-emerald-100",
+      wrapper:
+        "border-emerald-100 bg-emerald-50",
       icon: "text-emerald-600",
       time: "text-emerald-700",
       label: "Waiting",
       dot: "bg-emerald-500",
     },
     warning: {
-      wrapper: "bg-orange-50 border-orange-100",
+      wrapper:
+        "border-orange-100 bg-orange-50",
       icon: "text-orange-600",
       time: "text-orange-700",
       label: "Waiting",
       dot: "bg-orange-500",
     },
     urgent: {
-      wrapper: "bg-red-50 border-red-100",
+      wrapper:
+        "border-red-100 bg-red-50",
       icon: "text-red-600",
       time: "text-red-700",
       label: "Urgent",
@@ -94,7 +118,13 @@ export default function NewOrderCard({
     },
   }[timerState];
 
-  const itemCount = Array.isArray(order?.items)
+  /* =====================================================
+     ORDER DATA
+  ===================================================== */
+
+  const itemCount = Array.isArray(
+    order?.items,
+  )
     ? order.items.length
     : 1;
 
@@ -109,144 +139,141 @@ export default function NewOrderCard({
       0,
   );
 
+  /* =====================================================
+     DEVICE CLASSES
+  ===================================================== */
+
+  const cardRadius = isMobile
+    ? "rounded-xl"
+    : "rounded-2xl";
+
+  const cardPadding = isMobile
+    ? "p-3 pl-4"
+    : isTablet
+      ? "p-3.5 pl-4"
+      : "p-4 pl-5";
+
+  const headerGap = isMobile
+    ? "gap-2"
+    : isTablet
+      ? "gap-2.5"
+      : "gap-3";
+
+  const avatarSize = isMobile
+    ? "h-8 w-8"
+    : isTablet
+      ? "h-9 w-9"
+      : "h-10 w-10";
+
+  const avatarIconSize = isMobile
+    ? "h-3.5 w-3.5"
+    : isTablet
+      ? "h-4 w-4"
+      : "h-[18px] w-[18px]";
+
+  const customerNameSize = isMobile
+    ? "text-[12px]"
+    : isTablet
+      ? "text-[13px]"
+      : "text-sm";
+
+  const secondaryTextSize = isMobile
+    ? "text-[9px]"
+    : isTablet
+      ? "text-[10px]"
+      : "text-[11px]";
+
+  const valueSectionMargin = isMobile
+    ? "mt-2.5"
+    : isTablet
+      ? "mt-3"
+      : "mt-4";
+
+  const infoMargin = isMobile
+    ? "mt-2"
+    : isTablet
+      ? "mt-2.5"
+      : "mt-3";
+
+  const actionMargin = isMobile
+    ? "mt-2.5"
+    : isTablet
+      ? "mt-3"
+      : "mt-4";
+
+  const actionHeight = isMobile
+    ? "h-8"
+    : isTablet
+      ? "h-9"
+      : "h-10";
+
+  const actionText = isMobile
+    ? "text-[8px]"
+    : isTablet
+      ? "text-[9px]"
+      : "text-[10px]";
+
+  const infoText = isMobile
+    ? "text-[7px]"
+    : isTablet
+      ? "text-[8px]"
+      : "text-[9px]";
+
   return (
     <article
-      className="
-        relative
-        box-border
-        w-[calc(100vw-24px)]
-        max-w-full
-        min-w-0
-        overflow-hidden
-        rounded-2xl
-        border
-        border-slate-200
-        bg-white
-        shadow-sm
-        transition-all
-        hover:border-orange-200
-        hover:shadow-md
-
-        sm:w-[360px]
-
-        md:w-[380px]
-
-        lg:w-[420px]
-        lg:max-w-[420px]
-      "
+      className={`relative box-border w-full min-w-0 max-w-full overflow-hidden border border-slate-200 bg-white ${cardRadius} shadow-sm transition-all hover:border-orange-200 hover:shadow-md`}
     >
       {/* =====================================================
           LEFT ACCENT
       ===================================================== */}
 
       <div
-        className={`
-          absolute
-          inset-y-0
-          left-0
-          z-10
-          w-1
-          ${
-            timerState === "urgent"
-              ? "bg-red-500"
-              : timerState === "warning"
-                ? "bg-orange-500"
-                : "bg-gradient-to-b from-orange-500 to-red-500"
-          }
-        `}
+        className={`absolute inset-y-0 left-0 z-10 w-1 ${
+          timerState === "urgent"
+            ? "bg-red-500"
+            : timerState === "warning"
+              ? "bg-orange-500"
+              : "bg-gradient-to-b from-orange-500 to-red-500"
+        }`}
       />
 
-      <div
-        className="
-          min-w-0
-          p-3
-          pl-4
-
-          sm:p-3.5
-          sm:pl-4
-
-          lg:p-4
-          lg:pl-4.5
-        "
-      >
+      <div className={`min-w-0 ${cardPadding}`}>
         {/* =====================================================
             HEADER
         ===================================================== */}
 
         <div
-          className="
-            flex
-            min-w-0
-            items-center
-            justify-between
-            gap-2
-
-            sm:gap-3
-          "
+          className={`flex min-w-0 items-center justify-between ${headerGap}`}
         >
           {/* CUSTOMER */}
 
           <div
-            className="
-              flex
-              min-w-0
-              flex-1
-              items-center
-              gap-2.5
-
-              sm:gap-3
-            "
+            className={`flex min-w-0 flex-1 items-center ${
+              isMobile
+                ? "gap-2"
+                : isTablet
+                  ? "gap-2.5"
+                  : "gap-3"
+            }`}
           >
             <div
-              className="
-                flex
-                h-9
-                w-9
-                shrink-0
-                items-center
-                justify-center
-                rounded-full
-                bg-orange-50
-
-                sm:h-10
-                sm:w-10
-              "
+              className={`flex shrink-0 items-center justify-center rounded-full bg-orange-50 ${avatarSize}`}
             >
               <User
-                className="
-                  h-4
-                  w-4
-                  text-orange-600
-
-                  sm:h-[18px]
-                  sm:w-[18px]
-                "
+                className={`${avatarIconSize} text-orange-600`}
               />
             </div>
 
             <div className="min-w-0 flex-1">
               <h3
-                className="
-                  truncate
-                  text-[13px]
-                  font-bold
-                  text-slate-900
-
-                  sm:text-sm
-                "
+                className={`truncate font-bold text-slate-900 ${customerNameSize}`}
               >
-                {order?.customer_name || "Customer"}
+                {order?.customer_name ||
+                  "Customer"}
               </h3>
 
               <p
-                className="
-                  mt-0.5
-                  truncate
-                  text-[9px]
-                  text-slate-400
-
-                  sm:text-[10px]
-                "
+                className={`mt-0.5 truncate text-slate-400 ${secondaryTextSize}`}
               >
                 #{order?.order_number || "-"}
               </p>
@@ -254,17 +281,7 @@ export default function NewOrderCard({
               {order?.customer_phone && (
                 <a
                   href={`tel:${order.customer_phone}`}
-                  className="
-                    mt-0.5
-                    block
-                    truncate
-                    text-[10px]
-                    text-slate-500
-                    transition
-                    hover:text-orange-600
-
-                    sm:text-[11px]
-                  "
+                  className={`mt-0.5 block truncate text-slate-500 transition hover:text-orange-600 ${secondaryTextSize}`}
                 >
                   {order.customer_phone}
                 </a>
@@ -275,32 +292,20 @@ export default function NewOrderCard({
           {/* NEW BADGE */}
 
           <span
-            className="
-              flex
-              shrink-0
-              items-center
-              gap-1
-              rounded-full
-              bg-red-50
-              px-2
-              py-1.5
-              text-[8px]
-              font-bold
-              text-red-600
-
-              sm:gap-1.5
-              sm:px-2.5
-              sm:text-[9px]
-            "
+            className={`flex shrink-0 items-center rounded-full bg-red-50 font-bold text-red-600 ${
+              isMobile
+                ? "gap-1 px-2 py-1 text-[7px]"
+                : isTablet
+                  ? "gap-1 px-2 py-1.5 text-[8px]"
+                  : "gap-1.5 px-2.5 py-1.5 text-[9px]"
+            }`}
           >
             <span
-              className="
-                h-1.5
-                w-1.5
-                animate-pulse
-                rounded-full
-                bg-red-500
-              "
+              className={`animate-pulse rounded-full bg-red-500 ${
+                isMobile
+                  ? "h-1 w-1"
+                  : "h-1.5 w-1.5"
+              }`}
             />
 
             NEW
@@ -312,65 +317,58 @@ export default function NewOrderCard({
         ===================================================== */}
 
         <div
-          className="
-            mt-3
-            grid
-            min-w-0
-            grid-cols-[minmax(0,1fr)_auto]
-            items-center
-            gap-2
-            rounded-xl
-            bg-slate-50
-            px-2.5
-            py-2.5
-
-            sm:mt-4
-            sm:gap-3
-            sm:px-3
-          "
+          className={`grid min-w-0 grid-cols-[minmax(0,1fr)_auto] items-center rounded-xl bg-slate-50 ${
+            isMobile
+              ? "gap-1.5 px-2 py-2"
+              : isTablet
+                ? "gap-2 px-2.5 py-2.5"
+                : "gap-3 px-3 py-3"
+          } ${valueSectionMargin}`}
         >
           {/* VALUE */}
 
           <div className="min-w-0">
             <p
-              className="
-                text-[8px]
-                font-semibold
-                uppercase
-                tracking-wider
-                text-slate-400
-
-                sm:text-[9px]
-              "
+              className={`font-semibold uppercase tracking-wider text-slate-400 ${
+                isMobile
+                  ? "text-[7px]"
+                  : isTablet
+                    ? "text-[8px]"
+                    : "text-[9px]"
+              }`}
             >
               Order Value
             </p>
 
-            <div className="mt-1 flex min-w-0 items-center gap-1">
+            <div
+              className={`mt-1 flex min-w-0 items-center ${
+                isMobile
+                  ? "gap-0.5"
+                  : "gap-1"
+              }`}
+            >
               <IndianRupee
-                className="
-                  h-3.5
-                  w-3.5
-                  shrink-0
-                  text-emerald-600
-
-                  sm:h-4
-                  sm:w-4
-                "
+                className={`shrink-0 text-emerald-600 ${
+                  isMobile
+                    ? "h-3 w-3"
+                    : isTablet
+                      ? "h-3.5 w-3.5"
+                      : "h-4 w-4"
+                }`}
               />
 
               <span
-                className="
-                  truncate
-                  text-base
-                  font-extrabold
-                  leading-none
-                  text-emerald-600
-
-                  sm:text-lg
-                "
+                className={`truncate font-extrabold leading-none text-emerald-600 ${
+                  isMobile
+                    ? "text-sm"
+                    : isTablet
+                      ? "text-base"
+                      : "text-lg"
+                }`}
               >
-                {total.toLocaleString("en-IN")}
+                {total.toLocaleString(
+                  "en-IN",
+                )}
               </span>
             </div>
           </div>
@@ -378,94 +376,57 @@ export default function NewOrderCard({
           {/* TIMER */}
 
           <div
-            className={`
-              flex
-              min-w-0
-              shrink-0
-              items-center
-              gap-1.5
-              rounded-xl
-              border
-              px-2
-              py-1.5
-
-              sm:gap-2
-              sm:px-2.5
-              sm:py-2
-
-              ${timerConfig.wrapper}
-            `}
+            className={`flex min-w-0 shrink-0 items-center rounded-xl border ${
+              isMobile
+                ? "gap-1 px-1.5 py-1"
+                : isTablet
+                  ? "gap-1.5 px-2 py-1.5"
+                  : "gap-2 px-2.5 py-2"
+            } ${timerConfig.wrapper}`}
           >
             <div
-              className="
-                relative
-                flex
-                h-6
-                w-6
-                shrink-0
-                items-center
-                justify-center
-                rounded-lg
-                bg-white
-
-                sm:h-7
-                sm:w-7
-              "
+              className={`relative flex shrink-0 items-center justify-center rounded-lg bg-white ${
+                isMobile
+                  ? "h-5 w-5"
+                  : isTablet
+                    ? "h-6 w-6"
+                    : "h-7 w-7"
+              }`}
             >
               <Clock3
-                className={`
-                  h-3
-                  w-3
-
-                  sm:h-3.5
-                  sm:w-3.5
-
-                  ${timerConfig.icon}
-                `}
+                className={`${isMobile ? "h-2.5 w-2.5" : isTablet ? "h-3 w-3" : "h-3.5 w-3.5"} ${timerConfig.icon}`}
               />
 
               <span
-                className={`
-                  absolute
-                  -right-0.5
-                  -top-0.5
-                  h-1.5
-                  w-1.5
-                  rounded-full
-                  ${timerConfig.dot}
-                  ${timerState === "urgent" ? "animate-pulse" : ""}
-                `}
+                className={`absolute -right-0.5 -top-0.5 rounded-full ${isMobile ? "h-1 w-1" : "h-1.5 w-1.5"} ${timerConfig.dot} ${
+                  timerState === "urgent"
+                    ? "animate-pulse"
+                    : ""
+                }`}
               />
             </div>
 
             <div className="min-w-0">
               <p
-                className="
-                  text-[7px]
-                  font-bold
-                  uppercase
-                  tracking-wide
-                  text-slate-500
-
-                  sm:text-[8px]
-                "
+                className={`font-bold uppercase tracking-wide text-slate-500 ${
+                  isMobile
+                    ? "text-[6px]"
+                    : isTablet
+                      ? "text-[7px]"
+                      : "text-[8px]"
+                }`}
               >
                 {timerConfig.label}
               </p>
 
               <p
-                className={`
-                  mt-0.5
-                  font-mono
-                  text-xs
-                  font-black
-                  leading-none
-                  tabular-nums
-
-                  sm:text-sm
-
-                  ${timerConfig.time}
-                `}
+                className={`mt-0.5 font-mono font-black leading-none tabular-nums ${
+                  isMobile
+                    ? "text-[10px]"
+                    : isTablet
+                      ? "text-xs"
+                      : "text-sm"
+                } ${timerConfig.time}`}
               >
                 {formattedTime}
               </p>
@@ -478,57 +439,37 @@ export default function NewOrderCard({
         ===================================================== */}
 
         <div
-          className="
-            mt-2.5
-            grid
-            min-w-0
-            grid-cols-3
-            gap-1.5
-
-            sm:mt-3
-            sm:gap-2
-          "
+          className={`grid min-w-0 grid-cols-3 ${
+            isMobile
+              ? "gap-1"
+              : isTablet
+                ? "gap-1.5"
+                : "gap-2"
+          } ${infoMargin}`}
         >
           {/* ITEMS */}
 
           <div
-            className="
-              flex
-              min-w-0
-              items-center
-              justify-center
-              gap-1
-              overflow-hidden
-              rounded-lg
-              bg-slate-100
-              px-1.5
-              py-2
-
-              sm:gap-1.5
-              sm:px-2
-            "
+            className={`flex min-w-0 items-center justify-center overflow-hidden rounded-lg bg-slate-100 ${
+              isMobile
+                ? "gap-0.5 px-1 py-1.5"
+                : isTablet
+                  ? "gap-1 px-1.5 py-2"
+                  : "gap-1.5 px-2 py-2.5"
+            }`}
           >
             <ShoppingBag
-              className="
-                h-3
-                w-3
-                shrink-0
-                text-slate-500
-
-                sm:h-3.5
-                sm:w-3.5
-              "
+              className={`shrink-0 text-slate-500 ${
+                isMobile
+                  ? "h-2.5 w-2.5"
+                  : isTablet
+                    ? "h-3 w-3"
+                    : "h-3.5 w-3.5"
+              }`}
             />
 
             <span
-              className="
-                truncate
-                text-[8px]
-                font-semibold
-                text-slate-600
-
-                sm:text-[9px]
-              "
+              className={`truncate font-semibold text-slate-600 ${infoText}`}
             >
               {itemCount} Items
             </span>
@@ -537,43 +478,26 @@ export default function NewOrderCard({
           {/* PAYMENT */}
 
           <div
-            className="
-              flex
-              min-w-0
-              items-center
-              justify-center
-              gap-1
-              overflow-hidden
-              rounded-lg
-              bg-emerald-50
-              px-1.5
-              py-2
-
-              sm:gap-1.5
-              sm:px-2
-            "
+            className={`flex min-w-0 items-center justify-center overflow-hidden rounded-lg bg-emerald-50 ${
+              isMobile
+                ? "gap-0.5 px-1 py-1.5"
+                : isTablet
+                  ? "gap-1 px-1.5 py-2"
+                  : "gap-1.5 px-2 py-2.5"
+            }`}
           >
             <CreditCard
-              className="
-                h-3
-                w-3
-                shrink-0
-                text-emerald-600
-
-                sm:h-3.5
-                sm:w-3.5
-              "
+              className={`shrink-0 text-emerald-600 ${
+                isMobile
+                  ? "h-2.5 w-2.5"
+                  : isTablet
+                    ? "h-3 w-3"
+                    : "h-3.5 w-3.5"
+              }`}
             />
 
             <span
-              className="
-                truncate
-                text-[8px]
-                font-semibold
-                text-emerald-700
-
-                sm:text-[9px]
-              "
+              className={`truncate font-semibold text-emerald-700 ${infoText}`}
             >
               {paymentMethod}
             </span>
@@ -582,43 +506,26 @@ export default function NewOrderCard({
           {/* DISTANCE */}
 
           <div
-            className="
-              flex
-              min-w-0
-              items-center
-              justify-center
-              gap-1
-              overflow-hidden
-              rounded-lg
-              bg-blue-50
-              px-1.5
-              py-2
-
-              sm:gap-1.5
-              sm:px-2
-            "
+            className={`flex min-w-0 items-center justify-center overflow-hidden rounded-lg bg-blue-50 ${
+              isMobile
+                ? "gap-0.5 px-1 py-1.5"
+                : isTablet
+                  ? "gap-1 px-1.5 py-2"
+                  : "gap-1.5 px-2 py-2.5"
+            }`}
           >
             <MapPin
-              className="
-                h-3
-                w-3
-                shrink-0
-                text-blue-600
-
-                sm:h-3.5
-                sm:w-3.5
-              "
+              className={`shrink-0 text-blue-600 ${
+                isMobile
+                  ? "h-2.5 w-2.5"
+                  : isTablet
+                    ? "h-3 w-3"
+                    : "h-3.5 w-3.5"
+              }`}
             />
 
             <span
-              className="
-                truncate
-                text-[8px]
-                font-semibold
-                text-blue-700
-
-                sm:text-[9px]
-              "
+              className={`truncate font-semibold text-blue-700 ${infoText}`}
             >
               2.4 km
             </span>
@@ -630,138 +537,102 @@ export default function NewOrderCard({
         ===================================================== */}
 
         <div
-          className="
-            mt-3
-            grid
-            min-w-0
-            grid-cols-[minmax(0,1fr)_minmax(0,1fr)_38px]
-            gap-1.5
-
-            sm:mt-4
-            sm:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_42px]
-            sm:gap-2
-          "
+          className={`grid min-w-0 grid-cols-[minmax(0,1fr)_minmax(0,1fr)_auto] ${
+            isMobile
+              ? "gap-1"
+              : isTablet
+                ? "gap-1.5"
+                : "gap-2"
+          } ${actionMargin}`}
         >
           {/* ACCEPT */}
 
           <button
             type="button"
-            onClick={() => onConfirm(order.id, "Confirmed")}
-            className="
-              flex
-              h-9
-              min-w-0
-              items-center
-              justify-center
-              gap-1
-              overflow-hidden
-              rounded-lg
-              bg-emerald-600
-              px-1.5
-              text-[9px]
-              font-bold
-              text-white
-              shadow-sm
-              transition-all
-              hover:bg-emerald-700
-              active:scale-[0.98]
-
-              sm:gap-1.5
-              sm:px-3
-              sm:text-[10px]
-            "
+            onClick={() =>
+              onConfirm(
+                order.id,
+                "Confirmed",
+              )
+            }
+            className={`flex min-w-0 items-center justify-center overflow-hidden rounded-lg bg-emerald-600 font-bold text-white shadow-sm transition-all hover:bg-emerald-700 active:scale-[0.98] ${actionHeight} ${actionText} ${
+              isMobile
+                ? "gap-0.5 px-1"
+                : isTablet
+                  ? "gap-1 px-2"
+                  : "gap-1.5 px-3"
+            }`}
           >
             <CheckCircle2
-              className="
-                h-3.5
-                w-3.5
-                shrink-0
-
-                sm:h-4
-                sm:w-4
-              "
+              className={`shrink-0 ${
+                isMobile
+                  ? "h-3 w-3"
+                  : isTablet
+                    ? "h-3.5 w-3.5"
+                    : "h-4 w-4"
+              }`}
             />
 
-            <span className="truncate">Accept</span>
+            <span className="truncate">
+              Accept
+            </span>
           </button>
 
           {/* REJECT */}
 
           <button
             type="button"
-            onClick={() => onReject(order)}
-            className="
-              flex
-              h-9
-              min-w-0
-              items-center
-              justify-center
-              gap-1
-              overflow-hidden
-              rounded-lg
-              bg-red-50
-              px-1.5
-              text-[9px]
-              font-bold
-              text-red-600
-              transition-all
-              hover:bg-red-100
-              active:scale-[0.98]
-
-              sm:gap-1.5
-              sm:px-3
-              sm:text-[10px]
-            "
+            onClick={() =>
+              onReject(order)
+            }
+            className={`flex min-w-0 items-center justify-center overflow-hidden rounded-lg bg-red-50 font-bold text-red-600 transition-all hover:bg-red-100 active:scale-[0.98] ${actionHeight} ${actionText} ${
+              isMobile
+                ? "gap-0.5 px-1"
+                : isTablet
+                  ? "gap-1 px-2"
+                  : "gap-1.5 px-3"
+            }`}
           >
             <XCircle
-              className="
-                h-3.5
-                w-3.5
-                shrink-0
-
-                sm:h-4
-                sm:w-4
-              "
+              className={`shrink-0 ${
+                isMobile
+                  ? "h-3 w-3"
+                  : isTablet
+                    ? "h-3.5 w-3.5"
+                    : "h-4 w-4"
+              }`}
             />
 
-            <span className="truncate">Reject</span>
+            <span className="truncate">
+              Reject
+            </span>
           </button>
 
           {/* VIEW */}
 
           <button
             type="button"
-            onClick={() => onView(order)}
+            onClick={() =>
+              onView(order)
+            }
             title="View Order"
             aria-label="View Order"
-            className="
-              flex
-              h-9
-              w-[38px]
-              shrink-0
-              items-center
-              justify-center
-              rounded-lg
-              border
-              border-slate-200
-              bg-white
-              text-slate-600
-              transition-all
-              hover:border-slate-300
-              hover:bg-slate-50
-              active:scale-[0.98]
-
-              sm:w-[42px]
-            "
+            className={`flex shrink-0 items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-600 transition-all hover:border-slate-300 hover:bg-slate-50 active:scale-[0.98] ${actionHeight} ${
+              isMobile
+                ? "w-8"
+                : isTablet
+                  ? "w-9"
+                  : "w-10"
+            }`}
           >
             <Eye
-              className="
-                h-3.5
-                w-3.5
-
-                sm:h-4
-                sm:w-4
-              "
+              className={`${
+                isMobile
+                  ? "h-3 w-3"
+                  : isTablet
+                    ? "h-3.5 w-3.5"
+                    : "h-4 w-4"
+              }`}
             />
           </button>
         </div>
@@ -771,35 +642,34 @@ export default function NewOrderCard({
         ===================================================== */}
 
         <div
-          className="
-            mt-2.5
-            flex
-            items-center
-            justify-center
-            gap-1.5
-
-            sm:mt-3
-          "
+          className={`flex items-center justify-center ${
+            isMobile
+              ? "mt-2 gap-1"
+              : isTablet
+                ? "mt-2.5 gap-1.5"
+                : "mt-3 gap-1.5"
+          }`}
         >
           <span
-            className={`
-              h-1.5
-              w-1.5
-              shrink-0
-              rounded-full
-              ${timerConfig.dot}
-              ${timerState === "urgent" ? "animate-pulse" : ""}
-            `}
+            className={`shrink-0 rounded-full ${
+              isMobile
+                ? "h-1 w-1"
+                : "h-1.5 w-1.5"
+            } ${timerConfig.dot} ${
+              timerState === "urgent"
+                ? "animate-pulse"
+                : ""
+            }`}
           />
 
           <span
-            className="
-              text-[8px]
-              font-medium
-              text-slate-400
-
-              sm:text-[9px]
-            "
+            className={`font-medium text-slate-400 ${
+              isMobile
+                ? "text-[7px]"
+                : isTablet
+                  ? "text-[8px]"
+                  : "text-[9px]"
+            }`}
           >
             {timerState === "urgent"
               ? "Please respond"
