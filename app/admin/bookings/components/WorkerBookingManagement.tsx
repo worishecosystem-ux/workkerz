@@ -1711,13 +1711,17 @@ function normalizeStatus(status: unknown): BookingStatus {
   return "pending";
 }
 
-function normalizeBooking(booking: Partial<WorkerBooking>): WorkerBooking {
+function normalizeBooking(
+  booking: Partial<WorkerBooking>
+): WorkerBooking {
   return {
     id: booking.id || crypto.randomUUID(),
 
     booking_id: booking.booking_id || "UNKNOWN",
 
-    booking_status: normalizeStatus(booking.booking_status),
+    booking_status: normalizeStatus(
+      booking.booking_status
+    ),
 
     worker_id: booking.worker_id ?? null,
 
@@ -1759,11 +1763,17 @@ function normalizeBooking(booking: Partial<WorkerBooking>): WorkerBooking {
 
     work_status: booking.work_status ?? "scheduled",
 
-    worker_available: booking.worker_available ?? true,
+    worker_available:
+      booking.worker_available ?? true,
 
     address_id: booking.address_id ?? null,
 
-    created_at: booking.created_at || new Date().toISOString(),
+    customer_addresses:
+      booking.customer_addresses ?? null,
+
+    created_at:
+      booking.created_at ||
+      new Date().toISOString(),
   };
 }
 

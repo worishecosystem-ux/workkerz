@@ -20,26 +20,121 @@ export type PricingType =
    SERVICE CATEGORIES
 ========================================= */
 
+/* =========================================
+   SERVICE CATEGORIES
+========================================= */
+
 export const serviceCategories = [
   { id: "all", label: "All" },
+
   { id: "Labour", label: "Labour" },
   { id: "Driver", label: "Driver" },
   { id: "Mechanic", label: "Mechanic" },
-  { id: "Painter", label: "Painter" },
+  { id: "Electrical & Plumbing", label: "Electrical & Plumbing" },
+  { id: "Home Repair", label: "Home Repair" },
+  { id: "AC & Appliances", label: "AC & Appliances" },
   { id: "Washer", label: "Washer" },
-  { id: "Office Worker", label: "Office Worker" },
-  { id: "Home Services", label: "Home Services" },
+  { id: "Cleaner", label: "Cleaner" },
+  {
+    id: "Garden & Pest Control",
+    label: "Garden & Pest Control",
+  },
+  {
+    id: "Office & Computer",
+    label: "Office & Computer",
+  },
+  {
+    id: "Delivery & Warehouse",
+    label: "Delivery & Warehouse",
+  },
   { id: "Restaurant", label: "Restaurant" },
-  { id: "Home Contractor", label: "Home Contractor" },
+  {
+    id: "Salon & Beauty",
+    label: "Salon & Beauty",
+  },
+  {
+    id: "Security & Events",
+    label: "Security & Events",
+  },
   { id: "Factory", label: "Factory" },
-  { id: "Salon & Beauty", label: "Salon & Beauty" },
-  { id: "Construction", label: "Construction" },
-  { id: "Security", label: "Security" },
-  { id: "Event Services", label: "Event Services" },
+  { id: "Agriculture", label: "Agriculture" },
+  {
+    id: "Moving & Packing",
+    label: "Moving & Packing",
+  },
+  {
+    id: "Other Services",
+    label: "Other Services",
+  },
 ] as const;
 
 export type ServiceCategory =
   (typeof serviceCategories)[number];
+
+
+
+/* =========================================
+   SERVICE CATEGORY DESCRIPTIONS
+========================================= */
+
+export const serviceCategoryDescriptions: Record<
+  string,
+  string
+> = {
+  Labour:
+    "Daily wage & general workers",
+
+  Driver:
+    "Drivers for every requirement",
+
+  Mechanic:
+    "Vehicle repair & maintenance",
+
+  "Electrical & Plumbing":
+    "Electrical, plumbing, pipes & water work",
+
+  "Home Repair":
+    "Carpentry, painting, masonry & home repair",
+
+  "AC & Appliances":
+    "AC, refrigerator, RO & appliance services",
+
+  Washer:
+    "Vehicle cleaning & washing professionals",
+
+  Cleaner:
+    "Home, office & commercial cleaning",
+
+  "Garden & Pest Control":
+    "Garden, landscaping & pest control services",
+
+  "Office & Computer":
+    "Office, computer & data entry professionals",
+
+  "Delivery & Warehouse":
+    "Delivery, warehouse, loading & packing workers",
+
+  Restaurant:
+    "Restaurant, kitchen & serving staff",
+
+  "Salon & Beauty":
+    "Beauty, grooming & personal care services",
+
+  "Security & Events":
+    "Security, event staff & event support workers",
+
+  Factory:
+    "Factory & industrial workers",
+
+  Agriculture:
+    "Farming & agricultural workers",
+
+  "Moving & Packing":
+    "Moving, shifting & packing workers",
+
+  "Other Services":
+    "Other skilled & general work services",
+};
 
 /* =========================================
    WORKER

@@ -408,7 +408,7 @@ export default function BookingCard({
             Customer
           </p>
 
-          <p className="max-w-[135px] truncate text-[10px] font-bold text-slate-800">
+          <p className="max-w-33.75 truncate text-[10px] font-bold text-slate-800">
             {customerName}
           </p>
         </div>

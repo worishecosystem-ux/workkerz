@@ -404,34 +404,126 @@ export default function BookingDetails({
                 LOCATION
             ================================================= */}
 
-            <section className="rounded-2xl border border-slate-200 bg-white p-5 sm:p-6">
-              <SectionHeader
-                icon={<MapPin />}
-                title="Work Location"
-              />
+            {/* =================================================
+    LOCATION
+================================================= */}
 
-              <div className="mt-5 rounded-2xl border border-slate-100 bg-slate-50 p-4">
-                <div className="flex items-center gap-3">
-                  <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-white text-orange-500 shadow-sm">
-                    <MapPin className="h-5 w-5" />
-                  </div>
+<section className="rounded-2xl border border-slate-200 bg-white p-5 sm:p-6">
+  <SectionHeader
+    icon={<MapPin />}
+    title="Work Location"
+  />
 
-                  <div className="min-w-0 flex-1">
-                    <p className="text-[9px] font-bold uppercase tracking-wider text-slate-400">
-                      Service Address
-                    </p>
+  <div className="mt-5 rounded-2xl border border-slate-100 bg-slate-50 p-4">
+    {booking.customer_addresses ? (
+      <div className="space-y-4">
+        {/* MAIN ADDRESS */}
+        <div className="flex items-start gap-3">
+          <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-white text-orange-500 shadow-sm">
+            <MapPin className="h-5 w-5" />
+          </div>
 
-                    <p className="mt-1 text-sm font-bold text-slate-800">
-                      {booking.address_id
-                        ? "Customer address available"
-                        : "Address linked with booking"}
-                    </p>
-                  </div>
+          <div className="min-w-0 flex-1">
+            <div className="flex items-center gap-2">
+              <p className="text-[9px] font-bold uppercase tracking-wider text-slate-400">
+                Service Address
+              </p>
 
-                  <ArrowUpRight className="h-4 w-4 text-slate-300" />
-                </div>
-              </div>
-            </section>
+              {booking.customer_addresses.address_type && (
+                <span className="rounded-md bg-white px-2 py-0.5 text-[9px] font-bold capitalize text-slate-500">
+                  {booking.customer_addresses.address_type}
+                </span>
+              )}
+            </div>
+
+            <p className="mt-1 text-sm font-bold leading-5 text-slate-800">
+              {[
+                booking.customer_addresses.house_no,
+                booking.customer_addresses.address,
+              ]
+                .filter(Boolean)
+                .join(", ")}
+            </p>
+
+            {booking.customer_addresses.landmark && (
+              <p className="mt-1 text-xs text-slate-500">
+                Landmark:{" "}
+                {booking.customer_addresses.landmark}
+              </p>
+            )}
+          </div>
+        </div>
+
+        {/* LOCATION DETAILS */}
+        <div className="grid grid-cols-2 gap-3 border-t border-slate-200 pt-4">
+          {booking.customer_addresses.city && (
+            <div>
+              <p className="text-[9px] font-bold uppercase tracking-wider text-slate-400">
+                City
+              </p>
+
+              <p className="mt-1 text-xs font-semibold text-slate-700">
+                {booking.customer_addresses.city}
+              </p>
+            </div>
+          )}
+
+          {booking.customer_addresses.district && (
+            <div>
+              <p className="text-[9px] font-bold uppercase tracking-wider text-slate-400">
+                District
+              </p>
+
+              <p className="mt-1 text-xs font-semibold text-slate-700">
+                {booking.customer_addresses.district}
+              </p>
+            </div>
+          )}
+
+          {booking.customer_addresses.state && (
+            <div>
+              <p className="text-[9px] font-bold uppercase tracking-wider text-slate-400">
+                State
+              </p>
+
+              <p className="mt-1 text-xs font-semibold text-slate-700">
+                {booking.customer_addresses.state}
+              </p>
+            </div>
+          )}
+
+          {booking.customer_addresses.pincode && (
+            <div>
+              <p className="text-[9px] font-bold uppercase tracking-wider text-slate-400">
+                Pincode
+              </p>
+
+              <p className="mt-1 text-xs font-semibold text-slate-700">
+                {booking.customer_addresses.pincode}
+              </p>
+            </div>
+          )}
+        </div>
+      </div>
+    ) : (
+      <div className="flex items-center gap-3">
+        <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-white text-slate-400 shadow-sm">
+          <MapPin className="h-5 w-5" />
+        </div>
+
+        <div className="min-w-0">
+          <p className="text-sm font-bold text-slate-700">
+            Address not available
+          </p>
+
+          <p className="mt-1 text-xs text-slate-400">
+            No customer address is linked with this booking.
+          </p>
+        </div>
+      </div>
+    )}
+  </div>
+</section>
 
             {/* =================================================
                 BILL

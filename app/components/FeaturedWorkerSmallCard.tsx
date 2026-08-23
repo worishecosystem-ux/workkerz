@@ -110,7 +110,7 @@ export function FeaturedWorkerSmallCard({ worker }: { worker: Worker }) {
               alt={worker.name}
               loading="lazy"
               draggable={false}
-              className="relative z-10 h-full w-full object-cover object-top"
+              className="relative z-10 h-full w-full object-contain"
             />
 
             {/* Available */}
