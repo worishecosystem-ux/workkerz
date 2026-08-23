@@ -123,8 +123,7 @@ export default function OrdersTab({
   const [customRejectReason, setCustomRejectReason] = useState("");
   const [rejectLoading, setRejectLoading] = useState(false);
 
-  const [activeBoard, setActiveBoard] =
-    useState<OrderBoardTab>("new");
+  const [activeBoard, setActiveBoard] = useState<OrderBoardTab>("new");
 
   /* =========================================================
      FILTER
@@ -139,14 +138,9 @@ export default function OrdersTab({
       const phone = String(order.customer_phone ?? "").toLowerCase();
 
       return (
-        (!q ||
-          number.includes(q) ||
-          name.includes(q) ||
-          phone.includes(q)) &&
-        (statusFilter === "All" ||
-          order.status === statusFilter) &&
-        (paymentFilter === "All" ||
-          order.payment_status === paymentFilter)
+        (!q || number.includes(q) || name.includes(q) || phone.includes(q)) &&
+        (statusFilter === "All" || order.status === statusFilter) &&
+        (paymentFilter === "All" || order.payment_status === paymentFilter)
       );
     });
   }, [orders, search, statusFilter, paymentFilter]);
@@ -211,26 +205,15 @@ export default function OrdersTab({
   ========================================================= */
 
   const updateOrderStatus = useCallback(
-    async (
-      id: string | number,
-      status: string,
-    ): Promise<boolean> => {
-      const current = orders.find(
-        (o) => String(o.id) === String(id),
-      );
+    async (id: string | number, status: string): Promise<boolean> => {
+      const current = orders.find((o) => String(o.id) === String(id));
 
       if (!current) return false;
 
       const currentStatus = current.status;
 
-      if (
-        ["Delivered", "Cancelled"].includes(
-          currentStatus ?? "",
-        )
-      ) {
-        alert(
-          `Order is already ${currentStatus}. Status cannot be changed.`,
-        );
+      if (["Delivered", "Cancelled"].includes(currentStatus ?? "")) {
+        alert(`Order is already ${currentStatus}. Status cannot be changed.`);
         return false;
       }
 
@@ -238,9 +221,7 @@ export default function OrdersTab({
         currentStatus === "Out For Delivery" &&
         ["Pending", "Confirmed"].includes(status)
       ) {
-        alert(
-          "Out For Delivery orders cannot be moved back.",
-        );
+        alert("Out For Delivery orders cannot be moved back.");
         return false;
       }
 
@@ -251,35 +232,22 @@ export default function OrdersTab({
 
       if (error) {
         console.error("[Orders] Status error:", error);
-        alert(
-          error.message ||
-            "Unable to update order status.",
-        );
+        alert(error.message || "Unable to update order status.");
         return false;
       }
 
-      await supabase
-        .from("order_status_history")
-        .insert({
-          order_id: id,
-          status,
-          note:
-            STATUS_MESSAGES[status] ?? status,
-        });
+      await supabase.from("order_status_history").insert({
+        order_id: id,
+        status,
+        note: STATUS_MESSAGES[status] ?? status,
+      });
 
       setOrders((prev) =>
-        prev.map((o) =>
-          String(o.id) === String(id)
-            ? { ...o, status }
-            : o,
-        ),
+        prev.map((o) => (String(o.id) === String(id) ? { ...o, status } : o)),
       );
 
       setSelectedOrder((prev) =>
-        prev &&
-        String(prev.id) === String(id)
-          ? { ...prev, status }
-          : prev,
+        prev && String(prev.id) === String(id) ? { ...prev, status } : prev,
       );
 
       return true;
@@ -292,10 +260,7 @@ export default function OrdersTab({
   ========================================================= */
 
   const updatePaymentStatus = useCallback(
-    async (
-      id: string | number,
-      paymentStatus: string,
-    ) => {
+    async (id: string | number, paymentStatus: string) => {
       const { error } = await supabase
         .from("orders")
         .update({
@@ -304,10 +269,7 @@ export default function OrdersTab({
         .eq("id", id);
 
       if (error) {
-        alert(
-          error.message ||
-            "Unable to update payment status.",
-        );
+        alert(error.message || "Unable to update payment status.");
         return;
       }
 
@@ -323,8 +285,7 @@ export default function OrdersTab({
       );
 
       setSelectedOrder((prev) =>
-        prev &&
-        String(prev.id) === String(id)
+        prev && String(prev.id) === String(id)
           ? {
               ...prev,
               payment_status: paymentStatus,
@@ -357,12 +318,7 @@ export default function OrdersTab({
   }, [rejectLoading]);
 
   const openReject = useCallback((order: Order) => {
-    if (
-      !order ||
-      ["Delivered", "Cancelled"].includes(
-        order.status ?? "",
-      )
-    ) {
+    if (!order || ["Delivered", "Cancelled"].includes(order.status ?? "")) {
       alert(`Order is already ${order.status}.`);
       return;
     }
@@ -399,26 +355,19 @@ export default function OrdersTab({
           .in("id", ids);
 
         if (error) {
-          alert(
-            error.message ||
-              "Unable to reject orders.",
-          );
+          alert(error.message || "Unable to reject orders.");
           return;
         }
 
-        await supabase
-          .from("order_status_history")
-          .insert(
-            ids.map((id) => ({
-              order_id: id,
-              status: "Cancelled",
-              note: `Order rejected. Reason: ${reason}`,
-            })),
-          );
-
-        const idSet = new Set(
-          ids.map(String),
+        await supabase.from("order_status_history").insert(
+          ids.map((id) => ({
+            order_id: id,
+            status: "Cancelled",
+            note: `Order rejected. Reason: ${reason}`,
+          })),
         );
+
+        const idSet = new Set(ids.map(String));
 
         setOrders((prev) =>
           prev.map((o) =>
@@ -433,8 +382,7 @@ export default function OrdersTab({
         );
 
         setSelectedOrder((prev) =>
-          prev &&
-          idSet.has(String(prev.id))
+          prev && idSet.has(String(prev.id))
             ? {
                 ...prev,
                 status: "Cancelled",
@@ -449,36 +397,22 @@ export default function OrdersTab({
         setRejectReason("");
         setCustomRejectReason("");
 
-        ids.forEach((id) =>
-          onNotificationStatusChanged?.(id),
-        );
+        ids.forEach((id) => onNotificationStatusChanged?.(id));
       } catch (error) {
-        console.error(
-          "[Orders] Reject error:",
-          error,
-        );
+        console.error("[Orders] Reject error:", error);
         alert("Unable to reject orders.");
       } finally {
         setRejectLoading(false);
       }
     },
-    [
-      getFinalReason,
-      rejectReason,
-      onNotificationStatusChanged,
-    ],
+    [getFinalReason, rejectReason, onNotificationStatusChanged],
   );
 
-  const rejectSingle = useCallback(
-    async () => {
-      if (!rejectingOrder) return;
+  const rejectSingle = useCallback(async () => {
+    if (!rejectingOrder) return;
 
-      await rejectOrders([
-        rejectingOrder.id,
-      ]);
-    },
-    [rejectingOrder, rejectOrders],
-  );
+    await rejectOrders([rejectingOrder.id]);
+  }, [rejectingOrder, rejectOrders]);
 
   const openBulkReject = useCallback(() => {
     if (!selectedOrders.length) return;
@@ -492,28 +426,16 @@ export default function OrdersTab({
      SELECTION
   ========================================================= */
 
-  const toggleOrder = useCallback(
-    (id: string) => {
-      setSelectedOrders((prev) =>
-        prev.includes(id)
-          ? prev.filter((x) => x !== id)
-          : [...prev, id],
-      );
-    },
-    [],
-  );
+  const toggleOrder = useCallback((id: string) => {
+    setSelectedOrders((prev) =>
+      prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id],
+    );
+  }, []);
 
   const toggleSelectAll = useCallback(() => {
-    const ids = filtered.map((o) =>
-      String(o.id),
-    );
+    const ids = filtered.map((o) => String(o.id));
 
-    if (
-      ids.length &&
-      ids.every((id) =>
-        selectedOrders.includes(id),
-      )
-    ) {
+    if (ids.length && ids.every((id) => selectedOrders.includes(id))) {
       setSelectedOrders([]);
     } else {
       setSelectedOrders(ids);
@@ -529,35 +451,22 @@ export default function OrdersTab({
       if (!selectedOrders.length) return;
 
       const invalid = orders.some((order) => {
-        if (
-          !selectedOrders.includes(
-            String(order.id),
-          )
-        ) {
+        if (!selectedOrders.includes(String(order.id))) {
           return false;
         }
 
-        if (
-          ["Delivered", "Cancelled"].includes(
-            order.status ?? "",
-          )
-        ) {
+        if (["Delivered", "Cancelled"].includes(order.status ?? "")) {
           return true;
         }
 
         return (
-          order.status ===
-            "Out For Delivery" &&
-          ["Pending", "Confirmed"].includes(
-            status,
-          )
+          order.status === "Out For Delivery" &&
+          ["Pending", "Confirmed"].includes(status)
         );
       });
 
       if (invalid) {
-        alert(
-          "Some selected orders cannot be moved to this status.",
-        );
+        alert("Some selected orders cannot be moved to this status.");
         return;
       }
 
@@ -567,35 +476,22 @@ export default function OrdersTab({
         .in("id", selectedOrders);
 
       if (error) {
-        alert(
-          error.message ||
-            "Unable to update selected orders.",
-        );
+        alert(error.message || "Unable to update selected orders.");
         return;
       }
 
-      await supabase
-        .from("order_status_history")
-        .insert(
-          selectedOrders.map((id) => ({
-            order_id: id,
-            status,
-            note:
-              STATUS_MESSAGES[status] ??
-              status,
-          })),
-        );
-
-      const ids = new Set(
-        selectedOrders,
+      await supabase.from("order_status_history").insert(
+        selectedOrders.map((id) => ({
+          order_id: id,
+          status,
+          note: STATUS_MESSAGES[status] ?? status,
+        })),
       );
 
+      const ids = new Set(selectedOrders);
+
       setOrders((prev) =>
-        prev.map((o) =>
-          ids.has(String(o.id))
-            ? { ...o, status }
-            : o,
-        ),
+        prev.map((o) => (ids.has(String(o.id)) ? { ...o, status } : o)),
       );
 
       setSelectedOrders([]);
@@ -613,27 +509,20 @@ export default function OrdersTab({
     let cancelled = false;
 
     const run = async () => {
-      if (
-        notificationAction === "reject"
-      ) {
+      if (notificationAction === "reject") {
         openReject(notificationOrder);
         onNotificationHandled?.();
         return;
       }
 
-      if (
-        notificationAction === "accept"
-      ) {
-        const success =
-          await updateOrderStatus(
-            notificationOrder.id,
-            "Confirmed",
-          );
+      if (notificationAction === "accept") {
+        const success = await updateOrderStatus(
+          notificationOrder.id,
+          "Confirmed",
+        );
 
         if (!cancelled && success) {
-          onNotificationStatusChanged?.(
-            notificationOrder.id,
-          );
+          onNotificationStatusChanged?.(notificationOrder.id);
         }
 
         if (!cancelled) {
@@ -643,9 +532,7 @@ export default function OrdersTab({
         return;
       }
 
-      await openOrder(
-        notificationOrder,
-      );
+      await openOrder(notificationOrder);
 
       if (!cancelled) {
         onNotificationHandled?.();
@@ -685,28 +572,17 @@ export default function OrdersTab({
 
   const allSelected =
     filtered.length > 0 &&
-    filtered.every((o) =>
-      selectedOrders.includes(
-        String(o.id),
-      ),
-    );
+    filtered.every((o) => selectedOrders.includes(String(o.id)));
 
-  const newCount = orders.filter(
-    (o) => o.status === "Pending",
-  ).length;
+  const newCount = orders.filter((o) => o.status === "Pending").length;
 
-  const confirmedCount = orders.filter(
-    (o) => o.status === "Confirmed",
-  ).length;
+  const confirmedCount = orders.filter((o) => o.status === "Confirmed").length;
 
   const dispatchCount = orders.filter(
-    (o) =>
-      o.status === "Ready to Dispatch",
+    (o) => o.status === "Ready to Dispatch",
   ).length;
 
-  const deliveredCount = orders.filter(
-    (o) => o.status === "Delivered",
-  ).length;
+  const deliveredCount = orders.filter((o) => o.status === "Delivered").length;
 
   return (
     <div
@@ -772,9 +648,7 @@ export default function OrdersTab({
           OPERATIONS
       ===================================================== */}
 
-      <OperationsDashboard
-        orders={orders}
-      />
+      <OperationsDashboard orders={orders} />
 
       {/* =====================================================
           BOARD TABS
@@ -795,48 +669,34 @@ export default function OrdersTab({
             count={newCount}
             active={activeBoard === "new"}
             color="blue"
-            onClick={() =>
-              setActiveBoard("new")
-            }
+            onClick={() => setActiveBoard("new")}
             mobile={isMobile}
           />
 
           <BoardTab
             label="Confirmed"
             count={confirmedCount}
-            active={
-              activeBoard === "confirmed"
-            }
+            active={activeBoard === "confirmed"}
             color="indigo"
-            onClick={() =>
-              setActiveBoard("confirmed")
-            }
+            onClick={() => setActiveBoard("confirmed")}
             mobile={isMobile}
           />
 
           <BoardTab
             label="Dispatch"
             count={dispatchCount}
-            active={
-              activeBoard === "dispatch"
-            }
+            active={activeBoard === "dispatch"}
             color="orange"
-            onClick={() =>
-              setActiveBoard("dispatch")
-            }
+            onClick={() => setActiveBoard("dispatch")}
             mobile={isMobile}
           />
 
           <BoardTab
             label="Delivered"
             count={deliveredCount}
-            active={
-              activeBoard === "delivered"
-            }
+            active={activeBoard === "delivered"}
             color="green"
-            onClick={() =>
-              setActiveBoard("delivered")
-            }
+            onClick={() => setActiveBoard("delivered")}
             mobile={isMobile}
           />
         </div>
@@ -848,50 +708,37 @@ export default function OrdersTab({
 
       <div
         className={
-          isMobile
-            ? "space-y-3"
-            : isTablet
-              ? "space-y-4"
-              : "space-y-5"
+          isMobile ? "space-y-3" : isTablet ? "space-y-4" : "space-y-5"
         }
       >
         {activeBoard === "new" && (
-          <NewOrdersBoard
-            orders={orders}
-            onView={openOrder}
-            onConfirm={updateOrderStatus}
-            onReject={openReject}
-          />
+        <NewOrdersBoard
+  orders={orders}
+  device={device}
+  onView={openOrder}
+  onConfirm={updateOrderStatus}
+  onReject={openReject}
+/>
         )}
 
-        {activeBoard ===
-          "confirmed" && (
+        {activeBoard === "confirmed" && (
           <ConfirmedOrdersBoard
             orders={orders}
             onView={openOrder}
-            onDispatch={
-              updateOrderStatus
-            }
+            onDispatch={updateOrderStatus}
           />
         )}
 
-        {activeBoard ===
-          "dispatch" && (
+        {activeBoard === "dispatch" && (
           <OutForDeliveryBoard
             orders={orders}
             onView={openOrder}
-            onDelivered={
-              updateOrderStatus
-            }
+            onDelivered={updateOrderStatus}
           />
         )}
 
-        {activeBoard ===
-          "delivered" && (
-          <DeliveredBoard
-            orders={orders}
-            onView={openOrder}
-          />
+        {activeBoard === "delivered" && (
+          <DeliveredBoard orders={orders} onView={openOrder} />
         )}
       </div>
 
@@ -901,25 +748,25 @@ export default function OrdersTab({
 
       {showMore && (
         <OrdersManagementPage
-      isMobile={isMobile}
-      isTablet={isTablet}
-      orders={orders}
-      filtered={filtered}
-      search={search}
-      statusFilter={statusFilter}
-      paymentFilter={paymentFilter}
-      highlightOrderId={highlightOrderId}
-      selectedOrders={selectedOrders}
-      allSelected={allSelected}
-      onSearch={setSearch}
-      onStatus={setStatusFilter}
-      onPayment={setPaymentFilter}
-      onRefresh={fetchOrders}
-      onView={openOrder}
-      onSelect={toggleOrder}
-      onSelectAll={toggleSelectAll}
-      onClose={() => setShowMore(false)}
-    />
+          isMobile={isMobile}
+          isTablet={isTablet}
+          orders={orders}
+          filtered={filtered}
+          search={search}
+          statusFilter={statusFilter}
+          paymentFilter={paymentFilter}
+          highlightOrderId={highlightOrderId}
+          selectedOrders={selectedOrders}
+          allSelected={allSelected}
+          onSearch={setSearch}
+          onStatus={setStatusFilter}
+          onPayment={setPaymentFilter}
+          onRefresh={fetchOrders}
+          onView={openOrder}
+          onSelect={toggleOrder}
+          onSelectAll={toggleSelectAll}
+          onClose={() => setShowMore(false)}
+        />
       )}
 
       {/* =====================================================
@@ -936,34 +783,25 @@ export default function OrdersTab({
         >
           <NewOrderNotification
             order={notificationOrder}
-            onClose={() =>
-              onNotificationHandled?.()
-            }
+            onClose={() => onNotificationHandled?.()}
             onView={async () => {
-              await openOrder(
-                notificationOrder,
-              );
+              await openOrder(notificationOrder);
               onNotificationHandled?.();
             }}
             onAccept={async () => {
-              const success =
-                await updateOrderStatus(
-                  notificationOrder.id,
-                  "Confirmed",
-                );
+              const success = await updateOrderStatus(
+                notificationOrder.id,
+                "Confirmed",
+              );
 
               if (success) {
-                onNotificationStatusChanged?.(
-                  notificationOrder.id,
-                );
+                onNotificationStatusChanged?.(notificationOrder.id);
 
                 onNotificationHandled?.();
               }
             }}
             onReject={() => {
-              openReject(
-                notificationOrder,
-              );
+              openReject(notificationOrder);
               onNotificationHandled?.();
             }}
           />
@@ -978,58 +816,36 @@ export default function OrdersTab({
         open={showOrder}
         order={selectedOrder}
         items={orderItems}
-        onClose={() =>
-          setShowOrder(false)
-        }
-        onStatusChange={
-          updateOrderStatus
-        }
-        onPaymentStatusChange={
-          updatePaymentStatus
-        }
+        onClose={() => setShowOrder(false)}
+        onStatusChange={updateOrderStatus}
+        onPaymentStatusChange={updatePaymentStatus}
       />
 
       {/* =====================================================
           REJECT MODAL
       ===================================================== */}
 
-      {(rejectingOrder ||
-        bulkRejecting) && (
+      {(rejectingOrder || bulkRejecting) && (
         <RejectModal
           bulk={bulkRejecting}
           order={rejectingOrder}
-          count={
-            selectedOrders.length
-          }
+          count={selectedOrders.length}
           reason={rejectReason}
-          customReason={
-            customRejectReason
-          }
+          customReason={customRejectReason}
           loading={rejectLoading}
           onReasonChange={(value) => {
             setRejectReason(value);
 
             if (value !== "Other") {
-              setCustomRejectReason(
-                "",
-              );
+              setCustomRejectReason("");
             }
           }}
-          onCustomReasonChange={
-            setCustomRejectReason
-          }
+          onCustomReasonChange={setCustomRejectReason}
           onClose={resetReject}
           onSubmit={
-            rejectingOrder
-              ? rejectSingle
-              : () =>
-                  rejectOrders(
-                    selectedOrders,
-                  )
+            rejectingOrder ? rejectSingle : () => rejectOrders(selectedOrders)
           }
-          finalReason={
-            getFinalReason()
-          }
+          finalReason={getFinalReason()}
         />
       )}
 
@@ -1037,8 +853,7 @@ export default function OrdersTab({
           BULK ACTION BAR
       ===================================================== */}
 
-      {selectedOrders.length >
-        0 && (
+      {selectedOrders.length > 0 && (
         <div
           className={
             isMobile
@@ -1053,75 +868,46 @@ export default function OrdersTab({
                 : "flex items-center gap-4 rounded-2xl border border-orange-100 bg-white px-5 py-3 shadow-2xl"
             }
           >
-            <div
-              className={
-                isMobile
-                  ? "mb-3"
-                  : "shrink-0"
-              }
-            >
-              <p className="text-[11px] text-slate-500">
-                Selected Orders
-              </p>
+            <div className={isMobile ? "mb-3" : "shrink-0"}>
+              <p className="text-[11px] text-slate-500">Selected Orders</p>
 
               <p className="text-sm font-bold text-slate-900">
-                {selectedOrders.length}{" "}
-                Selected
+                {selectedOrders.length} Selected
               </p>
             </div>
 
             <div
               className={
-                isMobile
-                  ? "grid grid-cols-2 gap-2"
-                  : "flex items-center gap-2"
+                isMobile ? "grid grid-cols-2 gap-2" : "flex items-center gap-2"
               }
             >
               <ActionButton
                 label="Confirm"
                 className="bg-blue-600 hover:bg-blue-700"
-                onClick={() =>
-                  bulkUpdateStatus(
-                    "Confirmed",
-                  )
-                }
+                onClick={() => bulkUpdateStatus("Confirmed")}
               />
 
               <ActionButton
                 label="Dispatch"
                 className="bg-orange-600 hover:bg-orange-700"
-                onClick={() =>
-                  bulkUpdateStatus(
-                    "Ready to Dispatch",
-                  )
-                }
+                onClick={() => bulkUpdateStatus("Ready to Dispatch")}
               />
 
               <ActionButton
                 label="Delivered"
                 className="bg-green-600 hover:bg-green-700"
-                onClick={() =>
-                  bulkUpdateStatus(
-                    "Delivered",
-                  )
-                }
+                onClick={() => bulkUpdateStatus("Delivered")}
               />
 
               <ActionButton
                 label="Reject"
                 className="bg-red-600 hover:bg-red-700"
-                onClick={
-                  openBulkReject
-                }
+                onClick={openBulkReject}
               />
 
               <button
                 type="button"
-                onClick={() =>
-                  setSelectedOrders(
-                    [],
-                  )
-                }
+                onClick={() => setSelectedOrders([])}
                 className="rounded-xl border border-slate-200 px-3 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-50"
               >
                 Clear
@@ -1149,11 +935,7 @@ function BoardTab({
   label: string;
   count: number;
   active: boolean;
-  color:
-    | "blue"
-    | "indigo"
-    | "orange"
-    | "green";
+  color: "blue" | "indigo" | "orange" | "green";
   onClick: () => void;
   mobile: boolean;
 }) {
@@ -1186,11 +968,7 @@ function BoardTab({
         mobile
           ? "gap-1.5 px-3 py-3 text-[12px]"
           : "gap-1.5 px-4 py-3 text-[13px]"
-      } ${
-        active
-          ? c.text
-          : "text-slate-500 hover:text-slate-800"
-      }`}
+      } ${active ? c.text : "text-slate-500 hover:text-slate-800"}`}
     >
       <span>{label}</span>
 
@@ -1200,11 +978,7 @@ function BoardTab({
             mobile
               ? "h-[17px] min-w-[17px] text-[8px]"
               : "h-[18px] min-w-[18px] text-[9px]"
-          } ${
-            active
-              ? `${c.bg} text-white`
-              : "bg-slate-100 text-slate-600"
-          }`}
+          } ${active ? `${c.bg} text-white` : "bg-slate-100 text-slate-600"}`}
         >
           {count}
         </span>
@@ -1266,12 +1040,8 @@ function RejectModal({
   reason: string;
   customReason: string;
   loading: boolean;
-  onReasonChange: (
-    value: string,
-  ) => void;
-  onCustomReasonChange: (
-    value: string,
-  ) => void;
+  onReasonChange: (value: string) => void;
+  onCustomReasonChange: (value: string) => void;
   onClose: () => void;
   onSubmit: () => void;
   finalReason: string;
@@ -1283,16 +1053,12 @@ function RejectModal({
     >
       <div
         className="max-h-[92vh] w-full overflow-y-auto rounded-t-3xl bg-white p-4 shadow-2xl md:max-w-md md:rounded-2xl md:p-6"
-        onClick={(e) =>
-          e.stopPropagation()
-        }
+        onClick={(e) => e.stopPropagation()}
       >
         <div className="flex items-start justify-between gap-3">
           <div className="min-w-0">
             <h2 className="text-lg font-bold text-slate-900">
-              {bulk
-                ? "Reject Selected Orders"
-                : "Reject Order"}
+              {bulk ? "Reject Selected Orders" : "Reject Order"}
             </h2>
 
             <p className="mt-1 text-xs text-slate-500">
@@ -1322,27 +1088,16 @@ function RejectModal({
           <select
             value={reason}
             disabled={loading}
-            onChange={(e) =>
-              onReasonChange(
-                e.target.value,
-              )
-            }
+            onChange={(e) => onReasonChange(e.target.value)}
             className="mt-2 h-11 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm outline-none focus:border-red-500 focus:ring-2 focus:ring-red-100"
           >
-            <option value="">
-              Select a reason
-            </option>
+            <option value="">Select a reason</option>
 
-            {REJECTION_REASONS.map(
-              (item) => (
-                <option
-                  key={item}
-                  value={item}
-                >
-                  {item}
-                </option>
-              ),
-            )}
+            {REJECTION_REASONS.map((item) => (
+              <option key={item} value={item}>
+                {item}
+              </option>
+            ))}
           </select>
         </div>
 
@@ -1350,11 +1105,7 @@ function RejectModal({
           <textarea
             value={customReason}
             disabled={loading}
-            onChange={(e) =>
-              onCustomReasonChange(
-                e.target.value,
-              )
-            }
+            onChange={(e) => onCustomReasonChange(e.target.value)}
             rows={4}
             placeholder="Enter rejection reason..."
             className="mt-4 w-full resize-none rounded-xl border border-slate-200 px-3 py-3 text-sm outline-none focus:border-red-500 focus:ring-2 focus:ring-red-100"
@@ -1385,9 +1136,7 @@ function RejectModal({
 
           <button
             type="button"
-            disabled={
-              loading || !finalReason
-            }
+            disabled={loading || !finalReason}
             onClick={onSubmit}
             className="rounded-xl bg-red-600 px-3 py-3 text-sm font-bold text-white hover:bg-red-700 disabled:cursor-not-allowed disabled:opacity-50"
           >

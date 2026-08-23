@@ -11,7 +11,6 @@ import {
   User,
   XCircle,
 } from "lucide-react";
-
 import { useEffect, useState } from "react";
 
 type Props = {
@@ -29,6 +28,10 @@ export default function NewOrderCard({
 }: Props) {
   const [arrivalTime, setArrivalTime] = useState<number>(() => Date.now());
   const [now, setNow] = useState<number>(() => Date.now());
+
+  /* =====================================================
+     ORDER TIMER
+  ===================================================== */
 
   useEffect(() => {
     if (!order?.id) return;
@@ -91,14 +94,29 @@ export default function NewOrderCard({
     },
   }[timerState];
 
+  const itemCount = Array.isArray(order?.items)
+    ? order.items.length
+    : 1;
+
+  const paymentMethod = String(
+    order?.payment_method || "Cash",
+  ).toUpperCase();
+
+  const total = Number(
+    order?.total ??
+      order?.total_amount ??
+      order?.amount ??
+      0,
+  );
+
   return (
     <article
       className="
         relative
         box-border
-        w-full
-        max-w-[420px]
-        min-w-[340px]
+        w-[calc(100vw-24px)]
+        max-w-full
+        min-w-0
         overflow-hidden
         rounded-2xl
         border
@@ -108,9 +126,18 @@ export default function NewOrderCard({
         transition-all
         hover:border-orange-200
         hover:shadow-md
+
+        sm:w-[360px]
+
+        md:w-[380px]
+
+        lg:w-[420px]
+        lg:max-w-[420px]
       "
     >
-      {/* LEFT ACCENT */}
+      {/* =====================================================
+          LEFT ACCENT
+      ===================================================== */}
 
       <div
         className={`
@@ -129,52 +156,114 @@ export default function NewOrderCard({
         `}
       />
 
-      <div className="p-4 pl-4.5">
+      <div
+        className="
+          min-w-0
+          p-3
+          pl-4
+
+          sm:p-3.5
+          sm:pl-4
+
+          lg:p-4
+          lg:pl-4.5
+        "
+      >
         {/* =====================================================
             HEADER
         ===================================================== */}
 
-        <div className="flex items-center justify-between gap-3">
-          <div className="flex min-w-0 flex-1 items-center gap-3">
-            {/* USER */}
+        <div
+          className="
+            flex
+            min-w-0
+            items-center
+            justify-between
+            gap-2
 
+            sm:gap-3
+          "
+        >
+          {/* CUSTOMER */}
+
+          <div
+            className="
+              flex
+              min-w-0
+              flex-1
+              items-center
+              gap-2.5
+
+              sm:gap-3
+            "
+          >
             <div
               className="
                 flex
-                h-10
-                w-10
+                h-9
+                w-9
                 shrink-0
                 items-center
                 justify-center
                 rounded-full
                 bg-orange-50
+
+                sm:h-10
+                sm:w-10
               "
             >
-              <User className="h-[18px] w-[18px] text-orange-600" />
+              <User
+                className="
+                  h-4
+                  w-4
+                  text-orange-600
+
+                  sm:h-[18px]
+                  sm:w-[18px]
+                "
+              />
             </div>
 
-            {/* CUSTOMER */}
-
             <div className="min-w-0 flex-1">
-              <h3 className="truncate text-sm font-bold text-slate-900">
-                {order.customer_name || "Customer"}
+              <h3
+                className="
+                  truncate
+                  text-[13px]
+                  font-bold
+                  text-slate-900
+
+                  sm:text-sm
+                "
+              >
+                {order?.customer_name || "Customer"}
               </h3>
 
-              <p className="mt-0.5 truncate text-[10px] text-slate-400">
-                #{order.order_number || "-"}
+              <p
+                className="
+                  mt-0.5
+                  truncate
+                  text-[9px]
+                  text-slate-400
+
+                  sm:text-[10px]
+                "
+              >
+                #{order?.order_number || "-"}
               </p>
 
-              {order.customer_phone && (
+              {order?.customer_phone && (
                 <a
                   href={`tel:${order.customer_phone}`}
                   className="
                     mt-0.5
                     block
                     truncate
-                    text-[11px]
+                    text-[10px]
                     text-slate-500
                     transition
                     hover:text-orange-600
+
+                    sm:text-[11px]
                   "
                 >
                   {order.customer_phone}
@@ -183,24 +272,37 @@ export default function NewOrderCard({
             </div>
           </div>
 
-          {/* NEW */}
+          {/* NEW BADGE */}
 
           <span
             className="
               flex
               shrink-0
               items-center
-              gap-1.5
+              gap-1
               rounded-full
               bg-red-50
-              px-2.5
+              px-2
               py-1.5
-              text-[9px]
+              text-[8px]
               font-bold
               text-red-600
+
+              sm:gap-1.5
+              sm:px-2.5
+              sm:text-[9px]
             "
           >
-            <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-red-500" />
+            <span
+              className="
+                h-1.5
+                w-1.5
+                animate-pulse
+                rounded-full
+                bg-red-500
+              "
+            />
+
             NEW
           </span>
         </div>
@@ -211,29 +313,64 @@ export default function NewOrderCard({
 
         <div
           className="
-            mt-4
+            mt-3
             grid
-            grid-cols-[1fr_auto]
+            min-w-0
+            grid-cols-[minmax(0,1fr)_auto]
             items-center
-            gap-3
+            gap-2
             rounded-xl
             bg-slate-50
-            px-3
+            px-2.5
             py-2.5
+
+            sm:mt-4
+            sm:gap-3
+            sm:px-3
           "
         >
           {/* VALUE */}
 
           <div className="min-w-0">
-            <p className="text-[9px] font-semibold uppercase tracking-wider text-slate-400">
+            <p
+              className="
+                text-[8px]
+                font-semibold
+                uppercase
+                tracking-wider
+                text-slate-400
+
+                sm:text-[9px]
+              "
+            >
               Order Value
             </p>
 
-            <div className="mt-1 flex items-center gap-1">
-              <IndianRupee className="h-4 w-4 text-emerald-600" />
+            <div className="mt-1 flex min-w-0 items-center gap-1">
+              <IndianRupee
+                className="
+                  h-3.5
+                  w-3.5
+                  shrink-0
+                  text-emerald-600
 
-              <span className="truncate text-lg font-extrabold leading-none text-emerald-600">
-                {Number(order.total || 0).toLocaleString("en-IN")}
+                  sm:h-4
+                  sm:w-4
+                "
+              />
+
+              <span
+                className="
+                  truncate
+                  text-base
+                  font-extrabold
+                  leading-none
+                  text-emerald-600
+
+                  sm:text-lg
+                "
+              >
+                {total.toLocaleString("en-IN")}
               </span>
             </div>
           </div>
@@ -243,13 +380,19 @@ export default function NewOrderCard({
           <div
             className={`
               flex
-              min-w-[100px]
+              min-w-0
+              shrink-0
               items-center
-              gap-2
+              gap-1.5
               rounded-xl
               border
-              px-2.5
-              py-2
+              px-2
+              py-1.5
+
+              sm:gap-2
+              sm:px-2.5
+              sm:py-2
+
               ${timerConfig.wrapper}
             `}
           >
@@ -257,17 +400,28 @@ export default function NewOrderCard({
               className="
                 relative
                 flex
-                h-7
-                w-7
+                h-6
+                w-6
                 shrink-0
                 items-center
                 justify-center
                 rounded-lg
                 bg-white
+
+                sm:h-7
+                sm:w-7
               "
             >
               <Clock3
-                className={`h-3.5 w-3.5 ${timerConfig.icon}`}
+                className={`
+                  h-3
+                  w-3
+
+                  sm:h-3.5
+                  sm:w-3.5
+
+                  ${timerConfig.icon}
+                `}
               />
 
               <span
@@ -284,8 +438,18 @@ export default function NewOrderCard({
               />
             </div>
 
-            <div>
-              <p className="text-[8px] font-bold uppercase tracking-wide text-slate-500">
+            <div className="min-w-0">
+              <p
+                className="
+                  text-[7px]
+                  font-bold
+                  uppercase
+                  tracking-wide
+                  text-slate-500
+
+                  sm:text-[8px]
+                "
+              >
                 {timerConfig.label}
               </p>
 
@@ -293,10 +457,13 @@ export default function NewOrderCard({
                 className={`
                   mt-0.5
                   font-mono
-                  text-sm
+                  text-xs
                   font-black
                   leading-none
                   tabular-nums
+
+                  sm:text-sm
+
                   ${timerConfig.time}
                 `}
               >
@@ -310,7 +477,18 @@ export default function NewOrderCard({
             INFO
         ===================================================== */}
 
-        <div className="mt-3 grid grid-cols-3 gap-2">
+        <div
+          className="
+            mt-2.5
+            grid
+            min-w-0
+            grid-cols-3
+            gap-1.5
+
+            sm:mt-3
+            sm:gap-2
+          "
+        >
           {/* ITEMS */}
 
           <div
@@ -319,17 +497,40 @@ export default function NewOrderCard({
               min-w-0
               items-center
               justify-center
-              gap-1.5
+              gap-1
+              overflow-hidden
               rounded-lg
               bg-slate-100
-              px-2
+              px-1.5
               py-2
+
+              sm:gap-1.5
+              sm:px-2
             "
           >
-            <ShoppingBag className="h-3.5 w-3.5 shrink-0 text-slate-500" />
+            <ShoppingBag
+              className="
+                h-3
+                w-3
+                shrink-0
+                text-slate-500
 
-            <span className="truncate text-[9px] font-semibold text-slate-600">
-              {order.items?.length || 1} Items
+                sm:h-3.5
+                sm:w-3.5
+              "
+            />
+
+            <span
+              className="
+                truncate
+                text-[8px]
+                font-semibold
+                text-slate-600
+
+                sm:text-[9px]
+              "
+            >
+              {itemCount} Items
             </span>
           </div>
 
@@ -341,17 +542,40 @@ export default function NewOrderCard({
               min-w-0
               items-center
               justify-center
-              gap-1.5
+              gap-1
+              overflow-hidden
               rounded-lg
               bg-emerald-50
-              px-2
+              px-1.5
               py-2
+
+              sm:gap-1.5
+              sm:px-2
             "
           >
-            <CreditCard className="h-3.5 w-3.5 shrink-0 text-emerald-600" />
+            <CreditCard
+              className="
+                h-3
+                w-3
+                shrink-0
+                text-emerald-600
 
-            <span className="truncate text-[9px] font-semibold text-emerald-700">
-              {order.payment_method || "Cash"}
+                sm:h-3.5
+                sm:w-3.5
+              "
+            />
+
+            <span
+              className="
+                truncate
+                text-[8px]
+                font-semibold
+                text-emerald-700
+
+                sm:text-[9px]
+              "
+            >
+              {paymentMethod}
             </span>
           </div>
 
@@ -360,18 +584,42 @@ export default function NewOrderCard({
           <div
             className="
               flex
+              min-w-0
               items-center
               justify-center
-              gap-1.5
+              gap-1
+              overflow-hidden
               rounded-lg
               bg-blue-50
-              px-2
+              px-1.5
               py-2
+
+              sm:gap-1.5
+              sm:px-2
             "
           >
-            <MapPin className="h-3.5 w-3.5 shrink-0 text-blue-600" />
+            <MapPin
+              className="
+                h-3
+                w-3
+                shrink-0
+                text-blue-600
 
-            <span className="text-[9px] font-semibold text-blue-700">
+                sm:h-3.5
+                sm:w-3.5
+              "
+            />
+
+            <span
+              className="
+                truncate
+                text-[8px]
+                font-semibold
+                text-blue-700
+
+                sm:text-[9px]
+              "
+            >
               2.4 km
             </span>
           </div>
@@ -381,7 +629,19 @@ export default function NewOrderCard({
             ACTIONS
         ===================================================== */}
 
-        <div className="mt-4 grid grid-cols-[1fr_1fr_42px] gap-2">
+        <div
+          className="
+            mt-3
+            grid
+            min-w-0
+            grid-cols-[minmax(0,1fr)_minmax(0,1fr)_38px]
+            gap-1.5
+
+            sm:mt-4
+            sm:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_42px]
+            sm:gap-2
+          "
+        >
           {/* ACCEPT */}
 
           <button
@@ -393,21 +653,36 @@ export default function NewOrderCard({
               min-w-0
               items-center
               justify-center
-              gap-1.5
+              gap-1
+              overflow-hidden
               rounded-lg
               bg-emerald-600
-              px-3
-              text-[10px]
+              px-1.5
+              text-[9px]
               font-bold
               text-white
               shadow-sm
               transition-all
               hover:bg-emerald-700
               active:scale-[0.98]
+
+              sm:gap-1.5
+              sm:px-3
+              sm:text-[10px]
             "
           >
-            <CheckCircle2 className="h-4 w-4 shrink-0" />
-            <span>Accept</span>
+            <CheckCircle2
+              className="
+                h-3.5
+                w-3.5
+                shrink-0
+
+                sm:h-4
+                sm:w-4
+              "
+            />
+
+            <span className="truncate">Accept</span>
           </button>
 
           {/* REJECT */}
@@ -421,20 +696,35 @@ export default function NewOrderCard({
               min-w-0
               items-center
               justify-center
-              gap-1.5
+              gap-1
+              overflow-hidden
               rounded-lg
               bg-red-50
-              px-3
-              text-[10px]
+              px-1.5
+              text-[9px]
               font-bold
               text-red-600
               transition-all
               hover:bg-red-100
               active:scale-[0.98]
+
+              sm:gap-1.5
+              sm:px-3
+              sm:text-[10px]
             "
           >
-            <XCircle className="h-4 w-4 shrink-0" />
-            <span>Reject</span>
+            <XCircle
+              className="
+                h-3.5
+                w-3.5
+                shrink-0
+
+                sm:h-4
+                sm:w-4
+              "
+            />
+
+            <span className="truncate">Reject</span>
           </button>
 
           {/* VIEW */}
@@ -443,10 +733,11 @@ export default function NewOrderCard({
             type="button"
             onClick={() => onView(order)}
             title="View Order"
+            aria-label="View Order"
             className="
               flex
               h-9
-              w-[42px]
+              w-[38px]
               shrink-0
               items-center
               justify-center
@@ -459,9 +750,19 @@ export default function NewOrderCard({
               hover:border-slate-300
               hover:bg-slate-50
               active:scale-[0.98]
+
+              sm:w-[42px]
             "
           >
-            <Eye className="h-4 w-4" />
+            <Eye
+              className="
+                h-3.5
+                w-3.5
+
+                sm:h-4
+                sm:w-4
+              "
+            />
           </button>
         </div>
 
@@ -469,7 +770,17 @@ export default function NewOrderCard({
             STATUS
         ===================================================== */}
 
-        <div className="mt-3 flex items-center justify-center gap-1.5">
+        <div
+          className="
+            mt-2.5
+            flex
+            items-center
+            justify-center
+            gap-1.5
+
+            sm:mt-3
+          "
+        >
           <span
             className={`
               h-1.5
@@ -481,7 +792,15 @@ export default function NewOrderCard({
             `}
           />
 
-          <span className="text-[9px] font-medium text-slate-400">
+          <span
+            className="
+              text-[8px]
+              font-medium
+              text-slate-400
+
+              sm:text-[9px]
+            "
+          >
             {timerState === "urgent"
               ? "Please respond"
               : "Waiting for response"}
