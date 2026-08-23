@@ -25,46 +25,112 @@ export type PricingType =
 ========================================= */
 
 export const serviceCategories = [
-  { id: "all", label: "All" },
+  { id: "all", label: "All", color: "#475569", bg: "#F8FAFC" },
 
-  { id: "Labour", label: "Labour" },
-  { id: "Driver", label: "Driver" },
-  { id: "Mechanic", label: "Mechanic" },
-  { id: "Electrical & Plumbing", label: "Electrical & Plumbing" },
-  { id: "Home Repair", label: "Home Repair" },
-  { id: "AC & Appliances", label: "AC & Appliances" },
-  { id: "Washer", label: "Washer" },
-  { id: "Cleaner", label: "Cleaner" },
+  { id: "Labour", label: "Labour", color: "#F97316", bg: "#FFF5EB" },
+
+  { id: "Driver", label: "Driver", color: "#16A34A", bg: "#F0FDF4" },
+
+  { id: "Mechanic", label: "Mechanic", color: "#2563EB", bg: "#EFF6FF" },
+
+  {
+    id: "Electrical & Plumbing",
+    label: "Electrical & Plumbing",
+    color: "#CA8A04",
+    bg: "#FEFCE8",
+  },
+
+  {
+    id: "Home Repair",
+    label: "Home Repair",
+    color: "#D97706",
+    bg: "#FFF7ED",
+  },
+
+  {
+    id: "AC & Appliances",
+    label: "AC & Appliances",
+    color: "#0284C7",
+    bg: "#F0F9FF",
+  },
+
+  { id: "Washer", label: "Washer", color: "#0891B2", bg: "#ECFEFF" },
+
+  {
+    id: "Cleaner",
+    label: "Cleaner",
+    color: "#059669",
+    bg: "#ECFDF5",
+  },
+
   {
     id: "Garden & Pest Control",
     label: "Garden & Pest Control",
+    color: "#65A30D",
+    bg: "#F7FEE7",
   },
+
   {
     id: "Office & Computer",
     label: "Office & Computer",
+    color: "#7C3AED",
+    bg: "#F5F3FF",
   },
+
   {
     id: "Delivery & Warehouse",
     label: "Delivery & Warehouse",
+    color: "#0F766E",
+    bg: "#F0FDFA",
   },
-  { id: "Restaurant", label: "Restaurant" },
+
+  {
+    id: "Restaurant",
+    label: "Restaurant",
+    color: "#DC2626",
+    bg: "#FEF2F2",
+  },
+
   {
     id: "Salon & Beauty",
     label: "Salon & Beauty",
+    color: "#E11D48",
+    bg: "#FFF1F2",
   },
+
   {
     id: "Security & Events",
     label: "Security & Events",
+    color: "#1E3A8A",
+    bg: "#EFF6FF",
   },
-  { id: "Factory", label: "Factory" },
-  { id: "Agriculture", label: "Agriculture" },
+
+  {
+    id: "Factory",
+    label: "Factory",
+    color: "#475569",
+    bg: "#F8FAFC",
+  },
+
+  {
+    id: "Agriculture",
+    label: "Agriculture",
+    color: "#15803D",
+    bg: "#F0FDF4",
+  },
+
   {
     id: "Moving & Packing",
     label: "Moving & Packing",
+    color: "#9333EA",
+    bg: "#FAF5FF",
   },
+
   {
     id: "Other Services",
     label: "Other Services",
+    color: "#64748B",
+    bg: "#F1F5F9",
   },
 ] as const;
 
