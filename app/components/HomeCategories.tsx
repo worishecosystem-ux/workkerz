@@ -29,59 +29,6 @@ import {
 } from "@/app/data/workers";
 
 /* =========================================
-   CATEGORY IMAGES
-========================================= */
-
-const categoryImages: Record<string, string> = {
-  Labour: "/categories/workkerz/Labour.png",
-  Driver: "/categories/workkerz/Driver.png",
-  Mechanic: "/categories/workkerz/Mechanic.png",
-  Painter: "/categories/workkerz/Painter.png",
-  Washer: "/categories/workkerz/Washer.png",
-  "Office Worker": "/categories/workkerz/Office worker.png",
-  "Home Services": "/categories/workkerz/House service.png",
-  Restaurant: "/categories/workkerz/Restaurant.png",
-  "Home Contractor": "/categories/workkerz/Home contractor.png",
-  Factory: "/categories/workkerz/Factory worker.png",
-  "Salon & Beauty": "/categories/workkerz/Salon and beauty.png",
-  Construction: "/categories/workkerz/Constructionworker.png",
-  Security: "/categories/workkerz/Security.png",
-  "Event Services": "/categories/workkerz/Events.png",
-};
-
-/* =========================================
-   DESCRIPTIONS
-========================================= */
-
-const descriptions: Record<string, string> = {
-  Labour: "Daily wage & general workers",
-  Driver: "Drivers for every requirement",
-  Mechanic: "Vehicle repair & maintenance",
-  Painter: "Home, wall & commercial painting",
-  Washer: "Cleaning & washing professionals",
-  "Office Worker": "Reliable office professionals",
-  "Home Services": "Get household work done",
-  Restaurant: "Restaurant & kitchen workers",
-  "Home Contractor": "Trusted home contractors",
-  Factory: "Factory & industrial workers",
-  "Salon & Beauty": "Beauty & personal care",
-  Construction: "Skilled construction workers",
-  Security: "Security & guarding services",
-  "Event Services": "Workers for events & functions",
-};
-
-/* =========================================
-   FEATURED
-========================================= */
-
-const featuredCategories = [
-  "Labour",
-  "Driver",
-  "Mechanic",
-  "Restaurant",
-];
-
-/* =========================================
    SEARCH DROPDOWN
 ========================================= */
 
@@ -135,7 +82,7 @@ function SearchDropdown({
     const categoryText = [
       category.id,
       category.label,
-      descriptions[category.id],
+      category.description,
     ]
       .filter(Boolean)
       .join(" ")
@@ -187,9 +134,9 @@ function SearchDropdown({
                   className="flex items-center gap-3 rounded-xl px-3 py-2.5 transition hover:bg-emerald-50"
                 >
                   <div className="relative h-9 w-9 shrink-0 overflow-hidden rounded-lg bg-emerald-50">
-                    {categoryImages[category.id] ? (
+                    {category.image ? (
                       <Image
-                        src={categoryImages[category.id]}
+                        src={category.image}
                         alt={category.label}
                         fill
                         sizes="36px"
@@ -208,7 +155,7 @@ function SearchDropdown({
                     </p>
 
                     <p className="truncate text-[10px] text-gray-400">
-                      {descriptions[category.id] || "Find trusted workers"}
+                      {category.description}
                     </p>
                   </div>
 
@@ -322,31 +269,22 @@ function SearchDropdown({
 
 export default function HomeCategories() {
   const [workers, setWorkers] = useState<Worker[]>([]);
-
   const [loadingWorkers, setLoadingWorkers] = useState(true);
 
   const [selectedLocation, setSelectedLocation] = useState("");
-
   const [locationOpen, setLocationOpen] = useState(false);
 
   const [search, setSearch] = useState("");
-
   const [searchOpen, setSearchOpen] = useState(false);
 
-  /* =========================================
-     REQUEST FORM
-  ========================================= */
-
   const [openWorkerRequest, setOpenWorkerRequest] = useState(false);
-
   const [requestSuccess, setRequestSuccess] = useState(false);
 
   const locationRef = useRef<HTMLDivElement>(null);
-
   const searchRef = useRef<HTMLDivElement>(null);
 
   /* =========================================
-     LOCATIONS FROM workers.ts DATA
+     LOCATIONS FROM WORKERS DATA
   ========================================= */
 
   const locations = useMemo(() => {
@@ -360,7 +298,7 @@ export default function HomeCategories() {
   }, [workers]);
 
   /* =========================================
-     REQUEST SUCCESS LISTENER
+     REQUEST SUCCESS
   ========================================= */
 
   useEffect(() => {
@@ -388,7 +326,6 @@ export default function HomeCategories() {
 
   /* =========================================
      LOAD WORKERS
-     DATA COMES FROM workers.ts
   ========================================= */
 
   useEffect(() => {
@@ -483,11 +420,11 @@ export default function HomeCategories() {
 
   /* =========================================
      SORT CATEGORIES
-     WORKERS AVAILABLE FIRST
+     DATA FROM workers.ts
   ========================================= */
 
   const categories = useMemo(() => {
-    return serviceCategories
+    return [...serviceCategories]
       .filter((category) => category.id !== "all")
       .sort((a, b) => {
         const aCount = filteredWorkers.filter(
@@ -510,12 +447,16 @@ export default function HomeCategories() {
       });
   }, [filteredWorkers]);
 
-  const featured = categories.filter((category) =>
-    featuredCategories.includes(category.id),
+  /* =========================================
+     FEATURED FROM workers.ts
+  ========================================= */
+
+  const featured = categories.filter(
+    (category) => category.featured,
   );
 
   const remaining = categories.filter(
-    (category) => !featuredCategories.includes(category.id),
+    (category) => !category.featured,
   );
 
   /* =========================================
@@ -565,24 +506,14 @@ export default function HomeCategories() {
 
   return (
     <>
-      {/* =====================================
-          HERO / REQUEST FORM
-      ===================================== */}
-
       <HomeHero
         openRequest={openWorkerRequest}
         onRequestClose={closeRequestForm}
       />
 
-      {/* =====================================
-          SERVICES SECTION
-      ===================================== */}
-
       <section className="bg-[#f7f8f6] py-8 sm:py-12 lg:py-16">
         <div className="mx-auto mt-25 max-w-7xl px-4 sm:px-6 lg:px-8">
-          {/* =================================
-              SUCCESS MESSAGE
-          ================================= */}
+          {/* SUCCESS */}
 
           {requestSuccess && (
             <div className="mb-6 overflow-hidden rounded-2xl border border-emerald-200 bg-white shadow-sm">
@@ -613,29 +544,19 @@ export default function HomeCategories() {
             </div>
           )}
 
-          {/* =================================
-              HEADER
-          ================================= */}
+          {/* HEADER */}
 
           <div className="mb-4 sm:mb-8">
             <div className="relative min-h-38 overflow-hidden sm:min-h-57.5 lg:min-h-66.25">
-              {/* LEFT CONTENT */}
-
               <div className="relative z-10 max-w-140 pt-1 sm:pt-2">
-                {/* BADGE */}
-
                 <div className="mb-2 inline-flex items-center gap-1 rounded-full border border-emerald-200 bg-emerald-50 px-2.5 py-1 text-[9px] font-extrabold uppercase tracking-wider text-emerald-800 sm:mb-3 sm:gap-1.5 sm:px-3 sm:py-1.5 sm:text-[10px] lg:px-4 lg:py-2 lg:text-[11px]">
                   <Sparkles className="h-3 w-3 sm:h-3.5 sm:w-3.5 lg:h-4 lg:w-4" />
                   WORKKERZ SERVICES
                 </div>
 
-                {/* HEADING */}
-
                 <h2 className="translate-y-2 text-[24px] font-black leading-none tracking-tight text-slate-950 sm:translate-y-5 sm:text-[34px] lg:translate-y-6 lg:text-[48px] lg:leading-[1.05]">
                   Worker <span className="text-emerald-600">Chahiye?</span>
                 </h2>
-
-                {/* DESCRIPTION */}
 
                 <p className="mt-3 max-w-51.25 translate-y-3 text-[9px] font-medium leading-4 text-slate-700 sm:mt-4 sm:max-w-[320px] sm:translate-y-5 sm:text-[13px] sm:leading-5 lg:mt-5 lg:max-w-[500px] lg:translate-y-6 lg:text-xl lg:leading-8">
                   Aapko kis kaam ke liye worker chahiye, batayein
@@ -643,8 +564,6 @@ export default function HomeCategories() {
                   hum aapko sahi worker dhoondhne mein help karenge.
                 </p>
               </div>
-
-              {/* WORKER IMAGE */}
 
               <div className="pointer-events-none absolute -right-3.75 -top-8 h-47.5 w-55 sm:right-0 sm:h-58.75 sm:w-[320px] lg:h-66.25 lg:w-[390px]">
                 <div className="absolute right-4 h-38.75 w-38.75 rounded-full bg-emerald-50 sm:right-6 sm:top-3 sm:h-[200px] sm:w-[200px] lg:right-8 lg:h-57.5 lg:w-[230px]" />
@@ -660,12 +579,10 @@ export default function HomeCategories() {
               </div>
             </div>
 
-            {/* REQUEST WORKER CARD */}
+            {/* REQUEST CARD */}
 
             <div className="relative z-20 overflow-hidden rounded-[18px] border border-emerald-700/70 bg-white shadow-[0_3px_18px_rgba(16,185,129,0.06)] sm:rounded-[20px] lg:rounded-[24px]">
               <div className="flex items-center gap-2.5 px-2.5 py-2.5 sm:gap-3 sm:px-4 sm:py-3 lg:gap-5 lg:px-7 lg:py-5">
-                {/* WORKER ICON */}
-
                 <div className="relative flex h-[50px] w-[50px] shrink-0 items-center justify-center rounded-full bg-emerald-50 text-emerald-600 sm:h-[62px] sm:w-[62px] lg:h-[92px] lg:w-[92px]">
                   <UserRound className="h-7 w-7 stroke-[1.8] sm:h-8 sm:w-8 lg:h-11 lg:w-11" />
 
@@ -673,8 +590,6 @@ export default function HomeCategories() {
                     <Check className="h-2.5 w-2.5 text-white sm:h-3 sm:w-3 lg:h-4 lg:w-4" />
                   </div>
                 </div>
-
-                {/* TEXT */}
 
                 <div className="min-w-0 flex-1">
                   <h3 className="text-[14px] font-black leading-tight text-gray-950 sm:text-[16px] lg:text-2xl">
@@ -685,8 +600,6 @@ export default function HomeCategories() {
                     Apni requirement bhejiye, sahi worker se connect ho jaiye.
                   </p>
                 </div>
-
-                {/* REQUEST BUTTON */}
 
                 <button
                   type="button"
@@ -716,12 +629,8 @@ export default function HomeCategories() {
                 </button>
               </div>
 
-              {/* TRUST BAR */}
-
               <div className="mx-2.5 border-t border-gray-100 sm:mx-4 lg:mx-7">
                 <div className="grid grid-cols-3">
-                  {/* VERIFIED */}
-
                   <div className="flex min-w-0 items-center justify-center gap-1 px-1 py-2.5 sm:gap-1.5 sm:py-3 lg:gap-3 lg:py-4">
                     <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-emerald-50 text-emerald-600 sm:h-7 sm:w-7 lg:h-9 lg:w-9">
                       <ShieldCheck className="h-3 w-3 sm:h-3.5 sm:w-3.5 lg:h-5 lg:w-5" />
@@ -732,8 +641,6 @@ export default function HomeCategories() {
                       <span className="hidden lg:inline"> Workers</span>
                     </span>
                   </div>
-
-                  {/* TRUSTED */}
 
                   <div className="flex min-w-0 items-center justify-center gap-1 border-x border-gray-100 px-1 py-2.5 sm:gap-1.5 sm:py-3 lg:gap-3 lg:py-4">
                     <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-emerald-50 text-emerald-600 sm:h-7 sm:w-7 lg:h-9 lg:w-9">
@@ -746,8 +653,6 @@ export default function HomeCategories() {
                       <span className="sm:hidden"> Trusted</span>
                     </span>
                   </div>
-
-                  {/* SAFE */}
 
                   <div className="flex min-w-0 items-center justify-center gap-1 px-1 py-2.5 sm:gap-1.5 sm:py-3 lg:gap-3 lg:py-4">
                     <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-emerald-50 text-emerald-600 sm:h-7 sm:w-7 lg:h-9 lg:w-9">
@@ -765,13 +670,9 @@ export default function HomeCategories() {
             </div>
           </div>
 
-          {/* =================================
-              QUICK ACTIONS + SEARCH
-          ================================= */}
+          {/* QUICK ACTIONS */}
 
           <div className="relative z-40 mb-5 grid grid-cols-2 gap-2.5 sm:gap-3">
-            {/* VIEW ALL */}
-
             <Link
               href="/browse"
               className="group flex h-11 items-center justify-between rounded-xl border border-gray-200 bg-white px-3 shadow-sm transition hover:border-emerald-200 hover:shadow-md sm:h-12 sm:rounded-2xl sm:px-4"
@@ -832,8 +733,6 @@ export default function HomeCategories() {
                   />
                 )}
               </button>
-
-              {/* LOCATION DROPDOWN */}
 
               {locationOpen && (
                 <div className="absolute right-0 top-full z-[100] mt-2 w-[230px] overflow-hidden rounded-2xl border border-gray-200 bg-white p-2 shadow-xl sm:w-[270px]">
@@ -955,9 +854,7 @@ export default function HomeCategories() {
             </div>
           </div>
 
-          {/* =================================
-              SELECTED LOCATION
-          ================================= */}
+          {/* SELECTED LOCATION */}
 
           {selectedLocation && (
             <div className="mb-4 flex items-center justify-between rounded-xl border border-emerald-100 bg-emerald-50 px-3 py-2 sm:px-4 sm:py-2.5">
@@ -975,9 +872,7 @@ export default function HomeCategories() {
             </div>
           )}
 
-          {/* =================================
-              POPULAR
-          ================================= */}
+          {/* POPULAR */}
 
           <div className="mb-10">
             <div className="mb-4">
@@ -1005,9 +900,7 @@ export default function HomeCategories() {
             </div>
           </div>
 
-          {/* =================================
-              ALL SERVICES
-          ================================= */}
+          {/* ALL SERVICES */}
 
           <div>
             <div className="mb-4 flex items-center justify-between">
@@ -1055,27 +948,20 @@ function CategoryCard({
   selectedLocation,
   featured = false,
 }: {
-  category: {
-    id: string;
-    label: string;
-  };
-
+  category: (typeof serviceCategories)[number];
   workers: Worker[];
-
   loading: boolean;
-
   selectedLocation: string;
-
   featured?: boolean;
 }) {
-  const image = categoryImages[category.id];
-
   const categoryWorkers = workers.filter(
     (worker) => worker.category === category.id,
   );
 
   const location =
-    selectedLocation || categoryWorkers[0]?.labourChauk || "Near you";
+    selectedLocation ||
+    categoryWorkers[0]?.labourChauk ||
+    "Near you";
 
   return (
     <Link
@@ -1107,9 +993,9 @@ function CategoryCard({
 
           <div className="absolute -bottom-10 -left-8 h-24 w-24 rounded-full bg-lime-100/50" />
 
-          {image ? (
+          {category.image ? (
             <Image
-              src={image}
+              src={category.image}
               alt={category.label}
               fill
               sizes="(max-width: 640px) 50vw, 25vw"
@@ -1138,8 +1024,7 @@ function CategoryCard({
               </h4>
 
               <p className="mt-1 line-clamp-2 text-[11px] leading-4 text-gray-500 sm:text-xs">
-                {descriptions[category.id] ||
-                  "Find trusted professionals near you"}
+                {category.description}
               </p>
             </div>
 
@@ -1235,7 +1120,6 @@ function CategoryCard({
           {loading && (
             <div className="mt-2.5 space-y-1.5">
               <div className="h-9 animate-pulse rounded-lg bg-gray-100" />
-
               <div className="h-9 animate-pulse rounded-lg bg-gray-100" />
             </div>
           )}

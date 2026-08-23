@@ -25,43 +25,195 @@ export type PricingType =
 ========================================= */
 
 export const serviceCategories = [
-  { id: "all", label: "All", color: "#475569", bg: "#F8FAFC", image: "" },
+  {
+    id: "all",
+    label: "All",
+    description: "Find trusted workers and professionals for every need",
+    featured: false,
+    color: "#475569",
+    bg: "#F8FAFC",
+    image: "",
+  },
 
-  { id: "Labour", label: "Labour", color: "#F97316", bg: "#FFF5EB", image: "/categories/workkerz/Labour.png" },
+  {
+    id: "Labour",
+    label: "Labour",
+    description: "Daily wage and general workers",
+    featured: true,
+    color: "#F97316",
+    bg: "#FFF5EB",
+    image: "/categories/workkerz/Labour.png",
+  },
 
-  { id: "Driver", label: "Driver", color: "#16A34A", bg: "#F0FDF4", image: "/categories/workkerz/Driver.png" },
+  {
+    id: "Driver",
+    label: "Driver",
+    description: "Professional drivers for personal and commercial needs",
+    featured: true,
+    color: "#16A34A",
+    bg: "#F0FDF4",
+    image: "/categories/workkerz/Driver.png",
+  },
 
-  { id: "Mechanic", label: "Mechanic", color: "#2563EB", bg: "#EFF6FF", image: "/categories/workkerz/Mechanic.png" },
+  {
+    id: "Mechanic",
+    label: "Mechanic",
+    description: "Vehicle repair and maintenance professionals",
+    featured: true,
+    color: "#2563EB",
+    bg: "#EFF6FF",
+    image: "/categories/workkerz/Mechanic.png",
+  },
 
-  { id: "Electrical & Plumbing", label: "Electrical & Plumbing", color: "#CA8A04", bg: "#FEFCE8", image: "/categories/workkerz/Electricianandplumber.png" },
+  {
+    id: "Electrical & Plumbing",
+    label: "Electrical & Plumbing",
+    description: "Electricians and plumbers for home and commercial work",
+    featured: false,
+    color: "#CA8A04",
+    bg: "#FEFCE8",
+    image: "/categories/workkerz/Electricianandplumber.png",
+  },
 
-  { id: "Home Repair", label: "Home Repair", color: "#D97706", bg: "#FFF7ED", image: "/categories/workkerz/Home repair.png" },
+  {
+    id: "Home Repair",
+    label: "Home Repair",
+    description: "Reliable professionals for home repair and maintenance",
+    featured: false,
+    color: "#D97706",
+    bg: "#FFF7ED",
+    image: "/categories/workkerz/Home repair.png",
+  },
 
-  { id: "AC & Appliances", label: "AC & Appliances", color: "#0284C7", bg: "#F0F9FF", image: "/categories/workkerz/Ac and appliances repair.png" },
+  {
+    id: "AC & Appliances",
+    label: "AC & Appliances",
+    description: "AC, refrigerator and appliance repair professionals",
+    featured: false,
+    color: "#0284C7",
+    bg: "#F0F9FF",
+    image: "/categories/workkerz/Ac and appliances repair.png",
+  },
 
-  { id: "Washer", label: "Washer", color: "#0891B2", bg: "#ECFEFF", image: "/categories/workkerz/Washer.png" },
+  {
+    id: "Washer",
+    label: "Washer",
+    description: "Car, bike and other vehicle washing professionals",
+    featured: false,
+    color: "#0891B2",
+    bg: "#ECFEFF",
+    image: "/categories/workkerz/Washer.png",
+  },
 
-  { id: "Cleaner", label: "Cleaner", color: "#059669", bg: "#ECFDF5", image: "/categories/workkerz/Cleaner.png" },
+  {
+    id: "Cleaner",
+    label: "Cleaner",
+    description: "Home, office and commercial cleaning professionals",
+    featured: false,
+    color: "#059669",
+    bg: "#ECFDF5",
+    image: "/categories/workkerz/Cleaner.png",
+  },
 
-  { id: "Garden & Pest Control", label: "Garden & Pest Control", color: "#65A30D", bg: "#F7FEE7", image: "/categories/workkerz/Garden and pest control.png" },
+  {
+    id: "Garden & Pest Control",
+    label: "Garden & Pest Control",
+    description: "Gardening, lawn care and pest control services",
+    featured: false,
+    color: "#65A30D",
+    bg: "#F7FEE7",
+    image: "/categories/workkerz/Garden and pest control.png",
+  },
 
-  { id: "Office & Computer", label: "Office & Computer", color: "#7C3AED", bg: "#F5F3FF", image: "/categories/workkerz/Office and computer.png" },
+  {
+    id: "Office & Computer",
+    label: "Office & Computer",
+    description: "Office assistants, computer operators and professionals",
+    featured: false,
+    color: "#7C3AED",
+    bg: "#F5F3FF",
+    image: "/categories/workkerz/Office and computer.png",
+  },
 
-  { id: "Delivery & Warehouse", label: "Delivery & Warehouse", color: "#0F766E", bg: "#F0FDFA", image: "/categories/workkerz/Delivery and warehouse.png" },
+  {
+    id: "Delivery & Warehouse",
+    label: "Delivery & Warehouse",
+    description: "Delivery, loading, unloading and warehouse workers",
+    featured: false,
+    color: "#0F766E",
+    bg: "#F0FDFA",
+    image: "/categories/workkerz/Delivery and warehouse.png",
+  },
 
-  { id: "Restaurant", label: "Restaurant", color: "#DC2626", bg: "#FEF2F2", image: "/categories/workkerz/Restaurant.png" },
+  {
+    id: "Restaurant",
+    label: "Restaurant",
+    description: "Restaurant, kitchen, waiter and service workers",
+    featured: true,
+    color: "#DC2626",
+    bg: "#FEF2F2",
+    image: "/categories/workkerz/Restaurant.png",
+  },
 
-  { id: "Salon & Beauty", label: "Salon & Beauty", color: "#E11D48", bg: "#FFF1F2", image: "/categories/workkerz/Salon and beauty.png" },
+  {
+    id: "Salon & Beauty",
+    label: "Salon & Beauty",
+    description: "Beauty, salon, makeup and personal care professionals",
+    featured: false,
+    color: "#E11D48",
+    bg: "#FFF1F2",
+    image: "/categories/workkerz/Salon and beauty.png",
+  },
 
-  { id: "Security & Events", label: "Security & Events", color: "#1E3A8A", bg: "#EFF6FF", image: "/categories/workkerz/Events.png" },
+  {
+    id: "Security & Events",
+    label: "Security & Events",
+    description: "Security guards, event staff and function workers",
+    featured: false,
+    color: "#1E3A8A",
+    bg: "#EFF6FF",
+    image: "/categories/workkerz/Events.png",
+  },
 
-  { id: "Factory", label: "Factory", color: "#475569", bg: "#F8FAFC", image: "/categories/workkerz/Factory worker.png" },
+  {
+    id: "Factory",
+    label: "Factory",
+    description: "Factory, production and industrial workers",
+    featured: false,
+    color: "#475569",
+    bg: "#F8FAFC",
+    image: "/categories/workkerz/Factory worker.png",
+  },
 
-  { id: "Agriculture", label: "Agriculture", color: "#15803D", bg: "#F0FDF4", image: "/categories/workkerz/Agriculture.png" },
+  {
+    id: "Agriculture",
+    label: "Agriculture",
+    description: "Farm, agricultural and field workers",
+    featured: false,
+    color: "#15803D",
+    bg: "#F0FDF4",
+    image: "/categories/workkerz/Agriculture.png",
+  },
 
-  { id: "Moving & Packing", label: "Moving & Packing", color: "#9333EA", bg: "#FAF5FF", image: "/categories/workkerz/Moving and packers.png" },
+  {
+    id: "Moving & Packing",
+    label: "Moving & Packing",
+    description: "Packers, movers, loading and shifting workers",
+    featured: false,
+    color: "#9333EA",
+    bg: "#FAF5FF",
+    image: "/categories/workkerz/Moving and packers.png",
+  },
 
-  { id: "Other Services", label: "Other Services", color: "#64748B", bg: "#F1F5F9", image: "/categories/workkerz/Other services.png" },
+  {
+    id: "Other Services",
+    label: "Other Services",
+    description: "Other skilled and general services near you",
+    featured: false,
+    color: "#64748B",
+    bg: "#F1F5F9",
+    image: "/categories/workkerz/Other services.png",
+  },
 ] as const;
 
 export type ServiceCategory =
