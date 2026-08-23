@@ -22,9 +22,11 @@ import {
 
 import HomeHero from "@/app/components/HomeHero";
 
-import { getWorkers, serviceCategories, type Worker } from "@/app/data/workers";
-
-import { supabase } from "@/lib/supabase";
+import {
+  getWorkers,
+  serviceCategories,
+  type Worker,
+} from "@/app/data/workers";
 
 /* =========================================
    CATEGORY IMAGES
@@ -36,23 +38,14 @@ const categoryImages: Record<string, string> = {
   Mechanic: "/categories/workkerz/Mechanic.png",
   Painter: "/categories/workkerz/Painter.png",
   Washer: "/categories/workkerz/Washer.png",
-
   "Office Worker": "/categories/workkerz/Office worker.png",
-
   "Home Services": "/categories/workkerz/House service.png",
-
   Restaurant: "/categories/workkerz/Restaurant.png",
-
   "Home Contractor": "/categories/workkerz/Home contractor.png",
-
   Factory: "/categories/workkerz/Factory worker.png",
-
   "Salon & Beauty": "/categories/workkerz/Salon and beauty.png",
-
   Construction: "/categories/workkerz/Constructionworker.png",
-
   Security: "/categories/workkerz/Security.png",
-
   "Event Services": "/categories/workkerz/Events.png",
 };
 
@@ -66,23 +59,14 @@ const descriptions: Record<string, string> = {
   Mechanic: "Vehicle repair & maintenance",
   Painter: "Home, wall & commercial painting",
   Washer: "Cleaning & washing professionals",
-
   "Office Worker": "Reliable office professionals",
-
   "Home Services": "Get household work done",
-
   Restaurant: "Restaurant & kitchen workers",
-
   "Home Contractor": "Trusted home contractors",
-
   Factory: "Factory & industrial workers",
-
   "Salon & Beauty": "Beauty & personal care",
-
   Construction: "Skilled construction workers",
-
   Security: "Security & guarding services",
-
   "Event Services": "Workers for events & functions",
 };
 
@@ -90,7 +74,12 @@ const descriptions: Record<string, string> = {
    FEATURED
 ========================================= */
 
-const featuredCategories = ["Labour", "Driver", "Mechanic", "Restaurant"];
+const featuredCategories = [
+  "Labour",
+  "Driver",
+  "Mechanic",
+  "Restaurant",
+];
 
 /* =========================================
    SEARCH DROPDOWN
@@ -159,19 +148,11 @@ function SearchDropdown({
     new Map(matchingWorkers.map((worker) => [worker.id, worker])).values(),
   ).slice(0, 8);
 
-  const hasResults = matchingCategories.length > 0 || uniqueWorkers.length > 0;
+  const hasResults =
+    matchingCategories.length > 0 || uniqueWorkers.length > 0;
 
   return (
-    <div
-      className="
-        absolute left-0 right-0 top-full z-100 mt-2
-        overflow-hidden
-        rounded-2xl
-        border border-gray-200
-        bg-white
-        shadow-2xl
-      "
-    >
+    <div className="absolute left-0 right-0 top-full z-100 mt-2 overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-2xl">
       {!hasResults ? (
         <div className="px-4 py-8 text-center">
           <Search className="mx-auto h-6 w-6 text-gray-300" />
@@ -190,16 +171,7 @@ function SearchDropdown({
 
           {matchingCategories.length > 0 && (
             <div className="border-b border-gray-100 p-2">
-              <p
-                className="
-                  px-3 py-2
-                  text-[10px]
-                  font-bold
-                  uppercase
-                  tracking-wider
-                  text-gray-400
-                "
-              >
+              <p className="px-3 py-2 text-[10px] font-bold uppercase tracking-wider text-gray-400">
                 Services
               </p>
 
@@ -212,23 +184,9 @@ function SearchDropdown({
                       : ""
                   }`}
                   onClick={onClose}
-                  className="
-                      flex items-center gap-3
-                      rounded-xl
-                      px-3 py-2.5
-                      transition
-                      hover:bg-emerald-50
-                    "
+                  className="flex items-center gap-3 rounded-xl px-3 py-2.5 transition hover:bg-emerald-50"
                 >
-                  <div
-                    className="
-                        relative h-9 w-9
-                        shrink-0
-                        overflow-hidden
-                        rounded-lg
-                        bg-emerald-50
-                      "
-                  >
+                  <div className="relative h-9 w-9 shrink-0 overflow-hidden rounded-lg bg-emerald-50">
                     {categoryImages[category.id] ? (
                       <Image
                         src={categoryImages[category.id]}
@@ -265,15 +223,7 @@ function SearchDropdown({
           {uniqueWorkers.length > 0 && (
             <div className="p-2">
               <div className="flex items-center justify-between px-3 py-2">
-                <p
-                  className="
-                    text-[10px]
-                    font-bold
-                    uppercase
-                    tracking-wider
-                    text-gray-400
-                  "
-                >
+                <p className="text-[10px] font-bold uppercase tracking-wider text-gray-400">
                   Workers
                 </p>
 
@@ -283,27 +233,13 @@ function SearchDropdown({
               </div>
 
               {uniqueWorkers.map((worker) => (
-              <Link
-  key={worker.id}
-  href={`/workers/${worker.id}`}
-  onClick={onClose}
-  className="
-    flex items-center gap-3
-    rounded-xl
-    px-3 py-2.5
-    transition
-    hover:bg-emerald-50
-  "
->
-                  <div
-                    className="
-                        relative h-11 w-11
-                        shrink-0
-                        overflow-hidden
-                        rounded-full
-                        bg-gray-100
-                      "
-                  >
+                <Link
+                  key={worker.id}
+                  href={`/workers/${worker.id}`}
+                  onClick={onClose}
+                  className="flex items-center gap-3 rounded-xl px-3 py-2.5 transition hover:bg-emerald-50"
+                >
+                  <div className="relative h-11 w-11 shrink-0 overflow-hidden rounded-full bg-gray-100">
                     {worker.photo ? (
                       <Image
                         src={worker.photo}
@@ -356,7 +292,9 @@ function SearchDropdown({
                       <Star className="h-2.5 w-2.5 fill-yellow-400 text-yellow-400" />
 
                       <span className="text-[10px] font-semibold text-gray-600">
-                        {worker.rating > 0 ? worker.rating.toFixed(1) : "New"}
+                        {worker.rating > 0
+                          ? worker.rating.toFixed(1)
+                          : "New"}
                       </span>
                     </div>
 
@@ -387,10 +325,6 @@ export default function HomeCategories() {
 
   const [loadingWorkers, setLoadingWorkers] = useState(true);
 
-  const [loadingLocations, setLoadingLocations] = useState(true);
-
-  const [locations, setLocations] = useState<string[]>([]);
-
   const [selectedLocation, setSelectedLocation] = useState("");
 
   const [locationOpen, setLocationOpen] = useState(false);
@@ -412,25 +346,37 @@ export default function HomeCategories() {
   const searchRef = useRef<HTMLDivElement>(null);
 
   /* =========================================
+     LOCATIONS FROM workers.ts DATA
+  ========================================= */
+
+  const locations = useMemo(() => {
+    return Array.from(
+      new Set(
+        workers
+          .map((worker) => worker.labourChauk?.trim())
+          .filter((location): location is string => Boolean(location)),
+      ),
+    ).sort((a, b) => a.localeCompare(b));
+  }, [workers]);
+
+  /* =========================================
      REQUEST SUCCESS LISTENER
   ========================================= */
 
   useEffect(() => {
     function handleRequestSuccess() {
       setRequestSuccess(true);
-
       setOpenWorkerRequest(false);
 
-      /*
-       * Keep "Request Submitted" state visible
-       * for 8 seconds.
-       */
       window.setTimeout(() => {
         setRequestSuccess(false);
       }, 8000);
     }
 
-    window.addEventListener("workkerz-request-success", handleRequestSuccess);
+    window.addEventListener(
+      "workkerz-request-success",
+      handleRequestSuccess,
+    );
 
     return () => {
       window.removeEventListener(
@@ -441,56 +387,8 @@ export default function HomeCategories() {
   }, []);
 
   /* =========================================
-     LOAD LOCATIONS
-  ========================================= */
-
-  useEffect(() => {
-    let mounted = true;
-
-    async function loadLocations() {
-      try {
-        const { data, error } = await supabase
-          .from("workers")
-          .select("labour_chauk")
-          .not("labour_chauk", "is", null);
-
-        if (error) {
-          console.error("GET LOCATIONS ERROR:", error.message);
-
-          return;
-        }
-
-        if (!mounted) {
-          return;
-        }
-
-        const uniqueLocations = Array.from(
-          new Set(
-            (data ?? [])
-              .map((row) => row.labour_chauk?.trim())
-              .filter((location): location is string => Boolean(location)),
-          ),
-        ).sort((a, b) => a.localeCompare(b));
-
-        setLocations(uniqueLocations);
-      } catch (error) {
-        console.error("GET LOCATIONS ERROR:", error);
-      } finally {
-        if (mounted) {
-          setLoadingLocations(false);
-        }
-      }
-    }
-
-    loadLocations();
-
-    return () => {
-      mounted = false;
-    };
-  }, []);
-
-  /* =========================================
      LOAD WORKERS
+     DATA COMES FROM workers.ts
   ========================================= */
 
   useEffect(() => {
@@ -640,7 +538,6 @@ export default function HomeCategories() {
 
   function handleSearchChange(value: string) {
     setSearch(value);
-
     setSearchOpen(Boolean(value.trim()));
   }
 
@@ -654,11 +551,6 @@ export default function HomeCategories() {
   ========================================= */
 
   function openRequestForm() {
-    /*
-     * If previous request was completed,
-     * clicking Request Worker starts a
-     * fresh request again.
-     */
     setRequestSuccess(false);
     setOpenWorkerRequest(true);
   }
@@ -693,32 +585,9 @@ export default function HomeCategories() {
           ================================= */}
 
           {requestSuccess && (
-            <div
-              className="
-                mb-6
-                overflow-hidden
-                rounded-2xl
-                border border-emerald-200
-                bg-white
-                shadow-sm
-              "
-            >
-              <div
-                className="
-                  flex items-center gap-3
-                  px-4 py-3.5
-                  sm:px-5
-                "
-              >
-                <div
-                  className="
-                    flex h-10 w-10
-                    shrink-0
-                    items-center justify-center
-                    rounded-full
-                    bg-emerald-100
-                  "
-                >
+            <div className="mb-6 overflow-hidden rounded-2xl border border-emerald-200 bg-white shadow-sm">
+              <div className="flex items-center gap-3 px-4 py-3.5 sm:px-5">
+                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-emerald-100">
                   <Check className="h-5 w-5 text-emerald-600" />
                 </div>
 
@@ -735,16 +604,7 @@ export default function HomeCategories() {
                 <button
                   type="button"
                   onClick={() => setRequestSuccess(false)}
-                  className="
-                    flex h-7 w-7
-                    shrink-0
-                    items-center justify-center
-                    rounded-full
-                    text-gray-400
-                    transition
-                    hover:bg-gray-100
-                    hover:text-gray-700
-                  "
+                  className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-gray-400 transition hover:bg-gray-100 hover:text-gray-700"
                   aria-label="Close"
                 >
                   <X className="h-4 w-4" />
@@ -758,21 +618,25 @@ export default function HomeCategories() {
           ================================= */}
 
           <div className="mb-4 sm:mb-8">
-            {/* HERO */}
             <div className="relative min-h-38 overflow-hidden sm:min-h-57.5 lg:min-h-66.25">
               {/* LEFT CONTENT */}
+
               <div className="relative z-10 max-w-140 pt-1 sm:pt-2">
                 {/* BADGE */}
+
                 <div className="mb-2 inline-flex items-center gap-1 rounded-full border border-emerald-200 bg-emerald-50 px-2.5 py-1 text-[9px] font-extrabold uppercase tracking-wider text-emerald-800 sm:mb-3 sm:gap-1.5 sm:px-3 sm:py-1.5 sm:text-[10px] lg:px-4 lg:py-2 lg:text-[11px]">
                   <Sparkles className="h-3 w-3 sm:h-3.5 sm:w-3.5 lg:h-4 lg:w-4" />
                   WORKKERZ SERVICES
                 </div>
+
                 {/* HEADING */}
-                <h2 className="translate-y-2 text-[24px] font-black leading-none tracking-tight text-slate-950 sm:translate-y-5 sm:text-[34px] lg:translate-y-6 lg:text-5xl lg:text-[48px] lg:leading-[1.05]">
+
+                <h2 className="translate-y-2 text-[24px] font-black leading-none tracking-tight text-slate-950 sm:translate-y-5 sm:text-[34px] lg:translate-y-6 lg:text-[48px] lg:leading-[1.05]">
                   Worker <span className="text-emerald-600">Chahiye?</span>
                 </h2>
 
                 {/* DESCRIPTION */}
+
                 <p className="mt-3 max-w-51.25 translate-y-3 text-[9px] font-medium leading-4 text-slate-700 sm:mt-4 sm:max-w-[320px] sm:translate-y-5 sm:text-[13px] sm:leading-5 lg:mt-5 lg:max-w-[500px] lg:translate-y-6 lg:text-xl lg:leading-8">
                   Aapko kis kaam ke liye worker chahiye, batayein
                   <br />
@@ -781,8 +645,9 @@ export default function HomeCategories() {
               </div>
 
               {/* WORKER IMAGE */}
+
               <div className="pointer-events-none absolute -right-3.75 -top-8 h-47.5 w-55 sm:right-0 sm:h-58.75 sm:w-[320px] lg:h-66.25 lg:w-[390px]">
-                <div className="absolute right-4  h-38.75 w-38.75 rounded-full bg-emerald-50 sm:right-6 sm:top-3 sm:h-[200px] sm:w-[200px] lg:right-8 lg:h-57.5 lg:w-[230px]" />
+                <div className="absolute right-4 h-38.75 w-38.75 rounded-full bg-emerald-50 sm:right-6 sm:top-3 sm:h-[200px] sm:w-[200px] lg:right-8 lg:h-57.5 lg:w-[230px]" />
 
                 <Image
                   src="/categories/worker-service.png"
@@ -796,10 +661,11 @@ export default function HomeCategories() {
             </div>
 
             {/* REQUEST WORKER CARD */}
+
             <div className="relative z-20 overflow-hidden rounded-[18px] border border-emerald-700/70 bg-white shadow-[0_3px_18px_rgba(16,185,129,0.06)] sm:rounded-[20px] lg:rounded-[24px]">
-              {/* MAIN REQUEST AREA */}
               <div className="flex items-center gap-2.5 px-2.5 py-2.5 sm:gap-3 sm:px-4 sm:py-3 lg:gap-5 lg:px-7 lg:py-5">
                 {/* WORKER ICON */}
+
                 <div className="relative flex h-[50px] w-[50px] shrink-0 items-center justify-center rounded-full bg-emerald-50 text-emerald-600 sm:h-[62px] sm:w-[62px] lg:h-[92px] lg:w-[92px]">
                   <UserRound className="h-7 w-7 stroke-[1.8] sm:h-8 sm:w-8 lg:h-11 lg:w-11" />
 
@@ -809,6 +675,7 @@ export default function HomeCategories() {
                 </div>
 
                 {/* TEXT */}
+
                 <div className="min-w-0 flex-1">
                   <h3 className="text-[14px] font-black leading-tight text-gray-950 sm:text-[16px] lg:text-2xl">
                     Need a Worker?
@@ -820,6 +687,7 @@ export default function HomeCategories() {
                 </div>
 
                 {/* REQUEST BUTTON */}
+
                 <button
                   type="button"
                   onClick={openRequestForm}
@@ -839,7 +707,9 @@ export default function HomeCategories() {
                   ) : (
                     <>
                       <Users className="h-4 w-4 stroke-[1.8] sm:h-5 sm:w-5 lg:h-7 lg:w-7" />
-                      <span className="whitespace-nowrap">Request Worker</span>
+                      <span className="whitespace-nowrap">
+                        Request Worker
+                      </span>
                       <ArrowRight className="h-4 w-4 transition-transform duration-200 group-hover:translate-x-1 sm:h-5 sm:w-5 lg:h-7 lg:w-7" />
                     </>
                   )}
@@ -847,9 +717,11 @@ export default function HomeCategories() {
               </div>
 
               {/* TRUST BAR */}
+
               <div className="mx-2.5 border-t border-gray-100 sm:mx-4 lg:mx-7">
                 <div className="grid grid-cols-3">
                   {/* VERIFIED */}
+
                   <div className="flex min-w-0 items-center justify-center gap-1 px-1 py-2.5 sm:gap-1.5 sm:py-3 lg:gap-3 lg:py-4">
                     <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-emerald-50 text-emerald-600 sm:h-7 sm:w-7 lg:h-9 lg:w-9">
                       <ShieldCheck className="h-3 w-3 sm:h-3.5 sm:w-3.5 lg:h-5 lg:w-5" />
@@ -862,6 +734,7 @@ export default function HomeCategories() {
                   </div>
 
                   {/* TRUSTED */}
+
                   <div className="flex min-w-0 items-center justify-center gap-1 border-x border-gray-100 px-1 py-2.5 sm:gap-1.5 sm:py-3 lg:gap-3 lg:py-4">
                     <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-emerald-50 text-emerald-600 sm:h-7 sm:w-7 lg:h-9 lg:w-9">
                       <Sparkles className="h-3 w-3 sm:h-3.5 sm:w-3.5 lg:h-5 lg:w-5" />
@@ -875,6 +748,7 @@ export default function HomeCategories() {
                   </div>
 
                   {/* SAFE */}
+
                   <div className="flex min-w-0 items-center justify-center gap-1 px-1 py-2.5 sm:gap-1.5 sm:py-3 lg:gap-3 lg:py-4">
                     <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-emerald-50 text-emerald-600 sm:h-7 sm:w-7 lg:h-9 lg:w-9">
                       <ShieldCheck className="h-3 w-3 sm:h-3.5 sm:w-3.5 lg:h-5 lg:w-5" />
@@ -892,11 +766,12 @@ export default function HomeCategories() {
           </div>
 
           {/* =================================
-              SEARCH
+              QUICK ACTIONS + SEARCH
           ================================= */}
-          {/* QUICK ACTIONS + SEARCH */}
+
           <div className="relative z-40 mb-5 grid grid-cols-2 gap-2.5 sm:gap-3">
             {/* VIEW ALL */}
+
             <Link
               href="/browse"
               className="group flex h-11 items-center justify-between rounded-xl border border-gray-200 bg-white px-3 shadow-sm transition hover:border-emerald-200 hover:shadow-md sm:h-12 sm:rounded-2xl sm:px-4"
@@ -915,6 +790,7 @@ export default function HomeCategories() {
             </Link>
 
             {/* LOCATION */}
+
             <div ref={locationRef} className="relative">
               <button
                 type="button"
@@ -958,6 +834,7 @@ export default function HomeCategories() {
               </button>
 
               {/* LOCATION DROPDOWN */}
+
               {locationOpen && (
                 <div className="absolute right-0 top-full z-[100] mt-2 w-[230px] overflow-hidden rounded-2xl border border-gray-200 bg-white p-2 shadow-xl sm:w-[270px]">
                   <button
@@ -974,24 +851,14 @@ export default function HomeCategories() {
 
                     <div className="min-w-0">
                       <p className="text-xs font-bold">Near You</p>
+
                       <p className="text-[9px] text-gray-400">
                         Show workers from all locations
                       </p>
                     </div>
                   </button>
 
-                  {loadingLocations && (
-                    <div className="border-t border-gray-100 px-3 py-3">
-                      <div className="flex items-center gap-2">
-                        <div className="h-4 w-4 animate-spin rounded-full border-2 border-gray-200 border-t-emerald-600" />
-                        <span className="text-[10px] text-gray-400">
-                          Loading...
-                        </span>
-                      </div>
-                    </div>
-                  )}
-
-                  {!loadingLocations && locations.length > 0 && (
+                  {locations.length > 0 && (
                     <div className="mt-1 max-h-56 overflow-y-auto border-t border-gray-100 pt-1">
                       {locations.map((location) => (
                         <button
@@ -1014,11 +881,32 @@ export default function HomeCategories() {
                       ))}
                     </div>
                   )}
+
+                  {locations.length === 0 && !loadingWorkers && (
+                    <div className="border-t border-gray-100 px-3 py-3">
+                      <span className="text-[10px] text-gray-400">
+                        No locations available
+                      </span>
+                    </div>
+                  )}
+
+                  {loadingWorkers && (
+                    <div className="border-t border-gray-100 px-3 py-3">
+                      <div className="flex items-center gap-2">
+                        <div className="h-4 w-4 animate-spin rounded-full border-2 border-gray-200 border-t-emerald-600" />
+
+                        <span className="text-[10px] text-gray-400">
+                          Loading workers...
+                        </span>
+                      </div>
+                    </div>
+                  )}
                 </div>
               )}
             </div>
 
-            {/* SEARCH BAR */}
+            {/* SEARCH */}
+
             <div ref={searchRef} className="relative col-span-2">
               <div
                 className={[
@@ -1033,7 +921,9 @@ export default function HomeCategories() {
                 <input
                   type="text"
                   value={search}
-                  onChange={(event) => handleSearchChange(event.target.value)}
+                  onChange={(event) =>
+                    handleSearchChange(event.target.value)
+                  }
                   onFocus={() => {
                     if (search.trim()) {
                       setSearchOpen(true);
@@ -1064,6 +954,7 @@ export default function HomeCategories() {
               )}
             </div>
           </div>
+
           {/* =================================
               SELECTED LOCATION
           ================================= */}
@@ -1100,16 +991,7 @@ export default function HomeCategories() {
               </p>
             </div>
 
-            <div
-              className="
-                grid
-                grid-cols-2
-                gap-3
-                sm:grid-cols-4
-                sm:gap-4
-                lg:gap-5
-              "
-            >
+            <div className="grid grid-cols-2 gap-3 sm:grid-cols-4 sm:gap-4 lg:gap-5">
               {featured.map((category) => (
                 <CategoryCard
                   key={category.id}
@@ -1144,15 +1026,7 @@ export default function HomeCategories() {
               </span>
             </div>
 
-            <div
-              className="
-                grid
-                grid-cols-2
-                gap-3
-                sm:grid-cols-3
-                lg:grid-cols-4
-              "
-            >
+            <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
               {remaining.map((category) => (
                 <CategoryCard
                   key={category.id}
@@ -1239,14 +1113,7 @@ function CategoryCard({
               alt={category.label}
               fill
               sizes="(max-width: 640px) 50vw, 25vw"
-              className="
-                relative z-10
-                object-contain
-                p-3
-                transition
-                duration-500
-                group-hover:scale-110
-              "
+              className="relative z-10 object-contain p-3 transition duration-500 group-hover:scale-110"
             />
           ) : (
             <div className="flex h-full items-center justify-center text-4xl">
@@ -1255,21 +1122,7 @@ function CategoryCard({
           )}
 
           {featured && (
-            <div
-              className="
-                absolute left-3 top-3 z-20
-                rounded-full
-                bg-white/90
-                px-2.5 py-1
-                text-[9px]
-                font-extrabold
-                uppercase
-                tracking-wide
-                text-emerald-700
-                shadow-sm
-                backdrop-blur
-              "
-            >
+            <div className="absolute left-3 top-3 z-20 rounded-full bg-white/90 px-2.5 py-1 text-[9px] font-extrabold uppercase tracking-wide text-emerald-700 shadow-sm backdrop-blur">
               Popular
             </div>
           )}
@@ -1290,20 +1143,7 @@ function CategoryCard({
               </p>
             </div>
 
-            <div
-              className="
-                mt-0.5
-                flex h-7 w-7
-                shrink-0
-                items-center
-                justify-center
-                rounded-full
-                bg-gray-50
-                transition
-                group-hover:bg-emerald-600
-                group-hover:text-white
-              "
-            >
+            <div className="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-gray-50 transition group-hover:bg-emerald-600 group-hover:text-white">
               <ArrowRight className="h-3.5 w-3.5" />
             </div>
           </div>
@@ -1334,22 +1174,9 @@ function CategoryCard({
               {categoryWorkers.slice(0, 3).map((worker) => (
                 <div
                   key={worker.id}
-                  className="
-                          flex items-center gap-2
-                          rounded-lg
-                          bg-gray-50
-                          px-2 py-1.5
-                        "
+                  className="flex items-center gap-2 rounded-lg bg-gray-50 px-2 py-1.5"
                 >
-                  <div
-                    className="
-                            relative h-7 w-7
-                            shrink-0
-                            overflow-hidden
-                            rounded-full
-                            bg-gray-200
-                          "
-                  >
+                  <div className="relative h-7 w-7 shrink-0 overflow-hidden rounded-full bg-gray-200">
                     {worker.photo ? (
                       <Image
                         src={worker.photo}
@@ -1374,7 +1201,9 @@ function CategoryCard({
                       <Star className="h-2.5 w-2.5 fill-yellow-400 text-yellow-400" />
 
                       <span className="text-[9px] text-gray-500">
-                        {worker.rating > 0 ? worker.rating.toFixed(1) : "New"}
+                        {worker.rating > 0
+                          ? worker.rating.toFixed(1)
+                          : "New"}
                       </span>
                     </div>
                   </div>
