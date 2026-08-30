@@ -18,9 +18,11 @@ import {
 } from "lucide-react";
 
 import { supabase } from "@/lib/supabase";
+
 import type {
   Worker,
   WorkerFormData,
+  PriceKey,
 } from "@/app/data/workers";
 
 /* =========================================================
@@ -29,7 +31,9 @@ import type {
 
 type WorkerFormProps = {
   initial?: Worker;
-  onSave: (worker: WorkerFormData) => Promise<void>;
+  onSave: (
+    worker: WorkerFormData,
+  ) => Promise<void>;
   onClose: () => void;
 };
 
@@ -363,6 +367,12 @@ const SERVICES_BY_SUBCATEGORY: Record<
     "Kitchen Work",
   ],
 
+  Cleaner: [
+    "Cleaning",
+    "Kitchen Cleaning",
+    "Restaurant Cleaning",
+  ],
+
   "Delivery Staff": [
     "Food Delivery",
     "Order Delivery",
@@ -518,6 +528,14 @@ const LABOUR_CHAUKS = [
 ];
 
 /* =========================================================
+   DEFAULT VISIBLE PRICING
+========================================================= */
+
+const DEFAULT_VISIBLE_PRICING_TYPES: PriceKey[] = [
+  "per_job",
+];
+
+/* =========================================================
    EMPTY WORKER
 ========================================================= */
 
@@ -538,6 +556,10 @@ const emptyWorker = (): WorkerFormData => ({
   fullDayPrice: 0,
   monthlyPrice: 0,
   visitCharge: 0,
+
+  visiblePricingTypes: [
+    ...DEFAULT_VISIBLE_PRICING_TYPES,
+  ],
 
   rating: 0,
   reviewCount: 0,
@@ -580,9 +602,12 @@ export default function WorkerForm({
         name: initial.name || "",
         phone: initial.phone || "",
 
-        category: initial.category || "",
+        category:
+          initial.category || "",
+
         subcategory:
           initial.subcategory || "",
+
         specialty:
           initial.specialty || "",
 
@@ -606,6 +631,13 @@ export default function WorkerForm({
 
         visitCharge:
           initial.visitCharge || 0,
+
+        visiblePricingTypes:
+          initial.visiblePricingTypes?.length
+            ? initial.visiblePricingTypes
+            : [
+                ...DEFAULT_VISIBLE_PRICING_TYPES,
+              ],
 
         rating:
           initial.rating || 0,
@@ -669,6 +701,62 @@ export default function WorkerForm({
       ...previous,
       [field]: value,
     }));
+  };
+
+  /* =======================================================
+     VISIBLE PRICING HANDLER
+  ======================================================= */
+
+  const handleVisiblePriceChange = (
+    price: PriceKey,
+    checked: boolean,
+  ) => {
+    setForm((previous) => {
+      const current =
+        previous.visiblePricingTypes ||
+        [];
+
+      let updated: PriceKey[];
+
+      if (checked) {
+        if (
+          current.includes(price)
+        ) {
+          return previous;
+        }
+
+        updated = [
+          ...current,
+          price,
+        ];
+      } else {
+        updated =
+          current.filter(
+            (item) =>
+              item !== price,
+          );
+      }
+
+      /*
+       * Keep at least one pricing
+       * option selected.
+       */
+
+      if (updated.length === 0) {
+        return {
+          ...previous,
+          visiblePricingTypes: [
+            "per_job",
+          ],
+        };
+      }
+
+      return {
+        ...previous,
+        visiblePricingTypes:
+          updated,
+      };
+    });
   };
 
   /* =======================================================
@@ -738,7 +826,8 @@ export default function WorkerForm({
 
       case "Mechanic":
       case "Home Contractor":
-        pricingType = "visit_charge";
+        pricingType =
+          "visit_charge";
         break;
 
       case "Painter":
@@ -749,7 +838,8 @@ export default function WorkerForm({
 
       case "Washer":
       case "Salon & Beauty":
-        pricingType = "per_service";
+        pricingType =
+          "per_service";
         break;
 
       case "Office Worker":
@@ -794,9 +884,7 @@ export default function WorkerForm({
         form.phone,
       )
     ) {
-      return (
-        "Enter valid 10 digit mobile number"
-      );
+      return "Enter valid 10 digit mobile number";
     }
 
     if (!form.category) {
@@ -827,9 +915,15 @@ export default function WorkerForm({
     }
 
     if (!form.services.length) {
-      return (
-        "Select at least one service"
-      );
+      return "Select at least one service";
+    }
+
+    if (
+      !form.visiblePricingTypes ||
+      form.visiblePricingTypes.length ===
+        0
+    ) {
+      return "Select at least one pricing option";
     }
 
     return "";
@@ -1113,6 +1207,12 @@ export default function WorkerForm({
             form.visitCharge,
           ) || 0,
 
+        visiblePricingTypes:
+          form.visiblePricingTypes ||
+          [
+            ...DEFAULT_VISIBLE_PRICING_TYPES,
+          ],
+
         rating:
           Number(form.rating) ||
           0,
@@ -1183,6 +1283,7 @@ export default function WorkerForm({
       {/* HEADER */}
 
       <header className="flex shrink-0 items-center justify-between border-b border-slate-200 bg-white px-5 py-4">
+
         <div className="flex items-center gap-3">
 
           <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-emerald-50">
@@ -1213,6 +1314,7 @@ export default function WorkerForm({
         >
           <X className="h-4 w-4" />
         </button>
+
       </header>
 
       {/* BODY */}
@@ -1726,6 +1828,99 @@ export default function WorkerForm({
               description="Set worker rates and experience"
             />
 
+            {/* VISIBLE PRICING OPTIONS */}
+
+            <div className="mb-5">
+
+              <p className="mb-2 text-xs font-bold text-slate-600">
+                Pricing Options
+              </p>
+
+              <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-5">
+
+                {[
+                  {
+                    value:
+                      "per_job" as PriceKey,
+                    label: "Per Work",
+                  },
+                  {
+                    value:
+                      "half_day" as PriceKey,
+                    label: "Half Day",
+                  },
+                  {
+                    value:
+                      "full_day" as PriceKey,
+                    label: "Full Day",
+                  },
+                  {
+                    value:
+                      "monthly" as PriceKey,
+                    label: "Monthly",
+                  },
+                  {
+                    value:
+                      "visit_charge" as PriceKey,
+                    label: "Visit Charge",
+                  },
+                ].map(
+                  (option) => {
+                    const selected =
+                      form.visiblePricingTypes.includes(
+                        option.value,
+                      );
+
+                    return (
+                      <button
+                        key={
+                          option.value
+                        }
+                        type="button"
+                        onClick={() =>
+                          handleVisiblePriceChange(
+                            option.value,
+                            !selected,
+                          )
+                        }
+                        className={[
+                          "flex items-center gap-2 rounded-xl border px-3 py-3 text-left text-xs font-bold transition",
+                          selected
+                            ? "border-emerald-600 bg-emerald-50 text-emerald-700"
+                            : "border-slate-200 bg-white text-slate-500 hover:bg-slate-50",
+                        ].join(
+                          " ",
+                        )}
+                      >
+                        <span
+                          className={[
+                            "flex h-4 w-4 shrink-0 items-center justify-center rounded-md border",
+                            selected
+                              ? "border-emerald-600 bg-emerald-600 text-white"
+                              : "border-slate-300 bg-white",
+                          ].join(
+                            " ",
+                          )}
+                        >
+                          {selected && (
+                            <CheckCircle2 className="h-3 w-3" />
+                          )}
+                        </span>
+
+                        <span className="truncate">
+                          {
+                            option.label
+                          }
+                        </span>
+                      </button>
+                    );
+                  },
+                )}
+
+              </div>
+
+            </div>
+
             <div className="grid gap-4 md:grid-cols-2">
 
               <Field label="Pricing Type">
@@ -1772,78 +1967,108 @@ export default function WorkerForm({
 
               </Field>
 
-              <Field
-                label="Starting Price"
-                required
-              >
-                <PriceInput
-                  value={
-                    form.startingPrice
-                  }
-                  onChange={(value) =>
-                    updateField(
-                      "startingPrice",
-                      value,
-                    )
-                  }
-                />
-              </Field>
+              {/* PER WORK */}
 
-              <Field label="Half Day Price">
-                <PriceInput
-                  value={
-                    form.halfDayPrice
-                  }
-                  onChange={(value) =>
-                    updateField(
-                      "halfDayPrice",
-                      value,
-                    )
-                  }
-                />
-              </Field>
+              {form.visiblePricingTypes.includes(
+                "per_job",
+              ) && (
+                <Field
+                  label="Starting Price"
+                  required
+                >
+                  <PriceInput
+                    value={
+                      form.startingPrice
+                    }
+                    onChange={(value) =>
+                      updateField(
+                        "startingPrice",
+                        value,
+                      )
+                    }
+                  />
+                </Field>
+              )}
 
-              <Field label="Full Day Price">
-                <PriceInput
-                  value={
-                    form.fullDayPrice
-                  }
-                  onChange={(value) =>
-                    updateField(
-                      "fullDayPrice",
-                      value,
-                    )
-                  }
-                />
-              </Field>
+              {/* HALF DAY */}
 
-              <Field label="Monthly Price">
-                <PriceInput
-                  value={
-                    form.monthlyPrice
-                  }
-                  onChange={(value) =>
-                    updateField(
-                      "monthlyPrice",
-                      value,
-                    )
-                  }
-                />
-              </Field>
+              {form.visiblePricingTypes.includes(
+                "half_day",
+              ) && (
+                <Field label="Half Day Price">
+                  <PriceInput
+                    value={
+                      form.halfDayPrice
+                    }
+                    onChange={(value) =>
+                      updateField(
+                        "halfDayPrice",
+                        value,
+                      )
+                    }
+                  />
+                </Field>
+              )}
 
-              <Field label="Visit Charge">
-                <PriceInput
-                  value={
-                    form.visitCharge
-                  }
-                  onChange={(value) =>
-                    updateField(
-                      "visitCharge",
-                      value,
-                    )
-                  }
-                />
-              </Field>
+              {/* FULL DAY */}
+
+              {form.visiblePricingTypes.includes(
+                "full_day",
+              ) && (
+                <Field label="Full Day Price">
+                  <PriceInput
+                    value={
+                      form.fullDayPrice
+                    }
+                    onChange={(value) =>
+                      updateField(
+                        "fullDayPrice",
+                        value,
+                      )
+                    }
+                  />
+                </Field>
+              )}
+
+              {/* MONTHLY */}
+
+              {form.visiblePricingTypes.includes(
+                "monthly",
+              ) && (
+                <Field label="Monthly Price">
+                  <PriceInput
+                    value={
+                      form.monthlyPrice
+                    }
+                    onChange={(value) =>
+                      updateField(
+                        "monthlyPrice",
+                        value,
+                      )
+                    }
+                  />
+                </Field>
+              )}
+
+              {/* VISIT CHARGE */}
+
+              {form.visiblePricingTypes.includes(
+                "visit_charge",
+              ) && (
+                <Field label="Visit Charge">
+                  <PriceInput
+                    value={
+                      form.visitCharge
+                    }
+                    onChange={(value) =>
+                      updateField(
+                        "visitCharge",
+                        value,
+                      )
+                    }
+                  />
+                </Field>
+              )}
 
               <Field label="Experience">
                 <input
