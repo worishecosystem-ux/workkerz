@@ -1,9 +1,6 @@
 "use client";
 
-import {
-  useEffect,
-  useState,
-} from "react";
+import { useEffect } from "react";
 
 import BasicInfoSection from "./BasicInfoSection";
 import PhotoSection from "./PhotoSection";
@@ -14,27 +11,19 @@ import ProfessionalInfoSection from "./ProfessionalInfoSection";
 import PricingSection from "./PricingSection";
 import WorkerOnboardBottomBar from "./WorkerOnboardBottomBar";
 
-import type { PricingType } from "@/app/data/workers";
+import type { PricingType, PriceKey } from "@/app/data/workers";
 
-type Device =
-  | "desktop"
-  | "tablet"
-  | "mobile";
+type Device = "desktop" | "tablet" | "mobile";
 
 type Categories = Record<
   string,
   {
-    readonly subcategories: Record<
-      string,
-      readonly string[]
-    >;
+    readonly subcategories: Record<string, readonly string[]>;
   }
 >;
 
 type Props = {
-  /* =========================
-     BASIC INFORMATION
-  ========================= */
+  /* BASIC */
 
   name: string;
   phone: string;
@@ -44,168 +33,93 @@ type Props = {
 
   setName: (value: string) => void;
   setPhone: (value: string) => void;
-  setSpecialty: (
-    value: string,
-  ) => void;
-  setLocation: (
-    value: string,
-  ) => void;
-  setLabourChauk: (
-    value: string,
-  ) => void;
+  setSpecialty: (value: string) => void;
+  setLocation: (value: string) => void;
+  setLabourChauk: (value: string) => void;
 
-  /* =========================
-     PHOTO
-  ========================= */
+  /* PHOTO */
 
   photo: File | null;
+  setPhoto: (file: File | null) => void;
 
-  setPhoto: (
-    file: File | null,
-  ) => void;
-
-  /* =========================
-     CATEGORY
-  ========================= */
+  /* CATEGORY */
 
   category: string;
-
-  setCategory: (
-    value: string,
-  ) => void;
+  setCategory: (value: string) => void;
 
   subcategory: string;
+  setSubcategory: (value: string) => void;
 
-  setSubcategory: (
-    value: string,
-  ) => void;
-
-  /* =========================
-     SERVICE TYPES
-
-     These are the services selected
-     from ServiceTypeSection.
-
-     They are synchronized with
-     ProfessionalInfoSection services.
-  ========================= */
+  /* SERVICES */
 
   serviceTypes: string[];
+  setServiceTypes: (values: string[]) => void;
 
-  setServiceTypes: (
-    values: string[],
-  ) => void;
-
-  /* =========================
-     PROFESSIONAL INFORMATION
-  ========================= */
+  /* PROFESSIONAL */
 
   experience: string;
-
-  setExperience: (
-    value: string,
-  ) => void;
+  setExperience: (value: string) => void;
 
   responseTime: string;
-
-  setResponseTime: (
-    value: string,
-  ) => void;
+  setResponseTime: (value: string) => void;
 
   bio: string;
-
-  setBio: (
-    value: string,
-  ) => void;
+  setBio: (value: string) => void;
 
   skills: string[];
-
-  setSkills: (
-    values: string[],
-  ) => void;
+  setSkills: (values: string[]) => void;
 
   services: string[];
-
-  setServices: (
-    values: string[],
-  ) => void;
+  setServices: (values: string[]) => void;
 
   certifications: string[];
+  setCertifications: (values: string[]) => void;
 
-  setCertifications: (
-    values: string[],
-  ) => void;
-
-  /* =========================
-     PRICING
-  ========================= */
+  /* PRICING */
 
   pricingType: PricingType;
-
-  setPricingType: (
-    value: PricingType,
-  ) => void;
+  setPricingType: (value: PricingType) => void;
 
   startingPrice: string;
-
-  setStartingPrice: (
-    value: string,
-  ) => void;
+  setStartingPrice: (value: string) => void;
 
   halfDayPrice: string;
-
-  setHalfDayPrice: (
-    value: string,
-  ) => void;
+  setHalfDayPrice: (value: string) => void;
 
   fullDayPrice: string;
-
-  setFullDayPrice: (
-    value: string,
-  ) => void;
+  setFullDayPrice: (value: string) => void;
 
   monthlyPrice: string;
-
-  setMonthlyPrice: (
-    value: string,
-  ) => void;
+  setMonthlyPrice: (value: string) => void;
 
   visitCharge: string;
+  setVisitCharge: (value: string) => void;
 
-  setVisitCharge: (
-    value: string,
-  ) => void;
+  /* VISIBLE PRICING */
 
-  /* =========================
-     AVAILABILITY
-  ========================= */
+  visiblePricingTypes: PriceKey[];
+
+  setVisiblePricingTypes: (values: PriceKey[]) => void;
+
+  handleVisiblePriceChange: (price: PriceKey, checked: boolean) => void;
+
+  /* AVAILABILITY */
 
   available: boolean;
+  setAvailable: (value: boolean) => void;
 
-  setAvailable: (
-    value: boolean,
-  ) => void;
-
-  /* =========================
-     OTHER
-  ========================= */
+  /* OTHER */
 
   categories: Categories;
-
   device: Device;
 
   onCancel: () => void;
-
   onSave: () => void;
 
   saving?: boolean;
 };
 
 export default function WorkerOnboardSections({
-  /* =========================
-     BASIC
-  ========================= */
-
   name,
   phone,
   specialty,
@@ -218,16 +132,8 @@ export default function WorkerOnboardSections({
   setLocation,
   setLabourChauk,
 
-  /* =========================
-     PHOTO
-  ========================= */
-
   photo,
   setPhoto,
-
-  /* =========================
-     CATEGORY
-  ========================= */
 
   category,
   setCategory,
@@ -235,16 +141,8 @@ export default function WorkerOnboardSections({
   subcategory,
   setSubcategory,
 
-  /* =========================
-     SERVICE TYPES
-  ========================= */
-
   serviceTypes,
   setServiceTypes,
-
-  /* =========================
-     PROFESSIONAL
-  ========================= */
 
   experience,
   setExperience,
@@ -264,10 +162,6 @@ export default function WorkerOnboardSections({
   certifications,
   setCertifications,
 
-  /* =========================
-     PRICING
-  ========================= */
-
   pricingType,
   setPricingType,
 
@@ -286,16 +180,12 @@ export default function WorkerOnboardSections({
   visitCharge,
   setVisitCharge,
 
-  /* =========================
-     AVAILABILITY
-  ========================= */
+  visiblePricingTypes,
+  setVisiblePricingTypes,
+  handleVisiblePriceChange,
 
   available,
   setAvailable,
-
-  /* =========================
-     OTHER
-  ========================= */
 
   categories,
   device,
@@ -324,60 +214,37 @@ export default function WorkerOnboardSections({
       remove: () => void;
     } | null = null;
 
-    const setupKeyboard =
-      async () => {
-        try {
-          const { Keyboard } =
-            await import(
-              "@capacitor/keyboard"
-            );
+    const setupKeyboard = async () => {
+      try {
+        const { Keyboard } = await import("@capacitor/keyboard");
 
+        if (!mounted) {
+          return;
+        }
+
+        showListener = await Keyboard.addListener("keyboardDidShow", () => {
           if (!mounted) {
             return;
           }
 
-          showListener =
-            await Keyboard.addListener(
-              "keyboardDidShow",
-              () => {
-                if (!mounted) {
-                  return;
-                }
+          document.documentElement.classList.add("keyboard-open");
 
-                document.documentElement.classList.add(
-                  "keyboard-open",
-                );
+          document.body.classList.add("keyboard-open");
+        });
 
-                document.body.classList.add(
-                  "keyboard-open",
-                );
-              },
-            );
+        hideListener = await Keyboard.addListener("keyboardDidHide", () => {
+          if (!mounted) {
+            return;
+          }
 
-          hideListener =
-            await Keyboard.addListener(
-              "keyboardDidHide",
-              () => {
-                if (!mounted) {
-                  return;
-                }
+          document.documentElement.classList.remove("keyboard-open");
 
-                document.documentElement.classList.remove(
-                  "keyboard-open",
-                );
-
-                document.body.classList.remove(
-                  "keyboard-open",
-                );
-              },
-            );
-        } catch (error) {
-          console.debug(
-            "Capacitor Keyboard unavailable:",
-            error,
-          );
-        }
-      };
+          document.body.classList.remove("keyboard-open");
+        });
+      } catch (error) {
+        console.debug("Capacitor Keyboard unavailable:", error);
+      }
+    };
 
     setupKeyboard();
 
@@ -387,138 +254,26 @@ export default function WorkerOnboardSections({
       showListener?.remove();
       hideListener?.remove();
 
-      document.documentElement.classList.remove(
-        "keyboard-open",
-      );
+      document.documentElement.classList.remove("keyboard-open");
 
-      document.body.classList.remove(
-        "keyboard-open",
-      );
+      document.body.classList.remove("keyboard-open");
     };
   }, [device]);
-
-  /* =====================================================
-     SYNC SERVICE TYPES -> SERVICES
-
-     ServiceTypeSection controls serviceTypes.
-
-     ProfessionalInfoSection expects services.
-
-     Keep both synchronized so existing components
-     continue working and the selected service types
-     reach the onboarding save payload.
-  ===================================================== */
-
-  useEffect(() => {
-    const cleanServices =
-      Array.from(
-        new Map(
-          serviceTypes
-            .filter(
-              (
-                service,
-              ): service is string =>
-                typeof service ===
-                "string",
-            )
-            .map((service) =>
-              service.trim(),
-            )
-            .filter(Boolean)
-            .map((service) => [
-              service.toLowerCase(),
-              service,
-            ]),
-        ).values(),
-      );
-
-    const currentServices =
-      Array.isArray(services)
-        ? services
-        : [];
-
-    const same =
-      currentServices.length ===
-        cleanServices.length &&
-      currentServices.every(
-        (
-          service,
-          index,
-        ) =>
-          service ===
-          cleanServices[index],
-      );
-
-    if (!same) {
-      setServices(
-        cleanServices,
-      );
-    }
-  }, [
-    serviceTypes,
-    services,
-    setServices,
-  ]);
-
-  /* =====================================================
-     VISIBLE PRICING TYPES
-  ===================================================== */
-
-  const [
-    visiblePricingTypes,
-    setVisiblePricingTypes,
-  ] = useState<
-    PricingType[]
-  >([
-    "per_job",
-    "daily",
-  ]);
-
-  /* =====================================================
-     PRICING TYPE SETTER
-  ===================================================== */
-
-  const handleVisiblePricingTypesChange =
-    (
-      values: PricingType[],
-    ) => {
-      setVisiblePricingTypes(
-        [
-          ...values,
-        ],
-      );
-    };
 
   /* =====================================================
      DEBUG
   ===================================================== */
 
   useEffect(() => {
-    console.log(
-      "ONBOARD SERVICE TYPES:",
-      serviceTypes,
-    );
+    console.log("ONBOARD SERVICE TYPES:", serviceTypes);
 
-    console.log(
-      "ONBOARD SERVICES:",
-      services,
-    );
-  }, [
-    serviceTypes,
-    services,
-  ]);
+    console.log("ONBOARD SERVICES:", services);
 
-  /* =====================================================
-     UI
-  ===================================================== */
+    console.log("ONBOARD VISIBLE PRICING:", visiblePricingTypes);
+  }, [serviceTypes, services, visiblePricingTypes]);
 
   return (
     <div className="space-y-4 pb-1">
-
-      {/* =================================================
-          BASIC INFORMATION
-      ================================================= */}
-
       <BasicInfoSection
         name={name}
         phone={phone}
@@ -527,31 +282,13 @@ export default function WorkerOnboardSections({
         labourChauk={labourChauk}
         setName={setName}
         setPhone={setPhone}
-        setSpecialty={
-          setSpecialty
-        }
-        setLocation={
-          setLocation
-        }
-        setLabourChauk={
-          setLabourChauk
-        }
+        setSpecialty={setSpecialty}
+        setLocation={setLocation}
+        setLabourChauk={setLabourChauk}
         device={device}
       />
 
-      {/* =================================================
-          PHOTO
-      ================================================= */}
-
-      <PhotoSection
-        photo={photo}
-        setPhoto={setPhoto}
-        device={device}
-      />
-
-      {/* =================================================
-          CATEGORY
-      ================================================= */}
+      <PhotoSection photo={photo} setPhoto={setPhoto} device={device} />
 
       <CategorySection
         category={category}
@@ -560,184 +297,64 @@ export default function WorkerOnboardSections({
         device={device}
       />
 
-      {/* =================================================
-          SUBCATEGORY
-      ================================================= */}
-
       <SubcategorySection
         category={category}
-        subcategory={
-          subcategory
-        }
-        setSubcategory={
-          setSubcategory
-        }
+        subcategory={subcategory}
+        setSubcategory={setSubcategory}
         categories={categories}
         device={device}
       />
-
-      {/* =================================================
-          SERVICE TYPES
-      ================================================= */}
 
       <ServiceTypeSection
         category={category}
-        subcategory={
-          subcategory
-        }
-        serviceTypes={
-          serviceTypes
-        }
-        setServiceTypes={
-          setServiceTypes
-        }
+        subcategory={subcategory}
+        serviceTypes={serviceTypes}
+        setServiceTypes={setServiceTypes}
         categories={categories}
         device={device}
       />
 
-      {/* =================================================
-          PROFESSIONAL INFORMATION
-      ================================================= */}
-
       <ProfessionalInfoSection
-        experience={
-          experience
-        }
-        setExperience={
-          setExperience
-        }
-
-        responseTime={
-          responseTime
-        }
-        setResponseTime={
-          setResponseTime
-        }
-
+        experience={experience}
+        setExperience={setExperience}
+        responseTime={responseTime}
+        setResponseTime={setResponseTime}
         bio={bio}
         setBio={setBio}
-
         skills={skills}
-        setSkills={
-          setSkills
-        }
-
-        /*
-         * IMPORTANT:
-         * services remains connected to the existing
-         * ProfessionalInfoSection.
-         *
-         * It is synchronized from serviceTypes above.
-         */
-
-        services={
-          services
-        }
-
-        setServices={
-          setServices
-        }
-
-        certifications={
-          certifications
-        }
-
-        setCertifications={
-          setCertifications
-        }
-
+        setSkills={setSkills}
+        services={services}
+        setServices={setServices}
+        certifications={certifications}
+        setCertifications={setCertifications}
         device={device}
       />
-
-      {/* =================================================
-          PRICING
-      ================================================= */}
 
       <PricingSection
-        pricingType={
-          pricingType
-        }
-
-        setPricingType={
-          setPricingType
-        }
-
-        startingPrice={
-          startingPrice
-        }
-
-        setStartingPrice={
-          setStartingPrice
-        }
-
-        halfDayPrice={
-          halfDayPrice
-        }
-
-        setHalfDayPrice={
-          setHalfDayPrice
-        }
-
-        fullDayPrice={
-          fullDayPrice
-        }
-
-        setFullDayPrice={
-          setFullDayPrice
-        }
-
-        monthlyPrice={
-          monthlyPrice
-        }
-
-        setMonthlyPrice={
-          setMonthlyPrice
-        }
-
-        visitCharge={
-          visitCharge
-        }
-
-        setVisitCharge={
-          setVisitCharge
-        }
-
-        visiblePricingTypes={
-          visiblePricingTypes
-        }
-
-        setVisiblePricingTypes={
-          handleVisiblePricingTypesChange
-        }
-
-        available={
-          available
-        }
-
-        setAvailable={
-          setAvailable
-        }
-
+        pricingType={pricingType}
+        setPricingType={setPricingType}
+        startingPrice={startingPrice}
+        setStartingPrice={setStartingPrice}
+        halfDayPrice={halfDayPrice}
+        setHalfDayPrice={setHalfDayPrice}
+        fullDayPrice={fullDayPrice}
+        setFullDayPrice={setFullDayPrice}
+        monthlyPrice={monthlyPrice}
+        setMonthlyPrice={setMonthlyPrice}
+        visitCharge={visitCharge}
+        setVisitCharge={setVisitCharge}
+        visiblePricingTypes={visiblePricingTypes}
+        setVisiblePricingTypes={setVisiblePricingTypes}
+        handleVisiblePriceChange={handleVisiblePriceChange}
         device={device}
       />
-
-      {/* =================================================
-          BOTTOM ACTION BAR
-      ================================================= */}
 
       <WorkerOnboardBottomBar
         device={device}
-        onCancel={
-          onCancel
-        }
-        onSave={
-          onSave
-        }
-        saving={
-          saving
-        }
+        onCancel={onCancel}
+        onSave={onSave}
+        saving={saving}
       />
-
     </div>
   );
 }

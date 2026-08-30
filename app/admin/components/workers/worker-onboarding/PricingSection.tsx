@@ -7,6 +7,7 @@ import {
 
 import type {
   PricingType,
+  PriceKey,
 } from "@/app/data/workers";
 
 type Device =
@@ -51,16 +52,15 @@ type Props = {
     value: string,
   ) => void;
 
-  visiblePricingTypes: PricingType[];
+  visiblePricingTypes: PriceKey[];
 
   setVisiblePricingTypes: (
-    values: PricingType[],
+    values: PriceKey[],
   ) => void;
 
-  available: boolean;
-
-  setAvailable: (
-    value: boolean,
+  handleVisiblePriceChange: (
+    price: PriceKey,
+    checked: boolean,
   ) => void;
 
   device: Device;
@@ -68,6 +68,7 @@ type Props = {
 
 type PriceInputProps = {
   label: string;
+
   value: string;
 
   setValue: (
@@ -76,45 +77,38 @@ type PriceInputProps = {
 };
 
 /* =========================================
-   PRICING OPTIONS
-
-   ONLY values from workers.ts
+   VISIBLE PRICING OPTIONS
 ========================================= */
 
 const options: {
-  value: PricingType;
+  value: PriceKey;
   label: string;
 }[] = [
   {
     value: "per_job",
     label: "Per Work",
   },
-
   {
-    value: "daily",
-    label: "Daily",
+    value: "half_day",
+    label: "Half Day",
   },
-
+  {
+    value: "full_day",
+    label: "Full Day",
+  },
   {
     value: "monthly",
     label: "Monthly",
   },
-
-  {
-    value: "per_service",
-    label: "Per Service",
-  },
-
   {
     value: "visit_charge",
     label: "Visit Charge",
   },
-
-  {
-    value: "custom",
-    label: "Custom",
-  },
 ];
+
+/* =========================================
+   PRICE INPUT
+========================================= */
 
 function PriceInput({
   label,
@@ -149,13 +143,11 @@ function PriceInput({
 
   return (
     <div className="min-w-0">
-
       <label className="mb-1 block truncate text-[11px] font-semibold text-[#5F6F8A]">
         {label}
       </label>
 
       <div className="relative">
-
         <IndianRupee
           size={12}
           strokeWidth={2}
@@ -179,11 +171,14 @@ function PriceInput({
           enterKeyHint="done"
           className="h-10 w-full rounded-lg border border-[#E1E6ED] bg-[#F8FAFC] pl-7 pr-2 text-xs font-semibold text-[#111827] outline-none transition-colors placeholder:text-[#94A3B8] focus:border-[#FF8A5B] focus:bg-white focus:ring-1 focus:ring-[#FF8A5B]/20"
         />
-
       </div>
     </div>
   );
 }
+
+/* =========================================
+   PRICING SECTION
+========================================= */
 
 export default function PricingSection({
   pricingType,
@@ -207,6 +202,8 @@ export default function PricingSection({
   visiblePricingTypes,
   setVisiblePricingTypes,
 
+  handleVisiblePriceChange,
+
   device,
 }: Props) {
   const mobile =
@@ -215,61 +212,45 @@ export default function PricingSection({
   const tablet =
     device === "tablet";
 
-  const togglePricingType = (
-    type: PricingType,
-  ) => {
-    if (
-      visiblePricingTypes.includes(
-        type,
-      )
-    ) {
-      const updated =
-        visiblePricingTypes.filter(
-          (item) =>
-            item !== type,
-        );
-
-      setVisiblePricingTypes(
-        updated,
-      );
-
-      if (
-        pricingType === type &&
-        updated.length > 0
-      ) {
-        setPricingType(
-          updated[0],
-        );
-      }
-
-      return;
-    }
-
-    const updated = [
-      ...visiblePricingTypes,
-      type,
-    ];
-
-    setVisiblePricingTypes(
-      updated,
-    );
-
-    if (
-      visiblePricingTypes.length === 0
-    ) {
-      setPricingType(type);
-    }
-  };
+  /* =========================================
+     CHECK VISIBILITY
+  ========================================= */
 
   const isVisible = (
-    type: PricingType,
+    type: PriceKey,
   ) =>
     visiblePricingTypes.includes(
       type,
     );
 
+  /* =========================================
+     HANDLE PRICING CHANGE
+     
+     Parent owns the state.
+     We only pass:
+       price
+       checked
+  ========================================= */
+
+  const handlePricingToggle = (
+    price: PriceKey,
+  ) => {
+    const checked =
+      !visiblePricingTypes.includes(
+        price,
+      );
+
+    handleVisiblePriceChange(
+      price,
+      checked,
+    );
+  };
+
   return (
     <section className="overflow-hidden rounded-2xl border border-[#F0E2DB] bg-white">
+      {/* =========================================
+          HEADER
+      ========================================= */}
 
       <div
         className={
@@ -278,11 +259,8 @@ export default function PricingSection({
             : "border-b border-[#F3E8E2] px-5 py-4"
         }
       >
-
         <div className="flex items-center justify-between gap-3">
-
-          <div>
-
+          <div className="min-w-0">
             <h2
               className={
                 mobile
@@ -297,15 +275,18 @@ export default function PricingSection({
               Choose which pricing options
               appear on the worker profile.
             </p>
-
           </div>
 
           <div className="shrink-0 rounded-full bg-[#FFF3EE] px-2.5 py-1 text-[10px] font-bold text-[#FF7048]">
-            {visiblePricingTypes.length} Selected
+            {visiblePricingTypes.length}{" "}
+            Selected
           </div>
-
         </div>
       </div>
+
+      {/* =========================================
+          CONTENT
+      ========================================= */}
 
       <div
         className={
@@ -314,11 +295,13 @@ export default function PricingSection({
             : "px-5 py-4"
         }
       >
+        {/* =========================================
+            PRICING OPTIONS
+        ========================================= */}
 
         <div
           className={[
             "grid gap-2",
-
             mobile
               ? "grid-cols-2"
               : tablet
@@ -326,7 +309,6 @@ export default function PricingSection({
                 : "grid-cols-4",
           ].join(" ")}
         >
-
           {options.map(
             (option) => {
               const selected =
@@ -341,7 +323,7 @@ export default function PricingSection({
                   }
                   type="button"
                   onClick={() =>
-                    togglePricingType(
+                    handlePricingToggle(
                       option.value,
                     )
                   }
@@ -353,7 +335,6 @@ export default function PricingSection({
                       : "border-[#E7EBF0] bg-white hover:bg-[#F8FAFC]",
                   ].join(" ")}
                 >
-
                   <span
                     className={[
                       "flex h-4 w-4 shrink-0 items-center justify-center rounded-md border transition-all",
@@ -363,14 +344,12 @@ export default function PricingSection({
                         : "border-[#CBD5E1] bg-white",
                     ].join(" ")}
                   >
-
                     {selected && (
                       <Check
                         size={11}
                         strokeWidth={3}
                       />
                     )}
-
                   </span>
 
                   <span
@@ -384,13 +363,15 @@ export default function PricingSection({
                   >
                     {option.label}
                   </span>
-
                 </button>
               );
             },
           )}
-
         </div>
+
+        {/* =========================================
+            PRICE INPUTS
+        ========================================= */}
 
         {visiblePricingTypes.length >
           0 && (
@@ -405,6 +386,7 @@ export default function PricingSection({
                   : "grid-cols-4",
             ].join(" ")}
           >
+            {/* PER WORK */}
 
             {isVisible(
               "per_job",
@@ -420,19 +402,39 @@ export default function PricingSection({
               />
             )}
 
+            {/* HALF DAY */}
+
             {isVisible(
-              "daily",
+              "half_day",
             ) && (
               <PriceInput
-                label="Daily"
+                label="Half Day"
                 value={
-                  startingPrice
+                  halfDayPrice
                 }
                 setValue={
-                  setStartingPrice
+                  setHalfDayPrice
                 }
               />
             )}
+
+            {/* FULL DAY */}
+
+            {isVisible(
+              "full_day",
+            ) && (
+              <PriceInput
+                label="Full Day"
+                value={
+                  fullDayPrice
+                }
+                setValue={
+                  setFullDayPrice
+                }
+              />
+            )}
+
+            {/* MONTHLY */}
 
             {isVisible(
               "monthly",
@@ -448,19 +450,7 @@ export default function PricingSection({
               />
             )}
 
-            {isVisible(
-              "per_service",
-            ) && (
-              <PriceInput
-                label="Per Service"
-                value={
-                  startingPrice
-                }
-                setValue={
-                  setStartingPrice
-                }
-              />
-            )}
+            {/* VISIT CHARGE */}
 
             {isVisible(
               "visit_charge",
@@ -475,28 +465,16 @@ export default function PricingSection({
                 }
               />
             )}
-
-            {isVisible(
-              "custom",
-            ) && (
-              <PriceInput
-                label="Custom Price"
-                value={
-                  startingPrice
-                }
-                setValue={
-                  setStartingPrice
-                }
-              />
-            )}
-
           </div>
         )}
+
+        {/* =========================================
+            EMPTY STATE
+        ========================================= */}
 
         {visiblePricingTypes.length ===
           0 && (
           <div className="mt-3 rounded-xl border border-dashed border-[#E2E8F0] bg-[#F8FAFC] px-4 py-4 text-center">
-
             <p className="text-xs font-semibold text-[#64748B]">
               Select at least one
               pricing option
@@ -507,10 +485,8 @@ export default function PricingSection({
               appear on the worker
               profile.
             </p>
-
           </div>
         )}
-
       </div>
     </section>
   );

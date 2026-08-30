@@ -1,9 +1,6 @@
 "use client";
 
-import {
-  useEffect,
-  useState,
-} from "react";
+import { useEffect, useState } from "react";
 
 import WorkerOnboardSections from "./worker-onboarding/WorkerOnboardSections";
 import { WORKER_CATEGORIES } from "./data/workerCategories";
@@ -12,120 +9,61 @@ import { supabase } from "@/lib/supabase";
 
 import { ChevronLeft } from "lucide-react";
 
-import type {
-  PricingType,
-} from "@/app/data/workers";
+import type { PricingType, PriceKey } from "@/app/data/workers";
 
 type Props = {
   onBack?: () => void;
-  onCreated?: (
-    worker: unknown,
-  ) => void;
+  onCreated?: (worker: unknown) => void;
 };
 
-type Device =
-  | "desktop"
-  | "tablet"
-  | "mobile";
+type Device = "desktop" | "tablet" | "mobile";
 
 export default function WorkerOnboardForm({
   onBack,
   onCreated,
 }: Props) {
-  const [device, setDevice] =
-    useState<Device>("desktop");
+  const [device, setDevice] = useState<Device>("desktop");
 
   /* =====================================================
      BASIC INFORMATION
   ===================================================== */
 
-  const [name, setName] =
-    useState("");
-
-  const [phone, setPhone] =
-    useState("");
-
-  const [specialty, setSpecialty] =
-    useState("");
-
-  const [location, setLocation] =
-    useState("");
-
-  const [labourChauk, setLabourChauk] =
-    useState("");
+  const [name, setName] = useState("");
+  const [phone, setPhone] = useState("");
+  const [specialty, setSpecialty] = useState("");
+  const [location, setLocation] = useState("");
+  const [labourChauk, setLabourChauk] = useState("");
 
   /* =====================================================
      PHOTO
   ===================================================== */
 
-  const [photo, setPhoto] =
-    useState<File | null>(null);
+  const [photo, setPhoto] = useState<File | null>(null);
 
   /* =====================================================
      CATEGORY
   ===================================================== */
 
-  const [category, setCategory] =
-    useState("");
-
-  const [subcategory, setSubcategory] =
-    useState("");
+  const [category, setCategory] = useState("");
+  const [subcategory, setSubcategory] = useState("");
 
   /* =====================================================
      SERVICE TYPES
      
-     IMPORTANT:
-     This is the MAIN service state.
-
-     ServiceTypeSection updates this state.
-
-     It is saved into:
-     public.workers.services
+     SINGLE SOURCE OF TRUTH
   ===================================================== */
 
-  const [serviceTypes, setServiceTypes] =
-    useState<string[]>([]);
-
-  /* =====================================================
-     SERVICES ALIAS
-     
-     ProfessionalInfoSection currently requires:
-     services
-     setServices
-
-     Instead of creating another state, both point
-     to serviceTypes.
-  ===================================================== */
-
-  const services =
-    serviceTypes;
-
-  const setServices = (
-    values: string[],
-  ) => {
-    setServiceTypes(
-      values,
-    );
-  };
+  const [serviceTypes, setServiceTypes] = useState<string[]>([]);
 
   /* =====================================================
      PROFESSIONAL INFORMATION
   ===================================================== */
 
-  const [experience, setExperience] =
-    useState("");
-
-  const [responseTime, setResponseTime] =
-    useState("");
-
-  const [bio, setBio] =
-    useState("");
-
-  const [skills, setSkills] =
-    useState<string[]>([]);
-
-  const [certifications, setCertifications] =
-    useState<string[]>([]);
+  const [experience, setExperience] = useState("");
+  const [responseTime, setResponseTime] = useState("");
+  const [bio, setBio] = useState("");
+  const [skills, setSkills] = useState<string[]>([]);
+  const [certifications, setCertifications] = useState<string[]>([]);
 
   /* =====================================================
      PRICING
@@ -134,40 +72,40 @@ export default function WorkerOnboardForm({
   const [pricingType, setPricingType] =
     useState<PricingType>("custom");
 
-  const [startingPrice, setStartingPrice] =
-    useState("");
+  const [startingPrice, setStartingPrice] = useState("");
+  const [halfDayPrice, setHalfDayPrice] = useState("");
+  const [fullDayPrice, setFullDayPrice] = useState("");
+  const [monthlyPrice, setMonthlyPrice] = useState("");
+  const [visitCharge, setVisitCharge] = useState("");
 
-  const [halfDayPrice, setHalfDayPrice] =
-    useState("");
+  /* =====================================================
+     VISIBLE PRICING TYPES
+     
+     SINGLE SOURCE OF TRUTH
+     
+     Database:
+     public.workers.visible_pricing_types
+  ===================================================== */
 
-  const [fullDayPrice, setFullDayPrice] =
-    useState("");
-
-  const [monthlyPrice, setMonthlyPrice] =
-    useState("");
-
-  const [visitCharge, setVisitCharge] =
-    useState("");
+  const [visiblePricingTypes, setVisiblePricingTypes] =
+    useState<PriceKey[]>([
+      "per_job",
+      "half_day",
+    ]);
 
   /* =====================================================
      AVAILABILITY
   ===================================================== */
 
-  const [available, setAvailable] =
-    useState(true);
+  const [available, setAvailable] = useState(true);
 
   /* =====================================================
      SAVE STATE
   ===================================================== */
 
-  const [saving, setSaving] =
-    useState(false);
-
-  const [error, setError] =
-    useState("");
-
-  const [success, setSuccess] =
-    useState("");
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState("");
+  const [success, setSuccess] = useState("");
 
   /* =====================================================
      DEVICE DETECTION
@@ -175,39 +113,27 @@ export default function WorkerOnboardForm({
 
   useEffect(() => {
     const detectDevice = () => {
-      const ua =
-        navigator.userAgent.toLowerCase();
+      const ua = navigator.userAgent.toLowerCase();
 
       if (!ua.includes("android")) {
         setDevice("desktop");
         return;
       }
 
-      const shortest =
-        Math.min(
-          window.innerWidth,
-          window.innerHeight,
-        );
-
-      setDevice(
-        shortest >= 600
-          ? "tablet"
-          : "mobile",
+      const shortest = Math.min(
+        window.innerWidth,
+        window.innerHeight,
       );
+
+      setDevice(shortest >= 600 ? "tablet" : "mobile");
     };
 
     detectDevice();
 
-    window.addEventListener(
-      "resize",
-      detectDevice,
-    );
+    window.addEventListener("resize", detectDevice);
 
     return () => {
-      window.removeEventListener(
-        "resize",
-        detectDevice,
-      );
+      window.removeEventListener("resize", detectDevice);
     };
   }, []);
 
@@ -215,74 +141,49 @@ export default function WorkerOnboardForm({
      PHOTO UPLOAD
   ===================================================== */
 
-  const uploadWorkerPhoto =
-    async (
-      file: File,
-    ): Promise<string> => {
-      const extension =
-        file.name
-          .split(".")
-          .pop()
-          ?.toLowerCase() ||
-        "jpg";
+  const uploadWorkerPhoto = async (
+    file: File,
+  ): Promise<string> => {
+    const extension =
+      file.name.split(".").pop()?.toLowerCase() || "jpg";
 
-      const safeName =
-        name
-          .trim()
-          .toLowerCase()
-          .replace(
-            /[^a-z0-9]+/g,
-            "-",
-          )
-          .replace(
-            /^-+|-+$/g,
-            "",
-          ) || "worker";
+    const safeName =
+      name
+        .trim()
+        .toLowerCase()
+        .replace(/[^a-z0-9]+/g, "-")
+        .replace(/^-+|-+$/g, "") || "worker";
 
-      const path =
-        `workers/${safeName}-${Date.now()}.${extension}`;
+    const path = `workers/${safeName}-${Date.now()}.${extension}`;
 
-      const {
-        error: uploadError,
-      } =
-        await supabase.storage
-          .from("workers")
-          .upload(
-            path,
-            file,
-            {
-              cacheControl:
-                "3600",
-              upsert: false,
-              contentType:
-                file.type,
-            },
-          );
+    const { error: uploadError } =
+      await supabase.storage
+        .from("workers")
+        .upload(path, file, {
+          cacheControl: "3600",
+          upsert: false,
+          contentType: file.type,
+        });
 
-      if (uploadError) {
-        throw new Error(
-          uploadError.message ||
-            "Unable to upload worker photo.",
-        );
-      }
+    if (uploadError) {
+      throw new Error(
+        uploadError.message ||
+          "Unable to upload worker photo.",
+      );
+    }
 
-      const {
-        data,
-      } =
-        supabase.storage
-          .from("workers")
-          .getPublicUrl(
-            path,
-          );
+    const { data } = supabase.storage
+      .from("workers")
+      .getPublicUrl(path);
 
-      if (!data?.publicUrl) {
-        throw new Error(
-          "Unable to generate worker photo URL.",
-        );
-      }
+    if (!data?.publicUrl) {
+      throw new Error(
+        "Unable to generate worker photo URL.",
+      );
+    }
 
-      return data.publicUrl;
-    };
+    return data.publicUrl;
+  };
 
   /* =====================================================
      PRICE VALIDATION
@@ -296,12 +197,9 @@ export default function WorkerOnboardForm({
       return;
     }
 
-    const number =
-      Number(value);
+    const number = Number(value);
 
-    if (
-      !Number.isFinite(number)
-    ) {
+    if (!Number.isFinite(number)) {
       throw new Error(
         `${label} must be a valid number.`,
       );
@@ -315,433 +213,369 @@ export default function WorkerOnboardForm({
   };
 
   /* =====================================================
-     DIRECT SUPABASE SAVE
+     VISIBLE PRICE CHANGE
   ===================================================== */
 
-  const handleSave =
-    async () => {
-      if (saving) {
-        return;
+  const handleVisiblePriceChange = (
+    price: PriceKey,
+    checked: boolean,
+  ) => {
+    setVisiblePricingTypes((current) => {
+      if (checked) {
+        if (current.includes(price)) {
+          return current;
+        }
+
+        return [...current, price];
       }
 
-      setError("");
-      setSuccess("");
+      return current.filter(
+        (item) => item !== price,
+      );
+    });
+  };
 
-      try {
-        /* ===============================================
-           BASIC VALIDATION
-        =============================================== */
+  /* =====================================================
+     SAVE
+  ===================================================== */
 
-        if (!name.trim()) {
-          throw new Error(
-            "Worker name is required.",
-          );
-        }
+  const handleSave = async () => {
+    if (saving) {
+      return;
+    }
 
-        if (
-          name.trim().length < 2
-        ) {
-          throw new Error(
-            "Worker name must be at least 2 characters.",
-          );
-        }
+    setError("");
+    setSuccess("");
 
-        if (!phone.trim()) {
-          throw new Error(
-            "Phone number is required.",
-          );
-        }
+    try {
+      /* ===============================================
+         BASIC VALIDATION
+      =============================================== */
 
-        if (
-          !/^[6-9]\d{9}$/.test(
-            phone.trim(),
-          )
-        ) {
-          throw new Error(
-            "Enter a valid 10 digit mobile number.",
-          );
-        }
+      if (!name.trim()) {
+        throw new Error("Worker name is required.");
+      }
 
-        if (!category.trim()) {
-          throw new Error(
-            "Worker category is required.",
-          );
-        }
+      if (name.trim().length < 2) {
+        throw new Error(
+          "Worker name must be at least 2 characters.",
+        );
+      }
 
-        if (
-          !subcategory.trim()
-        ) {
-          throw new Error(
-            "Worker subcategory is required.",
-          );
-        }
+      if (!phone.trim()) {
+        throw new Error("Phone number is required.");
+      }
 
-        if (!specialty.trim()) {
-          throw new Error(
-            "Specialty is required.",
-          );
-        }
+      if (!/^[6-9]\d{9}$/.test(phone.trim())) {
+        throw new Error(
+          "Enter a valid 10 digit mobile number.",
+        );
+      }
 
-        if (!location.trim()) {
-          throw new Error(
-            "Location is required.",
-          );
-        }
+      if (!category.trim()) {
+        throw new Error(
+          "Worker category is required.",
+        );
+      }
 
-        /* ===============================================
-           PRICE VALIDATION
-        =============================================== */
+      if (!subcategory.trim()) {
+        throw new Error(
+          "Worker subcategory is required.",
+        );
+      }
 
-        validatePrice(
-          startingPrice,
-          "Starting price",
+      if (!specialty.trim()) {
+        throw new Error("Specialty is required.");
+      }
+
+      if (!location.trim()) {
+        throw new Error("Location is required.");
+      }
+
+      /* ===============================================
+         PRICE VALIDATION
+      =============================================== */
+
+      validatePrice(startingPrice, "Starting price");
+      validatePrice(halfDayPrice, "Half day price");
+      validatePrice(fullDayPrice, "Full day price");
+      validatePrice(monthlyPrice, "Monthly price");
+      validatePrice(visitCharge, "Visit charge");
+
+      /* ===============================================
+         CLEAN VISIBLE PRICES
+      =============================================== */
+
+      const cleanVisiblePricingTypes =
+        Array.from(
+          new Set(visiblePricingTypes),
         );
 
-        validatePrice(
-          halfDayPrice,
-          "Half day price",
+      setSaving(true);
+
+      /* ===============================================
+         AUTH
+      =============================================== */
+
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
+
+      if (!session?.user) {
+        throw new Error(
+          "Your admin session has expired. Please login again.",
         );
+      }
 
-        validatePrice(
-          fullDayPrice,
-          "Full day price",
-        );
+      /* ===============================================
+         PHOTO
+      =============================================== */
 
-        validatePrice(
-          monthlyPrice,
-          "Monthly price",
-        );
+      let photoUrl: string | null = null;
 
-        validatePrice(
-          visitCharge,
-          "Visit charge",
-        );
+      if (photo) {
+        photoUrl = await uploadWorkerPhoto(photo);
+      }
 
-        setSaving(true);
+      /* ===============================================
+         CLEAN SERVICES
+      =============================================== */
 
-        /* ===============================================
-           AUTH CHECK
-        =============================================== */
+      const cleanServices = Array.from(
+        new Map(
+          serviceTypes
+            .filter(
+              (service): service is string =>
+                typeof service === "string",
+            )
+            .map((service) => service.trim())
+            .filter(Boolean)
+            .map((service) => [
+              service.toLowerCase(),
+              service,
+            ]),
+        ).values(),
+      );
 
-        const {
-          data: {
-            session,
-          },
-        } =
-          await supabase.auth.getSession();
+      console.log(
+        "================================",
+      );
 
-        if (!session?.user) {
-          throw new Error(
-            "Your admin session has expired. Please login again.",
-          );
-        }
+      console.log(
+        "SELECTED SERVICE TYPES:",
+        serviceTypes,
+      );
 
-        /* ===============================================
-           PHOTO
-        =============================================== */
+      console.log(
+        "SERVICES TO SAVE:",
+        cleanServices,
+      );
 
-        let photoUrl:
-          | string
-          | null = null;
+      console.log(
+        "VISIBLE PRICING TYPES:",
+        cleanVisiblePricingTypes,
+      );
 
-        if (photo) {
-          photoUrl =
-            await uploadWorkerPhoto(
-              photo,
-            );
-        }
+      /* ===============================================
+         DATABASE PAYLOAD
+      =============================================== */
 
-        /* ===============================================
-           CLEAN SERVICES
-           
-           serviceTypes is the selected Service Type
-           state.
+      const workerData = {
+        name: name.trim(),
+        phone: phone.trim(),
+        category: category.trim(),
+        subcategory: subcategory.trim(),
+        specialty: specialty.trim(),
+        location: location.trim(),
 
-           This becomes public.workers.services.
-        =============================================== */
+        labour_chauk:
+          labourChauk.trim() || null,
 
-        const cleanServices =
-          Array.from(
-            new Map(
-              serviceTypes
-                .filter(
-                  (
-                    service,
-                  ): service is string =>
-                    typeof service ===
-                    "string",
-                )
-                .map(
-                  (service) =>
-                    service.trim(),
-                )
-                .filter(Boolean)
-                .map(
-                  (service) => [
-                    service
-                      .toLowerCase(),
-                    service,
-                  ],
-                ),
-            ).values(),
-          );
+        years_experience:
+          Number(experience) || 0,
 
-        console.log(
-          "================================",
-        );
+        bio:
+          bio.trim() || null,
 
-        console.log(
-          "SELECTED SERVICE TYPES:",
-          serviceTypes,
-        );
+        response_time:
+          responseTime.trim() || null,
 
-        console.log(
-          "SERVICES TO SAVE:",
+        skills:
+          Array.isArray(skills)
+            ? [...skills]
+            : [],
+
+        services:
           cleanServices,
-        );
 
-        /* ===============================================
-           DATABASE PAYLOAD
-        =============================================== */
+        certifications:
+          Array.isArray(certifications)
+            ? [...certifications]
+            : [],
 
-        const workerData = {
-          name:
-            name.trim(),
+        pricing_type:
+          pricingType,
 
-          phone:
-            phone.trim(),
+        starting_price:
+          Number(startingPrice) || 0,
 
-          category:
-            category.trim(),
+        half_day_price:
+          Number(halfDayPrice) || 0,
 
-          subcategory:
-            subcategory.trim(),
+        full_day_price:
+          Number(fullDayPrice) || 0,
 
-          specialty:
-            specialty.trim(),
+        monthly_price:
+          Number(monthlyPrice) || 0,
 
-          location:
-            location.trim(),
+        visit_charge:
+          Number(visitCharge) || 0,
 
-          labour_chauk:
-            labourChauk.trim() ||
-            null,
+        visible_pricing_types:
+          cleanVisiblePricingTypes,
 
-          years_experience:
-            Number(experience) ||
-            0,
+        available,
 
-          bio:
-            bio.trim() ||
-            null,
+        photo:
+          photoUrl,
+      };
 
-          response_time:
-            responseTime.trim() ||
-            null,
+      console.log(
+        "WORKER PAYLOAD:",
+        workerData,
+      );
 
-          skills:
-            Array.isArray(skills)
-              ? [...skills]
-              : [],
+      /* ===============================================
+         INSERT
+      =============================================== */
 
-          /* =============================================
-             FINAL SERVICE VALUE
-          ============================================= */
+      const {
+        data: worker,
+        error: insertError,
+      } = await supabase
+        .from("workers")
+        .insert(workerData)
+        .select("*")
+        .single();
 
-          services:
-            cleanServices,
+      /* ===============================================
+         ERROR
+      =============================================== */
 
-          certifications:
-            Array.isArray(
-              certifications,
-            )
-              ? [
-                  ...certifications,
-                ]
-              : [],
-
-          pricing_type:
-            pricingType,
-
-          starting_price:
-            Number(
-              startingPrice,
-            ) || 0,
-
-          half_day_price:
-            Number(
-              halfDayPrice,
-            ) || 0,
-
-          full_day_price:
-            Number(
-              fullDayPrice,
-            ) || 0,
-
-          monthly_price:
-            Number(
-              monthlyPrice,
-            ) || 0,
-
-          visit_charge:
-            Number(
-              visitCharge,
-            ) || 0,
-
-          available,
-
-          photo:
-            photoUrl,
-        };
-
-        console.log(
-          "WORKER PAYLOAD:",
-          workerData,
-        );
-
-        /* ===============================================
-           DIRECT DATABASE INSERT
-        =============================================== */
-
-        const {
-          data: worker,
-          error: insertError,
-        } =
-          await supabase
-            .from("workers")
-            .insert(
-              workerData,
-            )
-            .select("*")
-            .single();
-
-        /* ===============================================
-           DATABASE ERROR
-        =============================================== */
-
-        if (insertError) {
-          console.error(
-            "WORKER INSERT ERROR:",
-            insertError,
-          );
-
-          if (
-            insertError.code ===
-            "23505"
-          ) {
-            throw new Error(
-              "This worker already exists with the same name, category, subcategory, specialty and location.",
-            );
-          }
-
-          if (
-            insertError.code ===
-            "42501"
-          ) {
-            throw new Error(
-              "You do not have permission to add workers.",
-            );
-          }
-
-          if (
-            insertError.code ===
-            "23503"
-          ) {
-            throw new Error(
-              "Worker data contains an invalid reference.",
-            );
-          }
-
-          throw new Error(
-            insertError.message ||
-              "Unable to create worker.",
-          );
-        }
-
-        /* ===============================================
-           CHECK RETURNED DATA
-        =============================================== */
-
-        if (!worker) {
-          throw new Error(
-            "Worker was not returned after saving.",
-          );
-        }
-
-        console.log(
-          "WORKER SAVED:",
-          worker,
-        );
-
-        console.log(
-          "SAVED SERVICES:",
-          (
-            worker as {
-              services?:
-                | string[]
-                | null;
-            }
-          ).services,
-        );
-
-        /* ===============================================
-           WORKER CODE
-        =============================================== */
-
-        const workerCode =
-          (
-            worker as {
-              worker_code?:
-                | string
-                | null;
-            }
-          ).worker_code;
-
-        /* ===============================================
-           SUCCESS
-        =============================================== */
-
-        setSuccess(
-          workerCode
-            ? `Worker added successfully — ${workerCode}`
-            : "Worker added successfully.",
-        );
-
-        /* ===============================================
-           CALLBACK
-        =============================================== */
-
-        onCreated?.(
-          worker,
-        );
-      } catch (err) {
+      if (insertError) {
         console.error(
-          "WORKER ONBOARDING ERROR:",
-          err,
+          "WORKER INSERT ERROR:",
+          insertError,
         );
 
-        setError(
-          err instanceof Error
-            ? err.message
-            : "Unable to add worker.",
+        if (insertError.code === "23505") {
+          throw new Error(
+            "This worker already exists with the same name, category, subcategory, specialty and location.",
+          );
+        }
+
+        if (insertError.code === "42501") {
+          throw new Error(
+            "You do not have permission to add workers.",
+          );
+        }
+
+        if (insertError.code === "23503") {
+          throw new Error(
+            "Worker data contains an invalid reference.",
+          );
+        }
+
+        throw new Error(
+          insertError.message ||
+            "Unable to create worker.",
         );
-      } finally {
-        setSaving(false);
       }
-    };
+
+      /* ===============================================
+         RETURN CHECK
+      =============================================== */
+
+      if (!worker) {
+        throw new Error(
+          "Worker was not returned after saving.",
+        );
+      }
+
+      console.log(
+        "WORKER SAVED:",
+        worker,
+      );
+
+      console.log(
+        "SAVED SERVICES:",
+        (
+          worker as {
+            services?: string[] | null;
+          }
+        ).services,
+      );
+
+      console.log(
+        "SAVED VISIBLE PRICES:",
+        (
+          worker as {
+            visible_pricing_types?:
+              | string[]
+              | null;
+          }
+        ).visible_pricing_types,
+      );
+
+      /* ===============================================
+         WORKER CODE
+      =============================================== */
+
+      const workerCode =
+        (
+          worker as {
+            worker_code?: string | null;
+          }
+        ).worker_code;
+
+      /* ===============================================
+         SUCCESS
+      =============================================== */
+
+      setSuccess(
+        workerCode
+          ? `Worker added successfully — ${workerCode}`
+          : "Worker added successfully.",
+      );
+
+      onCreated?.(worker);
+    } catch (err) {
+      console.error(
+        "WORKER ONBOARDING ERROR:",
+        err,
+      );
+
+      setError(
+        err instanceof Error
+          ? err.message
+          : "Unable to add worker.",
+      );
+    } finally {
+      setSaving(false);
+    }
+  };
 
   /* =====================================================
      CANCEL
   ===================================================== */
 
-  const handleCancel =
-    () => {
-      if (saving) {
-        return;
-      }
+  const handleCancel = () => {
+    if (saving) {
+      return;
+    }
 
-      onBack?.();
-    };
+    onBack?.();
+  };
 
   /* =====================================================
      UI
@@ -749,21 +583,12 @@ export default function WorkerOnboardForm({
 
   return (
     <div className="min-h-screen bg-[#F5F7FA]">
-
-      {/* =================================================
-          HEADER
-      ================================================= */}
-
       <header className="sticky top-0 z-40 border-b border-[#E9ECF1] bg-white/95 px-3 pt-12 pb-3 backdrop-blur-md sm:px-4 sm:pt-8 sm:pb-3.5 md:pt-6 lg:px-6 lg:pt-4 lg:pb-4">
-
         <div className="mx-auto flex w-full max-w-5xl items-center gap-2.5 sm:gap-3">
-
           {onBack && (
             <button
               type="button"
-              onClick={
-                handleCancel
-              }
+              onClick={handleCancel}
               disabled={saving}
               aria-label="Go back"
               className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl text-[#334155] transition hover:bg-[#F1F5F9] active:scale-95 disabled:cursor-not-allowed disabled:opacity-50 sm:h-10 sm:w-10"
@@ -776,7 +601,6 @@ export default function WorkerOnboardForm({
           )}
 
           <div className="min-w-0 flex-1">
-
             <h1 className="truncate text-base font-bold leading-5 text-[#0F172A] sm:text-lg sm:leading-6">
               Worker Onboarding
             </h1>
@@ -784,32 +608,16 @@ export default function WorkerOnboardForm({
             <p className="mt-0.5 truncate text-[11px] leading-4 text-[#64748B] sm:text-xs">
               Add a new worker
             </p>
-
           </div>
-
         </div>
-
       </header>
 
-      {/* =================================================
-          CONTENT
-      ================================================= */}
-
       <main className="mx-auto w-full max-w-5xl px-3 pt-3 pb-32 sm:px-4 sm:pt-4 sm:pb-32 md:pt-3 lg:px-6 lg:pt-4 lg:pb-32">
-
-        {/* =================================================
-            ERROR
-        ================================================= */}
-
         {error && (
           <div className="mb-3 rounded-xl border border-red-200 bg-red-50 px-3 py-2.5 text-xs font-semibold leading-5 text-red-700 sm:mb-4 sm:px-4 sm:py-3 sm:text-sm">
             {error}
           </div>
         )}
-
-        {/* =================================================
-            SUCCESS
-        ================================================= */}
 
         {success && (
           <div className="mb-3 rounded-xl border border-orange-200 bg-orange-50 px-3 py-2.5 text-xs font-semibold leading-5 text-orange-700 sm:mb-4 sm:px-4 sm:py-3 sm:text-sm">
@@ -817,255 +625,60 @@ export default function WorkerOnboardForm({
           </div>
         )}
 
-        {/* =================================================
-            FORM
-        ================================================= */}
-
         <WorkerOnboardSections
-
-          /* =========================
-             BASIC
-          ========================= */
-
-          name={
-            name
-          }
-
-          phone={
-            phone
-          }
-
-          specialty={
-            specialty
-          }
-
-          location={
-            location
-          }
-
-          labourChauk={
-            labourChauk
-          }
-
-          setName={
-            setName
-          }
-
-          setPhone={
-            setPhone
-          }
-
-          setSpecialty={
-            setSpecialty
-          }
-
-          setLocation={
-            setLocation
-          }
-
-          setLabourChauk={
-            setLabourChauk
-          }
-
-          /* =========================
-             PHOTO
-          ========================= */
-
-          photo={
-            photo
-          }
-
-          setPhoto={
-            setPhoto
-          }
-
-          /* =========================
-             CATEGORY
-          ========================= */
-
-          category={
-            category
-          }
-
-          setCategory={
-            setCategory
-          }
-
-          subcategory={
-            subcategory
-          }
-
-          setSubcategory={
-            setSubcategory
-          }
-
-          /* =========================
-             SERVICE TYPES
-          ========================= */
-
-          serviceTypes={
-            serviceTypes
-          }
-
-          setServiceTypes={
-            setServiceTypes
-          }
-
-          /* =========================
-             PROFESSIONAL
-          ========================= */
-
-          experience={
-            experience
-          }
-
-          setExperience={
-            setExperience
-          }
-
-          responseTime={
-            responseTime
-          }
-
-          setResponseTime={
-            setResponseTime
-          }
-
-          bio={
-            bio
-          }
-
-          setBio={
-            setBio
-          }
-
-          skills={
-            skills
-          }
-
-          setSkills={
-            setSkills
-          }
-
-          /* =========================
-             SERVICES
-             
-             Required by
-             WorkerOnboardSections /
-             ProfessionalInfoSection.
-
-             Same state as serviceTypes.
-          ========================= */
-
-          services={
-            services
-          }
-
-          setServices={
-            setServices
-          }
-
-          certifications={
-            certifications
-          }
-
-          setCertifications={
-            setCertifications
-          }
-
-          /* =========================
-             PRICING
-          ========================= */
-
-          pricingType={
-            pricingType
-          }
-
-          setPricingType={
-            setPricingType
-          }
-
-          startingPrice={
-            startingPrice
-          }
-
-          setStartingPrice={
-            setStartingPrice
-          }
-
-          halfDayPrice={
-            halfDayPrice
-          }
-
-          setHalfDayPrice={
-            setHalfDayPrice
-          }
-
-          fullDayPrice={
-            fullDayPrice
-          }
-
-          setFullDayPrice={
-            setFullDayPrice
-          }
-
-          monthlyPrice={
-            monthlyPrice
-          }
-
-          setMonthlyPrice={
-            setMonthlyPrice
-          }
-
-          visitCharge={
-            visitCharge
-          }
-
-          setVisitCharge={
-            setVisitCharge
-          }
-
-          /* =========================
-             AVAILABILITY
-          ========================= */
-
-          available={
-            available
-          }
-
-          setAvailable={
-            setAvailable
-          }
-
-          /* =========================
-             DATA
-          ========================= */
-
-          categories={
-            WORKER_CATEGORIES
-          }
-
-          device={
-            device
-          }
-
-          /* =========================
-             ACTIONS
-          ========================= */
-
-          onCancel={
-            handleCancel
-          }
-
-          onSave={
-            handleSave
-          }
-
-          saving={
-            saving
-          }
+          name={name}
+          phone={phone}
+          specialty={specialty}
+          location={location}
+          labourChauk={labourChauk}
+          setName={setName}
+          setPhone={setPhone}
+          setSpecialty={setSpecialty}
+          setLocation={setLocation}
+          setLabourChauk={setLabourChauk}
+          photo={photo}
+          setPhoto={setPhoto}
+          category={category}
+          setCategory={setCategory}
+          subcategory={subcategory}
+          setSubcategory={setSubcategory}
+          serviceTypes={serviceTypes}
+          setServiceTypes={setServiceTypes}
+          experience={experience}
+          setExperience={setExperience}
+          responseTime={responseTime}
+          setResponseTime={setResponseTime}
+          bio={bio}
+          setBio={setBio}
+          skills={skills}
+          setSkills={setSkills}
+          services={serviceTypes}
+          setServices={setServiceTypes}
+          certifications={certifications}
+          setCertifications={setCertifications}
+          pricingType={pricingType}
+          setPricingType={setPricingType}
+          startingPrice={startingPrice}
+          setStartingPrice={setStartingPrice}
+          halfDayPrice={halfDayPrice}
+          setHalfDayPrice={setHalfDayPrice}
+          fullDayPrice={fullDayPrice}
+          setFullDayPrice={setFullDayPrice}
+          monthlyPrice={monthlyPrice}
+          setMonthlyPrice={setMonthlyPrice}
+          visitCharge={visitCharge}
+          setVisitCharge={setVisitCharge}
+          visiblePricingTypes={visiblePricingTypes}
+          setVisiblePricingTypes={setVisiblePricingTypes}
+          handleVisiblePriceChange={handleVisiblePriceChange}
+          available={available}
+          setAvailable={setAvailable}
+          categories={WORKER_CATEGORIES}
+          device={device}
+          onCancel={handleCancel}
+          onSave={handleSave}
+          saving={saving}
         />
-
       </main>
     </div>
   );
