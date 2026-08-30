@@ -208,8 +208,7 @@ export default function AdminSidebar({
               Workkerz + E-Aurix
             </div>
           </div>
-        </div>
-      </div>
+        </div>      </div>
 
       {/* NAVIGATION */}
       <nav className="flex-1 px-3 py-2 space-y-1 overflow-y-auto overscroll-contain">

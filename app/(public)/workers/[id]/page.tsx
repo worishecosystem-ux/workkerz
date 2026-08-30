@@ -1,9 +1,10 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { Share } from "@capacitor/share";
+
 import {
   Star,
   MapPin,
@@ -26,6 +27,7 @@ import {
   getWorkerById,
   serviceCategories,
   type Worker,
+  type PriceKey,
 } from "@/app/data/workers";
 
 import { supabase } from "@/lib/supabase";
@@ -34,16 +36,20 @@ import { supabase } from "@/lib/supabase";
    STAR RATING
 ========================================= */
 
-function StarRating({ rating }: { rating: number }) {
+function StarRating({
+  rating,
+}: {
+  rating: number;
+}) {
   return (
     <div className="flex items-center gap-0.5">
       {[1, 2, 3, 4, 5].map((i) => (
         <Star
           key={i}
-          className={`w-4 h-4 ${
+          className={`h-4 w-4 ${
             i <= Math.floor(rating)
-              ? "text-amber-400 fill-amber-400"
-              : "text-gray-200 fill-gray-200"
+              ? "fill-amber-400 text-amber-400"
+              : "fill-gray-200 text-gray-200"
           }`}
         />
       ))}
@@ -52,35 +58,150 @@ function StarRating({ rating }: { rating: number }) {
 }
 
 /* =========================================
+   PRICE DATA
+========================================= */
+
+type PriceItem = {
+  key: PriceKey;
+  price: number;
+  label: string;
+  shortLabel: string;
+};
+
+/* =========================================
+   GET VISIBLE PRICES
+========================================= */
+
+function getVisiblePrices(
+  worker: Worker,
+): PriceItem[] {
+  const visible =
+    Array.isArray(
+      worker.visiblePricingTypes,
+    )
+      ? worker.visiblePricingTypes
+      : [];
+
+  const priceMap: Record<
+    PriceKey,
+    PriceItem
+  > = {
+    per_job: {
+      key: "per_job",
+      price: Number(
+        worker.startingPrice || 0,
+      ),
+      label: "Per Job",
+      shortLabel: "Job",
+    },
+
+    half_day: {
+      key: "half_day",
+      price: Number(
+        worker.halfDayPrice || 0,
+      ),
+      label: "Half Day",
+      shortLabel: "Half Day",
+    },
+
+    full_day: {
+      key: "full_day",
+      price: Number(
+        worker.fullDayPrice || 0,
+      ),
+      label: "Full Day",
+      shortLabel: "Full Day",
+    },
+
+    monthly: {
+      key: "monthly",
+      price: Number(
+        worker.monthlyPrice || 0,
+      ),
+      label: "Monthly",
+      shortLabel: "Month",
+    },
+
+    visit_charge: {
+      key: "visit_charge",
+      price: Number(
+        worker.visitCharge || 0,
+      ),
+      label: "Visit Charge",
+      shortLabel: "Visit",
+    },
+  };
+
+  return visible
+    .map(
+      (key) =>
+        priceMap[key],
+    )
+    .filter(
+      (item) =>
+        item &&
+        Number(item.price) > 0,
+    );
+}
+
+/* =========================================
    WORKER PROFILE
 ========================================= */
 
 export default function WorkerProfile() {
   const { id } = useParams();
-  const workerId = Array.isArray(id) ? id[0] : id;
+
+  const workerId = Array.isArray(id)
+    ? id[0]
+    : id;
+
   const router = useRouter();
 
-  const [saved, setSaved] = useState(false);
-  const [activeTab, setActiveTab] = useState<
-    "about" | "reviews" | "portfolio"
-  >("about");
+  const [saved, setSaved] =
+    useState(false);
 
-  const [worker, setWorker] = useState<Worker | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [reviews, setReviews] = useState<any[]>([]);
-  const [favoriteLoading, setFavoriteLoading] = useState(false);
+  const [activeTab, setActiveTab] =
+    useState<
+      "about" | "reviews" | "portfolio"
+    >("about");
+
+  const [worker, setWorker] =
+    useState<Worker | null>(null);
+
+  const [loading, setLoading] =
+    useState(true);
+
+  const [reviews, setReviews] =
+    useState<any[]>([]);
+
+  const [favoriteLoading, setFavoriteLoading] =
+    useState(false);
+
+  /* =========================================
+     VISIBLE PRICES
+  ========================================= */
+
+  const visiblePrices = useMemo(
+    () =>
+      worker
+        ? getVisiblePrices(
+            worker,
+          )
+        : [],
+    [worker],
+  );
 
   /* =========================================
      FETCH DATA
   ========================================= */
 
   useEffect(() => {
-    if (!id) return;
+    if (!workerId) return;
 
     loadWorker();
     loadReviews();
     checkFavorite();
-  }, [id]);
+  }, [workerId]);
 
   /* =========================================
      LOAD WORKER
@@ -90,13 +211,26 @@ export default function WorkerProfile() {
     try {
       setLoading(true);
 
-      const data = await getWorkerById(id as string);
+      if (!workerId) {
+        return;
+      }
 
-      console.log("CURRENT WORKER =>", data);
+      const data =
+        await getWorkerById(
+          workerId,
+        );
+
+      console.log(
+        "CURRENT WORKER =>",
+        data,
+      );
 
       setWorker(data);
     } catch (error) {
-      console.error("LOAD WORKER ERROR:", error);
+      console.error(
+        "LOAD WORKER ERROR:",
+        error,
+      );
     } finally {
       setLoading(false);
     }
@@ -111,22 +245,35 @@ export default function WorkerProfile() {
 
     const {
       data: { user },
-    } = await supabase.auth.getUser();
+    } =
+      await supabase.auth.getUser();
 
     if (!user) {
       setSaved(false);
       return;
     }
 
-    const { data, error } = await supabase
+    const {
+      data,
+      error,
+    } = await supabase
       .from("favorites")
       .select("id")
-      .eq("customer_id", user.id)
-      .eq("worker_id", workerId)
+      .eq(
+        "customer_id",
+        user.id,
+      )
+      .eq(
+        "worker_id",
+        workerId,
+      )
       .maybeSingle();
 
     if (error) {
-      console.error("CHECK FAVORITE ERROR:", error);
+      console.error(
+        "CHECK FAVORITE ERROR:",
+        error,
+      );
       return;
     }
 
@@ -137,83 +284,128 @@ export default function WorkerProfile() {
      TOGGLE FAVORITE
   ========================================= */
 
-  const toggleFavorite = async () => {
-    try {
-      setFavoriteLoading(true);
-
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
-
-      if (!user) {
-        router.push(
-          `/login?redirect=${encodeURIComponent(
-            `/workers/${workerId}`,
-          )}`,
+  const toggleFavorite =
+    async () => {
+      try {
+        setFavoriteLoading(
+          true,
         );
-        return;
-      }
 
-      const { data: existing, error: checkError } =
-        await supabase
-          .from("favorites")
-          .select("id")
-          .eq("customer_id", user.id)
-          .eq("worker_id", workerId)
-          .maybeSingle();
+        const {
+          data: { user },
+        } =
+          await supabase.auth.getUser();
 
-      if (checkError) {
-        throw checkError;
-      }
-
-      if (existing) {
-        const { error } = await supabase
-          .from("favorites")
-          .delete()
-          .eq("id", existing.id);
-
-        if (error) {
-          throw error;
+        if (!user) {
+          router.push(
+            `/login?redirect=${encodeURIComponent(
+              `/workers/${workerId}`,
+            )}`,
+          );
+          return;
         }
 
-        setSaved(false);
-      } else {
-        const { error } = await supabase
-          .from("favorites")
-          .insert({
-            customer_id: user.id,
-            worker_id: workerId,
-          });
+        const {
+          data: existing,
+          error: checkError,
+        } =
+          await supabase
+            .from("favorites")
+            .select("id")
+            .eq(
+              "customer_id",
+              user.id,
+            )
+            .eq(
+              "worker_id",
+              workerId,
+            )
+            .maybeSingle();
 
-        if (error) {
-          throw error;
+        if (checkError) {
+          throw checkError;
         }
 
-        setSaved(true);
-      }
+        if (existing) {
+          const {
+            error,
+          } = await supabase
+            .from("favorites")
+            .delete()
+            .eq(
+              "id",
+              existing.id,
+            );
 
-      await checkFavorite();
-    } catch (error) {
-      console.error("Favorite Error:", error);
-    } finally {
-      setFavoriteLoading(false);
-    }
-  };
+          if (error) {
+            throw error;
+          }
+
+          setSaved(false);
+        } else {
+          const {
+            error,
+          } = await supabase
+            .from("favorites")
+            .upsert(
+              {
+                customer_id:
+                  user.id,
+                worker_id:
+                  workerId,
+              },
+              {
+                onConflict:
+                  "customer_id,worker_id",
+                ignoreDuplicates:
+                  true,
+              },
+            );
+
+          if (error) {
+            throw error;
+          }
+
+          setSaved(true);
+        }
+
+        await checkFavorite();
+      } catch (error) {
+        console.error(
+          "Favorite Error:",
+          error,
+        );
+      } finally {
+        setFavoriteLoading(
+          false,
+        );
+      }
+    };
 
   /* =========================================
      LOAD REVIEWS
   ========================================= */
 
   const loadReviews = async () => {
-    if (!id) return;
+    if (!workerId) return;
 
-    const { data, error } = await supabase
+    const {
+      data,
+      error,
+    } = await supabase
       .from("reviews")
       .select("*")
-      .eq("worker_id", id);
+      .eq(
+        "worker_id",
+        workerId,
+      );
 
     if (error) {
-      console.error("LOAD REVIEWS ERROR:", error);
+      console.error(
+        "LOAD REVIEWS ERROR:",
+        error,
+      );
+
       setReviews([]);
       return;
     }
@@ -225,51 +417,61 @@ export default function WorkerProfile() {
      BOOK NOW
   ========================================= */
 
-  const handleBookNow = async () => {
-    if (!workerId) return;
+  const handleBookNow =
+    async () => {
+      if (!workerId) return;
 
-    const {
-      data: { session },
-    } = await supabase.auth.getSession();
+      const {
+        data: { session },
+      } =
+        await supabase.auth.getSession();
 
-    if (!session) {
+      if (!session) {
+        router.push(
+          `/login?redirect=${encodeURIComponent(
+            `/book/${workerId}`,
+          )}`,
+        );
+        return;
+      }
+
       router.push(
-        `/login?redirect=${encodeURIComponent(
-          `/book/${workerId}`,
-        )}`,
+        `/book/${workerId}`,
       );
-      return;
-    }
-
-    router.push(`/book/${workerId}`);
-  };
+    };
 
   /* =========================================
      SHARE
   ========================================= */
 
-  const handleShare = async () => {
-    if (!worker) return;
+  const handleShare =
+    async () => {
+      if (!worker) return;
 
-    try {
-      await Share.share({
-        title: `${worker.name} | Workkerz`,
-        text: `Book ${worker.name} on Workkerz`,
-        url: window.location.href,
-        dialogTitle: "Share Worker",
-      });
-    } catch (error: any) {
-      if (
-        error?.message
-          ?.toLowerCase()
-          .includes("cancel")
-      ) {
-        return;
+      try {
+        await Share.share({
+          title: `${worker.name} | Workkerz`,
+          text: `Book ${worker.name} on Workkerz`,
+          url:
+            window.location.href,
+          dialogTitle:
+            "Share Worker",
+        });
+      } catch (error: any) {
+        if (
+          error?.message
+            ?.toLowerCase()
+            .includes("cancel")
+        ) {
+          return;
+        }
+
+        console.error(
+          "SHARE ERROR:",
+          error,
+        );
       }
-
-      console.error("SHARE ERROR:", error);
-    }
-  };
+    };
 
   /* =========================================
      LOADING
@@ -277,24 +479,16 @@ export default function WorkerProfile() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-[#F8FAFC] flex items-center justify-center px-6">
+      <div className="flex min-h-screen items-center justify-center bg-[#F8FAFC] px-6">
         <div className="flex flex-col items-center">
-          {/* LOGO LOADER */}
-
-          <div className="relative w-24 h-24 flex items-center justify-center">
-            {/* OUTER RING */}
-
+          <div className="relative flex h-24 w-24 items-center justify-center">
             <div className="absolute inset-0 rounded-full border-4 border-orange-100" />
 
-            {/* SPINNING RING */}
+            <div className="absolute inset-0 animate-spin rounded-full border-4 border-transparent border-r-[#FF5C39] border-t-[#FF5C39]" />
 
-            <div className="absolute inset-0 rounded-full border-4 border-transparent border-t-[#FF5C39] border-r-[#FF5C39] animate-spin" />
-
-            {/* INNER GLOW */}
-
-            <div className="w-14 h-14 rounded-2xl bg-[#FF5C39] flex items-center justify-center shadow-lg shadow-orange-200 animate-pulse">
+            <div className="flex h-14 w-14 animate-pulse items-center justify-center rounded-2xl bg-[#FF5C39] shadow-lg shadow-orange-200">
               <span
-                className="text-white text-2xl"
+                className="text-2xl text-white"
                 style={{
                   fontWeight: 900,
                 }}
@@ -304,40 +498,32 @@ export default function WorkerProfile() {
             </div>
           </div>
 
-          {/* TEXT */}
-
           <div className="mt-6 text-center">
-            <h2
-              className="text-[#0F172A]"
-              style={{
-                fontWeight: 800,
-                fontSize: "1.2rem",
-              }}
-            >
+            <h2 className="text-[1.2rem] font-extrabold text-[#0F172A]">
               Loading Workers
             </h2>
 
-            <p className="text-sm text-[#94A3B8] mt-1">
+            <p className="mt-1 text-sm text-[#94A3B8]">
               Preparing Workkerz profile
             </p>
           </div>
 
-          {/* DOTS */}
-
-          <div className="flex items-center gap-2 mt-5">
-            <span className="w-2.5 h-2.5 rounded-full bg-[#FF5C39] animate-bounce" />
+          <div className="mt-5 flex items-center gap-2">
+            <span className="h-2.5 w-2.5 animate-bounce rounded-full bg-[#FF5C39]" />
 
             <span
-              className="w-2.5 h-2.5 rounded-full bg-[#FF8A65] animate-bounce"
+              className="h-2.5 w-2.5 animate-bounce rounded-full bg-[#FF8A65]"
               style={{
-                animationDelay: "0.15s",
+                animationDelay:
+                  "0.15s",
               }}
             />
 
             <span
-              className="w-2.5 h-2.5 rounded-full bg-[#FFB199] animate-bounce"
+              className="h-2.5 w-2.5 animate-bounce rounded-full bg-[#FFB199]"
               style={{
-                animationDelay: "0.3s",
+                animationDelay:
+                  "0.3s",
               }}
             />
           </div>
@@ -352,20 +538,15 @@ export default function WorkerProfile() {
 
   if (!worker) {
     return (
-      <div className="min-h-screen bg-[#F8FAFC] flex items-center justify-center pt-16">
+      <div className="flex min-h-screen items-center justify-center bg-[#F8FAFC] pt-16">
         <div className="text-center">
-          <h2
-            className="text-[#0F172A] mb-2"
-            style={{
-              fontWeight: 700,
-            }}
-          >
+          <h2 className="mb-2 font-bold text-[#0F172A]">
             Worker not found
           </h2>
 
           <Link
             href="/browse"
-            className="text-[#FF5C39] text-sm"
+            className="text-sm text-[#FF5C39]"
           >
             Back to Browse
           </Link>
@@ -381,7 +562,8 @@ export default function WorkerProfile() {
   const cat =
     serviceCategories.find(
       (category) =>
-        category.id === worker.category,
+        category.id ===
+        worker.category,
     ) ?? {
       id: "other",
       label:
@@ -391,26 +573,29 @@ export default function WorkerProfile() {
       bg: "#F1F5F9",
     };
 
-  const workerReviews = reviews;
+  const workerReviews =
+    reviews;
 
   /* =========================================
      UI
   ========================================= */
 
   return (
-    <div className="min-h-dvh w-full bg-white overflow-x-hidden">
-      <div className="w-screen max-w-none m-0 p-0 lg:max-w-7xl lg:mx-auto lg:px-6 lg:py-8">
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-0 lg:gap-8">
+    <div className="min-h-dvh w-full overflow-x-hidden bg-white">
+      <div className="m-0 w-screen max-w-none p-0 lg:mx-auto lg:max-w-7xl lg:px-6 lg:py-8">
+        <div className="grid grid-cols-1 gap-0 lg:grid-cols-3 lg:gap-8">
           {/* =========================================
               MAIN CONTENT
           ========================================= */}
 
-          <div className="lg:col-span-2 space-y-5">
+          <div className="space-y-5 lg:col-span-2">
+
             {/* =========================================
                 PROFILE CARD
             ========================================= */}
 
-            <div className="bg-white overflow-hidden border-0 lg:border lg:border-gray-100 rounded-none lg:rounded-3xl">
+            <div className="overflow-hidden rounded-none border-0 bg-white lg:rounded-3xl lg:border lg:border-gray-100">
+
               {/* COVER */}
 
               <div
@@ -421,25 +606,35 @@ export default function WorkerProfile() {
               />
 
               <div className="px-2 pb-2">
-                {/* PROFILE */}
 
-                <div className="-mt-12 relative z-10">
-                  <div className="flex items-start gap-6">
+                {/* =====================================
+                    PROFILE HEADER
+                ===================================== */}
+
+                <div className="relative z-10 -mt-12">
+                  <div className="flex items-start gap-3 sm:gap-5">
+
                     {/* PROFILE PHOTO */}
 
-                    <div className="relative shrink-0 px-5">
+                    <div className="relative shrink-0 px-3 sm:px-5">
                       {worker.photo?.trim() ? (
                         <img
-                          src={worker.photo}
-                          alt={worker.name}
-                          className="h-20 w-20 rounded-2xl border-2 border-white bg-slate-100 object-cover object-top shadow-lg"
-                          onError={(e) => {
+                          src={
+                            worker.photo
+                          }
+                          alt={
+                            worker.name
+                          }
+                          className="h-20 w-20 rounded-2xl border-2 border-white bg-slate-100 object-cover object-top shadow-lg sm:h-24 sm:w-24"
+                          onError={(
+                            e,
+                          ) => {
                             e.currentTarget.style.display =
                               "none";
                           }}
                         />
                       ) : (
-                        <div className="flex h-20 w-20 items-center justify-center rounded-2xl border-2 border-white bg-slate-100 shadow-lg">
+                        <div className="flex h-20 w-20 items-center justify-center rounded-2xl border-2 border-white bg-slate-100 shadow-lg sm:h-24 sm:w-24">
                           <div className="flex h-10 w-10 items-center justify-center rounded-full bg-slate-300">
                             <span className="text-lg font-bold text-white">
                               {worker.name?.charAt(
@@ -451,21 +646,31 @@ export default function WorkerProfile() {
                       )}
 
                       {worker.available && (
-                        <span className="absolute bottom-1 right-5 h-4 w-4 rounded-full border border-white bg-emerald-500" />
+                        <span className="absolute bottom-1 right-3 h-4 w-4 rounded-full border-2 border-white bg-emerald-500 sm:right-5" />
                       )}
                     </div>
 
-                    {/* DETAILS */}
+                    {/* =================================
+                        DETAILS
+                    ================================= */}
 
-                    <div className="min-w-0 flex-1 space-y-2">
-                      {/* NAME */}
+                    <div className="min-w-0 flex-1 pt-1">
 
-                      <div className="flex items-center gap-1 flex-wrap">
-                        <h1 className="truncate text-lg font-bold text-slate-900">
-                          {worker.name}
+                      {/* NAME - FIXED SINGLE LINE */}
+
+                      <div className="flex min-w-0 items-center gap-1.5">
+                        <h1
+                          title={
+                            worker.name
+                          }
+                          className="min-w-0 flex-1 truncate text-base font-bold leading-6 text-slate-900 sm:text-lg"
+                        >
+                          {
+                            worker.name
+                          }
                         </h1>
 
-                        <div className="relative w-5 h-5">
+                        <div className="relative h-5 w-5 shrink-0">
                           <BadgeCheck className="absolute inset-0 h-5 w-5 fill-cyan-300 text-sky-500" />
 
                           <Check className="absolute inset-0 m-auto h-3 w-3 text-white stroke-3" />
@@ -474,39 +679,53 @@ export default function WorkerProfile() {
 
                       {/* CATEGORY + SPECIALTY */}
 
-                      <div className="flex flex-wrap gap-6 mt-">
+                      <div className="mt-1.5 flex min-w-0 items-center gap-1.5 overflow-hidden">
                         <div
-                          className="inline-flex items-center gap-1 rounded-lg border px-2.5 py-1 text-[11px] font-semibold"
+                          className="inline-flex h-7 max-w-[45%] shrink-0 items-center gap-1 overflow-hidden rounded-lg border px-2 text-[9px] font-semibold sm:text-[11px]"
                           style={{
                             backgroundColor:
                               cat.bg,
                             borderColor: `${cat.color}25`,
-                            color: cat.color,
+                            color:
+                              cat.color,
                           }}
                         >
-                          <BriefcaseBusiness className="h-3.5 w-3.5" />
+                          <BriefcaseBusiness className="h-3 w-3 shrink-0 sm:h-3.5 sm:w-3.5" />
 
-                          {cat.label}
+                          <span className="truncate">
+                            {cat.label}
+                          </span>
                         </div>
 
-                        <div className="inline-flex items-center gap-1 rounded-lg border border-slate-200 bg-white px-2.5 py-1 text-[11px] font-medium text-slate-600">
-                          <Building2 className="h-3.5 w-3.5 text-slate-400" />
+                        <div className="inline-flex h-7 min-w-0 flex-1 items-center gap-1 overflow-hidden rounded-lg border border-slate-200 bg-white px-2 text-[9px] font-medium text-slate-600 sm:text-[11px]">
+                          <Building2 className="h-3 w-3 shrink-0 text-slate-400 sm:h-3.5 sm:w-3.5" />
 
-                          <span className="truncate max-w-32.5">
-                            {worker.specialty}
+                          <span
+                            title={
+                              worker.specialty
+                            }
+                            className="truncate"
+                          >
+                            {
+                              worker.specialty
+                            }
                           </span>
                         </div>
                       </div>
 
                       {/* RATING */}
 
-                      <div className="flex items-center gap-2">
-                        <div className="flex items-center rounded-lg bg-amber-50 px-2 py-1">
+                      <div className="mt-1.5 flex items-center gap-1.5">
+                        <div className="flex items-center rounded-lg bg-amber-50 px-1.5 py-0.5">
                           {[1, 2, 3, 4, 5].map(
-                            (star) => (
+                            (
+                              star,
+                            ) => (
                               <Star
-                                key={star}
-                                className={`h-3.5 w-3.5 ${
+                                key={
+                                  star
+                                }
+                                className={`h-3 w-3 ${
                                   worker.rating >=
                                   star
                                     ? "fill-amber-400 text-amber-400"
@@ -516,15 +735,22 @@ export default function WorkerProfile() {
                             ),
                           )}
 
-                          <span className="ml-1 text-xs font-semibold text-slate-900">
-                            {worker.rating.toFixed(
+                          <span className="ml-1 text-[10px] font-semibold text-slate-900">
+                            {Number(
+                              worker.rating ||
+                                0,
+                            ).toFixed(
                               1,
                             )}
                           </span>
                         </div>
 
-                        <span className="text-xs text-slate-500">
-                          ({worker.reviewCount})
+                        <span className="text-[10px] text-slate-500">
+                          (
+                          {
+                            worker.reviewCount
+                          }
+                          )
                         </span>
                       </div>
                     </div>
@@ -532,183 +758,258 @@ export default function WorkerProfile() {
                 </div>
 
                 {/* =========================================
-                    ACTION BUTTONS
+                    VISIBLE PRICING + SHARE
                 ========================================= */}
 
-                <div className="mt-5 mb-5 flex items-center gap-5 px-2">
-                  {/* STARTING PRICE */}
+                <div className="mt-4 mb-4 flex items-center gap-2 px-2">
 
-                  <div className="relative flex-1 overflow-hidden rounded-2xl bg-linear-to-r from-[#FF6B35] via-[#FF7A45] to-[#FF9A62] p-px shadow-md shadow-orange-300/20">
-                    <div className="flex items-center justify-between rounded-2xl bg-white px-3 py-2">
-                      <div className="flex items-center gap-3 px-5">
-                        <BadgeIndianRupee className="h-6 w-6 text-emerald-600" />
+                  {/* PRICES */}
 
-                        <div className="flex items-center gap-3">
-                          <span className="text-[15px] font-semibold uppercase tracking-wide text-slate-500">
-                            Starting Price
-                          </span>
+                  <div className="min-w-0 flex-1">
 
-                          <span className="h-4 w-px bg-slate-300" />
+                    {visiblePrices.length ===
+                      1 && (
+                      <div className="flex h-12 items-center gap-2 rounded-xl border border-orange-100 bg-orange-50/50 px-3">
+                        <BadgeIndianRupee className="h-5 w-5 shrink-0 text-emerald-600" />
 
-                          <span className="bg-linear-to-r from-indigo-600 to-violet-600 bg-clip-text text-xl font-extrabold text-transparent">
-                            ₹{worker.startingPrice}
-                          </span>
+                        <div className="min-w-0">
+                          <p className="text-[8px] font-semibold uppercase tracking-wide text-slate-400">
+                            {
+                              visiblePrices[0]
+                                .label
+                            }
+                          </p>
+
+                          <div className="flex items-baseline gap-1">
+                            <span className="text-lg font-extrabold leading-none text-[#0F7A22]">
+                              ₹
+                              {
+                                visiblePrices[0]
+                                  .price
+                              }
+                            </span>
+
+                            <span className="text-[8px] text-slate-400">
+                              onwards
+                            </span>
+                          </div>
                         </div>
                       </div>
-                    </div>
+                    )}
+
+                    {visiblePrices.length >
+                      1 && (
+                      <div className="grid grid-cols-2 gap-1.5 sm:grid-cols-3">
+                        {visiblePrices.map(
+                          (item) => (
+                            <div
+                              key={
+                                item.key
+                              }
+                              className="min-w-0 rounded-xl border border-slate-100 bg-slate-50 px-2.5 py-1.5"
+                            >
+                              <p className="truncate text-[8px] font-semibold uppercase tracking-wide text-slate-400">
+                                {
+                                  item.shortLabel
+                                }
+                              </p>
+
+                              <p className="truncate text-sm font-extrabold leading-4 text-[#0F7A22]">
+                                ₹
+                                {
+                                  item.price
+                                }
+                              </p>
+                            </div>
+                          ),
+                        )}
+                      </div>
+                    )}
+
+                    {/* NO VISIBLE PRICE */}
+
+                    {visiblePrices.length ===
+                      0 && (
+                      <div className="flex h-12 items-center rounded-xl border border-slate-100 bg-slate-50 px-3">
+                        <span className="text-[10px] text-slate-400">
+                          Price not available
+                        </span>
+                      </div>
+                    )}
                   </div>
 
                   {/* SHARE */}
 
                   <button
-                    onClick={handleShare}
-                    className="flex h-11 w-11 items-center justify-center rounded-xl border border-slate-200 bg-white shadow-sm transition-all duration-300 hover:border-[#FF6B35] hover:bg-orange-50 active:scale-95"
+                    type="button"
+                    onClick={
+                      handleShare
+                    }
+                    className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border border-slate-200 bg-white shadow-sm transition-all duration-300 hover:border-[#FF6B35] hover:bg-orange-50 active:scale-95"
                   >
                     <Share2 className="h-5 w-5 text-slate-600" />
                   </button>
                 </div>
 
                 {/* =========================================
-                    BOOKING SIDEBAR
+                    STATS
                 ========================================= */}
 
-                <div className="lg:col-span-1">
-                  <div className="sticky top-24 space-y-4">
-                    {/* STATS */}
+                <div className="grid grid-cols-2 gap-2 px-2">
 
-                    <div className="grid grid-cols-2 gap-2 px-2">
-                      {[
-                        {
-                          label: "Rating",
-                          value:
-                            worker.rating,
-                          icon: Star,
-                          color: "#F59E0B",
-                        },
-                        {
-                          label: "Works",
-                          value: `${worker.completedJobs}+`,
-                          icon: Briefcase,
-                          color: "#3B82F6",
-                        },
-                        {
-                          label: "Experience",
-                          value: `${worker.yearsExperience}Y`,
-                          icon: Award,
-                          color: "#10B981",
-                        },
-                        {
-                          label: "",
-                          value:
-                            worker.location ||
-                            "N/A",
-                          icon: MapPin,
-                          color: "#EF4444",
-                        },
-                      ].map((stat) => {
+                  {[
+                    {
+                      label:
+                        "Rating",
+                      value:
+                        Number(
+                          worker.rating ||
+                            0,
+                        ).toFixed(
+                          1,
+                        ),
+                      icon: Star,
+                      color:
+                        "#F59E0B",
+                    },
+
+                    {
+                      label:
+                        "Works",
+                      value: `${worker.completedJobs}+`,
+                      icon: Briefcase,
+                      color:
+                        "#3B82F6",
+                    },
+
+                    {
+                      label:
+                        "Experience",
+                      value: `${worker.yearsExperience}Y`,
+                      icon: Award,
+                      color:
+                        "#10B981",
+                    },
+
+                    {
+                      label:
+                        "Location",
+                      value:
+                        worker.location ||
+                        "N/A",
+                      icon: MapPin,
+                      color:
+                        "#EF4444",
+                    },
+                  ].map(
+                    (stat) => {
+                      const Icon =
+                        stat.icon;
+
+                      return (
+                        <div
+                          key={
+                            stat.label
+                          }
+                          className="flex h-14.5 min-w-0 items-center rounded-2xl border border-slate-100 bg-white px-2.5 shadow-sm"
+                        >
+                          <div className="flex w-full min-w-0 items-center gap-2">
+                            <div
+                              className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl"
+                              style={{
+                                backgroundColor: `${stat.color}15`,
+                              }}
+                            >
+                              <Icon
+                                className="h-4 w-4"
+                                style={{
+                                  color:
+                                    stat.color,
+                                }}
+                              />
+                            </div>
+
+                            <div className="min-w-0 flex-1">
+                              <p
+                                className="truncate text-xs font-semibold text-slate-900 sm:text-sm"
+                                title={String(
+                                  stat.value,
+                                )}
+                              >
+                                {
+                                  stat.value
+                                }
+                              </p>
+
+                              <p className="truncate text-[9px] text-slate-500 sm:text-[11px]">
+                                {
+                                  stat.label
+                                }
+                              </p>
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    },
+                  )}
+                </div>
+
+                {/* =========================================
+                    TRUST BADGES
+                ========================================= */}
+
+                <div className="mt-4 rounded-2xl border border-gray-100 bg-white p-4">
+                  <h4 className="mb-3 text-sm font-semibold text-[#0F172A]">
+                    Why Book with Confidence
+                  </h4>
+
+                  <div className="space-y-3">
+                    {[
+                      {
+                        icon: Shield,
+                        text: "Background checked & verified",
+                        color:
+                          "#3B82F6",
+                      },
+                      {
+                        icon: CheckCircle,
+                        text: "Satisfaction guarantee",
+                        color:
+                          "#10B981",
+                      },
+                      {
+                        icon: Clock,
+                        text: "Flexible scheduling options",
+                        color:
+                          "#8B5CF6",
+                      },
+                    ].map(
+                      (badge) => {
                         const Icon =
-                          stat.icon;
+                          badge.icon;
 
                         return (
                           <div
                             key={
-                              stat.label ||
-                              String(
-                                stat.value,
-                              )
+                              badge.text
                             }
-                            className="h-14.5 bg-white border border-slate-100 rounded-2xl px-3 shadow-sm flex items-center"
+                            className="flex items-center gap-3 text-sm text-[#475569]"
                           >
-                            <div className="flex items-center gap-2 w-full min-w-0">
-                              <div
-                                className="w-8 h-8 rounded-xl flex items-center justify-center shrink-0"
-                                style={{
-                                  backgroundColor: `${stat.color}15`,
-                                }}
-                              >
-                                <Icon
-                                  className="w-4 h-4"
-                                  style={{
-                                    color:
-                                      stat.color,
-                                  }}
-                                />
-                              </div>
+                            <Icon
+                              className="h-4 w-4 shrink-0"
+                              style={{
+                                color:
+                                  badge.color,
+                              }}
+                            />
 
-                              <div className="flex-1 min-w-0">
-                                <p
-                                  className="text-sm font-semibold text-slate-900 truncate"
-                                  title={String(
-                                    stat.value,
-                                  )}
-                                >
-                                  {stat.value}
-                                </p>
-
-                                <p className="text-[11px] text-slate-500">
-                                  {stat.label}
-                                </p>
-                              </div>
-                            </div>
+                            {
+                              badge.text
+                            }
                           </div>
                         );
-                      })}
-                    </div>
-
-                    {/* TRUST BADGES */}
-
-                    <div className="bg-white rounded-2xl border border-gray-100 p-5">
-                      <h4
-                        className="text-[#0F172A] text-sm mb-4"
-                        style={{
-                          fontWeight: 600,
-                        }}
-                      >
-                        Why Book with Confidence
-                      </h4>
-
-                      <div className="space-y-3">
-                        {[
-                          {
-                            icon: Shield,
-                            text: "Background checked & verified",
-                            color: "#3B82F6",
-                          },
-                          {
-                            icon: CheckCircle,
-                            text: "Satisfaction guarantee",
-                            color: "#10B981",
-                          },
-                          {
-                            icon: Clock,
-                            text: "Flexible scheduling options",
-                            color: "#8B5CF6",
-                          },
-                        ].map((badge) => {
-                          const Icon =
-                            badge.icon;
-
-                          return (
-                            <div
-                              key={
-                                badge.text
-                              }
-                              className="flex items-center gap-3 text-sm text-[#475569]"
-                            >
-                              <Icon
-                                className="w-4 h-4 shrink-0"
-                                style={{
-                                  color:
-                                    badge.color,
-                                }}
-                              />
-
-                              {badge.text}
-                            </div>
-                          );
-                        })}
-                      </div>
-                    </div>
+                      },
+                    )}
                   </div>
                 </div>
               </div>
@@ -718,7 +1019,7 @@ export default function WorkerProfile() {
                 TABS
             ========================================= */}
 
-            <div className="bg-white rounded-2xl border border-gray-100 overflow-hidden mb-20">
+            <div className="mb-20 overflow-hidden rounded-2xl border border-gray-100 bg-white">
               <div className="flex border-b border-gray-100">
                 {(
                   [
@@ -729,25 +1030,31 @@ export default function WorkerProfile() {
                 ).map((tab) => (
                   <button
                     key={tab}
+                    type="button"
                     onClick={() =>
-                      setActiveTab(tab)
+                      setActiveTab(
+                        tab,
+                      )
                     }
-                    className={`flex-1 py-4 text-sm capitalize transition-colors ${
-                      activeTab === tab
-                        ? "text-[#FF5C39] border-b-2 border-[#FF5C39] bg-orange-50/50"
-                        : "text-[#64748B] hover:text-[#0F172A]"
+                    className={`flex-1 border-b-2 py-4 text-sm capitalize transition-colors ${
+                      activeTab ===
+                      tab
+                        ? "border-[#FF5C39] bg-orange-50/50 text-[#FF5C39]"
+                        : "border-transparent text-[#64748B] hover:text-[#0F172A]"
                     }`}
                     style={{
                       fontWeight:
-                        activeTab === tab
+                        activeTab ===
+                        tab
                           ? 600
                           : 400,
                     }}
                   >
                     {tab}
 
-                    {tab === "reviews" && (
-                      <span className="ml-1.5 text-xs bg-gray-100 text-[#64748B] px-1.5 py-0.5 rounded-full">
+                    {tab ===
+                      "reviews" && (
+                      <span className="ml-1.5 rounded-full bg-gray-100 px-1.5 py-0.5 text-xs text-[#64748B]">
                         {
                           worker.reviewCount
                         }
@@ -758,80 +1065,76 @@ export default function WorkerProfile() {
               </div>
 
               <div className="p-6">
-                {/* =========================================
-                    ABOUT TAB
-                ========================================= */}
 
-                {activeTab === "about" && (
+                {/* =====================================
+                    ABOUT
+                ===================================== */}
+
+                {activeTab ===
+                  "about" && (
                   <div className="space-y-6">
-                    {/* ABOUT */}
 
                     <div>
-                      <h3
-                        className="text-[#0F172A] mb-3"
-                        style={{
-                          fontWeight: 600,
-                        }}
-                      >
+                      <h3 className="mb-3 font-semibold text-[#0F172A]">
                         About
                       </h3>
 
-                      <p className="text-[#475569] text-sm leading-relaxed">
-                        {worker.bio}
+                      <p className="text-sm leading-relaxed text-[#475569]">
+                        {
+                          worker.bio
+                        }
                       </p>
                     </div>
 
-                    {/* SKILLS */}
-
                     <div>
-                      <h3
-                        className="text-[#0F172A] mb-3"
-                        style={{
-                          fontWeight: 600,
-                        }}
-                      >
+                      <h3 className="mb-3 font-semibold text-[#0F172A]">
                         Skills & Expertise
                       </h3>
 
                       <div className="flex flex-wrap gap-2">
                         {worker.skills.map(
-                          (skill) => (
+                          (
+                            skill,
+                          ) => (
                             <span
-                              key={skill}
-                              className="bg-[#F8FAFC] border border-gray-200 text-[#475569] text-sm px-3 py-1.5 rounded-full"
+                              key={
+                                skill
+                              }
+                              className="rounded-full border border-gray-200 bg-[#F8FAFC] px-3 py-1.5 text-sm text-[#475569]"
                             >
-                              {skill}
+                              {
+                                skill
+                              }
                             </span>
                           ),
                         )}
                       </div>
                     </div>
 
-                    {/* CERTIFICATIONS */}
-
                     <div>
-                      <h3
-                        className="text-[#0F172A] mb-3"
-                        style={{
-                          fontWeight: 600,
-                        }}
-                      >
+                      <h3 className="mb-3 font-semibold text-[#0F172A]">
                         Certifications
                       </h3>
 
                       <div className="space-y-2">
                         {worker.certifications.map(
-                          (cert) => (
+                          (
+                            cert,
+                          ) => (
                             <div
-                              key={cert}
+                              key={
+                                cert
+                              }
                               className="flex items-center gap-2.5"
                             >
-                              <div className="w-5 h-5 bg-emerald-100 rounded-full flex items-center justify-center shrink-0">
-                                <CheckCircle className="w-3.5 h-3.5 text-emerald-600" />
+                              <div className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-emerald-100">
+                                <CheckCircle className="h-3.5 w-3.5 text-emerald-600" />
                               </div>
 
-                              <span className="text-[#475569] text-sm">
-                                {cert}
+                              <span className="text-sm text-[#475569]">
+                                {
+                                  cert
+                                }
                               </span>
                             </div>
                           ),
@@ -841,27 +1144,23 @@ export default function WorkerProfile() {
                   </div>
                 )}
 
-                {/* =========================================
-                    REVIEWS TAB
-                ========================================= */}
+                {/* =====================================
+                    REVIEWS
+                ===================================== */}
 
                 {activeTab ===
                   "reviews" && (
                   <div>
-                    {/* RATING SUMMARY */}
 
-                    <div className="bg-[#F8FAFC] rounded-xl p-5 flex items-center gap-6 mb-6">
+                    <div className="mb-6 flex items-center gap-6 rounded-xl bg-[#F8FAFC] p-5">
                       <div className="text-center">
-                        <div
-                          className="text-[#0F172A]"
-                          style={{
-                            fontSize:
-                              "3rem",
-                            fontWeight: 800,
-                            lineHeight: 1,
-                          }}
-                        >
-                          {worker.rating}
+                        <div className="text-[3rem] font-extrabold leading-none text-[#0F172A]">
+                          {Number(
+                            worker.rating ||
+                              0,
+                          ).toFixed(
+                            1,
+                          )}
                         </div>
 
                         <StarRating
@@ -870,7 +1169,7 @@ export default function WorkerProfile() {
                           }
                         />
 
-                        <div className="text-[#94A3B8] text-xs mt-1">
+                        <div className="mt-1 text-xs text-[#94A3B8]">
                           {
                             worker.reviewCount
                           }{" "}
@@ -880,11 +1179,15 @@ export default function WorkerProfile() {
 
                       <div className="flex-1 space-y-1.5">
                         {[5, 4, 3, 2, 1].map(
-                          (star) => {
+                          (
+                            star,
+                          ) => {
                             const pct =
-                              star === 5
+                              star ===
+                              5
                                 ? 72
-                                : star === 4
+                                : star ===
+                                    4
                                   ? 20
                                   : star ===
                                       3
@@ -896,27 +1199,29 @@ export default function WorkerProfile() {
 
                             return (
                               <div
-                                key={star}
+                                key={
+                                  star
+                                }
                                 className="flex items-center gap-2"
                               >
-                                <span className="text-xs text-[#94A3B8] w-2">
+                                <span className="w-2 text-xs text-[#94A3B8]">
                                   {
                                     star
                                   }
                                 </span>
 
-                                <Star className="w-3 h-3 text-amber-400 fill-amber-400 shrink-0" />
+                                <Star className="h-3 w-3 shrink-0 fill-amber-400 text-amber-400" />
 
-                                <div className="flex-1 bg-gray-200 rounded-full h-1.5">
+                                <div className="h-1.5 flex-1 rounded-full bg-gray-200">
                                   <div
-                                    className="h-1.5 bg-amber-400 rounded-full"
+                                    className="h-1.5 rounded-full bg-amber-400"
                                     style={{
                                       width: `${pct}%`,
                                     }}
                                   />
                                 </div>
 
-                                <span className="text-xs text-[#94A3B8] w-6 text-right">
+                                <span className="w-6 text-right text-xs text-[#94A3B8]">
                                   {
                                     pct
                                   }
@@ -929,20 +1234,20 @@ export default function WorkerProfile() {
                       </div>
                     </div>
 
-                    {/* REVIEW LIST */}
-
                     {workerReviews.length >
                     0 ? (
                       <div className="space-y-4">
                         {workerReviews.map(
-                          (review) => (
+                          (
+                            review,
+                          ) => (
                             <div
                               key={
                                 review.id
                               }
-                              className="border border-gray-100 rounded-xl p-4"
+                              className="rounded-xl border border-gray-100 p-4"
                             >
-                              <div className="flex items-start gap-3 mb-3">
+                              <div className="mb-3 flex items-start gap-3">
                                 <img
                                   src={
                                     review.authorPhoto
@@ -950,37 +1255,32 @@ export default function WorkerProfile() {
                                   alt={
                                     review.author
                                   }
-                                  className="w-9 h-9 rounded-full object-cover"
+                                  className="h-9 w-9 rounded-full object-cover"
                                 />
 
                                 <div className="flex-1">
                                   <div className="flex items-center justify-between">
-                                    <span
-                                      className="text-[#0F172A] text-sm"
-                                      style={{
-                                        fontWeight: 600,
-                                      }}
-                                    >
+                                    <span className="text-sm font-semibold text-[#0F172A]">
                                       {
                                         review.author
                                       }
                                     </span>
 
-                                    <span className="text-[#94A3B8] text-xs">
+                                    <span className="text-xs text-[#94A3B8]">
                                       {
                                         review.date
                                       }
                                     </span>
                                   </div>
 
-                                  <div className="flex items-center gap-2 mt-0.5">
+                                  <div className="mt-0.5 flex items-center gap-2">
                                     <StarRating
                                       rating={
                                         review.rating
                                       }
                                     />
 
-                                    <span className="text-xs text-[#64748B] bg-gray-100 px-2 py-0.5 rounded-full">
+                                    <span className="rounded-full bg-gray-100 px-2 py-0.5 text-xs text-[#64748B]">
                                       {
                                         review.jobType
                                       }
@@ -989,15 +1289,17 @@ export default function WorkerProfile() {
                                 </div>
                               </div>
 
-                              <p className="text-[#475569] text-sm leading-relaxed">
+                              <p className="text-sm leading-relaxed text-[#475569]">
                                 {
                                   review.comment
                                 }
                               </p>
 
-                              <button className="flex items-center gap-1.5 text-xs text-[#94A3B8] hover:text-[#64748B] mt-3 transition-colors">
-                                <ThumbsUp className="w-3.5 h-3.5" />
-
+                              <button
+                                type="button"
+                                className="mt-3 flex items-center gap-1.5 text-xs text-[#94A3B8] transition-colors hover:text-[#64748B]"
+                              >
+                                <ThumbsUp className="h-3.5 w-3.5" />
                                 Helpful
                               </button>
                             </div>
@@ -1005,20 +1307,20 @@ export default function WorkerProfile() {
                         )}
                       </div>
                     ) : (
-                      <div className="text-center py-10 text-[#94A3B8] text-sm">
+                      <div className="py-10 text-center text-sm text-[#94A3B8]">
                         No reviews yet for this worker.
                       </div>
                     )}
                   </div>
                 )}
 
-                {/* =========================================
-                    PORTFOLIO TAB
-                ========================================= */}
+                {/* =====================================
+                    PORTFOLIO
+                ===================================== */}
 
                 {activeTab ===
                   "portfolio" && (
-                  <div className="text-center py-10 text-[#94A3B8] text-sm">
+                  <div className="py-10 text-center text-sm text-[#94A3B8]">
                     No portfolio available yet.
                   </div>
                 )}
@@ -1032,38 +1334,100 @@ export default function WorkerProfile() {
           MOBILE BOTTOM ACTION BAR
       ========================================= */}
 
-      <div className="fixed bottom-0 inset-x-0 z-50 lg:hidden">
-        <div className="border-t border-slate-200/80 bg-white/95 backdrop-blur-xl px-4 pt-3 pb-[calc(env(safe-area-inset-bottom)+12px)] shadow-[0_-8px_30px_rgba(15,23,42,0.08)]">
-          <div className="flex items-center gap-3">
-            {/* PRICE */}
+      <div className="fixed inset-x-0 bottom-0 z-50 lg:hidden">
+        <div className="border-t border-slate-200/80 bg-white/95 px-3 pt-2.5 pb-[calc(env(safe-area-inset-bottom)+10px)] shadow-[0_-8px_30px_rgba(15,23,42,0.08)] backdrop-blur-xl">
 
-            <div className="min-w-fit">
-              <p className="text-[11px] text-slate-500 leading-none">
-                Starting from
-              </p>
+          <div className="flex items-center gap-2">
 
-              <h3 className="text-xl font-bold text-slate-900 mt-1">
-                ₹{worker.startingPrice}
-              </h3>
+            {/* =====================================
+                VISIBLE PRICE
+            ===================================== */}
+
+            <div className="min-w-0 flex-1 overflow-hidden">
+
+              {visiblePrices.length ===
+                1 && (
+                <div className="min-w-0">
+                  <p className="truncate text-[8px] font-semibold uppercase tracking-wide text-slate-400">
+                    {
+                      visiblePrices[0]
+                        .label
+                    }
+                  </p>
+
+                  <div className="flex items-baseline gap-1">
+                    <span className="text-lg font-extrabold leading-5 text-[#0F7A22]">
+                      ₹
+                      {
+                        visiblePrices[0]
+                          .price
+                      }
+                    </span>
+
+                    <span className="text-[8px] text-slate-400">
+                      onwards
+                    </span>
+                  </div>
+                </div>
+              )}
+
+              {visiblePrices.length >
+                1 && (
+                <div className="flex max-w-full items-center gap-1 overflow-x-auto scrollbar-none">
+                  {visiblePrices.map(
+                    (item) => (
+                      <div
+                        key={
+                          item.key
+                        }
+                        className="min-w-18 shrink-0 rounded-lg bg-slate-50 px-2 py-1"
+                      >
+                        <p className="truncate text-[7px] font-semibold uppercase text-slate-400">
+                          {
+                            item.shortLabel
+                          }
+                        </p>
+
+                        <p className="text-xs font-extrabold leading-4 text-[#0F7A22]">
+                          ₹
+                          {
+                            item.price
+                          }
+                        </p>
+                      </div>
+                    ),
+                  )}
+                </div>
+              )}
+
+              {visiblePrices.length ===
+                0 && (
+                <p className="text-[9px] text-slate-400">
+                  Price not available
+                </p>
+              )}
             </div>
 
-            {/* FAVOURITE */}
+            {/* =====================================
+                FAVOURITE
+            ===================================== */}
 
             <button
+              type="button"
               onClick={
                 toggleFavorite
               }
               disabled={
                 favoriteLoading
               }
-              className={`h-12 w-12 rounded-2xl flex items-center justify-center transition-all ${
+              className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-xl transition-all ${
                 saved
-                  ? "bg-red-50 text-red-500 border border-red-100"
-                  : "bg-slate-100 text-slate-600 border border-slate-200"
+                  ? "border border-red-100 bg-red-50 text-red-500"
+                  : "border border-slate-200 bg-slate-100 text-slate-600"
               }`}
             >
               <Heart
-                className={`w-5 h-5 transition-all ${
+                className={`h-5 w-5 ${
                   saved
                     ? "fill-red-500"
                     : ""
@@ -1071,18 +1435,21 @@ export default function WorkerProfile() {
               />
             </button>
 
-            {/* BOOK */}
+            {/* =====================================
+                BOOK NOW
+            ===================================== */}
 
             <button
+              type="button"
               onClick={
                 handleBookNow
               }
               disabled={
                 !worker.available
               }
-              className={`flex-1 h-12 rounded-2xl font-semibold text-sm transition-all ${
+              className={`h-11 shrink-0 rounded-xl px-5 text-sm font-semibold transition-all ${
                 worker.available
-                  ? "bg-sky-500 active:scale-[0.98] text-white shadow-lg shadow-sky-200"
+                  ? "bg-sky-500 text-white shadow-lg shadow-sky-200 active:scale-[0.98]"
                   : "bg-slate-200 text-slate-500"
               }`}
             >

@@ -23,11 +23,16 @@ import {
 import { useEffect, useMemo, useState } from "react";
 
 import WorkerDrawer from "./WorkerDrawer";
-import EditWorkerModal from "./EditWorkerModal";
+import EditWorkerModal from "./edit-worker/EditWorkerModal";
 import WorkerOnboardForm from "./WorkerOnboardForm";
 
 import { supabase } from "@/lib/supabase";
-import type { Worker, PricingType } from "@/app/data/workers";
+
+import type {
+  Worker,
+  PricingType,
+  PriceKey,
+} from "@/app/data/workers";
 
 type WorkersTabProps = {
   onFormOpenChange?: (open: boolean) => void;
@@ -39,6 +44,7 @@ type WorkersTabProps = {
 
 type ApiWorker = {
   id: string;
+
   worker_code?: string | null;
   workerCode?: string | null;
 
@@ -69,10 +75,13 @@ type ApiWorker = {
   visit_charge?: number | string | null;
   visitCharge?: number | string | null;
 
+  visible_pricing_types?: string[] | null;
+  visiblePricingTypes?: string[] | null;
+
   rating?: number | string | null;
 
-  review_count?: number | null;
-  reviewCount?: number | null;
+  review_count?: number | string | null;
+  reviewCount?: number | string | null;
 
   location?: string | null;
 
@@ -81,11 +90,11 @@ type ApiWorker = {
 
   available?: boolean | null;
 
-  years_experience?: number | null;
-  yearsExperience?: number | null;
+  years_experience?: number | string | null;
+  yearsExperience?: number | string | null;
 
-  completed_jobs?: number | null;
-  completedJobs?: number | null;
+  completed_jobs?: number | string | null;
+  completedJobs?: number | string | null;
 
   bio?: string | null;
 
@@ -106,11 +115,19 @@ type ApiWorker = {
    HELPERS
 ===================================================== */
 
-function numberValue(value: number | string | null | undefined): number {
+function numberValue(
+  value: number | string | null | undefined,
+): number {
   return Number(value ?? 0) || 0;
 }
 
-function pricingValue(value: string | null | undefined): PricingType {
+/* =====================================================
+   PRICING TYPE
+===================================================== */
+
+function pricingValue(
+  value: string | null | undefined,
+): PricingType {
   switch (value) {
     case "per_job":
     case "daily":
@@ -126,61 +143,177 @@ function pricingValue(value: string | null | undefined): PricingType {
 }
 
 /* =====================================================
+   PRICE KEY
+===================================================== */
+
+const PRICE_KEYS: PriceKey[] = [
+  "per_job",
+  "half_day",
+  "full_day",
+  "monthly",
+  "visit_charge",
+];
+
+/* =====================================================
+   NORMALIZE VISIBLE PRICING TYPES
+===================================================== */
+
+function visiblePricingValue(
+  value: string[] | null | undefined,
+): PriceKey[] {
+  if (!Array.isArray(value)) {
+    return [];
+  }
+
+  return value.filter(
+    (item): item is PriceKey =>
+      PRICE_KEYS.includes(
+        item as PriceKey,
+      ),
+  );
+}
+
+/* =====================================================
    NORMALIZE WORKER
 ===================================================== */
 
-function normalizeWorker(row: ApiWorker): Worker {
+function normalizeWorker(
+  row: ApiWorker,
+): Worker {
   return {
     id: row.id,
 
-    workerCode: row.workerCode ?? row.worker_code ?? "",
+    workerCode:
+      row.workerCode ??
+      row.worker_code ??
+      null,
 
-    name: row.name ?? "",
-    phone: row.phone ?? "",
+    name:
+      row.name ?? "",
 
-    category: row.category ?? "",
-    subcategory: row.subcategory ?? "",
-    specialty: row.specialty ?? "",
+    phone:
+      row.phone ?? "",
 
-    services: Array.isArray(row.services) ? row.services : [],
+    category:
+      row.category ?? "",
 
-    pricingType: pricingValue(row.pricingType ?? row.pricing_type),
+    subcategory:
+      row.subcategory ?? "",
 
-    startingPrice: numberValue(row.startingPrice ?? row.starting_price),
+    specialty:
+      row.specialty ?? "",
 
-    halfDayPrice: numberValue(row.halfDayPrice ?? row.half_day_price),
+    services:
+      Array.isArray(row.services)
+        ? row.services
+        : [],
 
-    fullDayPrice: numberValue(row.fullDayPrice ?? row.full_day_price),
+    pricingType:
+      pricingValue(
+        row.pricingType ??
+          row.pricing_type,
+      ),
 
-    monthlyPrice: numberValue(row.monthlyPrice ?? row.monthly_price),
+    startingPrice:
+      numberValue(
+        row.startingPrice ??
+          row.starting_price,
+      ),
 
-    visitCharge: numberValue(row.visitCharge ?? row.visit_charge),
+    halfDayPrice:
+      numberValue(
+        row.halfDayPrice ??
+          row.half_day_price,
+      ),
 
-    rating: numberValue(row.rating),
+    fullDayPrice:
+      numberValue(
+        row.fullDayPrice ??
+          row.full_day_price,
+      ),
 
-    reviewCount: Number(row.reviewCount ?? row.review_count ?? 0),
+    monthlyPrice:
+      numberValue(
+        row.monthlyPrice ??
+          row.monthly_price,
+      ),
 
-    location: row.location ?? "",
+    visitCharge:
+      numberValue(
+        row.visitCharge ??
+          row.visit_charge,
+      ),
 
-    labourChauk: row.labourChauk ?? row.labour_chauk ?? "",
+    visiblePricingTypes:
+      visiblePricingValue(
+        row.visiblePricingTypes ??
+          row.visible_pricing_types,
+      ),
 
-    available: row.available ?? true,
+    rating:
+      numberValue(
+        row.rating,
+      ),
 
-    yearsExperience: Number(row.yearsExperience ?? row.years_experience ?? 0),
+    reviewCount:
+      Number(
+        row.reviewCount ??
+          row.review_count ??
+          0,
+      ),
 
-    completedJobs: Number(row.completedJobs ?? row.completed_jobs ?? 0),
+    location:
+      row.location ?? "",
 
-    bio: row.bio ?? "",
+    labourChauk:
+      row.labourChauk ??
+      row.labour_chauk ??
+      "",
 
-    skills: Array.isArray(row.skills) ? row.skills : [],
+    available:
+      row.available ?? true,
 
-    photo: row.photo ?? "",
+    yearsExperience:
+      Number(
+        row.yearsExperience ??
+          row.years_experience ??
+          0,
+      ),
 
-    responseTime: row.responseTime ?? row.response_time ?? "Within 1 hour",
+    completedJobs:
+      Number(
+        row.completedJobs ??
+          row.completed_jobs ??
+          0,
+      ),
 
-    certifications: Array.isArray(row.certifications) ? row.certifications : [],
+    bio:
+      row.bio ?? "",
 
-    createdAt: row.createdAt ?? row.created_at ?? "",
+    skills:
+      Array.isArray(row.skills)
+        ? row.skills
+        : [],
+
+    photo:
+      row.photo ?? "",
+
+    responseTime:
+      row.responseTime ??
+      row.response_time ??
+      "Within 1 hour",
+
+    certifications:
+      Array.isArray(
+        row.certifications,
+      )
+        ? row.certifications
+        : [],
+
+    createdAt:
+      row.createdAt ??
+      row.created_at ??
+      "",
   };
 }
 
@@ -188,32 +321,47 @@ function normalizeWorker(row: ApiWorker): Worker {
    COMPONENT
 ===================================================== */
 
-export default function WorkersTab({ onFormOpenChange }: WorkersTabProps) {
-  const [workers, setWorkers] = useState<Worker[]>([]);
+export default function WorkersTab({
+  onFormOpenChange,
+}: WorkersTabProps) {
+  const [workers, setWorkers] =
+    useState<Worker[]>([]);
 
-  const [selectedWorker, setSelectedWorker] = useState<Worker | null>(null);
+  const [selectedWorker, setSelectedWorker] =
+    useState<Worker | null>(null);
 
-  const [editWorker, setEditWorker] = useState<Worker | null>(null);
+  const [editWorker, setEditWorker] =
+    useState<Worker | null>(null);
 
-  const [actionWorker, setActionWorker] = useState<Worker | null>(null);
+  const [actionWorker, setActionWorker] =
+    useState<Worker | null>(null);
 
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] =
+    useState(true);
 
-  const [refreshing, setRefreshing] = useState(false);
+  const [refreshing, setRefreshing] =
+    useState(false);
 
-  const [showOnboardForm, setShowOnboardForm] = useState(false);
+  const [showOnboardForm, setShowOnboardForm] =
+    useState(false);
 
-  const [error, setError] = useState("");
+  const [error, setError] =
+    useState("");
 
-  const [actionError, setActionError] = useState("");
+  const [actionError, setActionError] =
+    useState("");
 
-  const [search, setSearch] = useState("");
+  const [search, setSearch] =
+    useState("");
 
-  const [actionLoading, setActionLoading] = useState(false);
+  const [actionLoading, setActionLoading] =
+    useState(false);
 
-  const [isSuperAdmin, setIsSuperAdmin] = useState(false);
+  const [isSuperAdmin, setIsSuperAdmin] =
+    useState(false);
 
-  const [selectedCategory, setSelectedCategory] = useState("All");
+  const [selectedCategory, setSelectedCategory] =
+    useState("All");
 
   /* =====================================================
      ADMIN ROLE
@@ -223,24 +371,36 @@ export default function WorkersTab({ onFormOpenChange }: WorkersTabProps) {
     try {
       const {
         data: { session },
-      } = await supabase.auth.getSession();
+      } =
+        await supabase.auth.getSession();
 
-      if (!session?.access_token) return;
+      if (!session?.access_token) {
+        return;
+      }
 
-      const response = await fetch("/api/admin/me", {
-        headers: {
-          Authorization: `Bearer ${session.access_token}`,
+      const response = await fetch(
+        "/api/admin/me",
+        {
+          headers: {
+            Authorization: `Bearer ${session.access_token}`,
+          },
+          cache: "no-store",
         },
-        cache: "no-store",
-      });
+      );
 
-      const data = await response.json();
+      const data =
+        await response.json();
 
       if (response.ok) {
-        setIsSuperAdmin(data.isSuperAdmin === true);
+        setIsSuperAdmin(
+          data.isSuperAdmin === true,
+        );
       }
     } catch (error) {
-      console.error("Admin role error:", error);
+      console.error(
+        "Admin role error:",
+        error,
+      );
     }
   };
 
@@ -248,7 +408,9 @@ export default function WorkersTab({ onFormOpenChange }: WorkersTabProps) {
      LOAD WORKERS
   ===================================================== */
 
-  const loadWorkers = async (showRefresh = false) => {
+  const loadWorkers = async (
+    showRefresh = false,
+  ) => {
     try {
       if (showRefresh) {
         setRefreshing(true);
@@ -260,45 +422,70 @@ export default function WorkersTab({ onFormOpenChange }: WorkersTabProps) {
 
       const {
         data: { session },
-      } = await supabase.auth.getSession();
+      } =
+        await supabase.auth.getSession();
 
       if (!session?.access_token) {
-        setError("Your admin session has expired.");
+        setError(
+          "Your admin session has expired.",
+        );
         return;
       }
 
-      const params = new URLSearchParams();
+      const params =
+        new URLSearchParams();
 
       if (search.trim()) {
-        params.set("search", search.trim());
+        params.set(
+          "search",
+          search.trim(),
+        );
       }
 
       params.set("limit", "100");
 
-      const response = await fetch(`/api/admin/workers?${params.toString()}`, {
-        method: "GET",
-        headers: {
-          Authorization: `Bearer ${session.access_token}`,
-        },
-        cache: "no-store",
-      });
+      const response =
+        await fetch(
+          `/api/admin/workers?${params.toString()}`,
+          {
+            method: "GET",
+            headers: {
+              Authorization: `Bearer ${session.access_token}`,
+            },
+            cache: "no-store",
+          },
+        );
 
-      const data = await response.json();
+      const data =
+        await response.json();
 
       if (!response.ok) {
-        throw new Error(data.error || "Unable to load workers.");
+        throw new Error(
+          data.error ||
+            "Unable to load workers.",
+        );
       }
 
-      const apiWorkers: ApiWorker[] = Array.isArray(data.workers)
-        ? data.workers
-        : [];
+      const apiWorkers: ApiWorker[] =
+        Array.isArray(data.workers)
+          ? data.workers
+          : [];
 
-      setWorkers(apiWorkers.map(normalizeWorker));
+      setWorkers(
+        apiWorkers.map(
+          normalizeWorker,
+        ),
+      );
     } catch (error) {
-      console.error("Load workers error:", error);
+      console.error(
+        "Load workers error:",
+        error,
+      );
 
       setError(
-        error instanceof Error ? error.message : "Unable to load workers.",
+        error instanceof Error
+          ? error.message
+          : "Unable to load workers.",
       );
     } finally {
       setLoading(false);
@@ -324,7 +511,8 @@ export default function WorkersTab({ onFormOpenChange }: WorkersTabProps) {
       loadWorkers();
     }, 400);
 
-    return () => clearTimeout(timer);
+    return () =>
+      clearTimeout(timer);
   }, [search]);
 
   /* =====================================================
@@ -332,68 +520,118 @@ export default function WorkersTab({ onFormOpenChange }: WorkersTabProps) {
   ===================================================== */
 
   const categories = useMemo(() => {
-    const unique = new Set<string>();
+    const unique =
+      new Set<string>();
 
     workers.forEach((worker) => {
-      const category = worker.category?.trim();
+      const category =
+        worker.category?.trim();
 
       if (category) {
         unique.add(category);
       }
     });
 
-    return ["All", ...Array.from(unique).sort((a, b) => a.localeCompare(b))];
+    return [
+      "All",
+      ...Array.from(unique).sort(
+        (a, b) =>
+          a.localeCompare(b),
+      ),
+    ];
   }, [workers]);
 
   /* =====================================================
      CATEGORY COUNTS
   ===================================================== */
 
-  const categoryCounts = useMemo(() => {
-    const counts: Record<string, number> = {};
+  const categoryCounts =
+    useMemo(() => {
+      const counts: Record<
+        string,
+        number
+      > = {};
 
-    workers.forEach((worker) => {
-      const category = worker.category?.trim() || "Other";
+      workers.forEach((worker) => {
+        const category =
+          worker.category?.trim() ||
+          "Other";
 
-      counts[category] = (counts[category] || 0) + 1;
-    });
+        counts[category] =
+          (counts[category] || 0) + 1;
+      });
 
-    return counts;
-  }, [workers]);
+      return counts;
+    }, [workers]);
 
   /* =====================================================
      FILTER
   ===================================================== */
 
-  const filteredWorkers = useMemo(() => {
-    if (selectedCategory === "All") {
-      return workers;
-    }
+  const filteredWorkers =
+    useMemo(() => {
+      if (
+        selectedCategory ===
+        "All"
+      ) {
+        return workers;
+      }
 
-    return workers.filter(
-      (worker) =>
-        worker.category?.trim().toLowerCase() ===
-        selectedCategory.trim().toLowerCase(),
-    );
-  }, [workers, selectedCategory]);
+      return workers.filter(
+        (worker) =>
+          worker.category
+            ?.trim()
+            .toLowerCase() ===
+          selectedCategory
+            .trim()
+            .toLowerCase(),
+      );
+    }, [
+      workers,
+      selectedCategory,
+    ]);
 
   /* =====================================================
      HELPERS
   ===================================================== */
 
-  const getWorkerName = (worker: Worker) => worker.name || "Unnamed Worker";
+  const getWorkerName = (
+    worker: Worker,
+  ) =>
+    worker.name ||
+    "Unnamed Worker";
 
-  const getPhone = (worker: Worker) => worker.phone || "—";
+  const getPhone = (
+    worker: Worker,
+  ) =>
+    worker.phone || "—";
 
-  const getCategory = (worker: Worker) => worker.category || "—";
+  const getCategory = (
+    worker: Worker,
+  ) =>
+    worker.category || "—";
 
-  const getSpecialty = (worker: Worker) => worker.specialty || "—";
+  const getSpecialty = (
+    worker: Worker,
+  ) =>
+    worker.specialty || "—";
 
-  const getLocation = (worker: Worker) => worker.location || "—";
+  const getLocation = (
+    worker: Worker,
+  ) =>
+    worker.location || "—";
 
-  const getRating = (worker: Worker) => Number(worker.rating || 0).toFixed(1);
+  const getRating = (
+    worker: Worker,
+  ) =>
+    Number(
+      worker.rating || 0,
+    ).toFixed(1);
 
-  const isWorkerActive = (worker: Worker) => worker.available === true;
+  const isWorkerActive = (
+    worker: Worker,
+  ) =>
+    worker.available === true;
 
   /* =====================================================
      STATS
@@ -401,35 +639,57 @@ export default function WorkersTab({ onFormOpenChange }: WorkersTabProps) {
 
   const stats = useMemo(() => {
     const source =
-      selectedCategory === "All"
+      selectedCategory ===
+      "All"
         ? workers
         : workers.filter(
             (worker) =>
-              worker.category?.trim().toLowerCase() ===
-              selectedCategory.trim().toLowerCase(),
+              worker.category
+                ?.trim()
+                .toLowerCase() ===
+              selectedCategory
+                .trim()
+                .toLowerCase(),
           );
 
-    const total = source.length;
+    const total =
+      source.length;
 
-    const active = source.filter((worker) => worker.available === true).length;
+    const active =
+      source.filter(
+        (worker) =>
+          worker.available ===
+          true,
+      ).length;
 
-    const inactive = total - active;
+    const inactive =
+      total - active;
 
-    const today = new Date();
+    const today =
+      new Date();
 
-    const newWorkers = source.filter((worker) => {
-      if (!worker.createdAt) {
-        return false;
-      }
+    const newWorkers =
+      source.filter(
+        (worker) => {
+          if (!worker.createdAt) {
+            return false;
+          }
 
-      const created = new Date(worker.createdAt);
+          const created =
+            new Date(
+              worker.createdAt,
+            );
 
-      return (
-        created.getFullYear() === today.getFullYear() &&
-        created.getMonth() === today.getMonth() &&
-        created.getDate() === today.getDate()
-      );
-    }).length;
+          return (
+            created.getFullYear() ===
+              today.getFullYear() &&
+            created.getMonth() ===
+              today.getMonth() &&
+            created.getDate() ===
+              today.getDate()
+          );
+        },
+      ).length;
 
     return {
       total,
@@ -437,18 +697,28 @@ export default function WorkersTab({ onFormOpenChange }: WorkersTabProps) {
       inactive,
       newWorkers,
     };
-  }, [workers, selectedCategory]);
+  }, [
+    workers,
+    selectedCategory,
+  ]);
 
   /* =====================================================
      DELETE
   ===================================================== */
 
-  const deleteWorker = async (worker: Worker) => {
-    const confirmed = window.confirm(
-      `Delete ${getWorkerName(worker)}? This action cannot be undone.`,
-    );
+  const deleteWorker = async (
+    worker: Worker,
+  ) => {
+    const confirmed =
+      window.confirm(
+        `Delete ${getWorkerName(
+          worker,
+        )}? This action cannot be undone.`,
+      );
 
-    if (!confirmed) return;
+    if (!confirmed) {
+      return;
+    }
 
     try {
       setActionLoading(true);
@@ -456,33 +726,49 @@ export default function WorkersTab({ onFormOpenChange }: WorkersTabProps) {
 
       const {
         data: { session },
-      } = await supabase.auth.getSession();
+      } =
+        await supabase.auth.getSession();
 
       if (!session?.access_token) {
-        throw new Error("Your admin session has expired.");
+        throw new Error(
+          "Your admin session has expired.",
+        );
       }
 
-      const response = await fetch(`/api/admin/workers/${worker.id}`, {
-        method: "DELETE",
-        headers: {
-          Authorization: `Bearer ${session.access_token}`,
-        },
-      });
+      const response =
+        await fetch(
+          `/api/admin/workers/${worker.id}`,
+          {
+            method: "DELETE",
+            headers: {
+              Authorization: `Bearer ${session.access_token}`,
+            },
+          },
+        );
 
-      const data = await response.json();
+      const data =
+        await response.json();
 
       if (!response.ok) {
-        throw new Error(data.error || "Unable to delete worker.");
+        throw new Error(
+          data.error ||
+            "Unable to delete worker.",
+        );
       }
 
       setActionWorker(null);
 
       await loadWorkers(true);
     } catch (error) {
-      console.error("Delete worker error:", error);
+      console.error(
+        "Delete worker error:",
+        error,
+      );
 
       setActionError(
-        error instanceof Error ? error.message : "Unable to delete worker.",
+        error instanceof Error
+          ? error.message
+          : "Unable to delete worker.",
       );
     } finally {
       setActionLoading(false);
@@ -493,67 +779,94 @@ export default function WorkersTab({ onFormOpenChange }: WorkersTabProps) {
      TOGGLE STATUS
   ===================================================== */
 
-  const toggleWorkerStatus = async (worker: Worker) => {
-    try {
-      setActionLoading(true);
-      setActionError("");
-
-      const {
-        data: { session },
-      } = await supabase.auth.getSession();
-
-      if (!session?.access_token) {
-        throw new Error("Your admin session has expired.");
-      }
-
-      const nextAvailable = !worker.available;
-
-      const response = await fetch(`/api/admin/workers/${worker.id}`, {
-        method: "PATCH",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${session.access_token}`,
-        },
-        body: JSON.stringify({
-          available: nextAvailable,
-        }),
-      });
-
-      const responseText = await response.text();
-
-      let data: {
-        error?: string;
-        message?: string;
-        worker?: ApiWorker;
-      } = {};
-
+  const toggleWorkerStatus =
+    async (
+      worker: Worker,
+    ) => {
       try {
-        data = responseText ? JSON.parse(responseText) : {};
-      } catch {
-        throw new Error(
-          `API error (${response.status}). The server returned an invalid response.`,
+        setActionLoading(true);
+        setActionError("");
+
+        const {
+          data: { session },
+        } =
+          await supabase.auth.getSession();
+
+        if (
+          !session?.access_token
+        ) {
+          throw new Error(
+            "Your admin session has expired.",
+          );
+        }
+
+        const nextAvailable =
+          !worker.available;
+
+        const response =
+          await fetch(
+            `/api/admin/workers/${worker.id}`,
+            {
+              method: "PATCH",
+              headers: {
+                "Content-Type":
+                  "application/json",
+                Authorization: `Bearer ${session.access_token}`,
+              },
+              body: JSON.stringify({
+                available:
+                  nextAvailable,
+              }),
+            },
+          );
+
+        const responseText =
+          await response.text();
+
+        let data: {
+          error?: string;
+          message?: string;
+          worker?: ApiWorker;
+        } = {};
+
+        try {
+          data = responseText
+            ? JSON.parse(
+                responseText,
+              )
+            : {};
+        } catch {
+          throw new Error(
+            `API error (${response.status}). The server returned an invalid response.`,
+          );
+        }
+
+        if (!response.ok) {
+          throw new Error(
+            data.error ||
+              data.message ||
+              "Unable to update worker availability.",
+          );
+        }
+
+        setActionWorker(null);
+
+        await loadWorkers(true);
+      } catch (error) {
+        console.error(
+          "Worker availability error:",
+          error,
         );
-      }
 
-      if (!response.ok) {
-        throw new Error(
-          data.error || data.message || "Unable to update worker availability.",
+        setActionError(
+          error instanceof Error
+            ? error.message
+            : "Unable to update worker.",
         );
+      } finally {
+        setActionLoading(false);
       }
-
-      setActionWorker(null);
-
-      await loadWorkers(true);
-    } catch (error) {
-      console.error("Worker availability error:", error);
-
-      setActionError(
-        error instanceof Error ? error.message : "Unable to update worker.",
-      );
-    } finally {
-      setActionLoading(false);
-    }
-  };
+    };
 
   /* =====================================================
      ONBOARD FORM
@@ -564,11 +877,15 @@ export default function WorkersTab({ onFormOpenChange }: WorkersTabProps) {
       <WorkerOnboardForm
         onBack={() => {
           setShowOnboardForm(false);
-          onFormOpenChange?.(false);
+          onFormOpenChange?.(
+            false,
+          );
         }}
         onCreated={() => {
           setShowOnboardForm(false);
-          onFormOpenChange?.(false);
+          onFormOpenChange?.(
+            false,
+          );
           loadWorkers(true);
         }}
       />
@@ -581,66 +898,70 @@ export default function WorkersTab({ onFormOpenChange }: WorkersTabProps) {
 
   return (
     <div className="min-h-screen bg-[#F8FAFC]">
-      {/* =================================================
-          HEADER
-      ================================================= */}
-
-      <header className="fixed inset-x-0  z-40 border-b border-gray-100 bg-white sm:top-0">
-        <div className="flex h-24 items-center justify-between  px-3 pt-18 pb-8  sm:h-20 sm:px-6 sm:pt-0 lg:px-8 sm:pb-2">
-          {/* LEFT */}
+      <header className="fixed inset-x-0 z-40 border-b border-gray-100 bg-white sm:top-0">
+        <div className="flex h-24 items-center justify-between px-3 pt-18 pb-8 sm:h-20 sm:px-6 sm:pt-0 lg:px-8 sm:pb-2">
           <div className="min-w-0 flex-1">
             <div className="flex min-w-0 items-center gap-2">
               <h1 className="shrink-0 text-lg font-black leading-none text-[#0F172A] sm:text-2xl">
                 Workers
               </h1>
 
-              {selectedCategory !== "All" && (
+              {selectedCategory !==
+                "All" && (
                 <>
-                  <span className="shrink-0 text-sm text-[#CBD5E1]">/</span>
+                  <span className="shrink-0 text-sm text-[#CBD5E1]">
+                    /
+                  </span>
 
                   <span className="min-w-0 max-w-32.5 truncate rounded-md bg-orange-50 px-2 py-1 text-[10px] font-bold leading-none text-[#FF5C39] sm:max-w-[180px] sm:rounded-lg sm:px-3 sm:py-1.5 sm:text-sm">
-                    {selectedCategory}
+                    {
+                      selectedCategory
+                    }
                   </span>
                 </>
               )}
             </div>
 
             <p className="mt-1.5 truncate text-[10px] leading-tight text-[#64748B] sm:text-sm">
-              {selectedCategory === "All"
+              {selectedCategory ===
+              "All"
                 ? "Manage all Workkerz workers and their profiles."
                 : `Manage ${selectedCategory} workers and their profiles.`}
             </p>
           </div>
 
-          {/* ADD WORKER */}
           <button
             type="button"
             onClick={() => {
-              setShowOnboardForm(true);
-              onFormOpenChange?.(true);
+              setShowOnboardForm(
+                true,
+              );
+              onFormOpenChange?.(
+                true,
+              );
             }}
             className="flex h-9 shrink-0 items-center justify-center gap-1.5 rounded-lg bg-[#FF5C39] px-3 text-[11px] font-bold text-white shadow-sm transition active:scale-[0.98] hover:bg-[#e54e2e] sm:h-11 sm:gap-2 sm:rounded-xl sm:px-5 sm:text-sm"
           >
             <UserPlus className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
-            <span>Add Worker</span>
+            <span>
+              Add Worker
+            </span>
           </button>
         </div>
       </header>
 
-      {/* =================================================
-          CONTENT
-      ================================================= */}
-
       <main className="p-2.5 pt-28 sm:p-5 sm:pt-20 lg:p-8 lg:pt-25">
-        {/* ERROR */}
-
         {error && (
           <div className="mb-3 flex flex-col gap-2 rounded-xl border border-red-200 bg-red-50 px-3 py-3 sm:mb-4 sm:flex-row sm:items-center sm:justify-between sm:px-4">
-            <p className="text-xs text-red-600 sm:text-sm">{error}</p>
+            <p className="text-xs text-red-600 sm:text-sm">
+              {error}
+            </p>
 
             <button
               type="button"
-              onClick={() => loadWorkers(true)}
+              onClick={() =>
+                loadWorkers(true)
+              }
               className="self-start text-xs font-bold text-red-700 hover:underline sm:self-auto"
             >
               Try again
@@ -648,12 +969,12 @@ export default function WorkersTab({ onFormOpenChange }: WorkersTabProps) {
           </div>
         )}
 
-        {/* =================================================
-            STATS
-        ================================================= */}
-
         <div className="mb-3 grid grid-cols-2 gap-2 sm:mb-6 sm:gap-4 lg:grid-cols-4 lg:gap-5">
-          <WorkerStat label="Total Workers" value={stats.total} icon={Users} />
+          <WorkerStat
+            label="Total Workers"
+            value={stats.total}
+            icon={Users}
+          />
 
           <WorkerStat
             label="Available"
@@ -674,24 +995,20 @@ export default function WorkersTab({ onFormOpenChange }: WorkersTabProps) {
           />
         </div>
 
-        {/* =================================================
-            MAIN CARD
-        ================================================= */}
-
         <div className="overflow-hidden rounded-xl border border-gray-100 bg-white shadow-sm sm:rounded-2xl">
-          {/* TOOLBAR */}
-
           <div className="border-b border-gray-100 bg-white">
             <div className="flex flex-col gap-2.5 p-2.5 sm:gap-3 sm:p-5 lg:flex-row lg:items-center lg:justify-between">
-              {/* SEARCH */}
-
               <div className="relative w-full lg:max-w-md">
                 <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[#94A3B8]" />
 
                 <input
                   type="text"
                   value={search}
-                  onChange={(event) => setSearch(event.target.value)}
+                  onChange={(event) =>
+                    setSearch(
+                      event.target.value,
+                    )
+                  }
                   placeholder="Search worker, phone, specialty..."
                   className="h-10 w-full rounded-xl border border-gray-200 bg-[#F8FAFC] pl-9 pr-10 text-xs text-[#0F172A] outline-none transition focus:border-[#FF5C39] focus:bg-white focus:ring-2 focus:ring-orange-100 sm:h-11 sm:pl-10 sm:text-sm"
                 />
@@ -699,15 +1016,15 @@ export default function WorkersTab({ onFormOpenChange }: WorkersTabProps) {
                 {search && (
                   <button
                     type="button"
-                    onClick={() => setSearch("")}
+                    onClick={() =>
+                      setSearch("")
+                    }
                     className="absolute right-2.5 top-1/2 flex h-6 w-6 -translate-y-1/2 items-center justify-center rounded-md text-[#94A3B8] hover:bg-gray-100"
                   >
                     <XCircle className="h-4 w-4" />
                   </button>
                 )}
               </div>
-
-              {/* ACTIONS */}
 
               <div className="flex w-full items-center gap-2 lg:w-auto">
                 <button
@@ -720,82 +1037,95 @@ export default function WorkersTab({ onFormOpenChange }: WorkersTabProps) {
 
                 <button
                   type="button"
-                  onClick={() => loadWorkers(true)}
+                  onClick={() =>
+                    loadWorkers(true)
+                  }
                   disabled={refreshing}
                   className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-gray-200 bg-white hover:bg-[#F8FAFC] disabled:opacity-50 sm:h-11 sm:w-11"
                 >
                   <RefreshCw
                     className={`h-4 w-4 text-[#64748B] ${
-                      refreshing ? "animate-spin" : ""
+                      refreshing
+                        ? "animate-spin"
+                        : ""
                     }`}
                   />
                 </button>
               </div>
             </div>
 
-            {/* =================================================
-                CATEGORY TABS
-            ================================================= */}
-
             <div className="relative overflow-hidden">
               <div className="overflow-x-auto px-2.5 pb-2.5 scrollbar-none sm:px-5 sm:pb-4">
                 <div className="flex w-max min-w-full items-center gap-1.5 sm:gap-2">
-                  {categories.map((category) => {
-                    const active = selectedCategory === category;
+                  {categories.map(
+                    (category) => {
+                      const active =
+                        selectedCategory ===
+                        category;
 
-                    const count =
-                      category === "All"
-                        ? workers.length
-                        : categoryCounts[category] || 0;
+                      const count =
+                        category ===
+                        "All"
+                          ? workers.length
+                          : categoryCounts[
+                              category
+                            ] || 0;
 
-                    return (
-                      <button
-                        key={category}
-                        type="button"
-                        onClick={() => setSelectedCategory(category)}
-                        className={`flex h-8 shrink-0 items-center gap-1.5 rounded-lg px-2.5 text-[11px] font-bold transition sm:h-10 sm:gap-2 sm:rounded-xl sm:px-4 sm:text-sm ${
-                          active
-                            ? "bg-[#FF5C39] text-white shadow-sm"
-                            : "border border-gray-200 bg-white text-[#64748B] hover:border-orange-200 hover:bg-orange-50 hover:text-[#FF5C39]"
-                        }`}
-                      >
-                        <span>{category}</span>
-
-                        <span
-                          className={`rounded-md px-1.5 py-0.5 text-[9px] font-black sm:rounded-lg sm:px-2 sm:text-[11px] ${
+                      return (
+                        <button
+                          key={category}
+                          type="button"
+                          onClick={() =>
+                            setSelectedCategory(
+                              category,
+                            )
+                          }
+                          className={`flex h-8 shrink-0 items-center gap-1.5 rounded-lg px-2.5 text-[11px] font-bold transition sm:h-10 sm:gap-2 sm:rounded-xl sm:px-4 sm:text-sm ${
                             active
-                              ? "bg-white/20 text-white"
-                              : "bg-[#F1F5F9] text-[#64748B]"
+                              ? "bg-[#FF5C39] text-white shadow-sm"
+                              : "border border-gray-200 bg-white text-[#64748B] hover:border-orange-200 hover:bg-orange-50 hover:text-[#FF5C39]"
                           }`}
                         >
-                          {count}
-                        </span>
-                      </button>
-                    );
-                  })}
+                          <span>
+                            {category}
+                          </span>
+
+                          <span
+                            className={`rounded-md px-1.5 py-0.5 text-[9px] font-black sm:rounded-lg sm:px-2 sm:text-[11px] ${
+                              active
+                                ? "bg-white/20 text-white"
+                                : "bg-[#F1F5F9] text-[#64748B]"
+                            }`}
+                          >
+                            {count}
+                          </span>
+                        </button>
+                      );
+                    },
+                  )}
                 </div>
               </div>
             </div>
           </div>
 
-          {/* =================================================
-              LOADING
-          ================================================= */}
-
           {loading ? (
             <div className="flex min-h-[300px] flex-col items-center justify-center px-4">
               <Loader2 className="h-7 w-7 animate-spin text-[#FF5C39]" />
 
-              <p className="mt-3 text-sm text-[#64748B]">Loading workers...</p>
+              <p className="mt-3 text-sm text-[#64748B]">
+                Loading workers...
+              </p>
             </div>
-          ) : filteredWorkers.length === 0 ? (
+          ) : filteredWorkers.length ===
+            0 ? (
             <div className="flex min-h-[300px] flex-col items-center justify-center px-5 text-center">
               <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-orange-50">
                 <Users className="h-7 w-7 text-[#FF5C39]" />
               </div>
 
               <h3 className="mt-4 text-sm font-bold text-[#0F172A]">
-                {selectedCategory === "All"
+                {selectedCategory ===
+                "All"
                   ? "No workers found"
                   : `No ${selectedCategory} workers found`}
               </h3>
@@ -803,17 +1133,22 @@ export default function WorkersTab({ onFormOpenChange }: WorkersTabProps) {
               <p className="mt-1 max-w-sm text-xs text-[#94A3B8]">
                 {search
                   ? `No workers match "${search}". Try a different search.`
-                  : selectedCategory === "All"
+                  : selectedCategory ===
+                    "All"
                     ? "Add your first worker to get started."
                     : `There are currently no workers in the ${selectedCategory} category.`}
               </p>
 
-              {(search || selectedCategory !== "All") && (
+              {(search ||
+                selectedCategory !==
+                  "All") && (
                 <button
                   type="button"
                   onClick={() => {
                     setSearch("");
-                    setSelectedCategory("All");
+                    setSelectedCategory(
+                      "All",
+                    );
                   }}
                   className="mt-4 rounded-xl bg-[#FF5C39] px-4 py-2 text-xs font-bold text-white"
                 >
@@ -823,10 +1158,6 @@ export default function WorkersTab({ onFormOpenChange }: WorkersTabProps) {
             </div>
           ) : (
             <>
-              {/* =================================================
-                  DESKTOP TABLE
-              ================================================= */}
-
               <div className="hidden overflow-x-auto lg:block">
                 <table className="w-full min-w-[1050px]">
                   <thead>
@@ -862,258 +1193,347 @@ export default function WorkersTab({ onFormOpenChange }: WorkersTabProps) {
                   </thead>
 
                   <tbody className="divide-y divide-gray-100">
-                    {filteredWorkers.map((worker) => {
-                      const active = isWorkerActive(worker);
+                    {filteredWorkers.map(
+                      (worker) => {
+                        const active =
+                          isWorkerActive(
+                            worker,
+                          );
 
-                      return (
-                        <tr
-                          key={worker.id}
-                          className="transition hover:bg-[#FAFAFA]"
-                        >
-                          <td className="px-6 py-4">
-                            <div className="flex items-center gap-3">
-                              <WorkerAvatar worker={worker} size="md" />
+                        return (
+                          <tr
+                            key={
+                              worker.id
+                            }
+                            className="transition hover:bg-[#FAFAFA]"
+                          >
+                            <td className="px-6 py-4">
+                              <div className="flex items-center gap-3">
+                                <WorkerAvatar
+                                  worker={
+                                    worker
+                                  }
+                                  size="md"
+                                />
 
-                              <div className="min-w-0">
-                                <p className="max-w-[190px] truncate text-sm font-bold text-[#0F172A]">
-                                  {getWorkerName(worker)}
+                                <div className="min-w-0">
+                                  <p className="max-w-[190px] truncate text-sm font-bold text-[#0F172A]">
+                                    {getWorkerName(
+                                      worker,
+                                    )}
+                                  </p>
+
+                                  <p className="max-w-[190px] truncate text-xs text-[#64748B]">
+                                    {getSpecialty(
+                                      worker,
+                                    )}
+                                  </p>
+                                </div>
+                              </div>
+                            </td>
+
+                            <td className="px-6 py-4 text-sm text-[#334155]">
+                              {getPhone(
+                                worker,
+                              )}
+                            </td>
+
+                            <td className="px-6 py-4">
+                              <p className="text-sm font-semibold text-[#334155]">
+                                {getCategory(
+                                  worker,
+                                )}
+                              </p>
+
+                              {worker.subcategory && (
+                                <p className="mt-1 text-xs text-[#94A3B8]">
+                                  {
+                                    worker.subcategory
+                                  }
                                 </p>
+                              )}
+                            </td>
 
-                                <p className="max-w-[190px] truncate text-xs text-[#64748B]">
-                                  {getSpecialty(worker)}
+                            <td className="px-6 py-4">
+                              <p className="max-w-[180px] truncate text-sm text-[#334155]">
+                                {getLocation(
+                                  worker,
+                                )}
+                              </p>
+
+                              {worker.labourChauk && (
+                                <p className="mt-1 max-w-[180px] truncate text-xs text-[#94A3B8]">
+                                  Chauk:{" "}
+                                  {
+                                    worker.labourChauk
+                                  }
                                 </p>
+                              )}
+                            </td>
+
+                            <td className="px-6 py-4">
+                              <div className="flex items-center gap-1.5">
+                                <Star className="h-3.5 w-3.5 fill-current text-amber-500" />
+
+                                <span className="text-sm font-semibold text-[#334155]">
+                                  {getRating(
+                                    worker,
+                                  )}
+                                </span>
+
+                                <span className="text-xs text-[#94A3B8]">
+                                  (
+                                  {worker.reviewCount ??
+                                    0}
+                                  )
+                                </span>
+                              </div>
+                            </td>
+
+                            <td className="px-6 py-4">
+                              <WorkerStatus
+                                active={
+                                  active
+                                }
+                              />
+                            </td>
+
+                            <td className="px-6 py-4">
+                              <div className="flex items-center justify-end gap-1">
+                                <button
+                                  type="button"
+                                  onClick={() =>
+                                    setSelectedWorker(
+                                      worker,
+                                    )
+                                  }
+                                  className="flex h-9 w-9 items-center justify-center rounded-lg hover:bg-gray-100"
+                                  title="View worker"
+                                >
+                                  <Eye className="h-4 w-4 text-[#64748B]" />
+                                </button>
+
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    setActionError(
+                                      "",
+                                    );
+
+                                    setActionWorker(
+                                      worker,
+                                    );
+                                  }}
+                                  className="flex h-9 w-9 items-center justify-center rounded-lg hover:bg-gray-100"
+                                  title="Worker actions"
+                                >
+                                  <MoreHorizontal className="h-4 w-4 text-[#64748B]" />
+                                </button>
+                              </div>
+                            </td>
+                          </tr>
+                        );
+                      },
+                    )}
+                  </tbody>
+                </table>
+              </div>
+
+              <div className="divide-y divide-gray-100 lg:hidden">
+                {filteredWorkers.map(
+                  (worker) => {
+                    const active =
+                      isWorkerActive(
+                        worker,
+                      );
+
+                    return (
+                      <div
+                        key={worker.id}
+                        className="p-2.5 sm:p-4"
+                      >
+                        <div className="rounded-xl border border-gray-100 bg-white p-2.5 transition hover:border-gray-200 hover:shadow-sm sm:rounded-2xl sm:p-4">
+                          <div className="flex items-start gap-2.5 sm:gap-3">
+                            <WorkerAvatar
+                              worker={
+                                worker
+                              }
+                              size="lg"
+                            />
+
+                            <div className="min-w-0 flex-1">
+                              <div className="flex items-start justify-between gap-2">
+                                <div className="min-w-0">
+                                  <h3 className="truncate text-sm font-bold text-[#0F172A] sm:text-base">
+                                    {getWorkerName(
+                                      worker,
+                                    )}
+                                  </h3>
+
+                                  <p className="mt-0.5 truncate text-[11px] text-[#64748B] sm:text-xs">
+                                    {getSpecialty(
+                                      worker,
+                                    )}
+                                  </p>
+                                </div>
+
+                                <WorkerStatus
+                                  active={
+                                    active
+                                  }
+                                  compact
+                                />
+                              </div>
+
+                              <div className="mt-2 flex flex-wrap items-center gap-1">
+                                <span className="rounded-md bg-orange-50 px-1.5 py-0.5 text-[9px] font-bold text-[#FF5C39] sm:px-2 sm:py-1 sm:text-[11px]">
+                                  {getCategory(
+                                    worker,
+                                  )}
+                                </span>
+
+                                {worker.subcategory && (
+                                  <span className="max-w-[130px] truncate rounded-md bg-gray-50 px-1.5 py-0.5 text-[9px] font-medium text-[#64748B] sm:max-w-[150px] sm:px-2 sm:py-1 sm:text-[11px]">
+                                    {
+                                      worker.subcategory
+                                    }
+                                  </span>
+                                )}
                               </div>
                             </div>
-                          </td>
+                          </div>
 
-                          <td className="px-6 py-4 text-sm text-[#334155]">
-                            {getPhone(worker)}
-                          </td>
+                          <div className="mt-2.5 grid grid-cols-2 gap-1.5 border-t border-gray-100 pt-2.5 sm:mt-3 sm:grid-cols-4 sm:gap-2 sm:pt-3">
+                            <MobileInfo
+                              icon={Phone}
+                              label="Phone"
+                              value={getPhone(
+                                worker,
+                              )}
+                            />
 
-                          <td className="px-6 py-4">
-                            <p className="text-sm font-semibold text-[#334155]">
-                              {getCategory(worker)}
-                            </p>
+                            <MobileInfo
+                              icon={MapPin}
+                              label="Location"
+                              value={getLocation(
+                                worker,
+                              )}
+                            />
 
-                            {worker.subcategory && (
-                              <p className="mt-1 text-xs text-[#94A3B8]">
-                                {worker.subcategory}
+                            <MobileInfo
+                              icon={Star}
+                              label="Rating"
+                              value={`${getRating(
+                                worker,
+                              )} (${worker.reviewCount ?? 0})`}
+                              rating
+                            />
+
+                            <MobileInfo
+                              icon={
+                                BriefcaseBusiness
+                              }
+                              label="Jobs"
+                              value={String(
+                                worker.completedJobs ??
+                                  0,
+                              )}
+                            />
+                          </div>
+
+                          <div className="mt-2.5 flex items-center justify-between gap-2 border-t border-gray-100 pt-2.5 sm:mt-3 sm:pt-3">
+                            <div className="min-w-0">
+                              <p className="truncate text-[10px] text-[#94A3B8] sm:text-xs">
+                                {worker.labourChauk
+                                  ? `Chauk: ${worker.labourChauk}`
+                                  : `Worker ID: ${worker.workerCode || "—"}`}
                               </p>
-                            )}
-                          </td>
-
-                          <td className="px-6 py-4">
-                            <p className="max-w-[180px] truncate text-sm text-[#334155]">
-                              {getLocation(worker)}
-                            </p>
-
-                            {worker.labourChauk && (
-                              <p className="mt-1 max-w-[180px] truncate text-xs text-[#94A3B8]">
-                                Chauk: {worker.labourChauk}
-                              </p>
-                            )}
-                          </td>
-
-                          <td className="px-6 py-4">
-                            <div className="flex items-center gap-1.5">
-                              <Star className="h-3.5 w-3.5 fill-current text-amber-500" />
-
-                              <span className="text-sm font-semibold text-[#334155]">
-                                {getRating(worker)}
-                              </span>
-
-                              <span className="text-xs text-[#94A3B8]">
-                                ({worker.reviewCount ?? 0})
-                              </span>
                             </div>
-                          </td>
 
-                          <td className="px-6 py-4">
-                            <WorkerStatus active={active} />
-                          </td>
-
-                          <td className="px-6 py-4">
-                            <div className="flex items-center justify-end gap-1">
+                            <div className="flex shrink-0 items-center gap-1.5">
                               <button
                                 type="button"
-                                onClick={() => setSelectedWorker(worker)}
-                                className="flex h-9 w-9 items-center justify-center rounded-lg hover:bg-gray-100"
-                                title="View worker"
+                                onClick={() =>
+                                  setSelectedWorker(
+                                    worker,
+                                  )
+                                }
+                                className="flex h-8 items-center gap-1 rounded-lg border border-gray-200 px-2 text-[11px] font-semibold text-[#64748B] transition hover:border-orange-200 hover:bg-orange-50 hover:text-[#FF5C39] sm:h-10 sm:gap-1.5 sm:px-3 sm:text-xs"
                               >
-                                <Eye className="h-4 w-4 text-[#64748B]" />
+                                <Eye className="h-3.5 w-3.5" />
+
+                                <span>
+                                  View
+                                </span>
                               </button>
 
                               <button
                                 type="button"
                                 onClick={() => {
-                                  setActionError("");
-                                  setActionWorker(worker);
+                                  setActionError(
+                                    "",
+                                  );
+
+                                  setActionWorker(
+                                    worker,
+                                  );
                                 }}
-                                className="flex h-9 w-9 items-center justify-center rounded-lg hover:bg-gray-100"
-                                title="Worker actions"
+                                className="flex h-8 w-8 items-center justify-center rounded-lg border border-gray-200 text-[#64748B] transition hover:border-gray-300 hover:bg-gray-50 sm:h-10 sm:w-10"
+                                title="More actions"
                               >
-                                <MoreHorizontal className="h-4 w-4 text-[#64748B]" />
+                                <MoreHorizontal className="h-4 w-4" />
                               </button>
                             </div>
-                          </td>
-                        </tr>
-                      );
-                    })}
-                  </tbody>
-                </table>
-              </div>
-
-              {/* =================================================
-                  MOBILE + TABLET
-              ================================================= */}
-
-              <div className="divide-y divide-gray-100 lg:hidden">
-                {filteredWorkers.map((worker) => {
-                  const active = isWorkerActive(worker);
-
-                  return (
-                    <div key={worker.id} className="p-2.5 sm:p-4">
-                      <div className="rounded-xl border border-gray-100 bg-white p-2.5 transition hover:border-gray-200 hover:shadow-sm sm:rounded-2xl sm:p-4">
-                        {/* TOP */}
-
-                        <div className="flex items-start gap-2.5 sm:gap-3">
-                          <WorkerAvatar worker={worker} size="lg" />
-
-                          <div className="min-w-0 flex-1">
-                            <div className="flex items-start justify-between gap-2">
-                              <div className="min-w-0">
-                                <h3 className="truncate text-sm font-bold text-[#0F172A] sm:text-base">
-                                  {getWorkerName(worker)}
-                                </h3>
-
-                                <p className="mt-0.5 truncate text-[11px] text-[#64748B] sm:text-xs">
-                                  {getSpecialty(worker)}
-                                </p>
-                              </div>
-
-                              <WorkerStatus active={active} compact />
-                            </div>
-
-                            <div className="mt-2 flex flex-wrap items-center gap-1">
-                              <span className="rounded-md bg-orange-50 px-1.5 py-0.5 text-[9px] font-bold text-[#FF5C39] sm:px-2 sm:py-1 sm:text-[11px]">
-                                {getCategory(worker)}
-                              </span>
-
-                              {worker.subcategory && (
-                                <span className="max-w-[130px] truncate rounded-md bg-gray-50 px-1.5 py-0.5 text-[9px] font-medium text-[#64748B] sm:max-w-[150px] sm:px-2 sm:py-1 sm:text-[11px]">
-                                  {worker.subcategory}
-                                </span>
-                              )}
-                            </div>
-                          </div>
-                        </div>
-
-                        {/* INFO */}
-
-                        <div className="mt-2.5 grid grid-cols-2 gap-1.5 border-t border-gray-100 pt-2.5 sm:mt-3 sm:grid-cols-4 sm:gap-2 sm:pt-3">
-                          <MobileInfo
-                            icon={Phone}
-                            label="Phone"
-                            value={getPhone(worker)}
-                          />
-
-                          <MobileInfo
-                            icon={MapPin}
-                            label="Location"
-                            value={getLocation(worker)}
-                          />
-
-                          <MobileInfo
-                            icon={Star}
-                            label="Rating"
-                            value={`${getRating(
-                              worker,
-                            )} (${worker.reviewCount ?? 0})`}
-                            rating
-                          />
-
-                          <MobileInfo
-                            icon={BriefcaseBusiness}
-                            label="Jobs"
-                            value={String(worker.completedJobs ?? 0)}
-                          />
-                        </div>
-
-                        {/* BOTTOM */}
-
-                        <div className="mt-2.5 flex items-center justify-between gap-2 border-t border-gray-100 pt-2.5 sm:mt-3 sm:pt-3">
-                          <div className="min-w-0">
-                            <p className="truncate text-[10px] text-[#94A3B8] sm:text-xs">
-                              {worker.labourChauk
-                                ? `Chauk: ${worker.labourChauk}`
-                                : `Worker ID: ${worker.workerCode || "—"}`}
-                            </p>
-                          </div>
-
-                          <div className="flex shrink-0 items-center gap-1.5">
-                            <button
-                              type="button"
-                              onClick={() => setSelectedWorker(worker)}
-                              className="flex h-8 items-center gap-1 rounded-lg border border-gray-200 px-2 text-[11px] font-semibold text-[#64748B] transition hover:border-orange-200 hover:bg-orange-50 hover:text-[#FF5C39] sm:h-10 sm:gap-1.5 sm:px-3 sm:text-xs"
-                            >
-                              <Eye className="h-3.5 w-3.5" />
-
-                              <span>View</span>
-                            </button>
-
-                            <button
-                              type="button"
-                              onClick={() => {
-                                setActionError("");
-                                setActionWorker(worker);
-                              }}
-                              className="flex h-8 w-8 items-center justify-center rounded-lg border border-gray-200 text-[#64748B] transition hover:border-gray-300 hover:bg-gray-50 sm:h-10 sm:w-10"
-                              title="More actions"
-                            >
-                              <MoreHorizontal className="h-4 w-4" />
-                            </button>
                           </div>
                         </div>
                       </div>
-                    </div>
-                  );
-                })}
+                    );
+                  },
+                )}
               </div>
             </>
           )}
 
-          {/* FOOTER */}
-
-          {!loading && filteredWorkers.length > 0 && (
-            <div className="flex flex-col gap-1.5 border-t border-gray-100 bg-[#FAFAFA] px-3 py-2.5 sm:flex-row sm:items-center sm:justify-between sm:px-6 sm:py-3">
-              <p className="text-[10px] font-medium text-[#64748B] sm:text-xs">
-                Showing{" "}
-                <span className="font-bold text-[#334155]">
-                  {filteredWorkers.length}
-                </span>{" "}
-                worker
-                {filteredWorkers.length !== 1 ? "s" : ""}
-                {selectedCategory !== "All" && (
-                  <>
-                    {" "}
-                    in{" "}
-                    <span className="font-bold text-[#FF5C39]">
-                      {selectedCategory}
-                    </span>
-                  </>
-                )}
-              </p>
-
-              {search && (
-                <p className="truncate text-[10px] text-[#94A3B8] sm:text-xs">
-                  Search:{" "}
-                  <span className="font-semibold text-[#64748B]">
-                    "{search}"
-                  </span>
+          {!loading &&
+            filteredWorkers.length >
+              0 && (
+              <div className="flex flex-col gap-1.5 border-t border-gray-100 bg-[#FAFAFA] px-3 py-2.5 sm:flex-row sm:items-center sm:justify-between sm:px-6 sm:py-3">
+                <p className="text-[10px] font-medium text-[#64748B] sm:text-xs">
+                  Showing{" "}
+                  <span className="font-bold text-[#334155]">
+                    {
+                      filteredWorkers.length
+                    }
+                  </span>{" "}
+                  worker
+                  {filteredWorkers.length !==
+                  1
+                    ? "s"
+                    : ""}
+                  {selectedCategory !==
+                    "All" && (
+                    <>
+                      {" "}
+                      in{" "}
+                      <span className="font-bold text-[#FF5C39]">
+                        {
+                          selectedCategory
+                        }
+                      </span>
+                    </>
+                  )}
                 </p>
-              )}
-            </div>
-          )}
+
+                {search && (
+                  <p className="truncate text-[10px] text-[#94A3B8] sm:text-xs">
+                    Search:{" "}
+                    <span className="font-semibold text-[#64748B]">
+                      "{search}"
+                    </span>
+                  </p>
+                )}
+              </div>
+            )}
         </div>
       </main>
 
@@ -1126,47 +1546,99 @@ export default function WorkersTab({ onFormOpenChange }: WorkersTabProps) {
           <button
             type="button"
             aria-label="Close actions"
-            onClick={() => setActionWorker(null)}
+            onClick={() =>
+              setActionWorker(
+                null,
+              )
+            }
             className="absolute inset-0 bg-black/30 backdrop-blur-[1px]"
           />
 
-          {/* DESKTOP */}
-
           <div className="absolute right-4 top-20 hidden w-72 rounded-2xl border border-gray-100 bg-white p-2 shadow-2xl sm:block lg:right-8">
             <ActionMenuContent
-              worker={actionWorker}
-              isSuperAdmin={isSuperAdmin}
-              actionLoading={actionLoading}
-              actionError={actionError}
+              worker={
+                actionWorker
+              }
+              isSuperAdmin={
+                isSuperAdmin
+              }
+              actionLoading={
+                actionLoading
+              }
+              actionError={
+                actionError
+              }
               onEdit={() => {
-                setEditWorker(actionWorker);
-                setActionWorker(null);
-                setActionError("");
+                setEditWorker(
+                  actionWorker,
+                );
+
+                setActionWorker(
+                  null,
+                );
+
+                setActionError(
+                  "",
+                );
               }}
-              onToggle={() => toggleWorkerStatus(actionWorker)}
-              onDelete={() => deleteWorker(actionWorker)}
+              onToggle={() =>
+                toggleWorkerStatus(
+                  actionWorker,
+                )
+              }
+              onDelete={() =>
+                deleteWorker(
+                  actionWorker,
+                )
+              }
             />
           </div>
-
-          {/* MOBILE BOTTOM SHEET */}
 
           <div className="absolute bottom-0 left-0 right-0 rounded-t-3xl border-t border-gray-100 bg-white p-3 pb-[calc(12px+env(safe-area-inset-bottom))] shadow-2xl sm:hidden">
             <div className="mx-auto mb-3 h-1 w-10 rounded-full bg-gray-200" />
 
             <ActionMenuContent
-              worker={actionWorker}
-              isSuperAdmin={isSuperAdmin}
-              actionLoading={actionLoading}
-              actionError={actionError}
+              worker={
+                actionWorker
+              }
+              isSuperAdmin={
+                isSuperAdmin
+              }
+              actionLoading={
+                actionLoading
+              }
+              actionError={
+                actionError
+              }
               mobile
               onEdit={() => {
-                setEditWorker(actionWorker);
-                setActionWorker(null);
-                setActionError("");
+                setEditWorker(
+                  actionWorker,
+                );
+
+                setActionWorker(
+                  null,
+                );
+
+                setActionError(
+                  "",
+                );
               }}
-              onToggle={() => toggleWorkerStatus(actionWorker)}
-              onDelete={() => deleteWorker(actionWorker)}
-              onCancel={() => setActionWorker(null)}
+              onToggle={() =>
+                toggleWorkerStatus(
+                  actionWorker,
+                )
+              }
+              onDelete={() =>
+                deleteWorker(
+                  actionWorker,
+                )
+              }
+              onCancel={() =>
+                setActionWorker(
+                  null,
+                )
+              }
             />
           </div>
         </div>
@@ -1177,8 +1649,12 @@ export default function WorkersTab({ onFormOpenChange }: WorkersTabProps) {
       ===================================================== */}
 
       <WorkerDrawer
-        worker={selectedWorker}
-        onClose={() => setSelectedWorker(null)}
+        worker={
+          selectedWorker
+        }
+        onClose={() =>
+          setSelectedWorker(null)
+        }
       />
 
       {/* =====================================================
@@ -1187,12 +1663,21 @@ export default function WorkersTab({ onFormOpenChange }: WorkersTabProps) {
 
       <EditWorkerModal
         worker={editWorker}
-        onClose={() => setEditWorker(null)}
-        onUpdated={(updatedWorker) => {
-          setWorkers((current) =>
-            current.map((worker) =>
-              worker.id === updatedWorker.id ? updatedWorker : worker,
-            ),
+        onClose={() =>
+          setEditWorker(null)
+        }
+        onUpdated={(
+          updatedWorker,
+        ) => {
+          setWorkers(
+            (current) =>
+              current.map(
+                (worker) =>
+                  worker.id ===
+                  updatedWorker.id
+                    ? updatedWorker
+                    : worker,
+              ),
           );
 
           setEditWorker(null);
@@ -1213,7 +1698,10 @@ function WorkerAvatar({
   worker: Worker;
   size?: "md" | "lg";
 }) {
-  const sizeClass = size === "lg" ? "h-11 w-11 sm:h-14 sm:w-14" : "h-11 w-11";
+  const sizeClass =
+    size === "lg"
+      ? "h-11 w-11 sm:h-14 sm:w-14"
+      : "h-11 w-11";
 
   return (
     <div
@@ -1222,7 +1710,10 @@ function WorkerAvatar({
       {worker.photo ? (
         <img
           src={worker.photo}
-          alt={worker.name || "Worker"}
+          alt={
+            worker.name ||
+            "Worker"
+          }
           className="h-full w-full object-cover"
         />
       ) : (
@@ -1246,7 +1737,9 @@ function WorkerStatus({
   return active ? (
     <span
       className={`inline-flex shrink-0 items-center gap-1.5 rounded-full bg-emerald-50 font-bold text-emerald-700 ${
-        compact ? "px-2 py-1 text-[9px]" : "px-2.5 py-1 text-xs"
+        compact
+          ? "px-2 py-1 text-[9px]"
+          : "px-2.5 py-1 text-xs"
       }`}
     >
       <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
@@ -1255,7 +1748,9 @@ function WorkerStatus({
   ) : (
     <span
       className={`inline-flex shrink-0 items-center gap-1.5 rounded-full bg-gray-100 font-bold text-gray-600 ${
-        compact ? "px-2 py-1 text-[9px]" : "px-2.5 py-1 text-xs"
+        compact
+          ? "px-2 py-1 text-[9px]"
+          : "px-2.5 py-1 text-xs"
       }`}
     >
       <span className="h-1.5 w-1.5 rounded-full bg-gray-400" />
@@ -1284,7 +1779,9 @@ function MobileInfo({
       <div className="flex items-center gap-1">
         <Icon
           className={`h-3 w-3 shrink-0 ${
-            rating ? "text-amber-500" : "text-[#94A3B8]"
+            rating
+              ? "text-amber-500"
+              : "text-[#94A3B8]"
           }`}
         />
 
@@ -1325,25 +1822,27 @@ function ActionMenuContent({
   onDelete: () => void;
   onCancel?: () => void;
 }) {
-  const active = worker.available === true;
+  const active =
+    worker.available === true;
 
   return (
     <>
-      {/* HEADER */}
-
       <div
         className={`border-b border-gray-100 px-3 ${
-          mobile ? "pb-3 pt-1" : "py-3"
+          mobile
+            ? "pb-3 pt-1"
+            : "py-3"
         }`}
       >
         <p className="truncate text-sm font-bold text-[#0F172A]">
-          {worker.name || "Unnamed Worker"}
+          {worker.name ||
+            "Unnamed Worker"}
         </p>
 
-        <p className="mt-1 text-xs text-[#64748B]">Worker actions</p>
+        <p className="mt-1 text-xs text-[#64748B]">
+          Worker actions
+        </p>
       </div>
-
-      {/* EDIT */}
 
       <button
         type="button"
@@ -1355,13 +1854,16 @@ function ActionMenuContent({
         </div>
 
         <div>
-          <p className="text-sm font-semibold text-[#0F172A]">Edit Worker</p>
+          <p className="text-sm font-semibold text-[#0F172A]">
+            Edit Worker
+          </p>
 
-          <p className="text-xs text-[#94A3B8]">Update worker information</p>
+          <p className="text-xs text-[#94A3B8]">
+            Update worker
+            information
+          </p>
         </div>
       </button>
-
-      {/* STATUS */}
 
       <button
         type="button"
@@ -1375,16 +1877,18 @@ function ActionMenuContent({
 
         <div>
           <p className="text-sm font-semibold text-[#0F172A]">
-            {active ? "Make Unavailable" : "Make Available"}
+            {active
+              ? "Make Unavailable"
+              : "Make Available"}
           </p>
 
           <p className="text-xs text-[#94A3B8]">
-            {active ? "Stop new bookings" : "Allow new bookings"}
+            {active
+              ? "Stop new bookings"
+              : "Allow new bookings"}
           </p>
         </div>
       </button>
-
-      {/* DELETE */}
 
       {isSuperAdmin && (
         <>
@@ -1405,21 +1909,22 @@ function ActionMenuContent({
                 Delete Worker
               </p>
 
-              <p className="text-xs text-red-400">Permanently remove worker</p>
+              <p className="text-xs text-red-400">
+                Permanently remove
+                worker
+              </p>
             </div>
           </button>
         </>
       )}
 
-      {/* ERROR */}
-
       {actionError && (
         <div className="mx-2 mb-2 mt-1 rounded-lg border border-red-100 bg-red-50 px-3 py-2">
-          <p className="text-xs text-red-600">{actionError}</p>
+          <p className="text-xs text-red-600">
+            {actionError}
+          </p>
         </div>
       )}
-
-      {/* LOADING */}
 
       {actionLoading && (
         <div className="flex items-center justify-center gap-2 py-2 text-xs text-[#64748B]">
@@ -1427,8 +1932,6 @@ function ActionMenuContent({
           Updating...
         </div>
       )}
-
-      {/* CANCEL */}
 
       {mobile && (
         <button

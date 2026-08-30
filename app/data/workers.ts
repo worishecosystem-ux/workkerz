@@ -1,6 +1,4 @@
-/* =========================================
-   app/data/workers.ts
-========================================= */
+"use client";
 
 import { supabase } from "@/lib/supabase";
 
@@ -17,8 +15,15 @@ export type PricingType =
   | "custom";
 
 /* =========================================
-   SERVICE CATEGORIES
+   VISIBLE PRICE TYPE
 ========================================= */
+
+export type PriceKey =
+  | "per_job"
+  | "half_day"
+  | "full_day"
+  | "monthly"
+  | "visit_charge";
 
 /* =========================================
    SERVICE CATEGORIES
@@ -34,7 +39,6 @@ export const serviceCategories = [
     bg: "#F8FAFC",
     image: "",
   },
-
   {
     id: "Labour",
     label: "Labour",
@@ -44,7 +48,6 @@ export const serviceCategories = [
     bg: "#FFF5EB",
     image: "/categories/workkerz/Labour.png",
   },
-
   {
     id: "Driver",
     label: "Driver",
@@ -54,7 +57,6 @@ export const serviceCategories = [
     bg: "#F0FDF4",
     image: "/categories/workkerz/Driver.png",
   },
-
   {
     id: "Mechanic",
     label: "Mechanic",
@@ -64,7 +66,6 @@ export const serviceCategories = [
     bg: "#EFF6FF",
     image: "/categories/workkerz/Mechanic.png",
   },
-
   {
     id: "Electrical & Plumbing",
     label: "Electrical & Plumbing",
@@ -74,7 +75,6 @@ export const serviceCategories = [
     bg: "#FEFCE8",
     image: "/categories/workkerz/Electricianandplumber.png",
   },
-
   {
     id: "Home Repair",
     label: "Home Repair",
@@ -84,7 +84,6 @@ export const serviceCategories = [
     bg: "#FFF7ED",
     image: "/categories/workkerz/Home repair.png",
   },
-
   {
     id: "AC & Appliances",
     label: "AC & Appliances",
@@ -94,7 +93,6 @@ export const serviceCategories = [
     bg: "#F0F9FF",
     image: "/categories/workkerz/Ac and appliances repair.png",
   },
-
   {
     id: "Washer",
     label: "Washer",
@@ -104,7 +102,6 @@ export const serviceCategories = [
     bg: "#ECFEFF",
     image: "/categories/workkerz/Washer.png",
   },
-
   {
     id: "Cleaner",
     label: "Cleaner",
@@ -114,7 +111,6 @@ export const serviceCategories = [
     bg: "#ECFDF5",
     image: "/categories/workkerz/Cleaner.png",
   },
-
   {
     id: "Garden & Pest Control",
     label: "Garden & Pest Control",
@@ -124,7 +120,6 @@ export const serviceCategories = [
     bg: "#F7FEE7",
     image: "/categories/workkerz/Garden and pest control.png",
   },
-
   {
     id: "Office & Computer",
     label: "Office & Computer",
@@ -134,7 +129,6 @@ export const serviceCategories = [
     bg: "#F5F3FF",
     image: "/categories/workkerz/Office and computer.png",
   },
-
   {
     id: "Delivery & Warehouse",
     label: "Delivery & Warehouse",
@@ -144,7 +138,6 @@ export const serviceCategories = [
     bg: "#F0FDFA",
     image: "/categories/workkerz/Delivery and warehouse.png",
   },
-
   {
     id: "Restaurant",
     label: "Restaurant",
@@ -154,7 +147,6 @@ export const serviceCategories = [
     bg: "#FEF2F2",
     image: "/categories/workkerz/Restaurant.png",
   },
-
   {
     id: "Salon & Beauty",
     label: "Salon & Beauty",
@@ -164,7 +156,6 @@ export const serviceCategories = [
     bg: "#FFF1F2",
     image: "/categories/workkerz/Salon and beauty.png",
   },
-
   {
     id: "Security & Events",
     label: "Security & Events",
@@ -174,7 +165,6 @@ export const serviceCategories = [
     bg: "#EFF6FF",
     image: "/categories/workkerz/Events.png",
   },
-
   {
     id: "Factory",
     label: "Factory",
@@ -184,7 +174,6 @@ export const serviceCategories = [
     bg: "#F8FAFC",
     image: "/categories/workkerz/Factory worker.png",
   },
-
   {
     id: "Agriculture",
     label: "Agriculture",
@@ -194,7 +183,6 @@ export const serviceCategories = [
     bg: "#F0FDF4",
     image: "/categories/workkerz/Agriculture.png",
   },
-
   {
     id: "Moving & Packing",
     label: "Moving & Packing",
@@ -204,7 +192,6 @@ export const serviceCategories = [
     bg: "#FAF5FF",
     image: "/categories/workkerz/Moving and packers.png",
   },
-
   {
     id: "Other Services",
     label: "Other Services",
@@ -219,67 +206,45 @@ export const serviceCategories = [
 export type ServiceCategory =
   (typeof serviceCategories)[number];
 
-
-
 /* =========================================
-   SERVICE CATEGORY DESCRIPTIONS
+   SERVICE DESCRIPTIONS
 ========================================= */
 
 export const serviceCategoryDescriptions: Record<
   string,
   string
 > = {
-  Labour:
-    "Daily wage & general workers",
-
-  Driver:
-    "Drivers for every requirement",
-
-  Mechanic:
-    "Vehicle repair & maintenance",
-
+  Labour: "Daily wage & general workers",
+  Driver: "Drivers for every requirement",
+  Mechanic: "Vehicle repair & maintenance",
   "Electrical & Plumbing":
     "Electrical, plumbing, pipes & water work",
-
   "Home Repair":
     "Carpentry, painting, masonry & home repair",
-
   "AC & Appliances":
     "AC, refrigerator, RO & appliance services",
-
   Washer:
     "Vehicle cleaning & washing professionals",
-
   Cleaner:
     "Home, office & commercial cleaning",
-
   "Garden & Pest Control":
     "Garden, landscaping & pest control services",
-
   "Office & Computer":
     "Office, computer & data entry professionals",
-
   "Delivery & Warehouse":
     "Delivery, warehouse, loading & packing workers",
-
   Restaurant:
     "Restaurant, kitchen & serving staff",
-
   "Salon & Beauty":
     "Beauty, grooming & personal care services",
-
   "Security & Events":
     "Security, event staff & event support workers",
-
   Factory:
     "Factory & industrial workers",
-
   Agriculture:
     "Farming & agricultural workers",
-
   "Moving & Packing":
     "Moving, shifting & packing workers",
-
   "Other Services":
     "Other skilled & general work services",
 };
@@ -290,7 +255,7 @@ export const serviceCategoryDescriptions: Record<
 
 export type Worker = {
   id: string;
-  workerCode?: string | null;
+  workerCode: string | null;
 
   name: string;
   phone: string;
@@ -308,6 +273,8 @@ export type Worker = {
   fullDayPrice: number;
   monthlyPrice: number;
   visitCharge: number;
+
+  visiblePricingTypes: PriceKey[];
 
   rating: number;
   reviewCount: number;
@@ -334,12 +301,12 @@ export type Worker = {
 };
 
 /* =========================================
-   FORM
+   FORM DATA
 ========================================= */
 
 export type WorkerFormData = Omit<
   Worker,
-  "id" | "createdAt"
+  "id" | "createdAt" | "workerCode"
 >;
 
 /* =========================================
@@ -350,27 +317,13 @@ type WorkerRow = {
   id: string;
 
   name: string;
-  phone: string | null;
-
   category: string;
-  subcategory: string | null;
   specialty: string;
-
-  services: string[] | null;
-
-  pricing_type: string | null;
-
-  starting_price: number | string | null;
-  half_day_price: number | string | null;
-  full_day_price: number | string | null;
-  monthly_price: number | string | null;
-  visit_charge: number | string | null;
 
   rating: number | string | null;
   review_count: number | string | null;
 
   location: string;
-  labour_chauk: string | null;
 
   available: boolean | null;
 
@@ -388,30 +341,44 @@ type WorkerRow = {
   certifications: string[] | null;
 
   created_at: string;
+
+  subcategory: string | null;
+
+  services: string[] | null;
+
+  phone: string | null;
+
+  pricing_type: string | null;
+
+  starting_price: number | string | null;
+
+  half_day_price: number | string | null;
+
+  full_day_price: number | string | null;
+
+  monthly_price: number | string | null;
+
+  visit_charge: number | string | null;
+
+  labour_chauk: string | null;
+
+  worker_code: string | null;
+
+  visible_pricing_types: string[] | null;
 };
 
 /* =========================================
-   SELECT
+   EXACT DATABASE SELECT
 ========================================= */
 
 const WORKER_SELECT = `
   id,
   name,
-  phone,
   category,
-  subcategory,
   specialty,
-  services,
-  pricing_type,
-  starting_price,
-  half_day_price,
-  full_day_price,
-  monthly_price,
-  visit_charge,
   rating,
   review_count,
   location,
-  labour_chauk,
   available,
   years_experience,
   completed_jobs,
@@ -420,7 +387,19 @@ const WORKER_SELECT = `
   photo,
   response_time,
   certifications,
-  created_at
+  created_at,
+  subcategory,
+  services,
+  phone,
+  pricing_type,
+  starting_price,
+  half_day_price,
+  full_day_price,
+  monthly_price,
+  visit_charge,
+  labour_chauk,
+  worker_code,
+  visible_pricing_types
 `;
 
 /* =========================================
@@ -434,12 +413,24 @@ function numberValue(
     | null
     | undefined,
 ): number {
-  const result = Number(value ?? 0);
+  if (
+    value === null ||
+    value === undefined ||
+    value === ""
+  ) {
+    return 0;
+  }
+
+  const result = Number(value);
 
   return Number.isFinite(result)
     ? result
     : 0;
 }
+
+/* =========================================
+   PRICING TYPE
+========================================= */
 
 function pricingValue(
   value:
@@ -462,7 +453,68 @@ function pricingValue(
 }
 
 /* =========================================
-   MAP WORKER
+   PRICE KEYS
+========================================= */
+
+const PRICE_KEYS: PriceKey[] = [
+  "per_job",
+  "half_day",
+  "full_day",
+  "monthly",
+  "visit_charge",
+];
+
+/* =========================================
+   VISIBLE PRICES
+========================================= */
+
+function visiblePrices(
+  value:
+    | string[]
+    | null
+    | undefined,
+): PriceKey[] {
+  if (!Array.isArray(value)) {
+    return [
+      "per_job",
+      "half_day",
+    ];
+  }
+
+  const result =
+    value.filter(
+      (
+        item,
+      ): item is PriceKey =>
+        PRICE_KEYS.includes(
+          item as PriceKey,
+        ),
+    );
+
+  return result;
+}
+
+/* =========================================
+   STRING ARRAY
+========================================= */
+
+function stringArray(
+  value:
+    | string[]
+    | null
+    | undefined,
+): string[] {
+  return Array.isArray(value)
+    ? value.filter(
+        (item) =>
+          typeof item ===
+          "string",
+      )
+    : [];
+}
+
+/* =========================================
+   MAP DATABASE → WORKER
 ========================================= */
 
 export function mapWorker(
@@ -471,8 +523,14 @@ export function mapWorker(
   return {
     id: row.id,
 
-    name: row.name ?? "",
-    phone: row.phone ?? "",
+    workerCode:
+      row.worker_code ?? null,
+
+    name:
+      row.name ?? "",
+
+    phone:
+      row.phone ?? "",
 
     category:
       row.category ?? "",
@@ -484,9 +542,9 @@ export function mapWorker(
       row.specialty ?? "",
 
     services:
-      Array.isArray(row.services)
-        ? row.services
-        : [],
+      stringArray(
+        row.services,
+      ),
 
     pricingType:
       pricingValue(
@@ -518,8 +576,15 @@ export function mapWorker(
         row.visit_charge,
       ),
 
+    visiblePricingTypes:
+      visiblePrices(
+        row.visible_pricing_types,
+      ),
+
     rating:
-      numberValue(row.rating),
+      numberValue(
+        row.rating,
+      ),
 
     reviewCount:
       numberValue(
@@ -537,35 +602,35 @@ export function mapWorker(
 
     yearsExperience:
       Number(
-        row.years_experience ?? 0,
+        row.years_experience ??
+          0,
       ),
 
     completedJobs:
       Number(
-        row.completed_jobs ?? 0,
+        row.completed_jobs ??
+          0,
       ),
 
     bio:
       row.bio ?? "",
 
     skills:
-      Array.isArray(row.skills)
-        ? row.skills
-        : [],
+      stringArray(
+        row.skills,
+      ),
 
     photo:
       row.photo ?? "",
 
     responseTime:
-      row.response_time ||
+      row.response_time ??
       "Within 1 hour",
 
     certifications:
-      Array.isArray(
+      stringArray(
         row.certifications,
-      )
-        ? row.certifications
-        : [],
+      ),
 
     createdAt:
       row.created_at ?? "",
@@ -573,91 +638,7 @@ export function mapWorker(
 }
 
 /* =========================================
-   GET WORKERS
-========================================= */
-
-export async function getWorkers(
-  limit = 100,
-): Promise<Worker[]> {
-  try {
-    const { data, error } =
-      await supabase
-        .from("workers")
-        .select(WORKER_SELECT)
-        .order("created_at", {
-          ascending: false,
-        })
-        .limit(limit);
-
-    if (error) {
-      console.error(
-        "GET WORKERS ERROR:",
-        error.message,
-      );
-
-      return [];
-    }
-
-    return (
-      (data ?? []) as unknown as WorkerRow[]
-    ).map(mapWorker);
-  } catch (error) {
-    console.error(
-      "GET WORKERS ERROR:",
-      error,
-    );
-
-    return [];
-  }
-}
-
-/* =========================================
-   GET SINGLE WORKER
-========================================= */
-
-export async function getWorkerById(
-  id: string,
-): Promise<Worker | null> {
-  if (!id) {
-    return null;
-  }
-
-  try {
-    const { data, error } =
-      await supabase
-        .from("workers")
-        .select(WORKER_SELECT)
-        .eq("id", id)
-        .maybeSingle();
-
-    if (error) {
-      console.error(
-        "GET WORKER ERROR:",
-        error.message,
-      );
-
-      return null;
-    }
-
-    if (!data) {
-      return null;
-    }
-
-    return mapWorker(
-      data as unknown as WorkerRow,
-    );
-  } catch (error) {
-    console.error(
-      "GET WORKER ERROR:",
-      error,
-    );
-
-    return null;
-  }
-}
-
-/* =========================================
-   WORKER PAYLOAD
+   DATABASE PAYLOAD
 ========================================= */
 
 function workerPayload(
@@ -667,23 +648,74 @@ function workerPayload(
     name:
       worker.name?.trim() || "",
 
-    phone:
-      worker.phone?.trim() || null,
-
     category:
-      worker.category,
-
-    subcategory:
-      worker.subcategory || null,
+      worker.category?.trim() || "",
 
     specialty:
       worker.specialty?.trim() || "",
 
+    rating:
+      numberValue(
+        worker.rating,
+      ),
+
+    review_count:
+      numberValue(
+        worker.reviewCount,
+      ),
+
+    location:
+      worker.location?.trim() || "",
+
+    available:
+      worker.available ?? true,
+
+    years_experience:
+      numberValue(
+        worker.yearsExperience,
+      ),
+
+    completed_jobs:
+      numberValue(
+        worker.completedJobs,
+      ),
+
+    bio:
+      worker.bio?.trim() || null,
+
+    skills:
+      stringArray(
+        worker.skills,
+      ),
+
+    photo:
+      worker.photo?.trim() || null,
+
+    response_time:
+      worker.responseTime?.trim() ||
+      "Within 1 hour",
+
+    certifications:
+      stringArray(
+        worker.certifications,
+      ),
+
+    subcategory:
+      worker.subcategory?.trim() ||
+      null,
+
     services:
-      worker.services ?? [],
+      stringArray(
+        worker.services,
+      ),
+
+    phone:
+      worker.phone?.trim() ||
+      null,
 
     pricing_type:
-      worker.pricingType,
+      worker.pricingType ??
+      "custom",
 
     starting_price:
       numberValue(
@@ -710,49 +742,109 @@ function workerPayload(
         worker.visitCharge,
       ),
 
-    rating:
-      numberValue(worker.rating),
-
-    review_count:
-      numberValue(
-        worker.reviewCount,
-      ),
-
-    location:
-      worker.location?.trim() || "",
-
     labour_chauk:
-      worker.labourChauk || null,
+      worker.labourChauk?.trim() ||
+      null,
 
-    available:
-      worker.available ?? true,
-
-    years_experience:
-      numberValue(
-        worker.yearsExperience,
-      ),
-
-    completed_jobs:
-      numberValue(
-        worker.completedJobs,
-      ),
-
-    bio:
-      worker.bio?.trim() || null,
-
-    skills:
-      worker.skills ?? [],
-
-    photo:
-      worker.photo || null,
-
-    response_time:
-      worker.responseTime ||
-      "Within 1 hour",
-
-    certifications:
-      worker.certifications ?? [],
+    visible_pricing_types:
+      Array.isArray(
+        worker.visiblePricingTypes,
+      )
+        ? worker.visiblePricingTypes
+        : [],
   };
+}
+
+/* =========================================
+   GET WORKERS
+========================================= */
+
+export async function getWorkers(
+  limit = 100,
+): Promise<Worker[]> {
+  try {
+    const {
+      data,
+      error,
+    } = await supabase
+      .from("workers")
+      .select(WORKER_SELECT)
+      .order("created_at", {
+        ascending: false,
+      })
+      .limit(limit);
+
+    if (error) {
+      console.error(
+        "GET WORKERS ERROR:",
+        error.message,
+      );
+
+      throw new Error(
+        error.message,
+      );
+    }
+
+    return (
+      (data ?? []) as unknown as WorkerRow[]
+    ).map(mapWorker);
+  } catch (error) {
+    console.error(
+      "GET WORKERS ERROR:",
+      error,
+    );
+
+    throw error;
+  }
+}
+
+/* =========================================
+   GET SINGLE WORKER
+========================================= */
+
+export async function getWorkerById(
+  id: string,
+): Promise<Worker | null> {
+  if (!id) {
+    return null;
+  }
+
+  try {
+    const {
+      data,
+      error,
+    } = await supabase
+      .from("workers")
+      .select(WORKER_SELECT)
+      .eq("id", id)
+      .maybeSingle();
+
+    if (error) {
+      console.error(
+        "GET WORKER ERROR:",
+        error.message,
+      );
+
+      throw new Error(
+        error.message,
+      );
+    }
+
+    if (!data) {
+      return null;
+    }
+
+    return mapWorker(
+      data as unknown as WorkerRow,
+    );
+  } catch (error) {
+    console.error(
+      "GET WORKER ERROR:",
+      error,
+    );
+
+    throw error;
+  }
 }
 
 /* =========================================
@@ -765,34 +857,45 @@ export async function createWorker(
   const payload =
     workerPayload(worker);
 
-  try {
-    const { data, error } =
-      await supabase
-        .from("workers")
-        .insert(payload)
-        .select(WORKER_SELECT)
-        .single();
+  const {
+    data,
+    error,
+  } = await supabase
+    .from("workers")
+    .insert(payload)
+    .select(WORKER_SELECT)
+    .single();
 
-    if (error) {
-      console.error(
-        "CREATE WORKER ERROR:",
-        error.message,
-      );
-
-      throw error;
-    }
-
-    return mapWorker(
-      data as unknown as WorkerRow,
-    );
-  } catch (error) {
+  if (error) {
     console.error(
       "CREATE WORKER ERROR:",
-      error,
+      error.message,
     );
 
-    throw error;
+    if (
+      error.code ===
+      "23505"
+    ) {
+      throw new Error(
+        "A worker with the same name, category, subcategory, specialty and location already exists.",
+      );
+    }
+
+    throw new Error(
+      error.message ||
+        "Unable to create worker.",
+    );
   }
+
+  if (!data) {
+    throw new Error(
+      "Worker was not returned after saving.",
+    );
+  }
+
+  return mapWorker(
+    data as unknown as WorkerRow,
+  );
 }
 
 /* =========================================
@@ -812,35 +915,62 @@ export async function updateWorker(
   const payload =
     workerPayload(worker);
 
-  try {
-    const { data, error } =
-      await supabase
-        .from("workers")
-        .update(payload)
-        .eq("id", id)
-        .select(WORKER_SELECT)
-        .single();
+  console.log(
+    "UPDATE WORKER PAYLOAD:",
+    {
+      id,
+      ...payload,
+    },
+  );
 
-    if (error) {
-      console.error(
-        "UPDATE WORKER ERROR:",
-        error.message,
-      );
+  const {
+    data,
+    error,
+  } = await supabase
+    .from("workers")
+    .update(payload)
+    .eq("id", id)
+    .select(WORKER_SELECT)
+    .single();
 
-      throw error;
-    }
-
-    return mapWorker(
-      data as unknown as WorkerRow,
-    );
-  } catch (error) {
+  if (error) {
     console.error(
       "UPDATE WORKER ERROR:",
-      error,
+      error.message,
     );
 
-    throw error;
+    if (
+      error.code ===
+      "23505"
+    ) {
+      throw new Error(
+        "Another worker already exists with the same name, category, subcategory, specialty and location.",
+      );
+    }
+
+    throw new Error(
+      error.message ||
+        "Unable to update worker.",
+    );
   }
+
+  if (!data) {
+    throw new Error(
+      "Worker was not returned after update.",
+    );
+  }
+
+  const updatedWorker =
+    mapWorker(
+      data as unknown as WorkerRow,
+    );
+
+  console.log(
+    "UPDATED WORKER FROM DATABASE:",
+    updatedWorker,
+  );
+
+  return updatedWorker;
 }
 
 /* =========================================
@@ -856,11 +986,12 @@ export async function deleteWorker(
     );
   }
 
-  const { error } =
-    await supabase
-      .from("workers")
-      .delete()
-      .eq("id", id);
+  const {
+    error,
+  } = await supabase
+    .from("workers")
+    .delete()
+    .eq("id", id);
 
   if (error) {
     console.error(
@@ -868,7 +999,9 @@ export async function deleteWorker(
       error.message,
     );
 
-    throw error;
+    throw new Error(
+      error.message,
+    );
   }
 }
 
@@ -886,13 +1019,14 @@ export async function setWorkerAvailability(
     );
   }
 
-  const { error } =
-    await supabase
-      .from("workers")
-      .update({
-        available,
-      })
-      .eq("id", id);
+  const {
+    error,
+  } = await supabase
+    .from("workers")
+    .update({
+      available,
+    })
+    .eq("id", id);
 
   if (error) {
     console.error(
@@ -900,7 +1034,9 @@ export async function setWorkerAvailability(
       error.message,
     );
 
-    throw error;
+    throw new Error(
+      error.message,
+    );
   }
 }
 

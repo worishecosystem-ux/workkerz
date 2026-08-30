@@ -1,16 +1,11 @@
 "use client";
 
-import { FormEvent, useEffect, useMemo, useState } from "react";
-
 import {
-  AlertTriangle,
-  CalendarDays,
   CheckCircle2,
   ChevronRight,
   Eye,
   EyeOff,
   Filter,
-  Mail,
   MoreVertical,
   Plus,
   RefreshCw,
@@ -22,6 +17,13 @@ import {
   UserX,
   X,
 } from "lucide-react";
+
+import {
+  FormEvent,
+  useEffect,
+  useMemo,
+  useState,
+} from "react";
 
 import { supabase } from "@/lib/supabase";
 
@@ -39,7 +41,9 @@ type AdminRole =
   | "finance_admin"
   | "verification_admin";
 
-type AccountRole = "super_admin" | "admin";
+type AccountRole =
+  | "super_admin"
+  | "admin";
 
 type Admin = {
   id: string;
@@ -56,22 +60,30 @@ type Admin = {
    ROLE LABELS
 ===================================================== */
 
-const roleLabels: Record<AdminRole, string> = {
+const roleLabels: Record<
+  AdminRole,
+  string
+> = {
   worker_admin: "Worker Admin",
-  worker_request_admin: "Worker Request Admin",
+  worker_request_admin:
+    "Worker Request Admin",
   order_admin: "Order Admin",
   shop_admin: "Shop Admin",
   booking_admin: "Booking Admin",
   support_admin: "Support Admin",
   finance_admin: "Finance Admin",
-  verification_admin: "Verification Admin",
+  verification_admin:
+    "Verification Admin",
 };
 
 /* =====================================================
    ROLE COLORS
 ===================================================== */
 
-const roleColors: Record<AdminRole, string> = {
+const roleColors: Record<
+  AdminRole,
+  string
+> = {
   worker_admin:
     "bg-blue-50 text-blue-700 border-blue-100",
 
@@ -101,18 +113,30 @@ const roleColors: Record<AdminRole, string> = {
    SAFE API RESPONSE
 ===================================================== */
 
-async function readApiResponse(response: Response) {
+async function readApiResponse(
+  response: Response,
+) {
   const contentType =
-    response.headers.get("content-type") || "";
+    response.headers.get(
+      "content-type",
+    ) || "";
 
-  const text = await response.text();
+  const text =
+    await response.text();
 
-  if (!contentType.includes("application/json")) {
-    console.error("API returned non-JSON:", {
-      status: response.status,
-      contentType,
-      response: text,
-    });
+  if (
+    !contentType.includes(
+      "application/json",
+    )
+  ) {
+    console.error(
+      "API returned non-JSON:",
+      {
+        status: response.status,
+        contentType,
+        response: text,
+      },
+    );
 
     throw new Error(
       `API returned ${response.status}. Please check the API route.`,
@@ -139,22 +163,32 @@ async function readApiResponse(response: Response) {
 ===================================================== */
 
 export default function AdminsTab() {
-  const [admins, setAdmins] = useState<Admin[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [saving, setSaving] = useState(false);
+  const [admins, setAdmins] =
+    useState<Admin[]>([]);
 
-  const [search, setSearch] = useState("");
+  const [loading, setLoading] =
+    useState(true);
+
+  const [saving, setSaving] =
+    useState(false);
+
+  const [search, setSearch] =
+    useState("");
 
   const [roleFilter, setRoleFilter] =
-    useState<"all" | AdminRole>("all");
+    useState<
+      "all" | AdminRole
+    >("all");
 
   const [statusFilter, setStatusFilter] =
     useState<
       "all" | "active" | "disabled"
     >("all");
 
-  const [selectedAdmin, setSelectedAdmin] =
-    useState<Admin | null>(null);
+  const [
+    selectedAdmin,
+    setSelectedAdmin,
+  ] = useState<Admin | null>(null);
 
   const [showCreate, setShowCreate] =
     useState(false);
@@ -165,17 +199,62 @@ export default function AdminsTab() {
   const [showMore, setShowMore] =
     useState(false);
 
-  const [error, setError] = useState("");
-  const [success, setSuccess] = useState("");
+  /* =====================================================
+     TRASH PIN STATE
+  ===================================================== */
 
-  const [form, setForm] = useState({
-    full_name: "",
-    email: "",
-    password: "",
-    admin_roles: [
-      "worker_admin",
-    ] as AdminRole[],
-  });
+  const [
+    showTrashPin,
+    setShowTrashPin,
+  ] = useState(false);
+
+  const [trashPin, setTrashPin] =
+    useState("");
+
+  const [
+    confirmTrashPin,
+    setConfirmTrashPin,
+  ] = useState("");
+
+  const [
+    showTrashPinValue,
+    setShowTrashPinValue,
+  ] = useState(false);
+
+  const [
+    savingTrashPin,
+    setSavingTrashPin,
+  ] = useState(false);
+
+  const [
+    trashPinError,
+    setTrashPinError,
+  ] = useState("");
+
+  const [
+    trashPinSuccess,
+    setTrashPinSuccess,
+  ] = useState("");
+
+  const [error, setError] =
+    useState("");
+
+  const [success, setSuccess] =
+    useState("");
+
+  /* =====================================================
+     FORM
+  ===================================================== */
+
+  const [form, setForm] =
+    useState({
+      full_name: "",
+      email: "",
+      password: "",
+      admin_roles: [
+        "worker_admin",
+      ] as AdminRole[],
+    });
 
   /* =====================================================
      AUTH HEADERS
@@ -184,16 +263,21 @@ export default function AdminsTab() {
   const getAuthHeaders = async () => {
     const {
       data: { session },
-    } = await supabase.auth.getSession();
+    } =
+      await supabase.auth.getSession();
 
-    if (!session?.access_token) {
+    if (
+      !session?.access_token
+    ) {
       throw new Error(
         "Admin session expired. Please login again.",
       );
     }
 
     return {
-      "Content-Type": "application/json",
+      "Content-Type":
+        "application/json",
+
       Authorization:
         `Bearer ${session.access_token}`,
     };
@@ -211,17 +295,20 @@ export default function AdminsTab() {
       const headers =
         await getAuthHeaders();
 
-      const response = await fetch(
-        "/api/admin/list",
-        {
-          method: "GET",
-          headers,
-          cache: "no-store",
-        },
-      );
+      const response =
+        await fetch(
+          "/api/admin/list",
+          {
+            method: "GET",
+            headers,
+            cache: "no-store",
+          },
+        );
 
       const data =
-        await readApiResponse(response);
+        await readApiResponse(
+          response,
+        );
 
       if (!response.ok) {
         throw new Error(
@@ -233,7 +320,8 @@ export default function AdminsTab() {
       const normalizedAdmins: Admin[] =
         (data.admins || []).map(
           (admin: Admin) => {
-            let roles: AdminRole[] = [];
+            let roles: AdminRole[] =
+              [];
 
             if (
               Array.isArray(
@@ -300,7 +388,8 @@ export default function AdminsTab() {
 
             return {
               ...admin,
-              admin_roles: roles,
+              admin_roles:
+                roles,
             };
           },
         );
@@ -329,13 +418,98 @@ export default function AdminsTab() {
   }, []);
 
   /* =====================================================
+     SET / UPDATE TRASH PIN
+  ===================================================== */
+
+  const handleSetTrashPin =
+    async () => {
+      setTrashPinError("");
+      setTrashPinSuccess("");
+
+      if (
+        !/^\d{4,6}$/.test(
+          trashPin,
+        )
+      ) {
+        setTrashPinError(
+          "Trash PIN must be 4–6 digits.",
+        );
+        return;
+      }
+
+      if (
+        trashPin !==
+        confirmTrashPin
+      ) {
+        setTrashPinError(
+          "PIN and confirm PIN do not match.",
+        );
+        return;
+      }
+
+      setSavingTrashPin(true);
+
+      try {
+        const headers =
+          await getAuthHeaders();
+
+        const response =
+          await fetch(
+            "/api/admin/trash-pin/set",
+            {
+              method: "POST",
+              headers,
+              body: JSON.stringify({
+                pin: trashPin,
+              }),
+            },
+          );
+
+        const data =
+          await readApiResponse(
+            response,
+          );
+
+        if (!response.ok) {
+          throw new Error(
+            data.error ||
+              "Unable to set Trash PIN.",
+          );
+        }
+
+        setTrashPin("");
+        setConfirmTrashPin("");
+
+        setTrashPinSuccess(
+          data.message ||
+            "Trash PIN set successfully.",
+        );
+      } catch (error) {
+        console.error(
+          "Set Trash PIN error:",
+          error,
+        );
+
+        setTrashPinError(
+          error instanceof Error
+            ? error.message
+            : "Unable to set Trash PIN.",
+        );
+      } finally {
+        setSavingTrashPin(false);
+      }
+    };
+
+  /* =====================================================
      FILTER
   ===================================================== */
 
   const filteredAdmins =
     useMemo(() => {
       const query =
-        search.trim().toLowerCase();
+        search
+          .trim()
+          .toLowerCase();
 
       return admins.filter(
         (admin) => {
@@ -355,7 +529,8 @@ export default function AdminsTab() {
             );
 
           const matchesStatus =
-            statusFilter === "all" ||
+            statusFilter ===
+              "all" ||
             (statusFilter ===
               "active" &&
               admin.is_active) ||
@@ -381,319 +556,335 @@ export default function AdminsTab() {
      CREATE ADMIN
   ===================================================== */
 
-  const handleCreateAdmin = async (
-    event: FormEvent<HTMLFormElement>,
-  ) => {
-    event.preventDefault();
+  const handleCreateAdmin =
+    async (
+      event: FormEvent<HTMLFormElement>,
+    ) => {
+      event.preventDefault();
 
-    setError("");
-    setSuccess("");
+      setError("");
+      setSuccess("");
 
-    if (
-      form.full_name.trim().length < 2
-    ) {
-      setError(
-        "Please enter a valid name.",
-      );
-      return;
-    }
-
-    if (
-      !form.email.trim().includes("@")
-    ) {
-      setError(
-        "Please enter a valid email.",
-      );
-      return;
-    }
-
-    if (form.password.length < 8) {
-      setError(
-        "Password must be at least 8 characters.",
-      );
-      return;
-    }
-
-    if (
-      form.admin_roles.length === 0
-    ) {
-      setError(
-        "Select at least one department.",
-      );
-      return;
-    }
-
-    setSaving(true);
-
-    try {
-      const headers =
-        await getAuthHeaders();
-
-      const response = await fetch(
-        "/api/admin/create",
-        {
-          method: "POST",
-          headers,
-          body: JSON.stringify({
-            full_name:
-              form.full_name.trim(),
-
-            email:
-              form.email
-                .trim()
-                .toLowerCase(),
-
-            password:
-              form.password,
-
-            role: "admin",
-
-            admin_roles:
-              form.admin_roles,
-          }),
-        },
-      );
-
-      const data =
-        await readApiResponse(
-          response,
+      if (
+        form.full_name.trim()
+          .length < 2
+      ) {
+        setError(
+          "Please enter a valid name.",
         );
-
-      if (!response.ok) {
-        throw new Error(
-          data.error ||
-            "Unable to create admin.",
-        );
+        return;
       }
 
-      setSuccess(
-        "Admin created successfully.",
-      );
+      if (
+        !form.email
+          .trim()
+          .includes("@")
+      ) {
+        setError(
+          "Please enter a valid email.",
+        );
+        return;
+      }
 
-      setForm({
-        full_name: "",
-        email: "",
-        password: "",
-        admin_roles: [
-          "worker_admin",
-        ],
-      });
+      if (
+        form.password.length < 8
+      ) {
+        setError(
+          "Password must be at least 8 characters.",
+        );
+        return;
+      }
 
-      setShowCreate(false);
+      if (
+        form.admin_roles.length ===
+        0
+      ) {
+        setError(
+          "Select at least one department.",
+        );
+        return;
+      }
 
-      await loadAdmins();
-    } catch (error) {
-      console.error(
-        "Create admin error:",
-        error,
-      );
+      setSaving(true);
 
-      setError(
-        error instanceof Error
-          ? error.message
-          : "Unable to create admin.",
-      );
-    } finally {
-      setSaving(false);
-    }
-  };
+      try {
+        const headers =
+          await getAuthHeaders();
+
+        const response =
+          await fetch(
+            "/api/admin/create",
+            {
+              method: "POST",
+              headers,
+              body: JSON.stringify({
+                full_name:
+                  form.full_name.trim(),
+
+                email:
+                  form.email
+                    .trim()
+                    .toLowerCase(),
+
+                password:
+                  form.password,
+
+                role: "admin",
+
+                admin_roles:
+                  form.admin_roles,
+              }),
+            },
+          );
+
+        const data =
+          await readApiResponse(
+            response,
+          );
+
+        if (!response.ok) {
+          throw new Error(
+            data.error ||
+              "Unable to create admin.",
+          );
+        }
+
+        setSuccess(
+          "Admin created successfully.",
+        );
+
+        setForm({
+          full_name: "",
+          email: "",
+          password: "",
+          admin_roles: [
+            "worker_admin",
+          ],
+        });
+
+        setShowCreate(false);
+
+        await loadAdmins();
+      } catch (error) {
+        console.error(
+          "Create admin error:",
+          error,
+        );
+
+        setError(
+          error instanceof Error
+            ? error.message
+            : "Unable to create admin.",
+        );
+      } finally {
+        setSaving(false);
+      }
+    };
 
   /* =====================================================
      UPDATE ADMIN
   ===================================================== */
 
-  const updateAdmin = async (
-    adminId: string,
-    changes: {
-      admin_roles?: AdminRole[];
-      role?: AccountRole;
-      is_active?: boolean;
-    },
-  ) => {
-    setSaving(true);
-    setError("");
-    setSuccess("");
+  const updateAdmin =
+    async (
+      adminId: string,
+      changes: {
+        admin_roles?: AdminRole[];
+        role?: AccountRole;
+        is_active?: boolean;
+      },
+    ) => {
+      setSaving(true);
+      setError("");
+      setSuccess("");
 
-    try {
-      const headers =
-        await getAuthHeaders();
+      try {
+        const headers =
+          await getAuthHeaders();
 
-      const response =
-        await fetch(
-          `/api/admin/${adminId}`,
-          {
-            method: "PATCH",
-            headers,
-            body: JSON.stringify(
-              changes,
+        const response =
+          await fetch(
+            `/api/admin/${adminId}`,
+            {
+              method: "PATCH",
+              headers,
+              body: JSON.stringify(
+                changes,
+              ),
+            },
+          );
+
+        const data =
+          await readApiResponse(
+            response,
+          );
+
+        if (!response.ok) {
+          throw new Error(
+            data.error ||
+              "Unable to update admin.",
+          );
+        }
+
+        if (
+          changes.admin_roles !==
+            undefined &&
+          typeof window !==
+            "undefined"
+        ) {
+          try {
+            localStorage.setItem(
+              `workkerz_admin_departments_${adminId}`,
+              JSON.stringify(
+                changes.admin_roles,
+              ),
+            );
+          } catch (error) {
+            console.error(
+              "Unable to save departments locally:",
+              error,
+            );
+          }
+        }
+
+        setAdmins(
+          (current) =>
+            current.map(
+              (admin) =>
+                admin.id ===
+                adminId
+                  ? {
+                      ...admin,
+
+                      ...(changes.admin_roles !==
+                      undefined
+                        ? {
+                            admin_roles:
+                              changes.admin_roles,
+                          }
+                        : {}),
+
+                      ...(changes.role !==
+                      undefined
+                        ? {
+                            role:
+                              changes.role,
+                          }
+                        : {}),
+
+                      ...(changes.is_active !==
+                      undefined
+                        ? {
+                            is_active:
+                              changes.is_active,
+                          }
+                        : {}),
+
+                      ...(data.admin ||
+                        {}),
+                    }
+                  : admin,
             ),
+        );
+
+        setSelectedAdmin(
+          (current) => {
+            if (
+              !current ||
+              current.id !==
+                adminId
+            ) {
+              return current;
+            }
+
+            return {
+              ...current,
+
+              ...(changes.admin_roles !==
+              undefined
+                ? {
+                    admin_roles:
+                      changes.admin_roles,
+                  }
+                : {}),
+
+              ...(changes.role !==
+              undefined
+                ? {
+                    role:
+                      changes.role,
+                  }
+                : {}),
+
+              ...(changes.is_active !==
+              undefined
+                ? {
+                    is_active:
+                      changes.is_active,
+                  }
+                : {}),
+            };
           },
         );
 
-      const data =
-        await readApiResponse(
-          response,
+        setSuccess(
+          data.message ||
+            "Admin updated successfully.",
+        );
+      } catch (error) {
+        console.error(
+          "Update admin error:",
+          error,
         );
 
-      if (!response.ok) {
-        throw new Error(
-          data.error ||
-            "Unable to update admin.",
+        setError(
+          error instanceof Error
+            ? error.message
+            : "Unable to update admin.",
         );
+      } finally {
+        setSaving(false);
       }
-
-      if (
-        changes.admin_roles !==
-          undefined &&
-        typeof window !==
-          "undefined"
-      ) {
-        try {
-          localStorage.setItem(
-            `workkerz_admin_departments_${adminId}`,
-            JSON.stringify(
-              changes.admin_roles,
-            ),
-          );
-        } catch (error) {
-          console.error(
-            "Unable to save departments locally:",
-            error,
-          );
-        }
-      }
-
-      setAdmins(
-        (current) =>
-          current.map(
-            (admin) =>
-              admin.id === adminId
-                ? {
-                    ...admin,
-
-                    ...(changes.admin_roles !==
-                    undefined
-                      ? {
-                          admin_roles:
-                            changes.admin_roles,
-                        }
-                      : {}),
-
-                    ...(changes.role !==
-                    undefined
-                      ? {
-                          role:
-                            changes.role,
-                        }
-                      : {}),
-
-                    ...(changes.is_active !==
-                    undefined
-                      ? {
-                          is_active:
-                            changes.is_active,
-                        }
-                      : {}),
-
-                    ...(data.admin ||
-                      {}),
-                  }
-                : admin,
-          ),
-      );
-
-      setSelectedAdmin(
-        (current) => {
-          if (
-            !current ||
-            current.id !== adminId
-          ) {
-            return current;
-          }
-
-          return {
-            ...current,
-
-            ...(changes.admin_roles !==
-            undefined
-              ? {
-                  admin_roles:
-                    changes.admin_roles,
-                }
-              : {}),
-
-            ...(changes.role !==
-            undefined
-              ? {
-                  role:
-                    changes.role,
-                }
-              : {}),
-
-            ...(changes.is_active !==
-            undefined
-              ? {
-                  is_active:
-                    changes.is_active,
-                }
-              : {}),
-          };
-        },
-      );
-
-      setSuccess(
-        data.message ||
-          "Admin updated successfully.",
-      );
-    } catch (error) {
-      console.error(
-        "Update admin error:",
-        error,
-      );
-
-      setError(
-        error instanceof Error
-          ? error.message
-          : "Unable to update admin.",
-      );
-    } finally {
-      setSaving(false);
-    }
-  };
+    };
 
   /* =====================================================
      TOGGLE DEPARTMENT
   ===================================================== */
 
-  const toggleDepartment = async (
-    role: AdminRole,
-  ) => {
-    if (!selectedAdmin) return;
+  const toggleDepartment =
+    async (
+      role: AdminRole,
+    ) => {
+      if (!selectedAdmin)
+        return;
 
-    const currentRoles =
-      selectedAdmin.admin_roles ||
-      [];
+      const currentRoles =
+        selectedAdmin.admin_roles ||
+        [];
 
-    const exists =
-      currentRoles.includes(role);
-
-    const nextRoles = exists
-      ? currentRoles.filter(
-          (item) => item !== role,
-        )
-      : [
-          ...currentRoles,
+      const exists =
+        currentRoles.includes(
           role,
-        ];
+        );
 
-    await updateAdmin(
-      selectedAdmin.id,
-      {
-        admin_roles:
-          nextRoles,
-      },
-    );
-  };
+      const nextRoles = exists
+        ? currentRoles.filter(
+            (item) =>
+              item !== role,
+          )
+        : [
+            ...currentRoles,
+            role,
+          ];
+
+      await updateAdmin(
+        selectedAdmin.id,
+        {
+          admin_roles:
+            nextRoles,
+        },
+      );
+    };
 
   /* =====================================================
      ACCOUNT ROLE
@@ -703,7 +894,8 @@ export default function AdminsTab() {
     async (
       role: AccountRole,
     ) => {
-      if (!selectedAdmin) return;
+      if (!selectedAdmin)
+        return;
 
       if (
         role === "super_admin" &&
@@ -732,7 +924,8 @@ export default function AdminsTab() {
 
   const handleToggleStatus =
     async () => {
-      if (!selectedAdmin) return;
+      if (!selectedAdmin)
+        return;
 
       const nextStatus =
         !selectedAdmin.is_active;
@@ -761,7 +954,8 @@ export default function AdminsTab() {
 
   const handleDeleteAdmin =
     async () => {
-      if (!selectedAdmin) return;
+      if (!selectedAdmin)
+        return;
 
       const confirmed =
         window.confirm(
@@ -890,14 +1084,17 @@ export default function AdminsTab() {
       ================================================= */}
 
       <header className="border-b border-gray-100 bg-white px-3 py-4 sm:px-6 sm:py-5 lg:px-8">
+
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between sm:gap-4">
 
           <div className="flex min-w-0 items-center gap-3">
+
             <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-orange-50 sm:h-11 sm:w-11">
               <ShieldCheck className="h-5 w-5 text-[#FF5C39]" />
             </div>
 
             <div className="min-w-0">
+
               <h1 className="text-lg font-black leading-tight text-[#0F172A] sm:text-2xl">
                 Admin Management
               </h1>
@@ -906,23 +1103,51 @@ export default function AdminsTab() {
                 Manage admin accounts,
                 departments and access.
               </p>
+
             </div>
+
           </div>
 
-          <button
-            type="button"
-            onClick={() => {
-              setError("");
-              setSuccess("");
-              setShowCreate(true);
-            }}
-            className="inline-flex h-10 w-full shrink-0 items-center justify-center gap-2 rounded-xl bg-[#FF5C39] px-4 text-sm font-bold text-white hover:bg-[#e54e2e] sm:h-11 sm:w-auto sm:px-5"
-          >
-            <Plus className="h-4 w-4" />
-            Create Admin
-          </button>
+          {/* HEADER ACTIONS */}
+
+          <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row">
+
+            {/* TRASH PIN */}
+
+            <button
+              type="button"
+              onClick={() => {
+                setTrashPin("");
+                setConfirmTrashPin("");
+                setTrashPinError("");
+                setTrashPinSuccess("");
+                setShowTrashPin(true);
+              }}
+              className="inline-flex h-10 w-full shrink-0 items-center justify-center gap-2 rounded-xl border border-red-200 bg-red-50 px-4 text-sm font-bold text-red-600 transition hover:bg-red-100 sm:h-11 sm:w-auto sm:px-5"
+            >
+              <ShieldCheck className="h-4 w-4" />
+              Trash PIN
+            </button>
+
+            {/* CREATE ADMIN */}
+
+            <button
+              type="button"
+              onClick={() => {
+                setError("");
+                setSuccess("");
+                setShowCreate(true);
+              }}
+              className="inline-flex h-10 w-full shrink-0 items-center justify-center gap-2 rounded-xl bg-[#FF5C39] px-4 text-sm font-bold text-white hover:bg-[#e54e2e] sm:h-11 sm:w-auto sm:px-5"
+            >
+              <Plus className="h-4 w-4" />
+              Create Admin
+            </button>
+
+          </div>
 
         </div>
+
       </header>
 
       {/* =================================================
@@ -995,6 +1220,7 @@ export default function AdminsTab() {
             {/* SEARCH */}
 
             <div className="relative min-w-0">
+
               <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[#94A3B8]" />
 
               <input
@@ -1007,11 +1233,13 @@ export default function AdminsTab() {
                 placeholder="Search admin..."
                 className="h-11 w-full rounded-xl border border-gray-200 bg-[#F8FAFC] pl-10 pr-4 text-sm outline-none focus:border-[#FF5C39]"
               />
+
             </div>
 
             {/* ROLE */}
 
             <div className="relative min-w-0">
+
               <Filter className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[#94A3B8]" />
 
               <select
@@ -1050,6 +1278,7 @@ export default function AdminsTab() {
                   ),
                 )}
               </select>
+
             </div>
 
             {/* STATUS */}
@@ -1099,6 +1328,7 @@ export default function AdminsTab() {
             </button>
 
           </div>
+
         </div>
 
         {/* =================================================
@@ -1108,6 +1338,7 @@ export default function AdminsTab() {
         <div className="overflow-hidden rounded-2xl border border-gray-100 bg-white">
 
           <div className="border-b border-gray-100 px-4 py-4 sm:px-6">
+
             <h2 className="font-bold text-[#0F172A]">
               Admin Accounts
             </h2>
@@ -1116,32 +1347,33 @@ export default function AdminsTab() {
               Click an admin to manage
               account access.
             </p>
-          </div>
 
-          {/* LOADING */}
+          </div>
 
           {loading ? (
             <div className="p-12 text-center">
+
               <RefreshCw className="mx-auto h-6 w-6 animate-spin text-[#FF5C39]" />
 
               <p className="mt-3 text-sm text-[#64748B]">
                 Loading admins...
               </p>
+
             </div>
           ) : filteredAdmins.length ===
             0 ? (
             <div className="p-12 text-center">
+
               <ShieldCheck className="mx-auto h-10 w-10 text-gray-300" />
 
               <p className="mt-3 text-sm font-semibold text-[#64748B]">
                 No admins found.
               </p>
+
             </div>
           ) : (
             <>
-              {/* =================================================
-                  MOBILE CARDS
-              ================================================= */}
+              {/* MOBILE */}
 
               <div className="divide-y divide-gray-100 md:hidden">
 
@@ -1157,6 +1389,7 @@ export default function AdminsTab() {
                       }
                       className="w-full p-4 text-left transition hover:bg-gray-50 active:bg-gray-50"
                     >
+
                       <div className="flex min-w-0 items-start gap-3">
 
                         <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-orange-50">
@@ -1168,13 +1401,19 @@ export default function AdminsTab() {
                           <div className="flex items-start justify-between gap-2">
 
                             <div className="min-w-0">
+
                               <p className="truncate text-sm font-bold text-[#0F172A]">
-                                {admin.full_name}
+                                {
+                                  admin.full_name
+                                }
                               </p>
 
                               <p className="mt-0.5 truncate text-xs text-[#64748B]">
-                                {admin.email}
+                                {
+                                  admin.email
+                                }
                               </p>
+
                             </div>
 
                             <span
@@ -1201,8 +1440,7 @@ export default function AdminsTab() {
 
                           <div className="mt-3 flex flex-wrap gap-1.5">
 
-                            {admin.admin_roles
-                              .length >
+                            {admin.admin_roles.length >
                             0 ? (
                               admin.admin_roles
                                 .slice(
@@ -1217,11 +1455,7 @@ export default function AdminsTab() {
                                       key={
                                         role
                                       }
-                                      className={`inline-flex max-w-full truncate rounded-lg border px-2 py-1 text-[10px] font-bold ${
-                                        roleColors[
-                                          role
-                                        ]
-                                      }`}
+                                      className={`inline-flex max-w-full truncate rounded-lg border px-2 py-1 text-[10px] font-bold ${roleColors[role]}`}
                                     >
                                       {
                                         roleLabels[
@@ -1237,15 +1471,11 @@ export default function AdminsTab() {
                               </span>
                             )}
 
-                            {admin
-                              .admin_roles
-                              .length >
+                            {admin.admin_roles.length >
                               3 && (
                               <span className="inline-flex rounded-lg border border-gray-100 bg-gray-50 px-2 py-1 text-[10px] font-bold text-gray-500">
                                 +
-                                {admin
-                                  .admin_roles
-                                  .length -
+                                {admin.admin_roles.length -
                                   3}
                               </span>
                             )}
@@ -1253,23 +1483,25 @@ export default function AdminsTab() {
                           </div>
 
                         </div>
+
                       </div>
+
                     </button>
                   ),
                 )}
 
               </div>
 
-              {/* =================================================
-                  DESKTOP TABLE
-              ================================================= */}
+              {/* DESKTOP */}
 
               <div className="hidden overflow-x-auto md:block">
 
                 <table className="w-full min-w-[850px]">
 
                   <thead>
+
                     <tr className="border-b border-gray-100 bg-[#F8FAFC] text-left">
+
                       <th className="px-6 py-3 text-xs font-bold text-[#64748B]">
                         Admin
                       </th>
@@ -1289,7 +1521,9 @@ export default function AdminsTab() {
                       <th className="px-6 py-3 text-right text-xs font-bold text-[#64748B]">
                         Action
                       </th>
+
                     </tr>
+
                   </thead>
 
                   <tbody className="divide-y divide-gray-100">
@@ -1304,6 +1538,7 @@ export default function AdminsTab() {
                         >
 
                           <td className="px-6 py-4">
+
                             <div className="flex items-center gap-3">
 
                               <div className="flex h-10 w-10 items-center justify-center rounded-full bg-orange-50">
@@ -1311,6 +1546,7 @@ export default function AdminsTab() {
                               </div>
 
                               <div className="min-w-0">
+
                                 <p className="truncate text-sm font-bold text-[#0F172A]">
                                   {
                                     admin.full_name
@@ -1322,16 +1558,18 @@ export default function AdminsTab() {
                                     admin.email
                                   }
                                 </p>
+
                               </div>
 
                             </div>
+
                           </td>
 
                           <td className="px-6 py-4">
+
                             <div className="flex max-w-[350px] flex-wrap gap-1.5">
 
-                              {admin.admin_roles
-                                .length >
+                              {admin.admin_roles.length >
                               0 ? (
                                 admin.admin_roles.map(
                                   (
@@ -1341,11 +1579,7 @@ export default function AdminsTab() {
                                       key={
                                         role
                                       }
-                                      className={`inline-flex rounded-lg border px-2.5 py-1 text-[10px] font-bold ${
-                                        roleColors[
-                                          role
-                                        ]
-                                      }`}
+                                      className={`inline-flex rounded-lg border px-2.5 py-1 text-[10px] font-bold ${roleColors[role]}`}
                                     >
                                       {
                                         roleLabels[
@@ -1362,9 +1596,11 @@ export default function AdminsTab() {
                               )}
 
                             </div>
+
                           </td>
 
                           <td className="px-6 py-4">
+
                             <span
                               className={`inline-flex rounded-full px-2.5 py-1 text-[10px] font-bold ${
                                 admin.role ===
@@ -1378,9 +1614,11 @@ export default function AdminsTab() {
                                 ? "Super Admin"
                                 : "Admin"}
                             </span>
+
                           </td>
 
                           <td className="px-6 py-4">
+
                             <span
                               className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[10px] font-bold ${
                                 admin.is_active
@@ -1388,6 +1626,7 @@ export default function AdminsTab() {
                                   : "bg-red-50 text-red-600"
                               }`}
                             >
+
                               <span
                                 className={`h-1.5 w-1.5 rounded-full ${
                                   admin.is_active
@@ -1399,10 +1638,13 @@ export default function AdminsTab() {
                               {admin.is_active
                                 ? "Active"
                                 : "Disabled"}
+
                             </span>
+
                           </td>
 
                           <td className="px-6 py-4 text-right">
+
                             <button
                               type="button"
                               onClick={() =>
@@ -1415,6 +1657,7 @@ export default function AdminsTab() {
                               <Eye className="h-4 w-4" />
                               Manage
                             </button>
+
                           </td>
 
                         </tr>
@@ -1422,12 +1665,241 @@ export default function AdminsTab() {
                     )}
 
                   </tbody>
+
                 </table>
+
               </div>
             </>
           )}
+
         </div>
+
       </main>
+
+      {/* =================================================
+          TRASH PIN MODAL
+      ================================================= */}
+
+      {showTrashPin && (
+        <div className="fixed inset-0 z-[150] flex items-center justify-center bg-black/45 px-4 backdrop-blur-sm">
+
+          <div className="w-full max-w-[380px] overflow-hidden rounded-2xl bg-white shadow-2xl">
+
+            {/* HEADER */}
+
+            <div className="flex items-center justify-between border-b border-gray-100 px-5 py-4">
+
+              <div className="flex items-center gap-3">
+
+                <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-red-50 text-red-600">
+                  <ShieldCheck className="h-5 w-5" />
+                </div>
+
+                <div>
+
+                  <h2 className="text-sm font-black text-[#172033]">
+                    Set Trash PIN
+                  </h2>
+
+                  <p className="mt-0.5 text-[9px] font-medium text-[#94A3B8]">
+                    Protect deleted requests
+                  </p>
+
+                </div>
+
+              </div>
+
+              <button
+                type="button"
+                disabled={
+                  savingTrashPin
+                }
+                onClick={() =>
+                  setShowTrashPin(
+                    false,
+                  )
+                }
+                className="flex h-8 w-8 items-center justify-center rounded-lg bg-gray-50 text-gray-500 hover:bg-gray-100 disabled:opacity-50"
+              >
+                <X className="h-4 w-4" />
+              </button>
+
+            </div>
+
+            {/* CONTENT */}
+
+            <div className="space-y-4 p-5">
+
+              {/* INFO */}
+
+              <div className="rounded-xl border border-red-100 bg-red-50 px-3 py-2.5">
+
+                <p className="text-[9px] font-bold leading-4 text-red-700">
+                  This PIN is required before
+                  opening the Trash section.
+                </p>
+
+              </div>
+
+              {/* NEW PIN */}
+
+              <div>
+
+                <label className="mb-1.5 block text-[10px] font-black text-[#475569]">
+                  New Trash PIN
+                </label>
+
+                <div className="relative">
+
+                  <input
+                    type={
+                      showTrashPinValue
+                        ? "text"
+                        : "password"
+                    }
+                    inputMode="numeric"
+                    maxLength={6}
+                    value={trashPin}
+                    onChange={(e) =>
+                      setTrashPin(
+                        e.target.value.replace(
+                          /\D/g,
+                          "",
+                        ),
+                      )
+                    }
+                    placeholder="Enter 4–6 digit PIN"
+                    className="h-11 w-full rounded-xl border border-gray-200 bg-[#F8FAFC] px-4 pr-11 text-sm font-bold tracking-[0.25em] outline-none focus:border-[#FF5C39]"
+                  />
+
+                  <button
+                    type="button"
+                    onClick={() =>
+                      setShowTrashPinValue(
+                        (value) =>
+                          !value,
+                      )
+                    }
+                    className="absolute right-2 top-1/2 flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded-lg text-gray-400"
+                  >
+                    {showTrashPinValue ? (
+                      <EyeOff className="h-4 w-4" />
+                    ) : (
+                      <Eye className="h-4 w-4" />
+                    )}
+                  </button>
+
+                </div>
+
+              </div>
+
+              {/* CONFIRM */}
+
+              <div>
+
+                <label className="mb-1.5 block text-[10px] font-black text-[#475569]">
+                  Confirm Trash PIN
+                </label>
+
+                <input
+                  type={
+                    showTrashPinValue
+                      ? "text"
+                      : "password"
+                  }
+                  inputMode="numeric"
+                  maxLength={6}
+                  value={
+                    confirmTrashPin
+                  }
+                  onChange={(e) =>
+                    setConfirmTrashPin(
+                      e.target.value.replace(
+                        /\D/g,
+                        "",
+                      ),
+                    )
+                  }
+                  placeholder="Re-enter PIN"
+                  className="h-11 w-full rounded-xl border border-gray-200 bg-[#F8FAFC] px-4 text-sm font-bold tracking-[0.25em] outline-none focus:border-[#FF5C39]"
+                />
+
+              </div>
+
+              {/* ERROR */}
+
+              {trashPinError && (
+                <div className="rounded-xl border border-red-200 bg-red-50 px-3 py-2.5 text-[10px] font-bold text-red-600">
+                  {trashPinError}
+                </div>
+              )}
+
+              {/* SUCCESS */}
+
+              {trashPinSuccess && (
+                <div className="flex items-center gap-2 rounded-xl border border-emerald-200 bg-emerald-50 px-3 py-2.5 text-[10px] font-bold text-emerald-700">
+
+                  <CheckCircle2 className="h-4 w-4 shrink-0" />
+
+                  {trashPinSuccess}
+
+                </div>
+              )}
+
+              {/* ACTIONS */}
+
+              <div className="flex gap-2 pt-1">
+
+                <button
+                  type="button"
+                  disabled={
+                    savingTrashPin
+                  }
+                  onClick={() =>
+                    setShowTrashPin(
+                      false,
+                    )
+                  }
+                  className="h-11 flex-1 rounded-xl border border-gray-200 bg-white text-xs font-bold text-gray-600 hover:bg-gray-50 disabled:opacity-50"
+                >
+                  Cancel
+                </button>
+
+                <button
+                  type="button"
+                  disabled={
+                    savingTrashPin ||
+                    trashPin.length <
+                      4 ||
+                    confirmTrashPin.length <
+                      4
+                  }
+                  onClick={
+                    handleSetTrashPin
+                  }
+                  className="inline-flex h-11 flex-1 items-center justify-center gap-2 rounded-xl bg-[#172033] text-xs font-black text-white hover:bg-[#101827] disabled:cursor-not-allowed disabled:opacity-40"
+                >
+
+                  {savingTrashPin ? (
+                    <RefreshCw className="h-4 w-4 animate-spin" />
+                  ) : (
+                    <ShieldCheck className="h-4 w-4" />
+                  )}
+
+                  {savingTrashPin
+                    ? "Saving..."
+                    : "Set PIN"}
+
+                </button>
+
+              </div>
+
+            </div>
+
+          </div>
+
+        </div>
+      )}
 
       {/* =================================================
           CREATE ADMIN MODAL
@@ -1441,6 +1913,7 @@ export default function AdminsTab() {
             <div className="sticky top-0 z-10 flex items-center justify-between border-b border-gray-100 bg-white px-4 py-4 sm:px-6">
 
               <div>
+
                 <h2 className="text-lg font-black text-[#0F172A]">
                   Create Admin
                 </h2>
@@ -1449,6 +1922,7 @@ export default function AdminsTab() {
                   Create an admin account
                   and assign departments.
                 </p>
+
               </div>
 
               <button
@@ -1472,6 +1946,7 @@ export default function AdminsTab() {
             >
 
               <div>
+
                 <label className="mb-1.5 block text-xs font-bold text-[#475569]">
                   Full Name
                 </label>
@@ -1493,9 +1968,11 @@ export default function AdminsTab() {
                   placeholder="Enter full name"
                   className="h-11 w-full rounded-xl border border-gray-200 bg-[#F8FAFC] px-4 text-sm outline-none focus:border-[#FF5C39]"
                 />
+
               </div>
 
               <div>
+
                 <label className="mb-1.5 block text-xs font-bold text-[#475569]">
                   Email
                 </label>
@@ -1518,9 +1995,11 @@ export default function AdminsTab() {
                   placeholder="admin@example.com"
                   className="h-11 w-full rounded-xl border border-gray-200 bg-[#F8FAFC] px-4 text-sm outline-none focus:border-[#FF5C39]"
                 />
+
               </div>
 
               <div>
+
                 <label className="mb-1.5 block text-xs font-bold text-[#475569]">
                   Password
                 </label>
@@ -1568,15 +2047,15 @@ export default function AdminsTab() {
                   </button>
 
                 </div>
+
               </div>
 
-              {/* =================================================
-                  DEPARTMENTS
-              ================================================= */}
+              {/* DEPARTMENTS */}
 
               <div>
 
                 <div className="mb-2 flex items-center justify-between">
+
                   <label className="text-xs font-bold text-[#475569]">
                     Departments
                   </label>
@@ -1584,6 +2063,7 @@ export default function AdminsTab() {
                   <span className="text-[10px] font-semibold text-[#94A3B8]">
                     Select one or more
                   </span>
+
                 </div>
 
                 <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
@@ -1600,6 +2080,7 @@ export default function AdminsTab() {
                       role,
                       label,
                     ]) => {
+
                       const checked =
                         form.admin_roles.includes(
                           role,
@@ -1614,6 +2095,7 @@ export default function AdminsTab() {
                               (
                                 current,
                               ) => {
+
                                 const exists =
                                   current.admin_roles.includes(
                                     role,
@@ -1666,6 +2148,7 @@ export default function AdminsTab() {
                   )}
 
                 </div>
+
               </div>
 
               {error && (
@@ -1694,6 +2177,7 @@ export default function AdminsTab() {
                   disabled={saving}
                   className="inline-flex h-11 items-center justify-center gap-2 rounded-xl bg-[#FF5C39] px-5 text-sm font-bold text-white disabled:opacity-60"
                 >
+
                   {saving && (
                     <RefreshCw className="h-4 w-4 animate-spin" />
                   )}
@@ -1701,12 +2185,15 @@ export default function AdminsTab() {
                   {saving
                     ? "Creating..."
                     : "Create Admin"}
+
                 </button>
 
               </div>
 
             </form>
+
           </div>
+
         </div>
       )}
 
@@ -1739,6 +2226,7 @@ export default function AdminsTab() {
                 </div>
 
                 <div className="min-w-0">
+
                   <p className="truncate text-sm font-black text-[#0F172A]">
                     Admin Access
                   </p>
@@ -1746,6 +2234,7 @@ export default function AdminsTab() {
                   <p className="truncate text-xs text-[#64748B]">
                     Manage account permissions
                   </p>
+
                 </div>
 
               </div>
@@ -1765,7 +2254,7 @@ export default function AdminsTab() {
 
             <div className="space-y-5 p-4 sm:p-5">
 
-              {/* ADMIN PROFILE */}
+              {/* PROFILE */}
 
               <div className="rounded-2xl border border-gray-100 bg-[#F8FAFC] p-4">
 
@@ -1812,6 +2301,7 @@ export default function AdminsTab() {
               <div>
 
                 <div className="mb-2 flex items-center justify-between">
+
                   <p className="text-sm font-black text-[#0F172A]">
                     Account Role
                   </p>
@@ -1819,6 +2309,7 @@ export default function AdminsTab() {
                   <span className="text-[10px] font-semibold text-[#94A3B8]">
                     System access
                   </span>
+
                 </div>
 
                 <div className="grid grid-cols-2 gap-2">
@@ -1872,6 +2363,7 @@ export default function AdminsTab() {
                   </button>
 
                 </div>
+
               </div>
 
               {/* DEPARTMENTS */}
@@ -1879,13 +2371,20 @@ export default function AdminsTab() {
               <div>
 
                 <div className="mb-2 flex items-center justify-between">
+
                   <p className="text-sm font-black text-[#0F172A]">
                     Department Access
                   </p>
 
                   <span className="text-[10px] font-semibold text-[#94A3B8]">
-                    {selectedAdmin.admin_roles.length} selected
+                    {
+                      selectedAdmin
+                        .admin_roles
+                        .length
+                    }{" "}
+                    selected
                   </span>
+
                 </div>
 
                 <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
@@ -1902,6 +2401,7 @@ export default function AdminsTab() {
                       role,
                       label,
                     ]) => {
+
                       const checked =
                         selectedAdmin.admin_roles.includes(
                           role,
@@ -1942,6 +2442,7 @@ export default function AdminsTab() {
                   )}
 
                 </div>
+
               </div>
 
               {/* STATUS */}
@@ -1966,6 +2467,7 @@ export default function AdminsTab() {
                     )}
 
                     <div>
+
                       <p className="text-sm font-bold text-[#0F172A]">
                         Account Status
                       </p>
@@ -1975,6 +2477,7 @@ export default function AdminsTab() {
                           ? "Admin can access the panel."
                           : "Admin access is disabled."}
                       </p>
+
                     </div>
 
                   </div>
@@ -2051,17 +2554,17 @@ export default function AdminsTab() {
 
                     <button
                       type="button"
-                      disabled={
-                        saving
-                      }
+                      disabled={saving}
                       onClick={
                         handleDeleteAdmin
                       }
                       className="flex w-full items-center gap-3 rounded-xl px-3 py-3 text-left text-red-600 hover:bg-red-50"
                     >
+
                       <Trash2 className="h-4 w-4" />
 
                       <div>
+
                         <p className="text-xs font-bold">
                           Delete Admin
                         </p>
@@ -2069,7 +2572,9 @@ export default function AdminsTab() {
                         <p className="mt-0.5 text-[10px] opacity-70">
                           Permanently remove this account
                         </p>
+
                       </div>
+
                     </button>
 
                   </div>
@@ -2078,7 +2583,9 @@ export default function AdminsTab() {
               </div>
 
             </div>
+
           </aside>
+
         </div>
       )}
 
