@@ -143,9 +143,7 @@ export default function ProductsGrid({
 
   function getActiveVariants(product: ProductItem) {
     return Array.isArray(product.variants)
-      ? product.variants.filter(
-          (variant) => variant && variant.isActive,
-        )
+      ? product.variants.filter((variant) => variant && variant.isActive)
       : [];
   }
 
@@ -160,11 +158,7 @@ export default function ProductsGrid({
     const variants = getActiveVariants(product);
 
     if (variants.length > 0) {
-      return Math.min(
-        ...variants.map(
-          (variant) => Number(variant.price) || 0,
-        ),
-      );
+      return Math.min(...variants.map((variant) => Number(variant.price) || 0));
     }
 
     return Number(product.price) || 0;
@@ -185,35 +179,31 @@ export default function ProductsGrid({
             NO PRODUCTS
         ================================================= */}
 
-        {activeCategory &&
-          !loading &&
-          visibleProducts.length === 0 && (
-            <div className="flex items-center gap-3 rounded-xl border border-slate-200 bg-white px-3 py-2.5 shadow-sm">
-              <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-slate-100 text-lg">
-                📦
-              </div>
-
-              <div className="min-w-0 flex-1">
-                <h2 className="text-[12px] font-bold leading-4 text-slate-900">
-                  No Products Found
-                </h2>
-
-                <p className="truncate text-[9px] leading-3.5 text-slate-500">
-                  {categories.find(
-                    (c) => c.id === activeCategory,
-                  )?.name}{" "}
-                  products coming soon.
-                </p>
-              </div>
-
-              <button
-                onClick={() => setActiveCategory(null)}
-                className="shrink-0 rounded-lg bg-emerald-500 px-2.5 py-1.5 text-[9px] font-bold text-white active:scale-95"
-              >
-                View All
-              </button>
+        {activeCategory && !loading && visibleProducts.length === 0 && (
+          <div className="flex items-center gap-3 rounded-xl border border-slate-200 bg-white px-3 py-2.5 shadow-sm">
+            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-slate-100 text-lg">
+              📦
             </div>
-          )}
+
+            <div className="min-w-0 flex-1">
+              <h2 className="text-[12px] font-bold leading-4 text-slate-900">
+                No Products Found
+              </h2>
+
+              <p className="truncate text-[9px] leading-3.5 text-slate-500">
+                {categories.find((c) => c.id === activeCategory)?.name} products
+                coming soon.
+              </p>
+            </div>
+
+            <button
+              onClick={() => setActiveCategory(null)}
+              className="shrink-0 rounded-lg bg-emerald-500 px-2.5 py-1.5 text-[9px] font-bold text-white active:scale-95"
+            >
+              View All
+            </button>
+          </div>
+        )}
 
         {/* =================================================
             PRODUCTS GRID
@@ -222,14 +212,11 @@ export default function ProductsGrid({
         {visibleProducts.length > 0 && (
           <div className="grid grid-cols-2 gap-3 pb-10 md:grid-cols-4 md:gap-4">
             {mixedTopProducts.map((product) => {
-              const activeVariants =
-                getActiveVariants(product);
+              const activeVariants = getActiveVariants(product);
 
-              const hasVariants =
-                activeVariants.length > 0;
+              const hasVariants = activeVariants.length > 0;
 
-              const displayPrice =
-                getDisplayPrice(product);
+              const displayPrice = getDisplayPrice(product);
 
               /*
                * Product-level cart item.
@@ -238,13 +225,10 @@ export default function ProductsGrid({
                * product-level cart items.
                */
               const inCart = cart.some(
-                (item) =>
-                  item.productId === product.id &&
-                  !item.variantId,
+                (item) => item.productId === product.id && !item.variantId,
               );
 
-              const productUrl =
-                `/eaurix/product/${product.id}`;
+              const productUrl = `/eaurix/product/${product.id}`;
 
               return (
                 <div
@@ -287,9 +271,7 @@ export default function ProductsGrid({
                       {hasVariants && (
                         <span className="absolute bottom-3 left-3 rounded-full bg-white/95 px-2 py-1 text-[9px] font-bold text-slate-800 shadow-sm">
                           {activeVariants.length}{" "}
-                          {activeVariants.length === 1
-                            ? "Option"
-                            : "Options"}
+                          {activeVariants.length === 1 ? "Option" : "Options"}
                         </span>
                       )}
                     </div>
@@ -329,16 +311,11 @@ export default function ProductsGrid({
                           <p className="mt-0.5 truncate text-[10px] font-semibold text-slate-800">
                             {activeVariants
                               .slice(0, 3)
-                              .map(
-                                (variant) =>
-                                  variant.variantName,
-                              )
+                              .map((variant) => variant.variantName)
                               .join(" • ")}
 
                             {activeVariants.length > 3 &&
-                              ` +${
-                                activeVariants.length - 3
-                              }`}
+                              ` +${activeVariants.length - 3}`}
                           </p>
                         </div>
 
@@ -353,25 +330,16 @@ export default function ProductsGrid({
                         CART + VIEW
                     ================================================= */}
 
-                    <div className="mt-3 flex gap-2">
+                    <div className="mt-3 flex items-center gap-2">
                       {hasVariants ? (
-                        /*
-                         * Variant products:
-                         * Don't add directly to cart.
-                         * Open product page to select option.
-                         */
                         <Link
                           href={productUrl}
-                          className="flex h-8 flex-1 items-center justify-center gap-1 rounded-lg border border-emerald-200 bg-emerald-50 px-2 text-[10px] font-semibold text-emerald-700 transition-all hover:bg-emerald-100 active:scale-95"
+                          className="flex h-9 flex-1 items-center justify-center gap-1.5 rounded-xl bg-emerald-500 px-3 text-[11px] font-semibold text-white shadow-sm transition-all hover:bg-emerald-600 active:scale-[0.97]"
                         >
-                          <ShoppingCart size={13} />
-                          <span>Select Option</span>
+                          <ShoppingCart size={14} />
+                          <span>Select</span>
                         </Link>
                       ) : (
-                        /*
-                         * Normal products:
-                         * Add directly to cart.
-                         */
                         <button
                           onClick={(e) => {
                             e.preventDefault();
@@ -384,45 +352,30 @@ export default function ProductsGrid({
                                 brand: product.brand,
                                 price: displayPrice,
                                 qty: 1,
-                                icon:
-                                  product.image || "",
-                                color:
-                                  product.color ??
-                                  "#10b981",
-                                unit:
-                                  product.unit ??
-                                  "pcs",
+                                icon: product.image || "",
+                                color: product.color ?? "#10b981",
+                                unit: product.unit ?? "pcs",
                               });
                             }
                           }}
-                          className={`flex h-8 w-8 items-center justify-center rounded-xl transition-all active:scale-95 ${
+                          className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-xl transition-all active:scale-[0.95] ${
                             inCart
-                              ? "bg-black text-white"
+                              ? "bg-black text-white shadow-sm"
                               : "border border-slate-200 bg-white text-slate-700 hover:border-emerald-500 hover:text-emerald-600"
                           }`}
                         >
                           <ShoppingCart
-                            size={16}
-                            className={
-                              inCart
-                                ? "fill-white"
-                                : ""
-                            }
+                            size={15}
+                            className={inCart ? "fill-white" : ""}
                           />
                         </button>
                       )}
 
-                      {/* VIEW BUTTON */}
-
                       <Link
                         href={productUrl}
-                        className={`flex h-8 items-center justify-center gap-1 rounded-lg bg-emerald-500 px-2 text-[11px] font-semibold text-white transition-all hover:bg-emerald-600 active:scale-95 ${
-                          hasVariants
-                            ? "w-20"
-                            : "flex-1"
-                        }`}
+                        className="flex h-9 flex-1 items-center justify-center gap-1.5 rounded-xl border border-emerald-200 bg-emerald-50 px-3 text-[11px] font-semibold text-emerald-700 transition-all hover:bg-emerald-100 active:scale-[0.97]"
                       >
-                        <Eye size={13} />
+                        <Eye size={14} />
                         <span>View</span>
                       </Link>
                     </div>
@@ -453,15 +406,8 @@ export default function ProductsGrid({
 
               <p className="mx-auto mt-2 max-w-xs text-sm leading-6 text-slate-500">
                 Only {visibleProducts.length} product
-                {visibleProducts.length !== 1
-                  ? "s are"
-                  : " is"}{" "}
-                available in{" "}
-                {
-                  categories.find(
-                    (c) => c.id === activeCategory,
-                  )?.name
-                }{" "}
+                {visibleProducts.length !== 1 ? "s are" : " is"} available in{" "}
+                {categories.find((c) => c.id === activeCategory)?.name}{" "}
                 category.
               </p>
 
@@ -480,8 +426,7 @@ export default function ProductsGrid({
       ===================================================== */}
 
       {visibleProducts.length > 0 &&
-        paginatedProducts.length <
-          visibleProducts.length && (
+        paginatedProducts.length < visibleProducts.length && (
           <div
             ref={loadMoreRef}
             className="flex h-20 items-center justify-center"

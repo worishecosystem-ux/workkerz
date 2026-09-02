@@ -11,17 +11,32 @@ import { usePathname } from "next/navigation";
 
 export type Platform = "workkerz" | "eaurix";
 
+/* =========================================================
+   CART ITEM
+========================================================= */
+
 export interface CartItem {
   id: string;
+
   productId: string;
+
+  /* VARIANT SUPPORT */
+  variantId?: string;
+  variantName?: string;
+
   name: string;
   brand: string;
   price: number;
   qty: number;
+
   icon?: string;
   color: string;
   unit: string;
 }
+
+/* =========================================================
+   CONTEXT TYPE
+========================================================= */
 
 interface PlatformContextType {
   platform: Platform;
@@ -29,17 +44,37 @@ interface PlatformContextType {
 
   cart: CartItem[];
 
-  addToCart: (item: Omit<CartItem, "id">) => void;
-  removeFromCart: (id: string) => void;
-  updateQty: (id: string, qty: number) => void;
+  addToCart: (
+    item: Omit<CartItem, "id">,
+  ) => void;
+
+  removeFromCart: (
+    id: string,
+  ) => void;
+
+  updateQty: (
+    id: string,
+    qty: number,
+  ) => void;
+
   clearCart: () => void;
 
   cartCount: number;
   cartTotal: number;
 }
 
+/* =========================================================
+   CONTEXT
+========================================================= */
+
 const PlatformContext =
-  createContext<PlatformContextType | null>(null);
+  createContext<PlatformContextType | null>(
+    null,
+  );
+
+/* =========================================================
+   PROVIDER
+========================================================= */
 
 export function PlatformProvider({
   children,
@@ -56,14 +91,18 @@ export function PlatformProvider({
     useState<Platform>("workkerz");
 
   useEffect(() => {
-    if (pathname.startsWith("/eaurix")) {
+    if (
+      pathname.startsWith("/eaurix")
+    ) {
       setPlatformState("eaurix");
     } else {
       setPlatformState("workkerz");
     }
   }, [pathname]);
 
-  const setPlatform = (p: Platform) => {
+  const setPlatform = (
+    p: Platform,
+  ) => {
     setPlatformState(p);
   };
 
@@ -71,7 +110,8 @@ export function PlatformProvider({
      CART
   ========================================================= */
 
-  const [cart, setCart] = useState<CartItem[]>([]);
+  const [cart, setCart] =
+    useState<CartItem[]>([]);
 
   const [cartHydrated, setCartHydrated] =
     useState(false);
@@ -83,10 +123,13 @@ export function PlatformProvider({
   useEffect(() => {
     try {
       const savedCart =
-        localStorage.getItem("eaurix-cart");
+        localStorage.getItem(
+          "eaurix-cart",
+        );
 
       if (savedCart) {
-        const parsed = JSON.parse(savedCart);
+        const parsed =
+          JSON.parse(savedCart);
 
         if (Array.isArray(parsed)) {
           setCart(parsed);
@@ -107,7 +150,9 @@ export function PlatformProvider({
   ========================================================= */
 
   useEffect(() => {
-    if (!cartHydrated) return;
+    if (!cartHydrated) {
+      return;
+    }
 
     try {
       localStorage.setItem(
@@ -120,41 +165,74 @@ export function PlatformProvider({
         error,
       );
     }
-  }, [cart, cartHydrated]);
+  }, [
+    cart,
+    cartHydrated,
+  ]);
 
   /* =========================================================
      ADD TO CART
+     
+     IMPORTANT:
+     Product + Variant are treated as unique.
+
+     Normal product:
+       productId = ABC
+       variantId = undefined
+
+     Variant 1:
+       productId = ABC
+       variantId = V1
+
+     Variant 2:
+       productId = ABC
+       variantId = V2
   ========================================================= */
 
   const addToCart = (
     item: Omit<CartItem, "id">,
   ) => {
     setCart((prev) => {
-      const existing = prev.find(
-        (cartItem) =>
-          cartItem.productId ===
-          item.productId,
-      );
+      const existing =
+        prev.find(
+          (cartItem) =>
+            cartItem.productId ===
+              item.productId &&
+            cartItem.variantId ===
+              item.variantId,
+        );
 
-      /* EXISTING PRODUCT */
+      /* =====================================================
+         EXISTING SAME PRODUCT / SAME VARIANT
+      ===================================================== */
+
       if (existing) {
-        return prev.map((cartItem) =>
-          cartItem.productId ===
-          item.productId
-            ? {
-                ...cartItem,
-                qty:
-                  cartItem.qty + item.qty,
-              }
-            : cartItem,
+        return prev.map(
+          (cartItem) =>
+            cartItem.id === existing.id
+              ? {
+                  ...cartItem,
+                  qty:
+                    Number(
+                      cartItem.qty || 0,
+                    ) +
+                    Number(
+                      item.qty || 0,
+                    ),
+                }
+              : cartItem,
         );
       }
 
-      /* NEW PRODUCT */
+      /* =====================================================
+         NEW PRODUCT / NEW VARIANT
+      ===================================================== */
+
       return [
         ...prev,
         {
           ...item,
+
           id: `cart-${Date.now()}-${Math.random()
             .toString(36)
             .slice(2)}`,
@@ -167,10 +245,13 @@ export function PlatformProvider({
      REMOVE FROM CART
   ========================================================= */
 
-  const removeFromCart = (id: string) => {
+  const removeFromCart = (
+    id: string,
+  ) => {
     setCart((prev) =>
       prev.filter(
-        (item) => item.id !== id,
+        (item) =>
+          item.id !== id,
       ),
     );
   };
@@ -212,27 +293,34 @@ export function PlatformProvider({
      CART COUNT
   ========================================================= */
 
-  const cartCount = cart.reduce(
-    (total, item) =>
-      total + Number(item.qty || 0),
-    0,
-  );
+  const cartCount =
+    cart.reduce(
+      (total, item) =>
+        total +
+        Number(item.qty || 0),
+      0,
+    );
 
   /* =========================================================
      CART TOTAL
   ========================================================= */
 
-  const cartTotal = Number(
-    cart
-      .reduce(
-        (total, item) =>
-          total +
-          Number(item.price || 0) *
-            Number(item.qty || 0),
-        0,
-      )
-      .toFixed(2),
-  );
+  const cartTotal =
+    Number(
+      cart
+        .reduce(
+          (total, item) =>
+            total +
+            Number(
+              item.price || 0,
+            ) *
+              Number(
+                item.qty || 0,
+              ),
+          0,
+        )
+        .toFixed(2),
+    );
 
   /* =========================================================
      PROVIDER
@@ -266,7 +354,9 @@ export function PlatformProvider({
 
 export function usePlatform() {
   const ctx =
-    useContext(PlatformContext);
+    useContext(
+      PlatformContext,
+    );
 
   if (!ctx) {
     throw new Error(
