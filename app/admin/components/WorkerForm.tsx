@@ -5,7 +5,6 @@ import {
   useMemo,
   useState,
 } from "react";
-
 import {
   CheckCircle2,
   ChevronDown,
@@ -16,9 +15,7 @@ import {
   Users,
   X,
 } from "lucide-react";
-
 import { supabase } from "@/lib/supabase";
-
 import type {
   Worker,
   WorkerFormData,
@@ -31,9 +28,7 @@ import type {
 
 type WorkerFormProps = {
   initial?: Worker;
-  onSave: (
-    worker: WorkerFormData,
-  ) => Promise<void>;
+  onSave: (worker: WorkerFormData) => Promise<void>;
   onClose: () => void;
 };
 
@@ -174,10 +169,7 @@ const WORKER_CATEGORIES = [
    SERVICES
 ========================================================= */
 
-const SERVICES_BY_SUBCATEGORY: Record<
-  string,
-  string[]
-> = {
+const SERVICES_BY_SUBCATEGORY: Record<string, string[]> = {
   "General Labour": [
     "General Work",
     "Loading",
@@ -542,44 +534,31 @@ const DEFAULT_VISIBLE_PRICING_TYPES: PriceKey[] = [
 const emptyWorker = (): WorkerFormData => ({
   name: "",
   phone: "",
-
   category: "",
   subcategory: "",
   specialty: "",
-
   services: [],
-
+  displayService: null,
   pricingType: "custom",
-
   startingPrice: 0,
   halfDayPrice: 0,
   fullDayPrice: 0,
   monthlyPrice: 0,
   visitCharge: 0,
-
   visiblePricingTypes: [
     ...DEFAULT_VISIBLE_PRICING_TYPES,
   ],
-
   rating: 0,
   reviewCount: 0,
-
   location: "",
   labourChauk: "",
-
   available: true,
-
   yearsExperience: 0,
   completedJobs: 0,
-
   bio: "",
-
   skills: [],
-
   photo: "",
-
   responseTime: "Within 1 hour",
-
   certifications: [],
 });
 
@@ -601,78 +580,53 @@ export default function WorkerForm({
       return {
         name: initial.name || "",
         phone: initial.phone || "",
-
-        category:
-          initial.category || "",
-
-        subcategory:
-          initial.subcategory || "",
-
-        specialty:
-          initial.specialty || "",
-
-        services:
-          initial.services || [],
-
+        category: initial.category || "",
+        subcategory: initial.subcategory || "",
+        specialty: initial.specialty || "",
+        services: initial.services || [],
+        displayService:
+          initial.displayService ?? null,
         pricingType:
           initial.pricingType || "custom",
-
         startingPrice:
           initial.startingPrice || 0,
-
         halfDayPrice:
           initial.halfDayPrice || 0,
-
         fullDayPrice:
           initial.fullDayPrice || 0,
-
         monthlyPrice:
           initial.monthlyPrice || 0,
-
         visitCharge:
           initial.visitCharge || 0,
-
         visiblePricingTypes:
           initial.visiblePricingTypes?.length
             ? initial.visiblePricingTypes
             : [
                 ...DEFAULT_VISIBLE_PRICING_TYPES,
               ],
-
         rating:
           initial.rating || 0,
-
         reviewCount:
           initial.reviewCount || 0,
-
         location:
           initial.location || "",
-
         labourChauk:
           initial.labourChauk || "",
-
         available:
           initial.available ?? true,
-
         yearsExperience:
           initial.yearsExperience || 0,
-
         completedJobs:
           initial.completedJobs || 0,
-
         bio:
           initial.bio || "",
-
         skills:
           initial.skills || [],
-
         photo:
           initial.photo || "",
-
         responseTime:
           initial.responseTime ||
           "Within 1 hour",
-
         certifications:
           initial.certifications || [],
       };
@@ -713,8 +667,7 @@ export default function WorkerForm({
   ) => {
     setForm((previous) => {
       const current =
-        previous.visiblePricingTypes ||
-        [];
+        previous.visiblePricingTypes || [];
 
       let updated: PriceKey[];
 
@@ -736,11 +689,6 @@ export default function WorkerForm({
               item !== price,
           );
       }
-
-      /*
-       * Keep at least one pricing
-       * option selected.
-       */
 
       if (updated.length === 0) {
         return {
@@ -960,14 +908,12 @@ export default function WorkerForm({
             if (width > MAX_WIDTH) {
               height *=
                 MAX_WIDTH / width;
-
               width = MAX_WIDTH;
             }
 
             if (height > MAX_HEIGHT) {
               width *=
                 MAX_HEIGHT / height;
-
               height = MAX_HEIGHT;
             }
 
@@ -1055,38 +1001,35 @@ export default function WorkerForm({
           response.blob(),
         );
 
-      const safeName =
-        (
-          form.name.trim() ||
-          "worker"
+      const safeName = (
+        form.name.trim() ||
+        "worker"
+      )
+        .replace(
+          /[^a-zA-Z0-9]/g,
+          "-",
         )
-          .replace(
-            /[^a-zA-Z0-9]/g,
-            "-",
-          )
-          .toLowerCase();
+        .toLowerCase();
 
-      const category =
-        (
-          form.category ||
-          "uncategorized"
+      const category = (
+        form.category ||
+        "uncategorized"
+      )
+        .replace(
+          /[^a-zA-Z0-9]/g,
+          "-",
         )
-          .replace(
-            /[^a-zA-Z0-9]/g,
-            "-",
-          )
-          .toLowerCase();
+        .toLowerCase();
 
-      const subcategory =
-        (
-          form.subcategory ||
-          "general"
+      const subcategory = (
+        form.subcategory ||
+        "general"
+      )
+        .replace(
+          /[^a-zA-Z0-9]/g,
+          "-",
         )
-          .replace(
-            /[^a-zA-Z0-9]/g,
-            "-",
-          )
-          .toLowerCase();
+        .toLowerCase();
 
       const filePath =
         `${category}/${subcategory}/${safeName}/profile.webp`;
@@ -1163,97 +1106,75 @@ export default function WorkerForm({
 
       await onSave({
         name: form.name.trim(),
-
         phone:
           form.phone.trim(),
-
         category:
           form.category,
-
         subcategory:
           form.subcategory,
-
         specialty:
           form.specialty.trim(),
-
         services:
           form.services,
-
+        displayService:
+          form.displayService ?? null,
         pricingType:
           form.pricingType,
-
         startingPrice:
           Number(
             form.startingPrice,
           ) || 0,
-
         halfDayPrice:
           Number(
             form.halfDayPrice,
           ) || 0,
-
         fullDayPrice:
           Number(
             form.fullDayPrice,
           ) || 0,
-
         monthlyPrice:
           Number(
             form.monthlyPrice,
           ) || 0,
-
         visitCharge:
           Number(
             form.visitCharge,
           ) || 0,
-
         visiblePricingTypes:
           form.visiblePricingTypes ||
           [
             ...DEFAULT_VISIBLE_PRICING_TYPES,
           ],
-
         rating:
           Number(form.rating) ||
           0,
-
         reviewCount:
           Number(
             form.reviewCount,
           ) || 0,
-
         location:
           form.location.trim(),
-
         labourChauk:
           form.labourChauk,
-
         available:
           form.available ?? true,
-
         yearsExperience:
           Number(
             form.yearsExperience,
           ) || 0,
-
         completedJobs:
           Number(
             form.completedJobs,
           ) || 0,
-
         bio:
           form.bio?.trim() || "",
-
         skills:
           form.skills,
-
         photo:
           form.photo || "",
-
         responseTime:
           form.responseTime ||
           "Within 1 hour",
-
         certifications:
           form.certifications,
       });
@@ -1283,9 +1204,7 @@ export default function WorkerForm({
       {/* HEADER */}
 
       <header className="flex shrink-0 items-center justify-between border-b border-slate-200 bg-white px-5 py-4">
-
         <div className="flex items-center gap-3">
-
           <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-emerald-50">
             <Users className="h-5 w-5 text-emerald-600" />
           </div>
@@ -1303,7 +1222,6 @@ export default function WorkerForm({
                 : "Onboard a new worker to Workkerz"}
             </p>
           </div>
-
         </div>
 
         <button
@@ -1314,20 +1232,17 @@ export default function WorkerForm({
         >
           <X className="h-4 w-4" />
         </button>
-
       </header>
 
       {/* BODY */}
 
       <main className="min-h-0 flex-1 overflow-y-auto">
-
         <div className="mx-auto max-w-5xl space-y-5 p-4 sm:p-6">
 
           {/* ERROR */}
 
           {error && (
             <div className="rounded-2xl border border-red-200 bg-red-50 p-4">
-
               <p className="text-sm font-bold text-red-700">
                 Unable to save worker
               </p>
@@ -1335,16 +1250,12 @@ export default function WorkerForm({
               <p className="mt-1 text-xs text-red-600">
                 {error}
               </p>
-
             </div>
           )}
 
-          {/* =================================================
-              PROFILE
-          ================================================= */}
+          {/* PROFILE */}
 
           <section className="rounded-3xl border border-slate-100 bg-white p-5 shadow-sm">
-
             <SectionTitle
               step="01"
               title="Worker Profile"
@@ -1352,9 +1263,7 @@ export default function WorkerForm({
             />
 
             <div className="flex flex-col gap-5 sm:flex-row sm:items-center">
-
               <div className="relative h-28 w-28 shrink-0 overflow-hidden rounded-3xl bg-slate-100 ring-4 ring-slate-50">
-
                 {form.photo ? (
                   <img
                     src={form.photo}
@@ -1375,13 +1284,10 @@ export default function WorkerForm({
                     <div className="h-6 w-6 animate-spin rounded-full border-2 border-white border-t-transparent" />
                   </div>
                 )}
-
               </div>
 
               <div className="space-y-2">
-
                 <label className="inline-flex cursor-pointer items-center gap-2 rounded-xl bg-emerald-600 px-4 py-3 text-xs font-bold text-white transition hover:bg-emerald-700">
-
                   <ImagePlus className="h-4 w-4" />
 
                   {uploadingPhoto
@@ -1426,25 +1332,18 @@ export default function WorkerForm({
                         "";
                     }}
                   />
-
                 </label>
 
                 <p className="text-[10px] text-slate-400">
                   JPG, PNG or WEBP • Max 5MB
                 </p>
-
               </div>
-
             </div>
-
           </section>
 
-          {/* =================================================
-              PERSONAL
-          ================================================= */}
+          {/* PERSONAL */}
 
           <section className="rounded-3xl border border-slate-100 bg-white p-5 shadow-sm">
-
             <SectionTitle
               step="02"
               title="Personal Information"
@@ -1452,7 +1351,6 @@ export default function WorkerForm({
             />
 
             <div className="grid gap-4 md:grid-cols-2">
-
               <Field
                 label="Full Name"
                 required
@@ -1518,7 +1416,6 @@ export default function WorkerForm({
                 icon={<MapPin />}
               >
                 <div className="relative">
-
                   <select
                     value={
                       form.labourChauk
@@ -1550,24 +1447,17 @@ export default function WorkerForm({
                         </option>
                       ),
                     )}
-
                   </select>
 
                   <ChevronDown className="pointer-events-none absolute right-4 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
-
                 </div>
               </Field>
-
             </div>
-
           </section>
 
-          {/* =================================================
-              WORK
-          ================================================= */}
+          {/* WORK */}
 
           <section className="rounded-3xl border border-slate-100 bg-white p-5 shadow-sm">
-
             <SectionTitle
               step="03"
               title="Work Information"
@@ -1575,13 +1465,11 @@ export default function WorkerForm({
             />
 
             <div className="grid gap-4 md:grid-cols-2">
-
               <Field
                 label="Category"
                 required
               >
                 <div className="relative">
-
                   <select
                     value={
                       form.category
@@ -1604,7 +1492,6 @@ export default function WorkerForm({
                     }}
                     className={`${inputClass} appearance-none pr-10`}
                   >
-
                     <option value="">
                       Select Category
                     </option>
@@ -1625,11 +1512,9 @@ export default function WorkerForm({
                         </option>
                       ),
                     )}
-
                   </select>
 
                   <ChevronDown className="pointer-events-none absolute right-4 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
-
                 </div>
               </Field>
 
@@ -1638,7 +1523,6 @@ export default function WorkerForm({
                 required
               >
                 <div className="relative">
-
                   <select
                     value={
                       form.subcategory
@@ -1654,7 +1538,6 @@ export default function WorkerForm({
                     }
                     className={`${inputClass} appearance-none pr-10 disabled:cursor-not-allowed disabled:bg-slate-50 disabled:text-slate-400`}
                   >
-
                     <option value="">
                       Select Sub Category
                     </option>
@@ -1677,11 +1560,9 @@ export default function WorkerForm({
                         </option>
                       ),
                     )}
-
                   </select>
 
                   <ChevronDown className="pointer-events-none absolute right-4 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
-
                 </div>
               </Field>
 
@@ -1727,17 +1608,12 @@ export default function WorkerForm({
                   className={inputClass}
                 />
               </Field>
-
             </div>
-
           </section>
 
-          {/* =================================================
-              SERVICES
-          ================================================= */}
+          {/* SERVICES */}
 
           <section className="rounded-3xl border border-slate-100 bg-white p-5 shadow-sm">
-
             <SectionTitle
               step="04"
               title="Services Offered"
@@ -1747,7 +1623,6 @@ export default function WorkerForm({
             {selectedServices.length >
             0 ? (
               <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-3">
-
                 {selectedServices.map(
                   (service) => {
                     const active =
@@ -1785,7 +1660,6 @@ export default function WorkerForm({
                             : "border-slate-200 bg-white text-slate-700 hover:border-emerald-300 hover:bg-emerald-50"
                         }`}
                       >
-
                         <span>
                           {service}
                         </span>
@@ -1793,16 +1667,13 @@ export default function WorkerForm({
                         {active && (
                           <CheckCircle2 className="h-4 w-4 shrink-0" />
                         )}
-
                       </button>
                     );
                   },
                 )}
-
               </div>
             ) : (
               <div className="rounded-2xl border border-dashed border-slate-200 bg-slate-50 p-6 text-center">
-
                 <p className="text-sm font-bold text-slate-500">
                   Select a sub category first
                 </p>
@@ -1810,18 +1681,13 @@ export default function WorkerForm({
                 <p className="mt-1 text-xs text-slate-400">
                   Available services will appear here
                 </p>
-
               </div>
             )}
-
           </section>
 
-          {/* =================================================
-              PRICING
-          ================================================= */}
+          {/* PRICING */}
 
           <section className="rounded-3xl border border-slate-100 bg-white p-5 shadow-sm">
-
             <SectionTitle
               step="05"
               title="Pricing & Experience"
@@ -1831,13 +1697,11 @@ export default function WorkerForm({
             {/* VISIBLE PRICING OPTIONS */}
 
             <div className="mb-5">
-
               <p className="mb-2 text-xs font-bold text-slate-600">
                 Pricing Options
               </p>
 
               <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-5">
-
                 {[
                   {
                     value:
@@ -1916,15 +1780,11 @@ export default function WorkerForm({
                     );
                   },
                 )}
-
               </div>
-
             </div>
 
             <div className="grid gap-4 md:grid-cols-2">
-
               <Field label="Pricing Type">
-
                 <select
                   value={
                     form.pricingType
@@ -1938,7 +1798,6 @@ export default function WorkerForm({
                   }
                   className={inputClass}
                 >
-
                   <option value="per_job">
                     Per Work
                   </option>
@@ -1962,12 +1821,8 @@ export default function WorkerForm({
                   <option value="custom">
                     Custom Quote
                   </option>
-
                 </select>
-
               </Field>
-
-              {/* PER WORK */}
 
               {form.visiblePricingTypes.includes(
                 "per_job",
@@ -1990,8 +1845,6 @@ export default function WorkerForm({
                 </Field>
               )}
 
-              {/* HALF DAY */}
-
               {form.visiblePricingTypes.includes(
                 "half_day",
               ) && (
@@ -2009,8 +1862,6 @@ export default function WorkerForm({
                   />
                 </Field>
               )}
-
-              {/* FULL DAY */}
 
               {form.visiblePricingTypes.includes(
                 "full_day",
@@ -2030,8 +1881,6 @@ export default function WorkerForm({
                 </Field>
               )}
 
-              {/* MONTHLY */}
-
               {form.visiblePricingTypes.includes(
                 "monthly",
               ) && (
@@ -2049,8 +1898,6 @@ export default function WorkerForm({
                   />
                 </Field>
               )}
-
-              {/* VISIT CHARGE */}
 
               {form.visiblePricingTypes.includes(
                 "visit_charge",
@@ -2111,21 +1958,14 @@ export default function WorkerForm({
                   className={inputClass}
                 />
               </Field>
-
             </div>
-
           </section>
 
-          {/* =================================================
-              AVAILABILITY
-          ================================================= */}
+          {/* AVAILABILITY */}
 
           <section className="rounded-3xl border border-slate-100 bg-white p-5 shadow-sm">
-
             <div className="flex items-center justify-between gap-4">
-
               <div>
-
                 <p className="text-sm font-black text-slate-900">
                   Available Now
                 </p>
@@ -2133,7 +1973,6 @@ export default function WorkerForm({
                 <p className="mt-1 text-xs text-slate-400">
                   Worker can receive new bookings
                 </p>
-
               </div>
 
               <button
@@ -2150,7 +1989,6 @@ export default function WorkerForm({
                     : "bg-slate-300"
                 }`}
               >
-
                 <span
                   className={`absolute top-1 h-5 w-5 rounded-full bg-white shadow transition-all ${
                     form.available
@@ -2158,19 +1996,13 @@ export default function WorkerForm({
                       : "left-1"
                   }`}
                 />
-
               </button>
-
             </div>
-
           </section>
 
-          {/* =================================================
-              ABOUT
-          ================================================= */}
+          {/* ABOUT */}
 
           <section className="rounded-3xl border border-slate-100 bg-white p-5 shadow-sm">
-
             <SectionTitle
               step="06"
               title="About Worker"
@@ -2189,17 +2021,13 @@ export default function WorkerForm({
               placeholder="Experienced worker with expertise in..."
               className={`${inputClass} resize-none`}
             />
-
           </section>
-
         </div>
-
       </main>
 
       {/* FOOTER */}
 
       <footer className="flex shrink-0 gap-3 border-t border-slate-200 bg-white p-4">
-
         <button
           type="button"
           onClick={onClose}
@@ -2224,9 +2052,7 @@ export default function WorkerForm({
               ? "Save Changes"
               : "Onboard Worker"}
         </button>
-
       </footer>
-
     </div>
   );
 }
@@ -2246,7 +2072,6 @@ function SectionTitle({
 }) {
   return (
     <div className="mb-5">
-
       <span className="inline-flex rounded-lg bg-emerald-50 px-2 py-1 text-[9px] font-black uppercase tracking-wider text-emerald-600">
         Step {step}
       </span>
@@ -2260,7 +2085,6 @@ function SectionTitle({
           {description}
         </p>
       )}
-
     </div>
   );
 }
@@ -2282,9 +2106,7 @@ function Field({
 }) {
   return (
     <label className="block">
-
       <span className="mb-1.5 flex items-center gap-1.5 text-xs font-bold text-slate-600">
-
         {icon && (
           <span className="text-slate-400 [&>svg]:h-3.5 [&>svg]:w-3.5">
             {icon}
@@ -2298,11 +2120,9 @@ function Field({
             *
           </span>
         )}
-
       </span>
 
       {children}
-
     </label>
   );
 }
@@ -2316,13 +2136,10 @@ function PriceInput({
   onChange,
 }: {
   value: number;
-  onChange: (
-    value: number,
-  ) => void;
+  onChange: (value: number) => void;
 }) {
   return (
     <div className="relative">
-
       <span className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-sm font-bold text-slate-400">
         ₹
       </span>
@@ -2341,7 +2158,6 @@ function PriceInput({
         placeholder="0"
         className={`${inputClass} pl-8`}
       />
-
     </div>
   );
 }
