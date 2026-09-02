@@ -15,6 +15,7 @@ import {
 
 import type {
   EditWorkerModalProps,
+  PriceKey,
 } from "./editWorker.types";
 
 import EditWorkerHeader from "./EditWorkerHeader";
@@ -31,6 +32,38 @@ const supabase = createClient(
 );
 
 const WORKER_IMAGE_BUCKET = "workers";
+
+/* =====================================================
+   PRICE KEYS
+===================================================== */
+
+const PRICE_KEYS: PriceKey[] = [
+  "per_job",
+  "half_day",
+  "full_day",
+  "monthly",
+  "visit_charge",
+];
+
+/* =====================================================
+   NORMALIZE DISPLAY SERVICE
+===================================================== */
+
+function normalizeDisplayService(
+  value: unknown,
+): PriceKey | null {
+  if (typeof value !== "string") {
+    return null;
+  }
+
+  const cleanValue = value.trim();
+
+  return PRICE_KEYS.includes(
+    cleanValue as PriceKey,
+  )
+    ? (cleanValue as PriceKey)
+    : null;
+}
 
 /* =====================================================
    NORMALIZE SERVICES
@@ -79,7 +112,7 @@ function normalizeServices(
         );
       }
     } catch {
-      // Continue.
+      // Continue with PostgreSQL array parsing.
     }
 
     /* POSTGRES ARRAY */
@@ -143,18 +176,13 @@ export default function EditWorkerModal({
   onUpdated,
 }: EditWorkerModalProps) {
   const fileInputRef =
-    useRef<HTMLInputElement | null>(
-      null,
-    );
+    useRef<HTMLInputElement | null>(null);
 
-  const keyboardOpen =
-    useKeyboardState();
+  const keyboardOpen = useKeyboardState();
 
-  const form =
-    useEditWorker();
+  const form = useEditWorker();
 
-  const photo =
-    useWorkerPhoto("");
+  const photo = useWorkerPhoto("");
 
   const [
     photoUploading,
@@ -220,7 +248,7 @@ export default function EditWorkerModal({
           }
 
           /* =============================================
-             CURRENT WORKER SELECTED SERVICES
+             CURRENT WORKER SERVICES
           ============================================= */
 
           const selectedServices =
@@ -229,11 +257,28 @@ export default function EditWorkerModal({
             );
 
           /* =============================================
-             FETCH ALL SERVICE TYPES FROM DATABASE
-             
-             We intentionally fetch services from workers
-             table because service types are stored inside
-             workers.services.
+             DISPLAY CHARGE
+
+             DB COLUMN:
+             workers.display_service
+
+             VALUES:
+             per_job
+             half_day
+             full_day
+             monthly
+             visit_charge
+          ============================================= */
+
+          const displayService =
+            normalizeDisplayService(
+              data.display_service,
+            );
+
+          /* =============================================
+             FETCH ALL SERVICE TYPES
+
+             Services come from workers.services.
           ============================================= */
 
           const {
@@ -277,9 +322,8 @@ export default function EditWorkerModal({
             );
 
           /*
-           * Always include current worker's saved
-           * services even if they are not present in
-           * another worker's service list.
+           * Always include current worker's
+           * saved services.
            */
 
           const finalServiceTypes =
@@ -310,6 +354,11 @@ export default function EditWorkerModal({
           console.log(
             "CURRENT WORKER SERVICES:",
             selectedServices,
+          );
+
+          console.log(
+            "DISPLAY SERVICE FROM DB:",
+            displayService,
           );
 
           console.log(
@@ -348,12 +397,13 @@ export default function EditWorkerModal({
             specialty:
               data.specialty ?? "",
 
-            /*
-             * ONLY SELECTED SERVICES GO INTO FORM
-             */
+            /* SELECTED SERVICES ONLY */
+
             services: [
               ...selectedServices,
             ],
+
+            /* PRICING */
 
             pricingType:
               data.pricing_type ??
@@ -415,6 +465,13 @@ export default function EditWorkerModal({
                     )
                   : "",
 
+            /* DISPLAY CHARGE */
+
+            displayService:
+              displayService,
+
+            /* VISIBLE PRICING */
+
             visiblePricingTypes:
               Array.isArray(
                 data.visible_pricing_types,
@@ -433,6 +490,8 @@ export default function EditWorkerModal({
                       "half_day",
                     ],
 
+            /* LOCATION */
+
             location:
               data.location ?? "",
 
@@ -441,9 +500,13 @@ export default function EditWorkerModal({
               data.labourChauk ??
               "",
 
+            /* AVAILABILITY */
+
             available:
               data.available ??
               true,
+
+            /* EXPERIENCE */
 
             yearsExperience:
               data.years_experience != null
@@ -467,13 +530,19 @@ export default function EditWorkerModal({
                     )
                   : "",
 
+            /* ABOUT */
+
             bio:
               data.bio ?? "",
+
+            /* SKILLS */
 
             skills:
               normalizeStringArray(
                 data.skills,
               ),
+
+            /* REVIEWS */
 
             rating:
               data.rating != null
@@ -498,10 +567,14 @@ export default function EditWorkerModal({
               data.responseTime ??
               "Within 1 hour",
 
+            /* CERTIFICATIONS */
+
             certifications:
               normalizeStringArray(
                 data.certifications,
               ),
+
+            /* PHOTO */
 
             photo:
               data.photo ?? "",
@@ -548,18 +621,17 @@ export default function EditWorkerModal({
       return;
     }
 
-    const handleKeyDown =
-      (
-        event: KeyboardEvent,
-      ) => {
-        if (
-          event.key === "Escape" &&
-          !form.loading &&
-          !fetchingWorker
-        ) {
-          onClose();
-        }
-      };
+    const handleKeyDown = (
+      event: KeyboardEvent,
+    ) => {
+      if (
+        event.key === "Escape" &&
+        !form.loading &&
+        !fetchingWorker
+      ) {
+        onClose();
+      }
+    };
 
     document.addEventListener(
       "keydown",
@@ -768,6 +840,72 @@ export default function EditWorkerModal({
         );
 
         /* =============================================
+           DISPLAY CHARGE
+        ============================================= */
+
+        const finalDisplayService =
+          normalizeDisplayService(
+            form.form.displayService,
+          );
+
+        console.log(
+          "SAVING DISPLAY SERVICE:",
+          finalDisplayService,
+        );
+
+        /* =============================================
+           DISPLAY CHARGE VALIDATION
+        ============================================= */
+
+        if (finalDisplayService) {
+          const displayPriceMap: Record<
+            PriceKey,
+            number
+          > = {
+            per_job:
+              Number(
+                form.form.startingPrice,
+              ) || 0,
+
+            half_day:
+              Number(
+                form.form.halfDayPrice,
+              ) || 0,
+
+            full_day:
+              Number(
+                form.form.fullDayPrice,
+              ) || 0,
+
+            monthly:
+              Number(
+                form.form.monthlyPrice,
+              ) || 0,
+
+            visit_charge:
+              Number(
+                form.form.visitCharge,
+              ) || 0,
+          };
+
+          const selectedDisplayPrice =
+            displayPriceMap[
+              finalDisplayService
+            ];
+
+          if (
+            !Number.isFinite(
+              selectedDisplayPrice,
+            ) ||
+            selectedDisplayPrice <= 0
+          ) {
+            throw new Error(
+              "Display charge must be selected from a filled pricing option.",
+            );
+          }
+        }
+
+        /* =============================================
            WORKER DATA
         ============================================= */
 
@@ -818,6 +956,11 @@ export default function EditWorkerModal({
             Number(
               form.form.visitCharge,
             ) || 0,
+
+          /* DISPLAY CHARGE */
+
+          displayService:
+            finalDisplayService,
 
           rating:
             Number(
@@ -875,8 +1018,26 @@ export default function EditWorkerModal({
             ],
         };
 
+        console.log(
+          "====================================",
+        );
+
+        console.log(
+          "FINAL WORKER UPDATE:",
+          workerData,
+        );
+
+        console.log(
+          "DISPLAY SERVICE:",
+          workerData.displayService,
+        );
+
+        console.log(
+          "====================================",
+        );
+
         /* =============================================
-           UPDATE
+           UPDATE DATABASE
         ============================================= */
 
         const updatedWorker =
@@ -1050,6 +1211,18 @@ export default function EditWorkerModal({
 
               setVisiblePricingTypes={
                 form.setVisiblePricingTypes
+              }
+
+              /* =========================================
+                 DISPLAY CHARGE
+              ========================================= */
+
+              displayService={
+                form.form.displayService
+              }
+
+              setDisplayService={
+                form.setDisplayService
               }
 
               setRating={

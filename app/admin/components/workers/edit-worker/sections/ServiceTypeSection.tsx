@@ -18,6 +18,10 @@ export default function ServiceTypeSection({
   setServices,
   availableServices,
 }: Props) {
+  /* =========================================
+     CLEAN SERVICES
+  ========================================= */
+
   const cleanServices = (
     values: unknown,
   ): string[] => {
@@ -42,21 +46,29 @@ export default function ServiceTypeSection({
     );
   };
 
+  /* =========================================
+     SAVED SERVICES
+  ========================================= */
+
   const savedServices =
     cleanServices(services);
+
+  /* =========================================
+     AVAILABLE SERVICES
+  ========================================= */
 
   const databaseServices =
     cleanServices(
       availableServices,
     );
 
-  /*
-   * Current worker ke saved services +
-   * database se available services.
-   *
-   * Agar saved service category list me nahi hai,
-   * tab bhi edit me dikhegi.
-   */
+  /* =========================================
+     ALL SERVICES
+
+     Saved services are kept first so that
+     existing DB services remain visible.
+  ========================================= */
+
   const allServices =
     Array.from(
       new Set([
@@ -65,14 +77,25 @@ export default function ServiceTypeSection({
       ]),
     );
 
+  /* =========================================
+     TOGGLE SERVICE
+  ========================================= */
+
   const toggleService = (
     service: string,
   ) => {
+    const normalizedService =
+      service.trim();
+
+    if (!normalizedService) {
+      return;
+    }
+
     const exists =
       savedServices.some(
         (item) =>
           item.toLowerCase() ===
-          service.toLowerCase(),
+          normalizedService.toLowerCase(),
       );
 
     if (exists) {
@@ -80,22 +103,27 @@ export default function ServiceTypeSection({
         savedServices.filter(
           (item) =>
             item.toLowerCase() !==
-            service.toLowerCase(),
+            normalizedService.toLowerCase(),
         ),
       );
 
       return;
     }
 
-    setServices([
-      ...savedServices,
-      service,
-    ]);
+    setServices(
+      cleanServices([
+        ...savedServices,
+        normalizedService,
+      ]),
+    );
   };
 
   return (
     <section className="rounded-2xl border border-[#E2E8F0] bg-white p-3 shadow-sm sm:p-5">
-      {/* HEADER */}
+
+      {/* =========================================
+          HEADER
+      ========================================= */}
 
       <div className="mb-4 flex items-center justify-between gap-3">
         <div className="min-w-0">
@@ -104,7 +132,7 @@ export default function ServiceTypeSection({
           </h2>
 
           <p className="mt-1 text-xs text-[#64748B]">
-            Select one or more services
+            Select all services this worker provides
           </p>
         </div>
 
@@ -115,7 +143,9 @@ export default function ServiceTypeSection({
         )}
       </div>
 
-      {/* SERVICES */}
+      {/* =========================================
+          SERVICES
+      ========================================= */}
 
       {allServices.length === 0 ? (
         <div className="rounded-xl border border-dashed border-[#CBD5E1] bg-[#F8FAFC] p-5 text-center">
@@ -126,6 +156,11 @@ export default function ServiceTypeSection({
 
           <p className="text-xs text-[#64748B]">
             No service types available
+          </p>
+
+          <p className="mt-1 text-[10px] text-[#94A3B8]">
+            Service types will appear here
+            when available.
           </p>
         </div>
       ) : (
@@ -144,56 +179,56 @@ export default function ServiceTypeSection({
                   key={service}
                   type="button"
                   onClick={() =>
-                    toggleService(
-                      service,
-                    )
+                    toggleService(service)
                   }
-                  className={`relative flex min-h-[50px] items-center rounded-xl border px-3 py-2.5 text-left transition active:scale-[0.98] ${
+                  className={[
+                    "flex min-h-[52px] w-full items-center rounded-xl border px-3 py-2.5 text-left transition active:scale-[0.98]",
                     selected
-                      ? "border-[#10B981] bg-[#ECFDF5] ring-1 ring-[#10B981]"
-                      : "border-[#E2E8F0] bg-white hover:border-[#86EFAC] hover:bg-[#F8FFFC]"
-                  }`}
+                      ? "border-[#10B981] bg-[#ECFDF5]"
+                      : "border-[#E2E8F0] bg-white hover:border-[#CBD5E1] hover:bg-[#F8FAFC]",
+                  ].join(" ")}
                 >
                   {/* ICON */}
 
                   <div
-                    className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-lg ${
+                    className={[
+                      "flex h-8 w-8 shrink-0 items-center justify-center rounded-lg",
                       selected
                         ? "bg-[#10B981] text-white"
-                        : "bg-[#F1F5F9] text-[#64748B]"
-                    }`}
+                        : "bg-[#F1F5F9] text-[#64748B]",
+                    ].join(" ")}
                   >
-                    <Wrench
-                      size={15}
-                    />
+                    <Wrench size={15} />
                   </div>
 
-                  {/* SERVICE NAME */}
+                  {/* SERVICE */}
 
                   <span
-                    className={`ml-3 flex-1 text-xs ${
+                    className={[
+                      "ml-3 min-w-0 flex-1 truncate text-xs",
                       selected
                         ? "font-bold text-[#047857]"
-                        : "font-medium text-[#334155]"
-                    }`}
+                        : "font-medium text-[#334155]",
+                    ].join(" ")}
                   >
                     {service}
                   </span>
 
                   {/* CHECK */}
 
-                  <div
-                    className={`ml-2 flex h-5 w-5 shrink-0 items-center justify-center rounded-full border ${
+                  <span
+                    className={[
+                      "flex h-5 w-5 shrink-0 items-center justify-center rounded-full border",
                       selected
                         ? "border-[#10B981] bg-[#10B981] text-white"
-                        : "border-[#CBD5E1] bg-white text-transparent"
-                    }`}
+                        : "border-[#CBD5E1] bg-white text-transparent",
+                    ].join(" ")}
                   >
                     <Check
                       size={12}
                       strokeWidth={3}
                     />
-                  </div>
+                  </span>
                 </button>
               );
             },
@@ -201,40 +236,20 @@ export default function ServiceTypeSection({
         </div>
       )}
 
-      {/* SELECTED SERVICES */}
+      {/* =========================================
+          IMPORTANT INFORMATION
+      ========================================= */}
 
-      {savedServices.length > 0 && (
-        <div className="mt-4 border-t border-[#F1F5F9] pt-3">
-          <div className="mb-2 flex items-center justify-between">
-            <p className="text-[11px] font-semibold text-[#64748B]">
-              Selected Services
-            </p>
-
-            <span className="text-[11px] font-bold text-[#059669]">
-              {savedServices.length}
-            </span>
-          </div>
-
-          <div className="flex flex-wrap gap-2">
-            {savedServices.map(
-              (service) => (
-                <button
-                  key={service}
-                  type="button"
-                  onClick={() =>
-                    toggleService(
-                      service,
-                    )
-                  }
-                  className="rounded-lg border border-[#A7F3D0] bg-[#ECFDF5] px-2.5 py-1.5 text-[11px] font-semibold text-[#047857] transition hover:border-red-200 hover:bg-red-50 hover:text-red-600"
-                >
-                  {service}
-                </button>
-              ),
-            )}
-          </div>
-        </div>
-      )}
+      <div className="mt-4 rounded-xl border border-[#E2E8F0] bg-[#F8FAFC] px-3 py-2.5">
+        <p className="text-[10px] leading-4 text-[#64748B]">
+          <span className="font-bold text-[#334155]">
+            Note:
+          </span>{" "}
+          Services and Display Charge are
+          separate. Display Charge is selected
+          independently from the Pricing section.
+        </p>
+      </div>
     </section>
   );
 }

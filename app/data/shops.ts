@@ -3,6 +3,8 @@
 import { supabase } from "@/lib/supabase";
 
 /* ====================================================== */
+/* SHOP INTERFACE */
+/* ====================================================== */
 
 export interface Shop {
   id: string;
@@ -42,26 +44,22 @@ export interface Shop {
   status: string;
 
   is_active: boolean;
+
+  total_products: number;
 }
 
 /* ====================================================== */
 /* FIX GOOGLE DRIVE IMAGE */
 /* ====================================================== */
 
-function fixDriveImage(
-  url?: string | null,
-) {
+function fixDriveImage(url?: string | null) {
   if (!url) {
     return "";
   }
 
   url = url.trim();
 
-  if (
-    !url.includes(
-      "drive.google.com",
-    )
-  ) {
+  if (!url.includes("drive.google.com")) {
     return url;
   }
 
@@ -69,63 +67,39 @@ function fixDriveImage(
 
   /* open?id= */
 
-  const openMatch =
-    url.match(
-      /open\?id=([^&]+)/,
-    );
+  const openMatch = url.match(/open\?id=([^&]+)/);
 
-  if (
-    openMatch?.[1]
-  ) {
-    fileId =
-      openMatch[1];
+  if (openMatch?.[1]) {
+    fileId = openMatch[1];
   }
 
   /* /file/d/ */
 
   if (!fileId) {
-    const fileMatch =
-      url.match(
-        /\/file\/d\/([^/]+)/,
-      );
+    const fileMatch = url.match(/\/file\/d\/([^/]+)/);
 
-    if (
-      fileMatch?.[1]
-    ) {
-      fileId =
-        fileMatch[1];
+    if (fileMatch?.[1]) {
+      fileId = fileMatch[1];
     }
   }
 
   /* thumbnail?id= */
 
   if (!fileId) {
-    const thumbMatch =
-      url.match(
-        /thumbnail\?id=([^&]+)/,
-      );
+    const thumbMatch = url.match(/thumbnail\?id=([^&]+)/);
 
-    if (
-      thumbMatch?.[1]
-    ) {
-      fileId =
-        thumbMatch[1];
+    if (thumbMatch?.[1]) {
+      fileId = thumbMatch[1];
     }
   }
 
   /* generic id= */
 
   if (!fileId) {
-    const genericMatch =
-      url.match(
-        /id=([^&]+)/,
-      );
+    const genericMatch = url.match(/id=([^&]+)/);
 
-    if (
-      genericMatch?.[1]
-    ) {
-      fileId =
-        genericMatch[1];
+    if (genericMatch?.[1]) {
+      fileId = genericMatch[1];
     }
   }
 
@@ -135,21 +109,18 @@ function fixDriveImage(
 
   return url;
 }
+
 /* ====================================================== */
 /* MAP SHOP */
 /* ====================================================== */
 
-function mapShop(
-  shop: any,
-): Shop {
+function mapShop(shop: any): Shop {
   return {
     id: shop.id || "",
 
-    shop_uid:
-      shop.shop_uid || "",
+    shop_uid: shop.shop_uid || "",
 
-    serial_no:
-      shop.serial_no || 0,
+    serial_no: shop.serial_no || 0,
 
     joined_date:
       shop.joined_date ||
@@ -157,31 +128,40 @@ function mapShop(
       "",
 
     created_at:
-      shop.created_at || "",
+      shop.created_at ||
+      "",
 
     shop_name:
-      shop.shop_name || "",
+      shop.shop_name ||
+      "",
 
     owner_name:
-      shop.owner_name || "",
+      shop.owner_name ||
+      "",
 
     phone:
-      shop.phone || "",
+      shop.phone ||
+      "",
 
     email:
-      shop.email || "",
+      shop.email ||
+      "",
 
     category:
-      shop.category || "",
+      shop.category ||
+      "",
 
     address:
-      shop.address || "",
+      shop.address ||
+      "",
 
     city:
-      shop.city || "",
+      shop.city ||
+      "",
 
     state:
-      shop.state || "",
+      shop.state ||
+      "",
 
     gst_number:
       shop.gst_number ||
@@ -208,6 +188,20 @@ function mapShop(
     is_active:
       shop.status ===
       "online",
+
+    /* =========================================
+       TOTAL PRODUCTS
+    ========================================= */
+
+    total_products:
+      Array.isArray(
+        shop.products,
+      )
+        ? Number(
+            shop.products[0]?.count ||
+              0,
+          )
+        : 0,
   };
 }
 
@@ -219,26 +213,41 @@ export async function getShops(): Promise<
   Shop[]
 > {
   try {
-    const { data, error } =
-      await supabase
-        .from("shops")
-        .select("*")
-        .order("created_at", {
+    const {
+      data,
+      error,
+    } = await supabase
+      .from("shops")
+      .select(`
+        *,
+        products(count)
+      `)
+      .order(
+        "created_at",
+        {
           ascending: false,
-        });
+        },
+      );
 
     if (error) {
-      console.log(error);
+      console.log(
+        "GET SHOPS ERROR:",
+        error,
+      );
 
       return [];
     }
 
     return (
-      data?.map(mapShop) ||
-      []
+      data?.map(
+        mapShop,
+      ) || []
     );
   } catch (err) {
-    console.log(err);
+    console.log(
+      "GET SHOPS ERROR:",
+      err,
+    );
 
     return [];
   }
@@ -252,22 +261,36 @@ export async function getShop(
   id: string,
 ) {
   try {
-    const { data, error } =
-      await supabase
-        .from("shops")
-        .select("*")
-        .eq("id", id)
-        .single();
+    const {
+      data,
+      error,
+    } = await supabase
+      .from("shops")
+      .select(`
+        *,
+        products(count)
+      `)
+      .eq(
+        "id",
+        id,
+      )
+      .single();
 
     if (error) {
-      console.log(error);
+      console.log(
+        "GET SHOP ERROR:",
+        error,
+      );
 
       return null;
     }
 
     return mapShop(data);
   } catch (err) {
-    console.log(err);
+    console.log(
+      "GET SHOP ERROR:",
+      err,
+    );
 
     return null;
   }
@@ -281,150 +304,87 @@ export async function addShop(
   shop: Partial<Shop>,
 ) {
   try {
-    const { count } =
-      await supabase
-        .from("shops")
-        .select("*", {
-          count: "exact",
-          head: true,
-        });
+    const {
+      count,
+    } = await supabase
+      .from("shops")
+      .select("*", {
+        count: "exact",
+        head: true,
+      });
 
     const serialNo =
       (count || 0) + 1;
 
-    const now = new Date();
+    const now =
+      new Date();
 
-    const month = String(
-      now.getMonth() + 1,
-    ).padStart(2, "0");
+    const month =
+      String(
+        now.getMonth() + 1,
+      ).padStart(
+        2,
+        "0",
+      );
 
     const year =
       now.getFullYear();
 
-    const shopUID = `EA-${year}${month}-${String(
-      serialNo,
-    ).padStart(4, "0")}`;
+    const shopUID =
+      `EA-${year}${month}-${String(
+        serialNo,
+      ).padStart(
+        4,
+        "0",
+      )}`;
 
-    const { data, error } =
-      await supabase
-        .from("shops")
-        .insert([
-          {
-            shop_uid:
-              shopUID,
+    const {
+      data,
+      error,
+    } = await supabase
+      .from("shops")
+      .insert([
+        {
+          shop_uid:
+            shopUID,
 
-            serial_no:
-              serialNo,
+          serial_no:
+            serialNo,
 
-            joined_date:
-              now.toISOString(),
+          joined_date:
+            now.toISOString(),
 
-            shop_name:
-              shop.shop_name ||
-              "",
-
-            owner_name:
-              shop.owner_name ||
-              "",
-
-            phone:
-              shop.phone || "",
-
-            email:
-              shop.email || "",
-
-            category:
-              shop.category ||
-              "",
-
-            address:
-              shop.address ||
-              "",
-
-            city:
-              shop.city || "",
-
-            state:
-              shop.state ||
-              "",
-
-            gst_number:
-              shop.gst_number ||
-              "",
-
-            description:
-              shop.description ||
-              "",
-
-            logo:
-              fixDriveImage(
-                shop.logo,
-              ),
-
-            banner:
-              fixDriveImage(
-                shop.banner,
-              ),
-
-            status:
-              shop.is_active
-                ? "online"
-                : "offline",
-          },
-        ])
-        .select()
-        .single();
-
-    if (error) {
-      console.log(error);
-
-      return null;
-    }
-
-    return mapShop(data);
-  } catch (err) {
-    console.log(err);
-
-    return null;
-  }
-}
-
-/* ====================================================== */
-/* UPDATE SHOP */
-/* ====================================================== */
-
-export async function updateShop(
-  id: string,
-  shop: Partial<Shop>,
-) {
-  try {
-    const { data, error } =
-      await supabase
-        .from("shops")
-        .update({
           shop_name:
-            shop.shop_name,
+            shop.shop_name ||
+            "",
 
           owner_name:
-            shop.owner_name,
+            shop.owner_name ||
+            "",
 
           phone:
-            shop.phone,
+            shop.phone ||
+            "",
 
           email:
-            shop.email || "",
+            shop.email ||
+            "",
 
           category:
-            shop.category || "",
+            shop.category ||
+            "",
 
           address:
-            shop.address || "",
+            shop.address ||
+            "",
 
           city:
-            shop.city || "",
+            shop.city ||
+            "",
 
           state:
-            shop.state || "",
+            shop.state ||
+            "",
 
           gst_number:
             shop.gst_number ||
@@ -448,20 +408,120 @@ export async function updateShop(
             shop.is_active
               ? "online"
               : "offline",
-        })
-        .eq("id", id)
-        .select()
-        .single();
+        },
+      ])
+      .select()
+      .single();
 
     if (error) {
-      console.log(error);
+      console.log(
+        "ADD SHOP ERROR:",
+        error,
+      );
 
       return null;
     }
 
     return mapShop(data);
   } catch (err) {
-    console.log(err);
+    console.log(
+      "ADD SHOP ERROR:",
+      err,
+    );
+
+    return null;
+  }
+}
+
+/* ====================================================== */
+/* UPDATE SHOP */
+/* ====================================================== */
+
+export async function updateShop(
+  id: string,
+  shop: Partial<Shop>,
+) {
+  try {
+    const {
+      data,
+      error,
+    } = await supabase
+      .from("shops")
+      .update({
+        shop_name:
+          shop.shop_name,
+
+        owner_name:
+          shop.owner_name,
+
+        phone:
+          shop.phone,
+
+        email:
+          shop.email ||
+          "",
+
+        category:
+          shop.category ||
+          "",
+
+        address:
+          shop.address ||
+          "",
+
+        city:
+          shop.city ||
+          "",
+
+        state:
+          shop.state ||
+          "",
+
+        gst_number:
+          shop.gst_number ||
+          "",
+
+        description:
+          shop.description ||
+          "",
+
+        logo:
+          fixDriveImage(
+            shop.logo,
+          ),
+
+        banner:
+          fixDriveImage(
+            shop.banner,
+          ),
+
+        status:
+          shop.is_active
+            ? "online"
+            : "offline",
+      })
+      .eq(
+        "id",
+        id,
+      )
+      .select()
+      .single();
+
+    if (error) {
+      console.log(
+        "UPDATE SHOP ERROR:",
+        error,
+      );
+
+      return null;
+    }
+
+    return mapShop(data);
+  } catch (err) {
+    console.log(
+      "UPDATE SHOP ERROR:",
+      err,
+    );
 
     return null;
   }
@@ -475,21 +535,31 @@ export async function deleteShop(
   id: string,
 ) {
   try {
-    const { error } =
-      await supabase
-        .from("shops")
-        .delete()
-        .eq("id", id);
+    const {
+      error,
+    } = await supabase
+      .from("shops")
+      .delete()
+      .eq(
+        "id",
+        id,
+      );
 
     if (error) {
-      console.log(error);
+      console.log(
+        "DELETE SHOP ERROR:",
+        error,
+      );
 
       return false;
     }
 
     return true;
   } catch (err) {
-    console.log(err);
+    console.log(
+      "DELETE SHOP ERROR:",
+      err,
+    );
 
     return false;
   }
@@ -509,15 +579,21 @@ export async function toggleShopStatus(
         ? "online"
         : "offline";
 
-    const { data, error } =
-      await supabase
-        .from("shops")
-        .update({
-          status: nextStatus,
-        })
-        .eq("id", id)
-        .select()
-        .single();
+    const {
+      data,
+      error,
+    } = await supabase
+      .from("shops")
+      .update({
+        status:
+          nextStatus,
+      })
+      .eq(
+        "id",
+        id,
+      )
+      .select()
+      .single();
 
     if (error) {
       console.log(
@@ -530,7 +606,10 @@ export async function toggleShopStatus(
 
     return mapShop(data);
   } catch (err) {
-    console.log(err);
+    console.log(
+      "TOGGLE SHOP ERROR:",
+      err,
+    );
 
     return null;
   }

@@ -15,7 +15,8 @@ export type PricingType =
   | "custom";
 
 /* =========================================
-   VISIBLE PRICE TYPE
+   PRICE KEY
+   Used for DISPLAY CHARGE
 ========================================= */
 
 export type PriceKey =
@@ -264,7 +265,29 @@ export type Worker = {
   subcategory: string;
   specialty: string;
 
+  /* =========================================
+     ACTUAL SERVICES
+     Example:
+     ["Visit", "Repair", "Emergency"]
+  ========================================= */
+
   services: string[];
+
+  /* =========================================
+     DISPLAY CHARGE
+     
+     IMPORTANT:
+     This is NOT a service name.
+
+     It stores one PriceKey:
+     per_job
+     half_day
+     full_day
+     monthly
+     visit_charge
+  ========================================= */
+
+  displayService: PriceKey | null;
 
   pricingType: PricingType;
 
@@ -327,8 +350,8 @@ type WorkerRow = {
 
   available: boolean | null;
 
-  years_experience: number | null;
-  completed_jobs: number | null;
+  years_experience: number | string | null;
+  completed_jobs: number | string | null;
 
   bio: string | null;
 
@@ -346,16 +369,25 @@ type WorkerRow = {
 
   services: string[] | null;
 
+  /* =========================================
+     DISPLAY CHARGE
+     DB COLUMN:
+     display_service
+     
+     VALUE:
+     per_job / half_day / full_day /
+     monthly / visit_charge
+  ========================================= */
+
+  display_service: string | null;
+
   phone: string | null;
 
   pricing_type: string | null;
 
   starting_price: number | string | null;
-
   half_day_price: number | string | null;
-
   full_day_price: number | string | null;
-
   monthly_price: number | string | null;
 
   visit_charge: number | string | null;
@@ -390,6 +422,7 @@ const WORKER_SELECT = `
   created_at,
   subcategory,
   services,
+  display_service,
   phone,
   pricing_type,
   starting_price,
@@ -433,10 +466,7 @@ function numberValue(
 ========================================= */
 
 function pricingValue(
-  value:
-    | string
-    | null
-    | undefined,
+  value: string | null | undefined,
 ): PricingType {
   switch (value) {
     case "per_job":
@@ -456,13 +486,62 @@ function pricingValue(
    PRICE KEYS
 ========================================= */
 
-const PRICE_KEYS: PriceKey[] = [
+export const PRICE_KEYS: PriceKey[] = [
   "per_job",
   "half_day",
   "full_day",
   "monthly",
   "visit_charge",
 ];
+
+/* =========================================
+   DISPLAY SERVICE VALUE
+========================================= */
+
+/**
+ * display_service is a PRICE KEY.
+ *
+ * Valid:
+ *   per_job
+ *   half_day
+ *   full_day
+ *   monthly
+ *   visit_charge
+ *
+ * Invalid examples:
+ *   Repair
+ *   Visit
+ *   Emergency
+ */
+
+function displayServiceValue(
+  value:
+    | string
+    | null
+    | undefined,
+): PriceKey | null {
+  if (
+    typeof value !==
+    "string"
+  ) {
+    return null;
+  }
+
+  const cleanValue =
+    value.trim();
+
+  if (
+    !cleanValue
+  ) {
+    return null;
+  }
+
+  return PRICE_KEYS.includes(
+    cleanValue as PriceKey,
+  )
+    ? (cleanValue as PriceKey)
+    : null;
+}
 
 /* =========================================
    VISIBLE PRICES
@@ -481,17 +560,12 @@ function visiblePrices(
     ];
   }
 
-  const result =
-    value.filter(
-      (
-        item,
-      ): item is PriceKey =>
-        PRICE_KEYS.includes(
-          item as PriceKey,
-        ),
-    );
-
-  return result;
+  return value.filter(
+    (item): item is PriceKey =>
+      PRICE_KEYS.includes(
+        item as PriceKey,
+      ),
+  );
 }
 
 /* =========================================
@@ -506,7 +580,7 @@ function stringArray(
 ): string[] {
   return Array.isArray(value)
     ? value.filter(
-        (item) =>
+        (item): item is string =>
           typeof item ===
           "string",
       )
@@ -520,30 +594,59 @@ function stringArray(
 export function mapWorker(
   row: WorkerRow,
 ): Worker {
-  return {
-    id: row.id,
+  const mappedWorker: Worker = {
+    id:
+      row.id,
 
     workerCode:
-      row.worker_code ?? null,
+      row.worker_code ??
+      null,
 
     name:
-      row.name ?? "",
+      row.name ??
+      "",
 
     phone:
-      row.phone ?? "",
+      row.phone ??
+      "",
 
     category:
-      row.category ?? "",
+      row.category ??
+      "",
 
     subcategory:
-      row.subcategory ?? "",
+      row.subcategory ??
+      "",
 
     specialty:
-      row.specialty ?? "",
+      row.specialty ??
+      "",
+
+    /* =====================================
+       ACTUAL SERVICES
+    ===================================== */
 
     services:
       stringArray(
         row.services,
+      ),
+
+    /* =====================================
+       DISPLAY CHARGE
+
+       DB:
+       display_service
+
+       APP:
+       displayService
+
+       Example:
+       "half_day"
+    ===================================== */
+
+    displayService:
+      displayServiceValue(
+        row.display_service,
       ),
 
     pricingType:
@@ -592,28 +695,30 @@ export function mapWorker(
       ),
 
     location:
-      row.location ?? "",
+      row.location ??
+      "",
 
     labourChauk:
-      row.labour_chauk ?? "",
+      row.labour_chauk ??
+      "",
 
     available:
-      row.available ?? true,
+      row.available ??
+      true,
 
     yearsExperience:
-      Number(
-        row.years_experience ??
-          0,
+      numberValue(
+        row.years_experience,
       ),
 
     completedJobs:
-      Number(
-        row.completed_jobs ??
-          0,
+      numberValue(
+        row.completed_jobs,
       ),
 
     bio:
-      row.bio ?? "",
+      row.bio ??
+      "",
 
     skills:
       stringArray(
@@ -621,7 +726,8 @@ export function mapWorker(
       ),
 
     photo:
-      row.photo ?? "",
+      row.photo ??
+      "",
 
     responseTime:
       row.response_time ??
@@ -633,8 +739,50 @@ export function mapWorker(
       ),
 
     createdAt:
-      row.created_at ?? "",
+      row.created_at ??
+      "",
   };
+
+  /* =====================================
+     DEBUG
+  ===================================== */
+
+  console.log(
+    "WORKER MAPPED:",
+    {
+      id:
+        mappedWorker.id,
+
+      name:
+        mappedWorker.name,
+
+      services:
+        mappedWorker.services,
+
+      displayService:
+        mappedWorker.displayService,
+
+      visitCharge:
+        mappedWorker.visitCharge,
+
+      startingPrice:
+        mappedWorker.startingPrice,
+
+      halfDayPrice:
+        mappedWorker.halfDayPrice,
+
+      fullDayPrice:
+        mappedWorker.fullDayPrice,
+
+      monthlyPrice:
+        mappedWorker.monthlyPrice,
+
+      visiblePricingTypes:
+        mappedWorker.visiblePricingTypes,
+    },
+  );
+
+  return mappedWorker;
 }
 
 /* =========================================
@@ -644,15 +792,47 @@ export function mapWorker(
 function workerPayload(
   worker: WorkerFormData,
 ) {
+  const cleanServices =
+    stringArray(
+      worker.services,
+    );
+
+  /* =====================================
+     DISPLAY CHARGE
+
+     IMPORTANT:
+     Do NOT compare this with services.
+
+     displayService is a PriceKey.
+
+     Example:
+       services:
+       ["Visit", "Repair", "Emergency"]
+
+       displayService:
+       "half_day"
+
+       halfDayPrice:
+       600
+  ===================================== */
+
+  const cleanDisplayService: PriceKey | null =
+    displayServiceValue(
+      worker.displayService,
+    );
+
   return {
     name:
-      worker.name?.trim() || "",
+      worker.name?.trim() ||
+      "",
 
     category:
-      worker.category?.trim() || "",
+      worker.category?.trim() ||
+      "",
 
     specialty:
-      worker.specialty?.trim() || "",
+      worker.specialty?.trim() ||
+      "",
 
     rating:
       numberValue(
@@ -665,10 +845,12 @@ function workerPayload(
       ),
 
     location:
-      worker.location?.trim() || "",
+      worker.location?.trim() ||
+      "",
 
     available:
-      worker.available ?? true,
+      worker.available ??
+      true,
 
     years_experience:
       numberValue(
@@ -681,7 +863,8 @@ function workerPayload(
       ),
 
     bio:
-      worker.bio?.trim() || null,
+      worker.bio?.trim() ||
+      null,
 
     skills:
       stringArray(
@@ -689,7 +872,8 @@ function workerPayload(
       ),
 
     photo:
-      worker.photo?.trim() || null,
+      worker.photo?.trim() ||
+      null,
 
     response_time:
       worker.responseTime?.trim() ||
@@ -704,10 +888,21 @@ function workerPayload(
       worker.subcategory?.trim() ||
       null,
 
+    /* =====================================
+       ACTUAL SERVICES
+    ===================================== */
+
     services:
-      stringArray(
-        worker.services,
-      ),
+      cleanServices,
+
+    /* =====================================
+       DISPLAY CHARGE
+
+       Stores PriceKey only
+    ===================================== */
+
+    display_service:
+      cleanDisplayService,
 
     phone:
       worker.phone?.trim() ||
@@ -769,9 +964,12 @@ export async function getWorkers(
     } = await supabase
       .from("workers")
       .select(WORKER_SELECT)
-      .order("created_at", {
-        ascending: false,
-      })
+      .order(
+        "created_at",
+        {
+          ascending: false,
+        },
+      )
       .limit(limit);
 
     if (error) {
@@ -785,9 +983,46 @@ export async function getWorkers(
       );
     }
 
-    return (
-      (data ?? []) as unknown as WorkerRow[]
-    ).map(mapWorker);
+    const rows =
+      (data ?? []) as unknown as WorkerRow[];
+
+    console.log(
+      "GET WORKERS RAW DATA:",
+      rows.map(
+        (row) => ({
+          id:
+            row.id,
+
+          name:
+            row.name,
+
+          services:
+            row.services,
+
+          display_service:
+            row.display_service,
+
+          starting_price:
+            row.starting_price,
+
+          half_day_price:
+            row.half_day_price,
+
+          full_day_price:
+            row.full_day_price,
+
+          monthly_price:
+            row.monthly_price,
+
+          visit_charge:
+            row.visit_charge,
+        }),
+      ),
+    );
+
+    return rows.map(
+      mapWorker,
+    );
   } catch (error) {
     console.error(
       "GET WORKERS ERROR:",
@@ -816,7 +1051,10 @@ export async function getWorkerById(
     } = await supabase
       .from("workers")
       .select(WORKER_SELECT)
-      .eq("id", id)
+      .eq(
+        "id",
+        id,
+      )
       .maybeSingle();
 
     if (error) {
@@ -831,12 +1069,101 @@ export async function getWorkerById(
     }
 
     if (!data) {
+      console.warn(
+        "GET WORKER: No worker found",
+        id,
+      );
+
       return null;
     }
 
-    return mapWorker(
-      data as unknown as WorkerRow,
+    /* =====================================
+       RAW DATABASE DEBUG
+    ===================================== */
+
+    const rawWorker =
+      data as unknown as WorkerRow;
+
+    console.log(
+      "GET WORKER RAW DATABASE:",
+      {
+        id:
+          rawWorker.id,
+
+        name:
+          rawWorker.name,
+
+        services:
+          rawWorker.services,
+
+        display_service:
+          rawWorker.display_service,
+
+        starting_price:
+          rawWorker.starting_price,
+
+        half_day_price:
+          rawWorker.half_day_price,
+
+        full_day_price:
+          rawWorker.full_day_price,
+
+        monthly_price:
+          rawWorker.monthly_price,
+
+        visit_charge:
+          rawWorker.visit_charge,
+
+        visible_pricing_types:
+          rawWorker.visible_pricing_types,
+      },
     );
+
+    const worker =
+      mapWorker(
+        rawWorker,
+      );
+
+    /* =====================================
+       FINAL WORKER DEBUG
+    ===================================== */
+
+    console.log(
+      "GET WORKER BY ID:",
+      {
+        id:
+          worker.id,
+
+        name:
+          worker.name,
+
+        services:
+          worker.services,
+
+        displayService:
+          worker.displayService,
+
+        visitCharge:
+          worker.visitCharge,
+
+        startingPrice:
+          worker.startingPrice,
+
+        halfDayPrice:
+          worker.halfDayPrice,
+
+        fullDayPrice:
+          worker.fullDayPrice,
+
+        monthlyPrice:
+          worker.monthlyPrice,
+
+        visiblePricingTypes:
+          worker.visiblePricingTypes,
+      },
+    );
+
+    return worker;
   } catch (error) {
     console.error(
       "GET WORKER ERROR:",
@@ -855,15 +1182,50 @@ export async function createWorker(
   worker: WorkerFormData,
 ): Promise<Worker> {
   const payload =
-    workerPayload(worker);
+    workerPayload(
+      worker,
+    );
+
+  console.log(
+    "CREATE WORKER PAYLOAD:",
+    {
+      services:
+        payload.services,
+
+      display_service:
+        payload.display_service,
+
+      visit_charge:
+        payload.visit_charge,
+
+      starting_price:
+        payload.starting_price,
+
+      half_day_price:
+        payload.half_day_price,
+
+      full_day_price:
+        payload.full_day_price,
+
+      monthly_price:
+        payload.monthly_price,
+
+      visible_pricing_types:
+        payload.visible_pricing_types,
+    },
+  );
 
   const {
     data,
     error,
   } = await supabase
     .from("workers")
-    .insert(payload)
-    .select(WORKER_SELECT)
+    .insert(
+      payload,
+    )
+    .select(
+      WORKER_SELECT,
+    )
     .single();
 
   if (error) {
@@ -893,9 +1255,47 @@ export async function createWorker(
     );
   }
 
-  return mapWorker(
-    data as unknown as WorkerRow,
+  const createdWorker =
+    mapWorker(
+      data as unknown as WorkerRow,
+    );
+
+  console.log(
+    "CREATED WORKER:",
+    {
+      id:
+        createdWorker.id,
+
+      name:
+        createdWorker.name,
+
+      services:
+        createdWorker.services,
+
+      displayService:
+        createdWorker.displayService,
+
+      visitCharge:
+        createdWorker.visitCharge,
+
+      startingPrice:
+        createdWorker.startingPrice,
+
+      halfDayPrice:
+        createdWorker.halfDayPrice,
+
+      fullDayPrice:
+        createdWorker.fullDayPrice,
+
+      monthlyPrice:
+        createdWorker.monthlyPrice,
+
+      visiblePricingTypes:
+        createdWorker.visiblePricingTypes,
+    },
   );
+
+  return createdWorker;
 }
 
 /* =========================================
@@ -913,13 +1313,38 @@ export async function updateWorker(
   }
 
   const payload =
-    workerPayload(worker);
+    workerPayload(
+      worker,
+    );
 
   console.log(
     "UPDATE WORKER PAYLOAD:",
     {
       id,
-      ...payload,
+
+      services:
+        payload.services,
+
+      display_service:
+        payload.display_service,
+
+      visit_charge:
+        payload.visit_charge,
+
+      starting_price:
+        payload.starting_price,
+
+      half_day_price:
+        payload.half_day_price,
+
+      full_day_price:
+        payload.full_day_price,
+
+      monthly_price:
+        payload.monthly_price,
+
+      visible_pricing_types:
+        payload.visible_pricing_types,
     },
   );
 
@@ -928,9 +1353,16 @@ export async function updateWorker(
     error,
   } = await supabase
     .from("workers")
-    .update(payload)
-    .eq("id", id)
-    .select(WORKER_SELECT)
+    .update(
+      payload,
+    )
+    .eq(
+      "id",
+      id,
+    )
+    .select(
+      WORKER_SELECT,
+    )
     .single();
 
   if (error) {
@@ -967,7 +1399,37 @@ export async function updateWorker(
 
   console.log(
     "UPDATED WORKER FROM DATABASE:",
-    updatedWorker,
+    {
+      id:
+        updatedWorker.id,
+
+      name:
+        updatedWorker.name,
+
+      services:
+        updatedWorker.services,
+
+      displayService:
+        updatedWorker.displayService,
+
+      visitCharge:
+        updatedWorker.visitCharge,
+
+      startingPrice:
+        updatedWorker.startingPrice,
+
+      halfDayPrice:
+        updatedWorker.halfDayPrice,
+
+      fullDayPrice:
+        updatedWorker.fullDayPrice,
+
+      monthlyPrice:
+        updatedWorker.monthlyPrice,
+
+      visiblePricingTypes:
+        updatedWorker.visiblePricingTypes,
+    },
   );
 
   return updatedWorker;
@@ -991,7 +1453,10 @@ export async function deleteWorker(
   } = await supabase
     .from("workers")
     .delete()
-    .eq("id", id);
+    .eq(
+      "id",
+      id,
+    );
 
   if (error) {
     console.error(
@@ -1026,7 +1491,10 @@ export async function setWorkerAvailability(
     .update({
       available,
     })
-    .eq("id", id);
+    .eq(
+      "id",
+      id,
+    );
 
   if (error) {
     console.error(

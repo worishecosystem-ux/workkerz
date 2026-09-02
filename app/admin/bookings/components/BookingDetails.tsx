@@ -121,22 +121,24 @@ export default function BookingDetails({
     if (!booking.booking_id) return;
 
     try {
-      await navigator.clipboard.writeText(
-        booking.booking_id
-      );
+      await navigator.clipboard.writeText(booking.booking_id);
     } catch {
       // Clipboard unavailable
     }
   };
 
+  const hasAddress =
+    Boolean(booking.house_no) ||
+    Boolean(booking.address) ||
+    Boolean(booking.landmark) ||
+    Boolean(booking.city) ||
+    Boolean(booking.district) ||
+    Boolean(booking.state) ||
+    Boolean(booking.pincode);
+
   return (
     <div
-      className="
-        fixed inset-0 z-[9999]
-        flex justify-end
-        bg-slate-950/55
-        backdrop-blur-[2px]
-      "
+      className="fixed inset-0 z-[9999] flex justify-end bg-slate-950/55 backdrop-blur-[2px]"
       onMouseDown={(e) => {
         if (e.target === e.currentTarget) {
           onClose();
@@ -144,16 +146,7 @@ export default function BookingDetails({
       }}
     >
       <div
-        className="
-          relative
-          flex h-full
-          w-full max-w-[720px]
-          flex-col
-          overflow-hidden
-          border-l border-slate-200
-          bg-[#f7f8fa]
-          shadow-[-20px_0_70px_rgba(15,23,42,0.18)]
-        "
+        className="relative flex h-full w-full max-w-[720px] flex-col overflow-hidden border-l border-slate-200 bg-[#f7f8fa] shadow-[-20px_0_70px_rgba(15,23,42,0.18)]"
         onMouseDown={(e) => e.stopPropagation()}
       >
         {/* =================================================
@@ -174,16 +167,7 @@ export default function BookingDetails({
                   </h2>
 
                   <span
-                    className={`
-                      hidden items-center gap-1.5
-                      rounded-full border
-                      px-2.5 py-1
-                      text-[10px] font-bold
-                      sm:inline-flex
-                      ${status.bg}
-                      ${status.text}
-                      ${status.border}
-                    `}
+                    className={`hidden items-center gap-1.5 rounded-full border px-2.5 py-1 text-[10px] font-bold sm:inline-flex ${status.bg} ${status.text} ${status.border}`}
                   >
                     <span
                       className={`h-1.5 w-1.5 rounded-full ${status.dot}`}
@@ -202,17 +186,7 @@ export default function BookingDetails({
             <button
               type="button"
               onClick={onClose}
-              className="
-                flex h-10 w-10 shrink-0
-                items-center justify-center
-                rounded-xl
-                border border-slate-200
-                bg-white
-                text-slate-500
-                transition
-                hover:bg-slate-50
-                hover:text-slate-950
-              "
+              className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-500 transition hover:bg-slate-50 hover:text-slate-950"
               aria-label="Close"
             >
               <X className="h-5 w-5" />
@@ -223,15 +197,7 @@ export default function BookingDetails({
 
           <div className="border-b border-slate-100 px-5 py-3 sm:hidden">
             <span
-              className={`
-                inline-flex items-center gap-1.5
-                rounded-full border
-                px-2.5 py-1
-                text-[10px] font-bold
-                ${status.bg}
-                ${status.text}
-                ${status.border}
-              `}
+              className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-[10px] font-bold ${status.bg} ${status.text} ${status.border}`}
             >
               <span
                 className={`h-1.5 w-1.5 rounded-full ${status.dot}`}
@@ -270,9 +236,7 @@ export default function BookingDetails({
                       </h3>
 
                       <p className="mt-1 truncate text-xs text-slate-400">
-                        {text(
-                          booking.worker_specialty
-                        )}
+                        {text(booking.worker_specialty)}
                       </p>
                     </div>
                   </div>
@@ -283,9 +247,7 @@ export default function BookingDetails({
                     </p>
 
                     <p className="mt-1 text-xl font-black">
-                      {amount(
-                        booking.grand_total
-                      )}
+                      {amount(booking.grand_total)}
                     </p>
                   </div>
                 </div>
@@ -304,16 +266,7 @@ export default function BookingDetails({
                   <button
                     type="button"
                     onClick={copyId}
-                    className="
-                      flex h-8 items-center gap-1.5
-                      rounded-lg
-                      bg-white/10
-                      px-2.5
-                      text-[10px] font-bold
-                      text-slate-300
-                      hover:bg-white/15
-                      hover:text-white
-                    "
+                    className="flex h-8 items-center gap-1.5 rounded-lg bg-white/10 px-2.5 text-[10px] font-bold text-slate-300 hover:bg-white/15 hover:text-white"
                   >
                     <Copy className="h-3 w-3" />
                     Copy ID
@@ -327,17 +280,13 @@ export default function BookingDetails({
                 <ScheduleItem
                   icon={<CalendarDays />}
                   label="Scheduled Date"
-                  value={fullDate(
-                    booking.booking_date
-                  )}
+                  value={fullDate(booking.booking_date)}
                 />
 
                 <ScheduleItem
                   icon={<Clock3 />}
                   label="Scheduled Time"
-                  value={text(
-                    booking.booking_time
-                  )}
+                  value={text(booking.booking_time)}
                 />
               </div>
             </section>
@@ -356,23 +305,13 @@ export default function BookingDetails({
                 <ProfileRow
                   label="Customer"
                   name={booking.customer_name}
-                  subtitle={
-                    booking.customer_phone
-                  }
+                  subtitle={booking.customer_phone}
                   icon={<UserRound />}
                   action={
                     booking.customer_phone ? (
                       <a
                         href={`tel:${booking.customer_phone}`}
-                        className="
-                          flex h-9 w-9
-                          items-center justify-center
-                          rounded-xl
-                          bg-emerald-50
-                          text-emerald-600
-                          transition
-                          hover:bg-emerald-100
-                        "
+                        className="flex h-9 w-9 items-center justify-center rounded-xl bg-emerald-50 text-emerald-600 transition hover:bg-emerald-100"
                         aria-label="Call customer"
                       >
                         <Phone className="h-4 w-4" />
@@ -384,12 +323,8 @@ export default function BookingDetails({
                 <ProfileRow
                   label="Assigned Worker"
                   name={booking.worker_name}
-                  subtitle={
-                    booking.worker_specialty
-                  }
-                  image={
-                    booking.worker_photo
-                  }
+                  subtitle={booking.worker_specialty}
+                  image={booking.worker_photo}
                   icon={<UserRound />}
                   rating={
                     booking.worker_rating
@@ -404,126 +339,110 @@ export default function BookingDetails({
                 LOCATION
             ================================================= */}
 
-            {/* =================================================
-    LOCATION
-================================================= */}
+            <section className="rounded-2xl border border-slate-200 bg-white p-5 sm:p-6">
+              <SectionHeader
+                icon={<MapPin />}
+                title="Work Location"
+              />
 
-<section className="rounded-2xl border border-slate-200 bg-white p-5 sm:p-6">
-  <SectionHeader
-    icon={<MapPin />}
-    title="Work Location"
-  />
+              <div className="mt-5 rounded-2xl border border-slate-100 bg-slate-50 p-4">
+                {hasAddress ? (
+                  <div className="space-y-4">
+                    {/* MAIN ADDRESS */}
 
-  <div className="mt-5 rounded-2xl border border-slate-100 bg-slate-50 p-4">
-    {booking.customer_addresses ? (
-      <div className="space-y-4">
-        {/* MAIN ADDRESS */}
-        <div className="flex items-start gap-3">
-          <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-white text-orange-500 shadow-sm">
-            <MapPin className="h-5 w-5" />
-          </div>
+                    <div className="flex items-start gap-3">
+                      <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-white text-orange-500 shadow-sm">
+                        <MapPin className="h-5 w-5" />
+                      </div>
 
-          <div className="min-w-0 flex-1">
-            <div className="flex items-center gap-2">
-              <p className="text-[9px] font-bold uppercase tracking-wider text-slate-400">
-                Service Address
-              </p>
+                      <div className="min-w-0 flex-1">
+                        <div className="flex items-center gap-2">
+                          <p className="text-[9px] font-bold uppercase tracking-wider text-slate-400">
+                            Service Address
+                          </p>
 
-              {booking.customer_addresses.address_type && (
-                <span className="rounded-md bg-white px-2 py-0.5 text-[9px] font-bold capitalize text-slate-500">
-                  {booking.customer_addresses.address_type}
-                </span>
-              )}
-            </div>
+                          {booking.address_type && (
+                            <span className="rounded-md bg-white px-2 py-0.5 text-[9px] font-bold capitalize text-slate-500">
+                              {booking.address_type}
+                            </span>
+                          )}
+                        </div>
 
-            <p className="mt-1 text-sm font-bold leading-5 text-slate-800">
-              {[
-                booking.customer_addresses.house_no,
-                booking.customer_addresses.address,
-              ]
-                .filter(Boolean)
-                .join(", ")}
-            </p>
+                        <p className="mt-1 text-sm font-bold leading-5 text-slate-800">
+                          {[
+                            booking.house_no,
+                            booking.address,
+                          ]
+                            .filter(Boolean)
+                            .join(", ")}
+                        </p>
 
-            {booking.customer_addresses.landmark && (
-              <p className="mt-1 text-xs text-slate-500">
-                Landmark:{" "}
-                {booking.customer_addresses.landmark}
-              </p>
-            )}
-          </div>
-        </div>
+                        {booking.landmark && (
+                          <p className="mt-1 text-xs text-slate-500">
+                            Landmark: {booking.landmark}
+                          </p>
+                        )}
+                      </div>
+                    </div>
 
-        {/* LOCATION DETAILS */}
-        <div className="grid grid-cols-2 gap-3 border-t border-slate-200 pt-4">
-          {booking.customer_addresses.city && (
-            <div>
-              <p className="text-[9px] font-bold uppercase tracking-wider text-slate-400">
-                City
-              </p>
+                    {/* LOCATION DETAILS */}
 
-              <p className="mt-1 text-xs font-semibold text-slate-700">
-                {booking.customer_addresses.city}
-              </p>
-            </div>
-          )}
+                    <div className="grid grid-cols-2 gap-3 border-t border-slate-200 pt-4">
+                      {booking.city && (
+                        <LocationItem
+                          label="City"
+                          value={booking.city}
+                        />
+                      )}
 
-          {booking.customer_addresses.district && (
-            <div>
-              <p className="text-[9px] font-bold uppercase tracking-wider text-slate-400">
-                District
-              </p>
+                      {booking.district && (
+                        <LocationItem
+                          label="District"
+                          value={booking.district}
+                        />
+                      )}
 
-              <p className="mt-1 text-xs font-semibold text-slate-700">
-                {booking.customer_addresses.district}
-              </p>
-            </div>
-          )}
+                      {booking.state && (
+                        <LocationItem
+                          label="State"
+                          value={booking.state}
+                        />
+                      )}
 
-          {booking.customer_addresses.state && (
-            <div>
-              <p className="text-[9px] font-bold uppercase tracking-wider text-slate-400">
-                State
-              </p>
+                      {booking.pincode && (
+                        <LocationItem
+                          label="Pincode"
+                          value={booking.pincode}
+                        />
+                      )}
 
-              <p className="mt-1 text-xs font-semibold text-slate-700">
-                {booking.customer_addresses.state}
-              </p>
-            </div>
-          )}
+                      {booking.country && (
+                        <LocationItem
+                          label="Country"
+                          value={booking.country}
+                        />
+                      )}
+                    </div>
+                  </div>
+                ) : (
+                  <div className="flex items-center gap-3">
+                    <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-white text-slate-400 shadow-sm">
+                      <MapPin className="h-5 w-5" />
+                    </div>
 
-          {booking.customer_addresses.pincode && (
-            <div>
-              <p className="text-[9px] font-bold uppercase tracking-wider text-slate-400">
-                Pincode
-              </p>
+                    <div className="min-w-0">
+                      <p className="text-sm font-bold text-slate-700">
+                        Address not available
+                      </p>
 
-              <p className="mt-1 text-xs font-semibold text-slate-700">
-                {booking.customer_addresses.pincode}
-              </p>
-            </div>
-          )}
-        </div>
-      </div>
-    ) : (
-      <div className="flex items-center gap-3">
-        <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-white text-slate-400 shadow-sm">
-          <MapPin className="h-5 w-5" />
-        </div>
-
-        <div className="min-w-0">
-          <p className="text-sm font-bold text-slate-700">
-            Address not available
-          </p>
-
-          <p className="mt-1 text-xs text-slate-400">
-            No customer address is linked with this booking.
-          </p>
-        </div>
-      </div>
-    )}
-  </div>
-</section>
+                      <p className="mt-1 text-xs text-slate-400">
+                        No address was saved with this booking.
+                      </p>
+                    </div>
+                  </div>
+                )}
+              </div>
+            </section>
 
             {/* =================================================
                 BILL
@@ -541,17 +460,14 @@ export default function BookingDetails({
                   value={booking.total_cost}
                 />
 
-                <PriceLine
-                  label="Service Fee"
-                  value={booking.service_fee}
-                />
+                {/* Service Fee intentionally removed */}
 
-                <PriceLine
-                  label="Materials"
-                  value={
-                    booking.materials_cost
-                  }
-                />
+                {Number(booking.materials_cost || 0) > 0 && (
+                  <PriceLine
+                    label="Materials"
+                    value={booking.materials_cost}
+                  />
+                )}
 
                 <div className="my-4 border-t border-dashed border-slate-200" />
 
@@ -562,9 +478,7 @@ export default function BookingDetails({
                     </p>
 
                     <p className="mt-1 text-2xl font-black tracking-tight text-slate-950">
-                      {amount(
-                        booking.grand_total
-                      )}
+                      {amount(booking.grand_total)}
                     </p>
                   </div>
 
@@ -626,23 +540,17 @@ export default function BookingDetails({
               <div className="mt-5 grid grid-cols-2 gap-3">
                 <MetaBox
                   label="Booking Type"
-                  value={text(
-                    booking.booking_type
-                  )}
+                  value={text(booking.booking_type)}
                 />
 
                 <MetaBox
                   label="Created"
-                  value={date(
-                    booking.created_at
-                  )}
+                  value={date(booking.created_at)}
                 />
 
                 <MetaBox
                   label="Work Status"
-                  value={text(
-                    booking.work_status
-                  )}
+                  value={text(booking.work_status)}
                 />
 
                 <MetaBox
@@ -679,21 +587,7 @@ export default function BookingDetails({
             <button
               type="button"
               onClick={onClose}
-              className="
-                ml-auto
-                flex h-11
-                items-center justify-center
-                gap-2
-                rounded-xl
-                bg-slate-950
-                px-6
-                text-xs
-                font-bold
-                text-white
-                transition
-                hover:bg-slate-800
-                active:scale-[0.98]
-              "
+              className="ml-auto flex h-11 items-center justify-center gap-2 rounded-xl bg-slate-950 px-6 text-xs font-bold text-white transition hover:bg-slate-800 active:scale-[0.98]"
             >
               Close Details
               <X className="h-4 w-4" />
@@ -819,6 +713,32 @@ function ProfileRow({
       )}
 
       {action}
+    </div>
+  );
+}
+
+/* =========================================================
+   LOCATION ITEM
+========================================================= */
+
+function LocationItem({
+  label,
+  value,
+}: {
+  label: string;
+  value: string | null | undefined;
+}) {
+  if (!value) return null;
+
+  return (
+    <div>
+      <p className="text-[9px] font-bold uppercase tracking-wider text-slate-400">
+        {label}
+      </p>
+
+      <p className="mt-1 text-xs font-semibold text-slate-700">
+        {value}
+      </p>
     </div>
   );
 }

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { Share } from "@capacitor/share";
@@ -33,6 +33,38 @@ import {
 import { supabase } from "@/lib/supabase";
 
 /* =========================================
+   PRICE KEYS
+========================================= */
+
+const PRICE_KEYS: PriceKey[] = [
+  "per_job",
+  "half_day",
+  "full_day",
+  "monthly",
+  "visit_charge",
+];
+
+/* =========================================
+   NORMALIZE DISPLAY CHARGE
+========================================= */
+
+function normalizeDisplayService(
+  value: unknown,
+): PriceKey | null {
+  if (typeof value !== "string") {
+    return null;
+  }
+
+  const cleanValue = value.trim();
+
+  return PRICE_KEYS.includes(
+    cleanValue as PriceKey,
+  )
+    ? (cleanValue as PriceKey)
+    : null;
+}
+
+/* =========================================
    STAR RATING
 ========================================= */
 
@@ -58,90 +90,112 @@ function StarRating({
 }
 
 /* =========================================
-   PRICE DATA
+   GET DISPLAY CHARGE
+
+   workers.display_service contains ONLY
+   the pricing key:
+
+   per_job
+   half_day
+   full_day
+   monthly
+   visit_charge
+
+   It is NOT a service name.
+
+   Example:
+
+   services:
+   ["Visit", "Repair", "Emergency"]
+
+   displayService:
+   "half_day"
+
+   halfDayPrice:
+   600
+
+   Result:
+   Half Day ₹600
 ========================================= */
 
-type PriceItem = {
-  key: PriceKey;
-  price: number;
-  label: string;
-  shortLabel: string;
-};
-
-/* =========================================
-   GET VISIBLE PRICES
-========================================= */
-
-function getVisiblePrices(
+function getDisplayCharge(
   worker: Worker,
-): PriceItem[] {
-  const visible =
-    Array.isArray(
-      worker.visiblePricingTypes,
-    )
-      ? worker.visiblePricingTypes
-      : [];
+) {
+  const displayService =
+    normalizeDisplayService(
+      worker.displayService,
+    );
+
+  if (!displayService) {
+    return null;
+  }
 
   const priceMap: Record<
     PriceKey,
-    PriceItem
+    {
+      price: number;
+      label: string;
+      suffix: string;
+    }
   > = {
     per_job: {
-      key: "per_job",
       price: Number(
-        worker.startingPrice || 0,
+        worker.startingPrice ?? 0,
       ),
-      label: "Per Job",
-      shortLabel: "Job",
+      label: "Per Work",
+      suffix: "per work",
     },
 
     half_day: {
-      key: "half_day",
       price: Number(
-        worker.halfDayPrice || 0,
+        worker.halfDayPrice ?? 0,
       ),
       label: "Half Day",
-      shortLabel: "Half Day",
+      suffix: "half day",
     },
 
     full_day: {
-      key: "full_day",
       price: Number(
-        worker.fullDayPrice || 0,
+        worker.fullDayPrice ?? 0,
       ),
       label: "Full Day",
-      shortLabel: "Full Day",
+      suffix: "full day",
     },
 
     monthly: {
-      key: "monthly",
       price: Number(
-        worker.monthlyPrice || 0,
+        worker.monthlyPrice ?? 0,
       ),
       label: "Monthly",
-      shortLabel: "Month",
+      suffix: "per month",
     },
 
     visit_charge: {
-      key: "visit_charge",
       price: Number(
-        worker.visitCharge || 0,
+        worker.visitCharge ?? 0,
       ),
       label: "Visit Charge",
-      shortLabel: "Visit",
+      suffix: "per visit",
     },
   };
 
-  return visible
-    .map(
-      (key) =>
-        priceMap[key],
-    )
-    .filter(
-      (item) =>
-        item &&
-        Number(item.price) > 0,
-    );
+  const selected =
+    priceMap[displayService];
+
+  if (!selected) {
+    return null;
+  }
+
+  if (
+    !Number.isFinite(
+      selected.price,
+    ) ||
+    selected.price <= 0
+  ) {
+    return null;
+  }
+
+  return selected;
 }
 
 /* =========================================
@@ -174,22 +228,10 @@ export default function WorkerProfile() {
   const [reviews, setReviews] =
     useState<any[]>([]);
 
-  const [favoriteLoading, setFavoriteLoading] =
-    useState(false);
-
-  /* =========================================
-     VISIBLE PRICES
-  ========================================= */
-
-  const visiblePrices = useMemo(
-    () =>
-      worker
-        ? getVisiblePrices(
-            worker,
-          )
-        : [],
-    [worker],
-  );
+  const [
+    favoriteLoading,
+    setFavoriteLoading,
+  ] = useState(false);
 
   /* =========================================
      FETCH DATA
@@ -221,9 +263,51 @@ export default function WorkerProfile() {
         );
 
       console.log(
-        "CURRENT WORKER =>",
+        "CURRENT WORKER FROM DATABASE =>",
         data,
       );
+
+      console.log(
+        "DISPLAY SERVICE =>",
+        data?.displayService,
+      );
+
+      console.log(
+        "STARTING PRICE =>",
+        data?.startingPrice,
+      );
+
+      console.log(
+        "HALF DAY PRICE =>",
+        data?.halfDayPrice,
+      );
+
+      console.log(
+        "FULL DAY PRICE =>",
+        data?.fullDayPrice,
+      );
+
+      console.log(
+        "MONTHLY PRICE =>",
+        data?.monthlyPrice,
+      );
+
+      console.log(
+        "VISIT CHARGE =>",
+        data?.visitCharge,
+      );
+
+      if (data) {
+        const charge =
+          getDisplayCharge(
+            data,
+          );
+
+        console.log(
+          "DISPLAY CHARGE RESULT =>",
+          charge,
+        );
+      }
 
       setWorker(data);
     } catch (error) {
@@ -256,24 +340,26 @@ export default function WorkerProfile() {
     const {
       data,
       error,
-    } = await supabase
-      .from("favorites")
-      .select("id")
-      .eq(
-        "customer_id",
-        user.id,
-      )
-      .eq(
-        "worker_id",
-        workerId,
-      )
-      .maybeSingle();
+    } =
+      await supabase
+        .from("favorites")
+        .select("id")
+        .eq(
+          "customer_id",
+          user.id,
+        )
+        .eq(
+          "worker_id",
+          workerId,
+        )
+        .maybeSingle();
 
     if (error) {
       console.error(
         "CHECK FAVORITE ERROR:",
         error,
       );
+
       return;
     }
 
@@ -302,6 +388,7 @@ export default function WorkerProfile() {
               `/workers/${workerId}`,
             )}`,
           );
+
           return;
         }
 
@@ -329,13 +416,14 @@ export default function WorkerProfile() {
         if (existing) {
           const {
             error,
-          } = await supabase
-            .from("favorites")
-            .delete()
-            .eq(
-              "id",
-              existing.id,
-            );
+          } =
+            await supabase
+              .from("favorites")
+              .delete()
+              .eq(
+                "id",
+                existing.id,
+              );
 
           if (error) {
             throw error;
@@ -345,22 +433,23 @@ export default function WorkerProfile() {
         } else {
           const {
             error,
-          } = await supabase
-            .from("favorites")
-            .upsert(
-              {
-                customer_id:
-                  user.id,
-                worker_id:
-                  workerId,
-              },
-              {
-                onConflict:
-                  "customer_id,worker_id",
-                ignoreDuplicates:
-                  true,
-              },
-            );
+          } =
+            await supabase
+              .from("favorites")
+              .upsert(
+                {
+                  customer_id:
+                    user.id,
+                  worker_id:
+                    workerId,
+                },
+                {
+                  onConflict:
+                    "customer_id,worker_id",
+                  ignoreDuplicates:
+                    true,
+                },
+              );
 
           if (error) {
             throw error;
@@ -392,13 +481,14 @@ export default function WorkerProfile() {
     const {
       data,
       error,
-    } = await supabase
-      .from("reviews")
-      .select("*")
-      .eq(
-        "worker_id",
-        workerId,
-      );
+    } =
+      await supabase
+        .from("reviews")
+        .select("*")
+        .eq(
+          "worker_id",
+          workerId,
+        );
 
     if (error) {
       console.error(
@@ -432,6 +522,7 @@ export default function WorkerProfile() {
             `/book/${workerId}`,
           )}`,
         );
+
         return;
       }
 
@@ -556,6 +647,13 @@ export default function WorkerProfile() {
   }
 
   /* =========================================
+     DISPLAY CHARGE
+  ========================================= */
+
+  const displayCharge =
+    getDisplayCharge(worker);
+
+  /* =========================================
      CATEGORY
   ========================================= */
 
@@ -584,6 +682,7 @@ export default function WorkerProfile() {
     <div className="min-h-dvh w-full overflow-x-hidden bg-white">
       <div className="m-0 w-screen max-w-none p-0 lg:mx-auto lg:max-w-7xl lg:px-6 lg:py-8">
         <div className="grid grid-cols-1 gap-0 lg:grid-cols-3 lg:gap-8">
+
           {/* =========================================
               MAIN CONTENT
           ========================================= */}
@@ -656,7 +755,7 @@ export default function WorkerProfile() {
 
                     <div className="min-w-0 flex-1 pt-1">
 
-                      {/* NAME - FIXED SINGLE LINE */}
+                      {/* NAME */}
 
                       <div className="flex min-w-0 items-center gap-1.5">
                         <h1
@@ -758,82 +857,60 @@ export default function WorkerProfile() {
                 </div>
 
                 {/* =========================================
-                    VISIBLE PRICING + SHARE
+                    DISPLAY CHARGE + SHARE
                 ========================================= */}
 
                 <div className="mt-4 mb-4 flex items-center gap-2 px-2">
 
-                  {/* PRICES */}
-
                   <div className="min-w-0 flex-1">
-
-                    {visiblePrices.length ===
-                      1 && (
+                    {displayCharge ? (
                       <div className="flex h-12 items-center gap-2 rounded-xl border border-orange-100 bg-orange-50/50 px-3">
                         <BadgeIndianRupee className="h-5 w-5 shrink-0 text-emerald-600" />
 
                         <div className="min-w-0">
-                          <p className="text-[8px] font-semibold uppercase tracking-wide text-slate-400">
-                            {
-                              visiblePrices[0]
-                                .label
-                            }
-                          </p>
+                          <div className="flex min-w-0 items-center gap-1.5">
+                            <p className="truncate text-[8px] font-semibold uppercase tracking-wide text-slate-400">
+                              Display Charge
+                            </p>
+
+                            <span className="h-1 w-1 shrink-0 rounded-full bg-slate-300" />
+
+                            <p className="truncate text-[8px] font-semibold uppercase tracking-wide text-slate-400">
+                              {
+                                displayCharge.label
+                              }
+                            </p>
+                          </div>
 
                           <div className="flex items-baseline gap-1">
                             <span className="text-lg font-extrabold leading-none text-[#0F7A22]">
                               ₹
-                              {
-                                visiblePrices[0]
-                                  .price
-                              }
+                              {displayCharge.price.toLocaleString(
+                                "en-IN",
+                              )}
                             </span>
 
                             <span className="text-[8px] text-slate-400">
-                              onwards
+                              {
+                                displayCharge.suffix
+                              }
                             </span>
                           </div>
                         </div>
                       </div>
-                    )}
+                    ) : (
+                      <div className="flex h-12 items-center gap-2 rounded-xl border border-slate-100 bg-slate-50 px-3">
+                        <BadgeIndianRupee className="h-5 w-5 text-slate-300" />
 
-                    {visiblePrices.length >
-                      1 && (
-                      <div className="grid grid-cols-2 gap-1.5 sm:grid-cols-3">
-                        {visiblePrices.map(
-                          (item) => (
-                            <div
-                              key={
-                                item.key
-                              }
-                              className="min-w-0 rounded-xl border border-slate-100 bg-slate-50 px-2.5 py-1.5"
-                            >
-                              <p className="truncate text-[8px] font-semibold uppercase tracking-wide text-slate-400">
-                                {
-                                  item.shortLabel
-                                }
-                              </p>
+                        <div>
+                          <p className="text-[8px] font-semibold uppercase tracking-wide text-slate-400">
+                            Display Charge
+                          </p>
 
-                              <p className="truncate text-sm font-extrabold leading-4 text-[#0F7A22]">
-                                ₹
-                                {
-                                  item.price
-                                }
-                              </p>
-                            </div>
-                          ),
-                        )}
-                      </div>
-                    )}
-
-                    {/* NO VISIBLE PRICE */}
-
-                    {visiblePrices.length ===
-                      0 && (
-                      <div className="flex h-12 items-center rounded-xl border border-slate-100 bg-slate-50 px-3">
-                        <span className="text-[10px] text-slate-400">
-                          Price not available
-                        </span>
+                          <span className="text-[10px] text-slate-400">
+                            Price not available
+                          </span>
+                        </div>
                       </div>
                     )}
                   </div>
@@ -856,7 +933,6 @@ export default function WorkerProfile() {
                 ========================================= */}
 
                 <div className="grid grid-cols-2 gap-2 px-2">
-
                   {[
                     {
                       label:
@@ -872,7 +948,6 @@ export default function WorkerProfile() {
                       color:
                         "#F59E0B",
                     },
-
                     {
                       label:
                         "Works",
@@ -881,7 +956,6 @@ export default function WorkerProfile() {
                       color:
                         "#3B82F6",
                     },
-
                     {
                       label:
                         "Experience",
@@ -890,7 +964,6 @@ export default function WorkerProfile() {
                       color:
                         "#10B981",
                     },
-
                     {
                       label:
                         "Location",
@@ -1073,7 +1146,6 @@ export default function WorkerProfile() {
                 {activeTab ===
                   "about" && (
                   <div className="space-y-6">
-
                     <div>
                       <h3 className="mb-3 font-semibold text-[#0F172A]">
                         About
@@ -1151,7 +1223,6 @@ export default function WorkerProfile() {
                 {activeTab ===
                   "reviews" && (
                   <div>
-
                     <div className="mb-6 flex items-center gap-6 rounded-xl bg-[#F8FAFC] p-5">
                       <div className="text-center">
                         <div className="text-[3rem] font-extrabold leading-none text-[#0F172A]">
@@ -1340,68 +1411,32 @@ export default function WorkerProfile() {
           <div className="flex items-center gap-2">
 
             {/* =====================================
-                VISIBLE PRICE
+                DISPLAY CHARGE
             ===================================== */}
 
             <div className="min-w-0 flex-1 overflow-hidden">
-
-              {visiblePrices.length ===
-                1 && (
+              {displayCharge ? (
                 <div className="min-w-0">
                   <p className="truncate text-[8px] font-semibold uppercase tracking-wide text-slate-400">
-                    {
-                      visiblePrices[0]
-                        .label
-                    }
+                    {displayCharge.label}
                   </p>
 
                   <div className="flex items-baseline gap-1">
                     <span className="text-lg font-extrabold leading-5 text-[#0F7A22]">
                       ₹
-                      {
-                        visiblePrices[0]
-                          .price
-                      }
+                      {displayCharge.price.toLocaleString(
+                        "en-IN",
+                      )}
                     </span>
 
                     <span className="text-[8px] text-slate-400">
-                      onwards
+                      {
+                        displayCharge.suffix
+                      }
                     </span>
                   </div>
                 </div>
-              )}
-
-              {visiblePrices.length >
-                1 && (
-                <div className="flex max-w-full items-center gap-1 overflow-x-auto scrollbar-none">
-                  {visiblePrices.map(
-                    (item) => (
-                      <div
-                        key={
-                          item.key
-                        }
-                        className="min-w-18 shrink-0 rounded-lg bg-slate-50 px-2 py-1"
-                      >
-                        <p className="truncate text-[7px] font-semibold uppercase text-slate-400">
-                          {
-                            item.shortLabel
-                          }
-                        </p>
-
-                        <p className="text-xs font-extrabold leading-4 text-[#0F7A22]">
-                          ₹
-                          {
-                            item.price
-                          }
-                        </p>
-                      </div>
-                    ),
-                  )}
-                </div>
-              )}
-
-              {visiblePrices.length ===
-                0 && (
+              ) : (
                 <p className="text-[9px] text-slate-400">
                   Price not available
                 </p>

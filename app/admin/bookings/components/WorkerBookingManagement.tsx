@@ -279,98 +279,98 @@ export default function WorkerBookingManagement() {
    */
 
   const playNotificationSound = useCallback(async () => {
-  if (typeof window === "undefined") {
-    return;
-  }
-
-  try {
-    const AudioContextClass =
-      window.AudioContext ||
-      (
-        window as typeof window & {
-          webkitAudioContext?: typeof AudioContext;
-        }
-      ).webkitAudioContext;
-
-    if (!AudioContextClass) {
-      console.error("WEB AUDIO API NOT SUPPORTED");
+    if (typeof window === "undefined") {
       return;
     }
 
-    if (!audioContextRef.current) {
-      audioContextRef.current = new AudioContextClass();
-    }
+    try {
+      const AudioContextClass =
+        window.AudioContext ||
+        (
+          window as typeof window & {
+            webkitAudioContext?: typeof AudioContext;
+          }
+        ).webkitAudioContext;
 
-    const context = audioContextRef.current;
-
-    // IMPORTANT:
-    // Android Chrome / WebView can suspend AudioContext.
-    if (context.state !== "running") {
-      await context.resume();
-    }
-
-    if (context.state !== "running") {
-      console.error(
-        "NOTIFICATION SOUND FAILED — AUDIO CONTEXT:",
-        context.state,
-      );
-      return;
-    }
-
-    // Load sound if not already loaded
-    if (!notificationBufferRef.current) {
-      const loaded = await loadNotificationSound();
-
-      if (!loaded) {
-        console.error("NOTIFICATION SOUND — BUFFER NOT LOADED");
+      if (!AudioContextClass) {
+        console.error("WEB AUDIO API NOT SUPPORTED");
         return;
       }
-    }
 
-    const buffer = notificationBufferRef.current;
-
-    if (!buffer) {
-      console.error("NOTIFICATION SOUND — NO BUFFER");
-      return;
-    }
-
-    // Stop previous sound
-    if (audioSourceRef.current) {
-      try {
-        audioSourceRef.current.stop();
-      } catch {
-        // Already stopped
+      if (!audioContextRef.current) {
+        audioContextRef.current = new AudioContextClass();
       }
 
-      audioSourceRef.current = null;
-    }
+      const context = audioContextRef.current;
 
-    const source = context.createBufferSource();
-    const gain = context.createGain();
+      // IMPORTANT:
+      // Android Chrome / WebView can suspend AudioContext.
+      if (context.state !== "running") {
+        await context.resume();
+      }
 
-    source.buffer = buffer;
+      if (context.state !== "running") {
+        console.error(
+          "NOTIFICATION SOUND FAILED — AUDIO CONTEXT:",
+          context.state,
+        );
+        return;
+      }
 
-    // Volume
-    gain.gain.setValueAtTime(1, context.currentTime);
+      // Load sound if not already loaded
+      if (!notificationBufferRef.current) {
+        const loaded = await loadNotificationSound();
 
-    source.connect(gain);
-    gain.connect(context.destination);
+        if (!loaded) {
+          console.error("NOTIFICATION SOUND — BUFFER NOT LOADED");
+          return;
+        }
+      }
 
-    audioSourceRef.current = source;
+      const buffer = notificationBufferRef.current;
 
-    source.onended = () => {
-      if (audioSourceRef.current === source) {
+      if (!buffer) {
+        console.error("NOTIFICATION SOUND — NO BUFFER");
+        return;
+      }
+
+      // Stop previous sound
+      if (audioSourceRef.current) {
+        try {
+          audioSourceRef.current.stop();
+        } catch {
+          // Already stopped
+        }
+
         audioSourceRef.current = null;
       }
-    };
 
-    source.start(0);
+      const source = context.createBufferSource();
+      const gain = context.createGain();
 
-    console.log("NOTIFICATION SOUND PLAYED SUCCESSFULLY");
-  } catch (error) {
-    console.error("NOTIFICATION SOUND PLAY ERROR:", error);
-  }
-}, [loadNotificationSound]);
+      source.buffer = buffer;
+
+      // Volume
+      gain.gain.setValueAtTime(1, context.currentTime);
+
+      source.connect(gain);
+      gain.connect(context.destination);
+
+      audioSourceRef.current = source;
+
+      source.onended = () => {
+        if (audioSourceRef.current === source) {
+          audioSourceRef.current = null;
+        }
+      };
+
+      source.start(0);
+
+      console.log("NOTIFICATION SOUND PLAYED SUCCESSFULLY");
+    } catch (error) {
+      console.error("NOTIFICATION SOUND PLAY ERROR:", error);
+    }
+  }, [loadNotificationSound]);
 
   /*
    * =========================================================
@@ -420,37 +420,45 @@ export default function WorkerBookingManagement() {
         .from("bookings")
         .select(
           `
-                id,
-                booking_id,
-                booking_status,
-                worker_id,
-                worker_name,
-                worker_photo,
-                worker_specialty,
-                worker_rating,
-                service_type,
-                description,
-                booking_date,
-                booking_time,
-                customer_name,
-                customer_phone,
-                customer_email,
-                notes,
-                total_cost,
-                service_fee,
-                materials_cost,
-                package_price,
-                grand_total,
-                booking_type,
-                work_status,
-                worker_available,
-                address_id,
-                created_at
-              `,
+    id,
+    booking_id,
+    booking_status,
+    worker_id,
+    worker_name,
+    worker_photo,
+    worker_specialty,
+    worker_rating,
+    service_type,
+    description,
+    booking_date,
+    booking_time,
+    customer_name,
+    customer_phone,
+    customer_email,
+    notes,
+    total_cost,
+    service_fee,
+    materials_cost,
+    package_price,
+    grand_total,
+    booking_type,
+    work_status,
+    worker_available,
+
+    house_no,
+    address,
+    landmark,
+    city,
+    district,
+    state,
+    country,
+    pincode,
+    address_type,
+
+    created_at
+  `,
         )
-        .order("created_at", {
-          ascending: false,
-        })
+        .order("created_at", { ascending: false })
         .limit(100);
 
       if (error) {
@@ -1728,17 +1736,13 @@ function normalizeStatus(status: unknown): BookingStatus {
   return "pending";
 }
 
-function normalizeBooking(
-  booking: Partial<WorkerBooking>
-): WorkerBooking {
+function normalizeBooking(booking: Partial<WorkerBooking>): WorkerBooking {
   return {
     id: booking.id || crypto.randomUUID(),
 
     booking_id: booking.booking_id || "UNKNOWN",
 
-    booking_status: normalizeStatus(
-      booking.booking_status
-    ),
+    booking_status: normalizeStatus(booking.booking_status),
 
     worker_id: booking.worker_id ?? null,
 
@@ -1780,17 +1784,29 @@ function normalizeBooking(
 
     work_status: booking.work_status ?? "scheduled",
 
-    worker_available:
-      booking.worker_available ?? true,
+    worker_available: booking.worker_available ?? true,
 
-    address_id: booking.address_id ?? null,
+    house_no: booking.house_no ?? null,
 
-    customer_addresses:
-      booking.customer_addresses ?? null,
+    address: booking.address ?? null,
 
-    created_at:
-      booking.created_at ||
-      new Date().toISOString(),
+    landmark: booking.landmark ?? null,
+
+    city: booking.city ?? null,
+
+    district: booking.district ?? null,
+
+    state: booking.state ?? null,
+
+    country: booking.country ?? "India",
+
+    pincode: booking.pincode ?? null,
+
+    address_type: booking.address_type ?? "home",
+
+    customer_addresses: booking.customer_addresses ?? null,
+
+    created_at: booking.created_at || new Date().toISOString(),
   };
 }
 

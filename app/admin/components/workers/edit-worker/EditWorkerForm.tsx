@@ -23,25 +23,83 @@ type EditWorkerFormProps = {
   completedJobs: string;
   bio: string;
 
-  /* CURRENT WORKER SAVED SERVICES */
+  /* =====================================================
+     SERVICES
+     
+     These are actual services selected for the worker.
+     Example:
+     ["Visit", "Repair", "Emergency"]
+  ===================================================== */
+
   services: string[];
 
-  /* DATABASE AVAILABLE SERVICES */
+  /* =====================================================
+     DATABASE AVAILABLE SERVICES
+  ===================================================== */
+
   availableServiceTypes: string[];
 
+  /* =====================================================
+     PRICING
+  ===================================================== */
+
   pricingType: Worker["pricingType"];
+
   startingPrice: string;
   halfDayPrice: string;
   fullDayPrice: string;
   monthlyPrice: string;
   visitCharge: string;
+
+  /* =====================================================
+     VISIBLE PRICING OPTIONS
+     
+     Controls which pricing options can be displayed.
+  ===================================================== */
+
   visiblePricingTypes: PriceKey[];
+
+  /* =====================================================
+     DISPLAY CHARGE
+     
+     IMPORTANT:
+     This is NOT a service name.
+     
+     It stores the selected pricing key:
+     
+     per_job
+     half_day
+     full_day
+     monthly
+     visit_charge
+     
+     Example:
+     
+     displayService = "half_day"
+     
+     Profile:
+     Half Day ₹600
+  ===================================================== */
+
+  displayService: PriceKey | null;
+
+  /* =====================================================
+     REVIEWS
+  ===================================================== */
 
   rating: string;
   reviewCount: string;
   responseTime: string;
 
+  /* =====================================================
+     AVAILABILITY
+  ===================================================== */
+
   available: boolean;
+
+  /* =====================================================
+     PHOTO
+  ===================================================== */
 
   photoPreview: string;
   selectedPhoto: File | null;
@@ -52,15 +110,47 @@ type EditWorkerFormProps = {
     HTMLInputElement | null
   >;
 
+  /* =====================================================
+     ERROR
+  ===================================================== */
+
   error: string;
 
-  setName: (value: string) => void;
-  setPhone: (value: string) => void;
-  setCategory: (value: string) => void;
-  setSubcategory: (value: string) => void;
-  setSpecialty: (value: string) => void;
-  setLocation: (value: string) => void;
-  setLabourChauk: (value: string) => void;
+  /* =====================================================
+     BASIC SETTERS
+  ===================================================== */
+
+  setName: (
+    value: string,
+  ) => void;
+
+  setPhone: (
+    value: string,
+  ) => void;
+
+  setCategory: (
+    value: string,
+  ) => void;
+
+  setSubcategory: (
+    value: string,
+  ) => void;
+
+  setSpecialty: (
+    value: string,
+  ) => void;
+
+  setLocation: (
+    value: string,
+  ) => void;
+
+  setLabourChauk: (
+    value: string,
+  ) => void;
+
+  /* =====================================================
+     EXPERIENCE
+  ===================================================== */
 
   setYearsExperience: (
     value: string,
@@ -70,13 +160,25 @@ type EditWorkerFormProps = {
     value: string,
   ) => void;
 
+  /* =====================================================
+     ABOUT
+  ===================================================== */
+
   setBio: (
     value: string,
   ) => void;
 
+  /* =====================================================
+     SERVICES
+  ===================================================== */
+
   setServices: (
     values: string[],
   ) => void;
+
+  /* =====================================================
+     PRICING
+  ===================================================== */
 
   setPricingType: (
     value: Worker["pricingType"],
@@ -102,9 +204,25 @@ type EditWorkerFormProps = {
     value: string,
   ) => void;
 
+  /* =====================================================
+     VISIBLE PRICING
+  ===================================================== */
+
   setVisiblePricingTypes: React.Dispatch<
     React.SetStateAction<PriceKey[]>
   >;
+
+  /* =====================================================
+     DISPLAY CHARGE
+  ===================================================== */
+
+  setDisplayService: (
+    value: PriceKey | null,
+  ) => void;
+
+  /* =====================================================
+     REVIEWS
+  ===================================================== */
 
   setRating: (
     value: string,
@@ -118,9 +236,17 @@ type EditWorkerFormProps = {
     value: string,
   ) => void;
 
+  /* =====================================================
+     AVAILABILITY
+  ===================================================== */
+
   setAvailable: React.Dispatch<
     React.SetStateAction<boolean>
   >;
+
+  /* =====================================================
+     PHOTO ACTIONS
+  ===================================================== */
 
   onPhotoSelect: (
     event: React.ChangeEvent<HTMLInputElement>,
@@ -130,6 +256,10 @@ type EditWorkerFormProps = {
 
   onUploadClick: () => void;
 };
+
+/* =====================================================
+   COMPONENT
+===================================================== */
 
 export default function EditWorkerForm({
   name,
@@ -155,6 +285,8 @@ export default function EditWorkerForm({
   visitCharge,
   visiblePricingTypes,
 
+  displayService,
+
   rating,
   reviewCount,
   responseTime,
@@ -179,6 +311,7 @@ export default function EditWorkerForm({
 
   setYearsExperience,
   setCompletedJobs,
+
   setBio,
 
   setServices,
@@ -190,6 +323,8 @@ export default function EditWorkerForm({
   setMonthlyPrice,
   setVisitCharge,
   setVisiblePricingTypes,
+
+  setDisplayService,
 
   setRating,
   setReviewCount,
@@ -244,12 +379,18 @@ export default function EditWorkerForm({
 
         {/* =================================================
             SERVICE TYPES
-
-            services:
-            Current worker ke saved/selected services
-
-            availableServiceTypes:
-            Database se available service types
+           
+            ONLY ACTUAL SERVICES ARE MANAGED HERE.
+           
+            Example:
+           
+            services = [
+              "Visit",
+              "Repair",
+              "Emergency"
+            ]
+           
+            Display Charge is completely separate.
         ================================================= */}
 
         <ServiceTypeSection
@@ -290,48 +431,96 @@ export default function EditWorkerForm({
 
         {/* =================================================
             PRICING
+           
+            All actual prices are entered here.
+           
+            Display Charge is selected from the
+            pricing options that have a valid price.
+           
+            Example:
+           
+            Starting Price   ₹300
+            Half Day         ₹600
+            Full Day         ₹1000
+            Visit Charge     ₹200
+           
+            Display Charge:
+            Half Day ₹600
+           
+            displayService = "half_day"
         ================================================= */}
 
         <PricingSection
-          pricingType={pricingType}
+          pricingType={
+            pricingType
+          }
+
           startingPrice={
             startingPrice
           }
+
           halfDayPrice={
             halfDayPrice
           }
+
           fullDayPrice={
             fullDayPrice
           }
+
           monthlyPrice={
             monthlyPrice
           }
+
           visitCharge={
             visitCharge
           }
+
           visiblePricingTypes={
             visiblePricingTypes
           }
+
+          /* DISPLAY CHARGE */
+
+          displayService={
+            displayService
+          }
+
+          /* PRICING SETTERS */
+
           setPricingType={
             setPricingType
           }
+
           setStartingPrice={
             setStartingPrice
           }
+
           setHalfDayPrice={
             setHalfDayPrice
           }
+
           setFullDayPrice={
             setFullDayPrice
           }
+
           setMonthlyPrice={
             setMonthlyPrice
           }
+
           setVisitCharge={
             setVisitCharge
           }
+
+          /* VISIBLE PRICING */
+
           setVisiblePricingTypes={
             setVisiblePricingTypes
+          }
+
+          /* DISPLAY CHARGE SETTER */
+
+          setDisplayService={
+            setDisplayService
           }
         />
 

@@ -103,14 +103,14 @@ export default function BookingPaymentStep({
                 Worker Booking Bilkul FREE!
               </h2>
 
-              <p className="mt-1 text-[11px] leading-[17px] text-[#344054]">
+              <p className="mt-1 text-[11px] leading-4.25 text-[#344054]">
                 Workkerz par worker booking ke liye aapse koi charge nahi liya
                 jata.
               </p>
 
               <div className="mt-2 flex items-start gap-1.5 rounded-[10px] border border-[#d8ebdd] bg-white/70 px-2.5 py-1.5">
                 <span className="mt-0.5 flex h-4 w-4 shrink-0 items-center justify-center rounded-full bg-[#0a9f4b] text-white">
-                  <Check className="h-2.5 w-2.5 stroke-[3]" />
+                  <Check className="h-2.5 w-2.5 stroke-3" />
                 </span>
 
                 <span className="text-[10px] font-medium leading-4 text-[#31543b]">

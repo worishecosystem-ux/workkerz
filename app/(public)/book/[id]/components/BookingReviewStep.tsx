@@ -13,7 +13,6 @@ import {
   ShieldCheck,
   Headphones,
   ChevronRight,
-  ArrowLeft,
   PencilLine,
 } from "lucide-react";
 
@@ -45,12 +44,124 @@ export default function BookingReviewStep({
   onProceed,
   onEdit,
 }: Props) {
+  /* =========================================
+     SELECTED PRICING TYPE
+  ========================================= */
+
+  const pricingType =
+    form?.pricingType ||
+    form?.bookingType ||
+    worker?.pricingType ||
+    "";
+
+  /* =========================================
+     WORKER PRICES
+  ========================================= */
+
+  const workerStartingPrice = Number(
+    worker?.startingPrice || 0,
+  );
+
+  const workerHalfDayPrice = Number(
+    worker?.halfDayPrice || 0,
+  );
+
+  const workerFullDayPrice = Number(
+    worker?.fullDayPrice || 0,
+  );
+
+  const workerMonthlyPrice = Number(
+    worker?.monthlyPrice || 0,
+  );
+
+  const workerVisitCharge = Number(
+    worker?.visitCharge || 0,
+  );
+
+  /* =========================================
+     RESOLVE WORKER CHARGE
+  ========================================= */
+
+  let resolvedWorkerCharge = Number(
+    totalCost || 0,
+  );
+
+  if (resolvedWorkerCharge <= 0) {
+    switch (pricingType) {
+      case "visit_charge":
+      case "visit":
+      case "visitCharge":
+        resolvedWorkerCharge =
+          workerVisitCharge;
+        break;
+
+      case "half_day":
+      case "half-day":
+        resolvedWorkerCharge =
+          workerHalfDayPrice;
+        break;
+
+      case "full_day":
+      case "full-day":
+        resolvedWorkerCharge =
+          workerFullDayPrice;
+        break;
+
+      case "monthly":
+        resolvedWorkerCharge =
+          workerMonthlyPrice;
+        break;
+
+      case "per_job":
+      case "per-job":
+      case "per_service":
+      default:
+        resolvedWorkerCharge =
+          workerStartingPrice;
+        break;
+    }
+  }
+
+  /* =========================================
+     NO SERVICE CHARGE
+     TOTAL = WORKER CHARGE
+  ========================================= */
+
+  const finalGrandTotal =
+    resolvedWorkerCharge;
+
+  const finalPayableAmount =
+    finalGrandTotal;
+
+  /* =========================================
+     DEBUG
+  ========================================= */
+
+  console.log(
+    "BOOKING REVIEW PRICING:",
+    {
+      worker: worker?.name,
+      pricingType,
+      totalCost,
+      workerStartingPrice,
+      workerHalfDayPrice,
+      workerFullDayPrice,
+      workerMonthlyPrice,
+      workerVisitCharge,
+      resolvedWorkerCharge,
+      finalGrandTotal,
+      finalPayableAmount,
+    },
+  );
+
   return (
     <div className="bg-white min-h-screen pb-36">
-      {/* Header */}
+      {/* =====================================
+          HEADER
+      ===================================== */}
+
       <div className="sticky top-0 z-30 bg-white/95 backdrop-blur-xl border-b border-gray-100">
         <div className="px-5 pt-5 pb-4">
-          {/* Title */}
           <div>
             <h1 className="text-xl font-semibold tracking-tight text-gray-900">
               Review Booking
@@ -61,18 +172,22 @@ export default function BookingReviewStep({
             </p>
           </div>
 
-          {/* Premium Status */}
+          {/* Protected Booking */}
           <div className="mt-2 rounded-xl bg-gray-100 px-3 py-2.5">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2.5">
                 <div className="flex h-8 w-8 items-center justify-center rounded-full bg-white shadow-sm">
-                  <ShieldCheck size={16} className="text-green-600" />
+                  <ShieldCheck
+                    size={16}
+                    className="text-green-600"
+                  />
                 </div>
 
                 <div>
                   <p className="text-[13px] font-semibold text-gray-900 leading-none">
                     Protected Booking
                   </p>
+
                   <p className="mt-1 text-[11px] text-gray-500 leading-none">
                     Secure payment • Verified worker
                   </p>
@@ -86,7 +201,10 @@ export default function BookingReviewStep({
       </div>
 
       <div className="space-y-4">
-        {/* Service */}
+        {/* =====================================
+            SERVICE DETAILS
+        ===================================== */}
+
         <Card
           title="Service Details"
           icon={<Calendar size={18} />}
@@ -96,14 +214,32 @@ export default function BookingReviewStep({
           <Item
             icon={<Receipt size={16} />}
             label="Category"
-            value={worker?.specialty || worker?.specialty || "Not Available"}
+            value={
+              worker?.specialty ||
+              worker?.category ||
+              "Not Available"
+            }
           />
 
-          <Item icon={<Calendar size={16} />} label="Date" value={form.date} />
+          <Item
+            icon={<Calendar size={16} />}
+            label="Date"
+            value={
+              form?.date ||
+              "Not Selected"
+            }
+          />
 
-          <Item icon={<Clock3 size={16} />} label="Time" value={form.time} />
+          <Item
+            icon={<Clock3 size={16} />}
+            label="Time"
+            value={
+              form?.time ||
+              "Not Selected"
+            }
+          />
 
-          {form.serviceType && (
+          {form?.serviceType && (
             <Item
               icon={<FileText size={16} />}
               label="Service Type"
@@ -111,7 +247,17 @@ export default function BookingReviewStep({
             />
           )}
 
-          {form.description?.trim() && (
+          {pricingType && (
+            <Item
+              icon={<Wallet size={16} />}
+              label="Pricing Type"
+              value={formatPricingType(
+                pricingType,
+              )}
+            />
+          )}
+
+          {form?.description?.trim() && (
             <div className="flex items-start gap-3 py-3 border-t border-gray-100">
               <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-gray-100 text-gray-600">
                 <FileText size={16} />
@@ -130,26 +276,48 @@ export default function BookingReviewStep({
           )}
         </Card>
 
-        {/* Customer */}
+        {/* =====================================
+            CUSTOMER DETAILS
+        ===================================== */}
+
         <Card
           title="Customer Details"
           icon={<UserRound size={18} />}
           step={2}
           onEdit={onEdit}
         >
-          <Item icon={<UserRound size={16} />} label="Name" value={form.name} />
+          <Item
+            icon={<UserRound size={16} />}
+            label="Name"
+            value={
+              form?.name ||
+              "Not Provided"
+            }
+          />
 
-          <Item icon={<Phone size={16} />} label="Phone" value={form.phone} />
+          <Item
+            icon={<Phone size={16} />}
+            label="Phone"
+            value={
+              form?.phone ||
+              "Not Provided"
+            }
+          />
 
           <Item
             icon={<Mail size={16} />}
             label="Email"
-            value={form.email || "Not Provided"}
+            value={
+              form?.email ||
+              "Not Provided"
+            }
           />
         </Card>
 
-        {/* Address */}
-        {/* Address */}
+        {/* =====================================
+            SERVICE ADDRESS
+        ===================================== */}
+
         <Card
           title="Service Address"
           icon={<Navigation size={18} />}
@@ -159,10 +327,12 @@ export default function BookingReviewStep({
           <div className="flex items-start gap-3">
             <div className="min-w-0 flex-1">
               <p className="text-sm font-semibold text-gray-900 truncate">
-                {address?.customer_name}
+                {address?.customer_name ||
+                  form?.name ||
+                  "Service Address"}
               </p>
 
-              <p className="mt-0.5 text-[13px] leading-5 text-gray-600 wrap-break-word line-clamp-2">
+              <p className="mt-0.5 text-[13px] leading-5 text-gray-600 wrap-break-word">
                 {[
                   address?.house_no,
                   address?.address,
@@ -173,23 +343,34 @@ export default function BookingReviewStep({
                   address?.pincode,
                 ]
                   .filter(Boolean)
-                  .join(", ")}
+                  .join(", ") ||
+                  "Address not provided"}
               </p>
             </div>
           </div>
         </Card>
 
-        {form.notes?.trim() && (
+        {/* =====================================
+            BOOKING NOTES
+        ===================================== */}
+
+        {form?.notes?.trim() && (
           <Card
             title="Booking Notes"
             icon={<FileText size={18} />}
             step={2}
             onEdit={onEdit}
           >
-            <p className="text-gray-700">{form.notes}</p>
+            <p className="text-gray-700">
+              {form.notes}
+            </p>
           </Card>
         )}
-        {/* Payment */}
+
+        {/* =====================================
+            PAYMENT SUMMARY
+        ===================================== */}
+
         <Card
           title="Payment Summary"
           icon={<Wallet size={18} />}
@@ -197,26 +378,50 @@ export default function BookingReviewStep({
           onEdit={onEdit}
         >
           <div className="space-y-1">
-            <Row title="Worker Charge" value={`₹${totalCost}`} />
+            <Row
+              title="Worker Charge"
+              value={`₹${resolvedWorkerCharge.toLocaleString(
+                "en-IN",
+              )}`}
+            />
+
+            <div className="my-2 border-t border-gray-100" />
+
+            <Row
+              title="Total"
+              value={`₹${finalGrandTotal.toLocaleString(
+                "en-IN",
+              )}`}
+              bold
+            />
           </div>
         </Card>
 
-        {/* Info */}
+        {/* =====================================
+            INFORMATION
+        ===================================== */}
+
         <div className="bg-white rounded-2xl border border-gray-100">
           <InfoRow
-            icon={<ShieldCheck size={18} />}
+            icon={
+              <ShieldCheck size={18} />
+            }
             title="Secure Payment"
             subtitle="100% Safe & Secure Payment"
           />
 
           <InfoRow
-            icon={<Receipt size={18} />}
+            icon={
+              <Receipt size={18} />
+            }
             title="Cancellation Policy"
             subtitle="Free cancellation before worker accepts."
           />
 
           <InfoRow
-            icon={<Headphones size={18} />}
+            icon={
+              <Headphones size={18} />
+            }
             title="Need Help?"
             subtitle="Our support team is available."
             last
@@ -224,13 +429,23 @@ export default function BookingReviewStep({
         </div>
       </div>
 
-      {/* Bottom Bar */}
-      <div className="fixed bottom-0 left-0 right-0 bg-white border-t px-4 py-4">
-        <div className="flex items-center justify-between">
-          <div>
-            <p className="text-xs text-gray-500">Amount Payable</p>
+      {/* =====================================
+          BOTTOM BAR
+      ===================================== */}
 
-            <h2 className="text-2xl font-bold">₹{totalCost}</h2>
+      <div className="fixed bottom-0 left-0 right-0 bg-white border-t px-4 py-4">
+        <div className="flex items-center justify-between gap-4">
+          <div>
+            <p className="text-xs text-gray-500">
+              Amount Payable
+            </p>
+
+            <h2 className="text-2xl font-bold text-gray-900">
+              ₹
+              {finalPayableAmount.toLocaleString(
+                "en-IN",
+              )}
+            </h2>
           </div>
 
           <button
@@ -245,6 +460,10 @@ export default function BookingReviewStep({
     </div>
   );
 }
+
+/* =========================================
+   CARD
+========================================= */
 
 function Card({
   title,
@@ -268,7 +487,9 @@ function Card({
             {icon}
           </div>
 
-          <h3 className="text-[15px] font-semibold text-gray-900">{title}</h3>
+          <h3 className="text-[15px] font-semibold text-gray-900">
+            {title}
+          </h3>
         </div>
 
         <button
@@ -281,10 +502,16 @@ function Card({
       </div>
 
       {/* Content */}
-      <div className="p-3.5">{children}</div>
+      <div className="p-3.5">
+        {children}
+      </div>
     </div>
   );
 }
+
+/* =========================================
+   ITEM
+========================================= */
 
 function Item({
   icon,
@@ -302,7 +529,9 @@ function Item({
       </div>
 
       <div className="flex flex-1 items-center justify-between min-w-0 gap-3">
-        <span className="text-[12px] font-medium text-gray-500">{label}</span>
+        <span className="text-[12px] font-medium text-gray-500">
+          {label}
+        </span>
 
         <span className="truncate text-[14px] font-semibold text-gray-900 text-right">
           {value}
@@ -311,6 +540,10 @@ function Item({
     </div>
   );
 }
+
+/* =========================================
+   ROW
+========================================= */
 
 function Row({
   title,
@@ -327,7 +560,9 @@ function Row({
     <div className="flex items-center justify-between py-1.5">
       <span
         className={`text-[13px] ${
-          bold ? "font-semibold text-gray-900" : "text-gray-600"
+          bold
+            ? "font-semibold text-gray-900"
+            : "text-gray-600"
         }`}
       >
         {title}
@@ -348,6 +583,10 @@ function Row({
   );
 }
 
+/* =========================================
+   INFO ROW
+========================================= */
+
 function InfoRow({
   icon,
   title,
@@ -360,14 +599,65 @@ function InfoRow({
   last?: boolean;
 }) {
   return (
-    <div className={`flex items-start gap-4 p-4 ${!last ? "border-b" : ""}`}>
-      <div className="text-green-600 mt-1">{icon}</div>
+    <div
+      className={`flex items-start gap-4 p-4 ${
+        !last ? "border-b" : ""
+      }`}
+    >
+      <div className="text-green-600 mt-1">
+        {icon}
+      </div>
 
       <div>
-        <h4 className="font-medium text-gray-900">{title}</h4>
+        <h4 className="font-medium text-gray-900">
+          {title}
+        </h4>
 
-        <p className="text-sm text-gray-500">{subtitle}</p>
+        <p className="text-sm text-gray-500">
+          {subtitle}
+        </p>
       </div>
     </div>
   );
+}
+
+/* =========================================
+   FORMAT PRICING TYPE
+========================================= */
+
+function formatPricingType(
+  value: string,
+): string {
+  switch (value) {
+    case "visit_charge":
+    case "visit":
+    case "visitCharge":
+      return "Visit Charge";
+
+    case "per_job":
+    case "per-job":
+      return "Per Work";
+
+    case "half_day":
+    case "half-day":
+      return "Half Day";
+
+    case "full_day":
+    case "full-day":
+      return "Full Day";
+
+    case "monthly":
+      return "Monthly";
+
+    default:
+      return value
+        ? value
+            .replaceAll("_", " ")
+            .replace(
+              /\b\w/g,
+              (char) =>
+                char.toUpperCase(),
+            )
+        : "Not Selected";
+  }
 }

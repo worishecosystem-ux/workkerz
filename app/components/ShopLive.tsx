@@ -7,6 +7,7 @@ import {
   MapPin,
   Truck,
   BadgeCheck,
+  Phone,
 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { getShops, type Shop } from "@/app/data/shops";
@@ -27,17 +28,17 @@ function ShopSkeleton() {
         <div className="h-2.5 w-12 animate-pulse rounded bg-slate-100" />
       </div>
 
-      <div className="mx-auto w-full overflow-hidden rounded-[15px] border border-slate-100 bg-white">
-        <div className="h-33 animate-pulse bg-slate-200" />
+      <div className="mx-auto w-full overflow-hidden rounded-[18px] bg-white shadow-[0_4px_20px_rgba(15,23,42,0.08)]">
+        <div className="h-40 animate-pulse bg-slate-200" />
 
-        <div className="p-2.5">
-          <div className="h-3.5 w-28 animate-pulse rounded bg-slate-100" />
-          <div className="mt-1.5 h-2.5 w-20 animate-pulse rounded bg-slate-100" />
-          <div className="mt-2 h-px bg-slate-100" />
+        <div className="p-4">
+          <div className="h-5 w-36 animate-pulse rounded bg-slate-100" />
+          <div className="mt-2 h-3 w-28 animate-pulse rounded bg-slate-100" />
+          <div className="mt-3 h-3 w-40 animate-pulse rounded bg-slate-100" />
 
-          <div className="mt-2 flex gap-2">
-            <div className="h-5 w-20 animate-pulse rounded-md bg-slate-100" />
-            <div className="h-5 w-20 animate-pulse rounded-md bg-slate-100" />
+          <div className="mt-4 flex gap-3">
+            <div className="h-11 flex-1 animate-pulse rounded-xl bg-slate-100" />
+            <div className="h-11 flex-1 animate-pulse rounded-xl bg-slate-100" />
           </div>
         </div>
       </div>
@@ -52,6 +53,29 @@ function ShopSkeleton() {
 function getImageUrl(url?: string) {
   if (!url || !url.trim()) return "";
   return url.trim();
+}
+
+/* =========================================================
+   GET LOCAL AREA
+========================================================= */
+
+function getLocalArea(address?: string) {
+  if (!address?.trim()) return "Nearby";
+
+  const parts = address
+    .split(",")
+    .map((part) => part.trim())
+    .filter(Boolean);
+
+  if (parts.length >= 3) {
+    return parts[parts.length - 3];
+  }
+
+  if (parts.length === 2) {
+    return parts[0];
+  }
+
+  return parts[0];
 }
 
 /* =========================================================
@@ -73,31 +97,27 @@ function ShopCard({
 }) {
   const image = getImageUrl(shop.logo);
   const category = shop.category?.trim() || "Building Materials";
+  const localArea = getLocalArea(shop.address);
 
   return (
-    <div className="w-full overflow-hidden rounded-[18px] border border-slate-200 bg-white shadow-[0_4px_18px_rgba(15,23,42,0.08)]">
+    <div className="w-full overflow-hidden rounded-[22px] bg-white shadow-[0_6px_24px_rgba(15,23,42,0.10)]">
       {/* =====================================================
           SHOP IMAGE
       ===================================================== */}
 
-      <div className="relative h-33 w-full bg-slate-100">
-        {!loadedImages[shop.id] && image && (
-          <div className="absolute inset-0 animate-pulse bg-slate-200" />
-        )}
-
+      <div className="relative h-40 w-full overflow-hidden bg-slate-100">
         {image ? (
-          <div className="absolute inset-1 overflow-hidden rounded-[14px] border-2 border-white bg-white shadow-sm">
+          <>
+            {!loadedImages[shop.id] && (
+              <div className="absolute inset-0 animate-pulse bg-slate-200" />
+            )}
+
             <img
               src={image}
               alt={shop.shop_name}
-              className={`
-                h-full
-                w-full
-                object-cover
-                transition-opacity
-                duration-300
-                ${loadedImages[shop.id] ? "opacity-100" : "opacity-0"}
-              `}
+              className={`h-full w-full object-cover transition-opacity duration-300 ${
+                loadedImages[shop.id] ? "opacity-100" : "opacity-0"
+              }`}
               referrerPolicy="no-referrer"
               loading="lazy"
               onLoad={() => {
@@ -111,63 +131,70 @@ function ShopCard({
                   ...prev,
                   [shop.id]: true,
                 }));
-
                 e.currentTarget.src = "/placeholder-shop.png";
               }}
             />
-          </div>
+          </>
         ) : (
-          <div className="absolute inset-1 flex items-center justify-center rounded-[14px] border-2 border-white bg-gradient-to-br from-emerald-50 to-slate-100">
-            <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-white shadow-sm">
-              <Store size={24} className="text-emerald-400" />
+          <div className="absolute inset-0 flex items-center justify-center bg-gradient-to-br from-emerald-50 to-slate-100">
+            <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-white shadow-sm">
+              <Store size={30} className="text-emerald-400" />
             </div>
           </div>
         )}
 
-        {/* IMAGE GRADIENT */}
-
-        <div className="pointer-events-none absolute inset-x-0 bottom-0 h-20 bg-gradient-to-t from-black/65 via-black/20 to-transparent" />
+        {/* IMAGE OVERLAY */}
+        <div className="pointer-events-none absolute inset-0 bg-linear-to-t from-black/45 via-black/5 to-transparent" />
 
         {/* E-AURIX */}
-
-        <div className="absolute left-2.5 top-2.5 flex items-center gap-1 rounded-full bg-emerald-600 px-2 py-1 shadow-md">
+        <div className="absolute left-3 top-3 flex items-center gap-1 rounded-full bg-emerald-600 px-2 py-1 shadow-md">
           <span className="h-1.5 w-1.5 rounded-full bg-white" />
-
           <span className="text-[7px] font-black tracking-[0.5px] text-white">
             E-AURIX
           </span>
         </div>
 
         {/* VERIFIED */}
-
-        <div className="absolute right-2.5 top-2.5 flex items-center gap-1 rounded-full border border-white/70 bg-white/95 px-1.5 py-1 shadow-sm backdrop-blur-sm">
+        <div className="absolute right-3 top-3 flex items-center gap-1 rounded-full border border-white/70 bg-white/95 px-2 py-1 shadow-sm backdrop-blur-sm">
           <BadgeCheck
-            size={9}
+            size={10}
             strokeWidth={2.5}
             className="text-emerald-600"
           />
-
           <span className="text-[7px] font-extrabold text-slate-700">
             VERIFIED
           </span>
         </div>
 
-        {/* CATEGORY */}
+        {/* BOTTOM WHITE CUT - SCREENSHOT STYLE CURVE */}
+        <div className="absolute bottom-0 left-0 z-10 h-10 w-[45%]">
+          <svg
+            viewBox="0 0 500 64"
+            preserveAspectRatio="none"
+            className="absolute inset-0 h-full w-full"
+          >
+            <path
+              d="M 0 0 H 260 C 305 0 325 10 350 30 C 375 50 400 64 445 64 H 500 V 64 H 0 Z"
+              fill="white"
+            />
+          </svg>
 
-        <div className="absolute bottom-2.5 left-2.5 rounded-md bg-white/95 px-2 py-1 shadow-sm backdrop-blur-sm">
-          <span className="block max-w-[150px] truncate text-[7px] font-extrabold uppercase tracking-wide text-slate-700">
-            {category}
-          </span>
+          <div className="relative z-10 px-3 pt-4">
+            <div className="flex items-baseline gap-1">
+              <span className="text-[15px] font-black leading-none text-slate-700">
+                {shop.total_products ?? 0}+
+              </span>
+
+              <span className="text-[10px] font-semibold leading-none text-slate-500">
+                products
+              </span>
+            </div>
+          </div>
         </div>
-
         {/* DELIVERY */}
-
-        <div className="absolute bottom-2.5 right-2.5 flex items-center gap-1 rounded-md bg-sky-600 px-1.5 py-1 shadow-sm">
-          <Truck size={8} strokeWidth={2.5} className="text-white" />
-
-          <span className="text-[7px] font-extrabold text-white">
-            DELIVERY
-          </span>
+        <div className="absolute bottom-3 right-3 z-20 flex items-center gap-1 rounded-lg bg-sky-600 px-2 py-1 shadow-sm">
+          <Truck size={9} strokeWidth={2.5} className="text-white" />
+          <span className="text-[7px] font-extrabold text-white">DELIVERY</span>
         </div>
       </div>
 
@@ -175,94 +202,75 @@ function ShopCard({
           SHOP DETAILS
       ===================================================== */}
 
-      <div className="px-3 pb-3 pt-2.5">
+      <div className="px-4 pb-4 pt-3.5">
         {/* SHOP NAME */}
-
-        <div className="flex items-center gap-1">
-          <h3 className="min-w-0 flex-1 truncate text-[13px] font-black leading-4 tracking-[-0.2px] text-slate-900">
+        <div className="flex min-w-0 items-center gap-1">
+          <h3 className="min-w-0 truncate text-[19px] font-black leading-[22px] tracking-[-0.4px] text-slate-950">
             {shop.shop_name}
           </h3>
 
           <BadgeCheck
-            size={14}
-            strokeWidth={2.4}
+            size={16}
+            strokeWidth={2.5}
             className="shrink-0 text-emerald-500"
           />
         </div>
 
-        {/* CATEGORY + LOCATION */}
-
-        <div className="mt-1 flex items-center gap-1.5">
-          <span className="truncate text-[9px] font-semibold text-slate-500">
+        {/* CATEGORY */}
+        <div className="mt-1.5">
+          <span className="text-[12px] font-medium text-slate-500">
             {category}
           </span>
+        </div>
 
-          <span className="h-1 w-1 shrink-0 rounded-full bg-slate-300" />
+        {/* LOCAL AREA */}
+        <div className="mt-2 flex items-center gap-1.5">
+          <MapPin
+            size={14}
+            strokeWidth={2.2}
+            className="shrink-0 text-slate-400"
+          />
 
-          <span className="flex shrink-0 items-center gap-0.5 text-[8px] font-semibold text-slate-400">
-            <MapPin size={8} />
-            Nearby
+          <span className="truncate text-[13px] font-medium text-slate-500">
+            {localArea}
           </span>
         </div>
 
-        {/* TAGS */}
-
-        <div className="mt-2 flex gap-1.5 overflow-hidden">
-          <span className="shrink-0 rounded-md bg-emerald-50 px-1.5 py-1 text-[7px] font-extrabold text-emerald-700">
-            MATERIALS
+        {/* STATUS */}
+        <div className="mt-2.5 flex items-center gap-2">
+          <span className="relative flex h-2.5 w-2.5">
+            <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-60" />
+            <span className="relative inline-flex h-2.5 w-2.5 rounded-full bg-emerald-500" />
           </span>
 
-          <span className="shrink-0 rounded-md bg-sky-50 px-1.5 py-1 text-[7px] font-extrabold text-sky-700">
-            LOCAL SHOP
+          <span className="text-[13px] font-semibold text-emerald-600">
+            Open
           </span>
 
-          <span className="shrink-0 rounded-md bg-amber-50 px-1.5 py-1 text-[7px] font-extrabold text-amber-700">
-            TRUSTED
+          <span className="text-[13px] font-medium text-slate-400">
+            • Ready for orders
           </span>
         </div>
 
-        {/* =====================================================
-            FOOTER
-        ===================================================== */}
+        {/* ACTION BUTTONS */}
+        <div className="mt-4 flex gap-3">
+          {/* CALL NOW */}
+          <a
+            href={`tel:${shop.phone}`}
+            className="flex h-11 flex-1 items-center justify-center gap-2 rounded-[13px] border-2 border-emerald-600 bg-white px-3 text-[15px] font-extrabold text-emerald-600 shadow-sm transition active:scale-[0.98]"
+          >
+            <Phone size={18} strokeWidth={2.3} />
+            Call us now
+          </a>
 
-        <div className="mt-2.5 flex items-center justify-between border-t border-slate-100 pt-2.5">
-          <div className="flex min-w-0 items-center gap-1.5">
-            <span className="relative flex h-2 w-2">
-              <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-60" />
-
-              <span className="relative inline-flex h-2 w-2 rounded-full bg-emerald-500" />
-            </span>
-
-            <span className="truncate text-[8px] font-bold text-slate-500">
-              Ready for orders
-            </span>
-          </div>
-
-          {/* SHOP NOW */}
-
+          {/* VIEW SHOP */}
           <button
             type="button"
             onClick={onShopNow}
-            className="
-              flex
-              shrink-0
-              items-center
-              gap-0.5
-              rounded-lg
-              bg-emerald-600
-              px-2.5
-              py-1.5
-              text-[7px]
-              font-black
-              tracking-wide
-              text-white
-              shadow-sm
-              transition
-              active:scale-95
-            "
+            className="flex h-11 flex-1 items-center justify-center gap-1.5 rounded-[13px] bg-emerald-600 px-3 text-[15px] font-extrabold text-white shadow-[0_4px_12px_rgba(79,70,229,0.25)] transition active:scale-[0.98]"
           >
-            SHOP NOW
-            <ChevronRight size={9} strokeWidth={3} />
+            View shop
+            <ChevronRight size={17} strokeWidth={2.8} />
           </button>
         </div>
       </div>
@@ -280,9 +288,7 @@ export default function ShopLive() {
   const [shops, setShops] = useState<Shop[]>([]);
   const [loading, setLoading] = useState(true);
 
-  const [loadedImages, setLoadedImages] = useState<
-    Record<string, boolean>
-  >({});
+  const [loadedImages, setLoadedImages] = useState<Record<string, boolean>>({});
 
   const [currentIndex, setCurrentIndex] = useState(0);
 
@@ -303,9 +309,7 @@ export default function ShopLive() {
       try {
         const data = await getShops();
 
-        const onlineShops = data.filter(
-          (shop) => shop.status === "online"
-        );
+        const onlineShops = data.filter((shop) => shop.status === "online");
 
         setShops(onlineShops);
       } catch (error) {
@@ -517,26 +521,12 @@ export default function ShopLive() {
           </p>
         </div>
 
-        {/* =================================================
-            VIEW ALL = ALL SHOPS
-        ================================================= */}
+        {/* VIEW ALL */}
 
         <button
           type="button"
           onClick={() => router.push("/eaurix/shops")}
-          className="
-            flex
-            shrink-0
-            items-center
-            gap-0.5
-            rounded-md
-            px-1
-            py-1
-            text-[9px]
-            font-extrabold
-            text-emerald-600
-            active:opacity-60
-          "
+          className="flex shrink-0 items-center gap-0.5 rounded-md px-1 py-1 text-[9px] font-extrabold text-emerald-600 active:opacity-60"
         >
           View all
           <ChevronRight size={12} strokeWidth={2.5} />
@@ -565,9 +555,7 @@ export default function ShopLive() {
                   shop={shop}
                   loadedImages={loadedImages}
                   setLoadedImages={setLoadedImages}
-                  onShopNow={() =>
-                   router.push(`/eaurix/shop/${shop.id}`)
-                  }
+                  onShopNow={() => router.push(`/eaurix/shop/${shop.id}`)}
                 />
               </div>
             </div>
@@ -580,21 +568,15 @@ export default function ShopLive() {
       ===================================================== */}
 
       {shops.length > 1 && (
-        <div className="mt-1.5 flex justify-center gap-1">
+        <div className="mt-2 flex justify-center gap-1">
           {shops.map((shop, index) => (
             <span
               key={shop.id}
-              className={`
-                h-1
-                rounded-full
-                transition-all
-                duration-300
-                ${
-                  currentIndex % shops.length === index
-                    ? "w-3 bg-emerald-500"
-                    : "w-1 bg-slate-300"
-                }
-              `}
+              className={`h-1 rounded-full transition-all duration-300 ${
+                currentIndex % shops.length === index
+                  ? "w-3 bg-emerald-600"
+                  : "w-1 bg-slate-300"
+              }`}
             />
           ))}
         </div>

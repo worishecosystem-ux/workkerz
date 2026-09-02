@@ -107,8 +107,6 @@ export default function ServiceTypeSection({
 
   /* =====================================================
      UPDATE SERVICES
-
-     Always send a NEW string[] to parent.
   ===================================================== */
 
   const updateServices = (
@@ -149,6 +147,11 @@ export default function ServiceTypeSection({
 
   /* =====================================================
      TOGGLE SERVICE
+
+     Service selection is completely independent
+     from Display Charge.
+
+     Display Charge is selected inside PricingSection.
   ===================================================== */
 
   const toggleService = (
@@ -225,12 +228,18 @@ export default function ServiceTypeSection({
           <div className="mt-4 flex flex-wrap gap-2">
             {savedServices.map(
               (service) => (
-                <span
+                <button
                   key={service}
+                  type="button"
+                  onClick={() =>
+                    toggleService(
+                      service,
+                    )
+                  }
                   className="rounded-lg border border-[#A7F3D0] bg-[#ECFDF5] px-2.5 py-1.5 text-[11px] font-semibold text-[#047857]"
                 >
                   {service}
-                </span>
+                </button>
               ),
             )}
           </div>
@@ -294,10 +303,12 @@ export default function ServiceTypeSection({
           : "p-5",
       ].join(" ")}
     >
-      {/* HEADER */}
+      {/* =================================================
+          HEADER
+      ================================================= */}
 
-      <div className="mb-4 flex items-center justify-between">
-        <div>
+      <div className="mb-4 flex items-center justify-between gap-3">
+        <div className="min-w-0">
           <h2
             className={[
               "font-bold text-[#0F172A]",
@@ -317,14 +328,16 @@ export default function ServiceTypeSection({
 
         {savedServices.length >
           0 && (
-          <span className="rounded-full bg-[#ECFDF5] px-2.5 py-1 text-[11px] font-bold text-[#059669]">
+          <span className="shrink-0 rounded-full bg-[#ECFDF5] px-2.5 py-1 text-[11px] font-bold text-[#059669]">
             {savedServices.length}{" "}
             selected
           </span>
         )}
       </div>
 
-      {/* SERVICE BOXES */}
+      {/* =================================================
+          SERVICE BOXES
+      ================================================= */}
 
       <div
         className={[
@@ -440,7 +453,9 @@ export default function ServiceTypeSection({
         )}
       </div>
 
-      {/* SELECTED SERVICES */}
+      {/* =================================================
+          SELECTED SERVICES
+      ================================================= */}
 
       {savedServices.length >
         0 && (

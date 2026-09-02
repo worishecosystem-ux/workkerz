@@ -15,6 +15,10 @@ import type {
   PriceKey,
 } from "../editWorker.types";
 
+/* =====================================================
+   FORM STATE
+===================================================== */
+
 export type EditWorkerFormState = {
   id: string;
 
@@ -25,7 +29,11 @@ export type EditWorkerFormState = {
   subcategory: string;
   specialty: string;
 
+  /* SERVICES */
+
   services: string[];
+
+  /* PRICING */
 
   pricingType: PricingType;
 
@@ -35,18 +43,47 @@ export type EditWorkerFormState = {
   monthlyPrice: string;
   visitCharge: string;
 
+  /* VISIBLE PRICING */
+
   visiblePricingTypes: PriceKey[];
+
+  /*
+   * DISPLAY CHARGE
+   *
+   * IMPORTANT:
+   * This is NOT a service name.
+   *
+   * Allowed values:
+   *
+   * per_job
+   * half_day
+   * full_day
+   * monthly
+   * visit_charge
+   */
+
+  displayService: PriceKey | null;
+
+  /* LOCATION */
 
   location: string;
   labourChauk: string;
 
+  /* AVAILABILITY */
+
   available: boolean;
+
+  /* EXPERIENCE */
 
   yearsExperience: string;
   completedJobs: string;
 
+  /* ABOUT */
+
   bio: string;
   skills: string[];
+
+  /* REVIEWS */
 
   rating: string;
   reviewCount: string;
@@ -54,13 +91,23 @@ export type EditWorkerFormState = {
   responseTime: string;
   certifications: string[];
 
+  /* PHOTO */
+
   photo: string;
 };
+
+/* =====================================================
+   DEFAULT VISIBLE PRICING
+===================================================== */
 
 const DEFAULT_VISIBLE_PRICING_TYPES: PriceKey[] = [
   "per_job",
   "half_day",
 ];
+
+/* =====================================================
+   EMPTY FORM
+===================================================== */
 
 const EMPTY_FORM: EditWorkerFormState = {
   id: "",
@@ -85,6 +132,11 @@ const EMPTY_FORM: EditWorkerFormState = {
   visiblePricingTypes:
     DEFAULT_VISIBLE_PRICING_TYPES,
 
+  /*
+   * No display charge selected initially.
+   */
+  displayService: null,
+
   location: "",
   labourChauk: "",
 
@@ -106,6 +158,10 @@ const EMPTY_FORM: EditWorkerFormState = {
   photo: "",
 };
 
+/* =====================================================
+   HOOK
+===================================================== */
+
 export default function useEditWorker() {
   const [form, setForm] =
     useState<EditWorkerFormState>({
@@ -120,6 +176,8 @@ export default function useEditWorker() {
       visiblePricingTypes: [
         ...DEFAULT_VISIBLE_PRICING_TYPES,
       ],
+
+      displayService: null,
     });
 
   const [loading, setLoading] =
@@ -129,7 +187,7 @@ export default function useEditWorker() {
     useState("");
 
   /* =====================================================
-     LOAD DATABASE
+     LOAD FROM DATABASE
   ===================================================== */
 
   const loadFromDatabase =
@@ -140,8 +198,11 @@ export default function useEditWorker() {
         setForm({
           id: data.id ?? "",
 
-          name: data.name ?? "",
-          phone: data.phone ?? "",
+          name:
+            data.name ?? "",
+
+          phone:
+            data.phone ?? "",
 
           category:
             data.category ?? "",
@@ -152,10 +213,14 @@ export default function useEditWorker() {
           specialty:
             data.specialty ?? "",
 
+          /* SERVICES */
+
           services:
             Array.isArray(data.services)
               ? [...data.services]
               : [],
+
+          /* PRICING */
 
           pricingType:
             data.pricingType ??
@@ -181,6 +246,8 @@ export default function useEditWorker() {
             data.visitCharge ??
             "",
 
+          /* VISIBLE PRICING */
+
           visiblePricingTypes:
             Array.isArray(
               data.visiblePricingTypes,
@@ -192,14 +259,26 @@ export default function useEditWorker() {
                   ...DEFAULT_VISIBLE_PRICING_TYPES,
                 ],
 
+          /* DISPLAY CHARGE */
+
+          displayService:
+            data.displayService ??
+            null,
+
+          /* LOCATION */
+
           location:
             data.location ?? "",
 
           labourChauk:
             data.labourChauk ?? "",
 
+          /* AVAILABILITY */
+
           available:
             data.available ?? true,
+
+          /* EXPERIENCE */
 
           yearsExperience:
             data.yearsExperience ??
@@ -209,6 +288,8 @@ export default function useEditWorker() {
             data.completedJobs ??
             "",
 
+          /* ABOUT */
+
           bio:
             data.bio ?? "",
 
@@ -216,6 +297,8 @@ export default function useEditWorker() {
             Array.isArray(data.skills)
               ? [...data.skills]
               : [],
+
+          /* REVIEWS */
 
           rating:
             data.rating ?? "",
@@ -236,6 +319,8 @@ export default function useEditWorker() {
                   ...data.certifications,
                 ]
               : [],
+
+          /* PHOTO */
 
           photo:
             data.photo ?? "",
@@ -367,6 +452,13 @@ export default function useEditWorker() {
 
   /* =====================================================
      SERVICES
+     
+     ONLY ACTUAL SERVICES.
+     
+     Example:
+     ["Visit", "Repair", "Emergency"]
+     
+     Display Charge is NOT managed here.
   ===================================================== */
 
   const setServices =
@@ -473,6 +565,38 @@ export default function useEditWorker() {
         setForm((prev) => ({
           ...prev,
           visitCharge: value,
+        }));
+      },
+      [],
+    );
+
+  /* =====================================================
+     DISPLAY CHARGE
+     
+     Stores ONLY the selected pricing key.
+     
+     Example:
+     
+     "half_day"
+     "full_day"
+     "monthly"
+     "visit_charge"
+     
+     NOT:
+     
+     "Repair"
+     "Emergency"
+     "Installation"
+  ===================================================== */
+
+  const setDisplayService =
+    useCallback(
+      (
+        value: PriceKey | null,
+      ) => {
+        setForm((prev) => ({
+          ...prev,
+          displayService: value,
         }));
       },
       [],
@@ -591,8 +715,8 @@ export default function useEditWorker() {
     }
 
     if (
-      form.visiblePricingTypes
-        .length === 0
+      form.visiblePricingTypes.length ===
+      0
     ) {
       return "Select at least one pricing type to show.";
     }
@@ -617,6 +741,8 @@ export default function useEditWorker() {
       visiblePricingTypes: [
         ...DEFAULT_VISIBLE_PRICING_TYPES,
       ],
+
+      displayService: null,
     });
 
     setLoading(false);
@@ -642,20 +768,30 @@ export default function useEditWorker() {
 
     validate,
 
+    /* BASIC */
+
     setName,
     setPhone,
     setCategory,
     setSubcategory,
     setSpecialty,
 
+    /* LOCATION */
+
     setLocation,
     setLabourChauk,
+
+    /* PROFESSIONAL */
 
     setYearsExperience,
     setCompletedJobs,
     setBio,
 
+    /* SERVICES */
+
     setServices,
+
+    /* PRICING */
 
     setPricingType,
 
@@ -665,12 +801,22 @@ export default function useEditWorker() {
     setMonthlyPrice,
     setVisitCharge,
 
+    /* DISPLAY CHARGE */
+
+    setDisplayService,
+
+    /* VISIBLE PRICING */
+
     setVisiblePricingTypes,
+
+    /* REVIEWS */
 
     setRating,
     setReviewCount,
 
     setResponseTime,
+
+    /* AVAILABILITY */
 
     setAvailable,
   };

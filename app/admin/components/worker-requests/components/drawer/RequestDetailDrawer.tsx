@@ -75,6 +75,7 @@ export default function RequestDetailDrawer({
   const isUpdating = updating === request.id;
 
   const isPending = status === "pending";
+  const isUnderReview = status === "under_review";
   const isAccepted = status === "accepted";
   const isCompleted = status === "completed";
   const isRejected = status === "rejected";
@@ -115,7 +116,11 @@ export default function RequestDetailDrawer({
   };
 
   const handleTrash = async () => {
-    if (!finalReason || !onTrash || isUpdating) {
+    if (
+      !finalReason ||
+      !onTrash ||
+      isUpdating
+    ) {
       return;
     }
 
@@ -465,6 +470,14 @@ export default function RequestDetailDrawer({
 
             {/* STATUS */}
 
+            {isUnderReview && (
+              <StatusMessage
+                type="neutral"
+                title="Booking Under Review"
+                message="This booking is under review. Confirm the booking to proceed or cancel it if required."
+              />
+            )}
+
             {isAccepted && (
               <StatusMessage
                 type="success"
@@ -501,7 +514,9 @@ export default function RequestDetailDrawer({
 
         {/* ACTION BAR */}
 
-        {(isPending || isAccepted) && (
+        {(isPending ||
+          isUnderReview ||
+          isAccepted) && (
           <footer
             className="
               shrink-0
@@ -547,6 +562,7 @@ export default function RequestDetailDrawer({
                   "
                 >
                   <Trash2 className="h-3.5 w-3.5" />
+
                   Move to Trash
                 </button>
               )}
@@ -613,6 +629,74 @@ export default function RequestDetailDrawer({
                     )}
 
                     Under Review
+                  </button>
+                </>
+              )}
+
+              {/* UNDER REVIEW */}
+
+              {isUnderReview && (
+                <>
+                  <button
+                    type="button"
+                    disabled={isUpdating}
+                    onClick={() =>
+                      update("cancelled")
+                    }
+                    className="
+                      flex h-9
+                      items-center
+                      justify-center
+                      gap-1.5
+                      rounded-lg
+                      border border-red-100
+                      bg-red-50
+                      px-5
+                      text-[9px] font-extrabold
+                      text-red-600
+                      transition
+                      hover:bg-red-100
+                      disabled:opacity-50
+                    "
+                  >
+                    {isUpdating ? (
+                      <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                    ) : (
+                      <X className="h-3.5 w-3.5" />
+                    )}
+
+                    Cancel Booking
+                  </button>
+
+                  <button
+                    type="button"
+                    disabled={isUpdating}
+                    onClick={() =>
+                      update("accepted")
+                    }
+                    className="
+                      flex h-9
+                      items-center
+                      justify-center
+                      gap-1.5
+                      rounded-lg
+                      bg-emerald-600
+                      px-5
+                      text-[9px] font-extrabold
+                      text-white
+                      shadow-sm
+                      transition
+                      hover:bg-emerald-700
+                      disabled:opacity-50
+                    "
+                  >
+                    {isUpdating ? (
+                      <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                    ) : (
+                      <CheckCircle2 className="h-3.5 w-3.5" />
+                    )}
+
+                    Confirm Booking
                   </button>
                 </>
               )}

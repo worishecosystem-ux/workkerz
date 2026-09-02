@@ -16,82 +16,252 @@ import {
 import { supabase } from "@/lib/supabase";
 import confetti from "canvas-confetti";
 
+/* ============================================================
+   BOOKING STATUS
+============================================================ */
+
+type BookingStatus =
+  | "pending"
+  | "confirmed"
+  | "rejected"
+  | "cancelled";
+
+/* ============================================================
+   CUSTOMER ADDRESS
+============================================================ */
+
+type CustomerAddress = {
+  house_no?: string | null;
+  address?: string | null;
+  landmark?: string | null;
+  city?: string | null;
+  district?: string | null;
+  state?: string | null;
+  country?: string | null;
+  pincode?: string | null;
+  address_type?: string | null;
+};
+
+/* ============================================================
+   BOOKING PRICING
+   SERVICE FEE REMOVED
+============================================================ */
+
+type BookingPricing = {
+  totalCost: number;
+  materialsCost: number;
+  grandTotal: number;
+};
+
+/* ============================================================
+   CONFIRMATION STATE
+============================================================ */
+
+type ConfirmationState = {
+  form: Record<string, any>;
+
+  worker: {
+    id: string;
+    name: string;
+    photo: string;
+    specialty: string;
+    rating: number;
+
+    pricingType?: string;
+
+    startingPrice?: number;
+    visitCharge?: number;
+    halfDayPrice?: number;
+    fullDayPrice?: number;
+    monthlyPrice?: number;
+  };
+
+  selectedAddress?: CustomerAddress | null;
+
+  bookingId?: string;
+  bookingReference?: string;
+
+  totalCost?: number;
+  materialsCost?: number;
+  grandTotal?: number;
+
+  confirmedAt?: string;
+};
+
+/* ============================================================
+   CONFIRMATION PAGE
+============================================================ */
+
 export default function Confirmation() {
+  /* ==========================================================
+     CONFETTI PROTECTION
+  ========================================================== */
+
   const fired = useRef(false);
-  const savedRef = useRef(false);
+
+  /* ==========================================================
+     BOOKING ID
+  ========================================================== */
+
   const bookingId = useRef("");
+
+  /* ==========================================================
+     WHATSAPP OPEN PROTECTION
+
+     This is extremely important.
+
+     WhatsApp must NEVER open again when
+     bookingPricing/status changes every 3 seconds.
+  ========================================================== */
+
+  const whatsappOpened = useRef(false);
+
+  /* ==========================================================
+     WHATSAPP SENT UI
+  ========================================================== */
 
   const [waSent, setWaSent] = useState(false);
 
-  const [bookingStatus, setBookingStatus] = useState<
-    "pending" | "confirmed" | "rejected" | "cancelled"
-  >("pending");
+  /* ==========================================================
+     BOOKING STATUS
+  ========================================================== */
 
-  const [customerAddress, setCustomerAddress] = useState<any>(null);
-  const [saving, setSaving] = useState(true);
+  const [bookingStatus, setBookingStatus] =
+    useState<BookingStatus>("pending");
 
-  const [state, setState] = useState<{
-    form: Record<string, any>;
+  /* ==========================================================
+     ADDRESS
+  ========================================================== */
 
-    worker: {
-      id: string;
-      name: string;
-      photo: string;
-      specialty: string;
-      rating: number;
-      addressId?: string;
-      pricingType: string;
+  const [customerAddress, setCustomerAddress] =
+    useState<CustomerAddress | null>(null);
 
-      startingPrice: number;
-      visitCharge: number;
-      halfDayPrice: number;
-      fullDayPrice: number;
-      monthlyPrice: number;
-    };
+  /* ==========================================================
+     BOOKING STATE
+  ========================================================== */
 
-    addressId?: string;
+  const [state, setState] =
+    useState<ConfirmationState | null>(null);
 
-    totalCost: number;
+  /* ==========================================================
+     PRICING
 
-    // Kept for compatibility with existing booking-data.
-    // It will NOT be added to total.
-    serviceFee: number;
+     SERVICE FEE REMOVED
+  ========================================================== */
 
-    materialsCost?: number;
-    grandTotal: number;
+  const [bookingPricing, setBookingPricing] =
+    useState<BookingPricing>({
+      totalCost: 0,
+      materialsCost: 0,
+      grandTotal: 0,
+    });
 
-    confirmedAt?: string;
-    bookingId?: string;
-  } | null>(null);
-
-  // ============================================================
-  // LOAD BOOKING DATA
-  // ============================================================
+  /* ============================================================
+     LOAD BOOKING DATA FROM SESSION
+  ============================================================ */
 
   useEffect(() => {
-    const saved = sessionStorage.getItem("booking-data");
+    const saved =
+      sessionStorage.getItem("booking-data");
 
     if (!saved) return;
 
     try {
-      const parsed = JSON.parse(saved);
+      const parsed =
+        JSON.parse(saved) as ConfirmationState;
 
       setState(parsed);
 
+      /* =========================================
+         PUBLIC WORKKERZ BOOKING REFERENCE
+
+         Example:
+         WRK-020926-001
+      ========================================= */
+
       bookingId.current =
+        parsed.bookingReference ||
         parsed.bookingId ||
-        `WKZ-${Math.random()
-          .toString(36)
-          .slice(2, 8)
-          .toUpperCase()}`;
+        "";
+
+      /* =========================================
+         ADDRESS SNAPSHOT
+      ========================================= */
+
+      if (parsed.selectedAddress) {
+        setCustomerAddress(
+          parsed.selectedAddress,
+        );
+      } else if (parsed.form) {
+        setCustomerAddress({
+          house_no:
+            parsed.form.houseNo || null,
+
+          address:
+            parsed.form.address || null,
+
+          landmark:
+            parsed.form.landmark || null,
+
+          city:
+            parsed.form.city || null,
+
+          district:
+            parsed.form.district || null,
+
+          state:
+            parsed.form.state || null,
+
+          country:
+            parsed.form.country || "India",
+
+          pincode:
+            parsed.form.pincode || null,
+
+          address_type:
+            parsed.form.addressType ||
+            "home",
+        });
+      }
+
+      /* =========================================
+         TEMPORARY SESSION PRICING
+
+         SERVICE FEE INTENTIONALLY NOT USED
+      ========================================= */
+
+      const sessionTotalCost =
+        Number(
+          parsed.totalCost || 0,
+        );
+
+      const sessionMaterialsCost =
+        Number(
+          parsed.materialsCost || 0,
+        );
+
+      setBookingPricing({
+        totalCost:
+          sessionTotalCost,
+
+        materialsCost:
+          sessionMaterialsCost,
+
+        grandTotal:
+          sessionTotalCost +
+          sessionMaterialsCost,
+      });
     } catch (error) {
-      console.error("BOOKING DATA PARSE ERROR:", error);
+      console.error(
+        "BOOKING DATA PARSE ERROR:",
+        error,
+      );
     }
   }, []);
 
-  // ============================================================
-  // CONFETTI
-  // ============================================================
+  /* ============================================================
+     CONFETTI
+  ============================================================ */
 
   useEffect(() => {
     if (fired.current) return;
@@ -101,285 +271,192 @@ export default function Confirmation() {
     confetti({
       particleCount: 120,
       spread: 90,
-      origin: { y: 0.5 },
-      colors: ["#FF5C39", "#0F172A", "#FF9F7F", "#FED7CC"],
+      origin: {
+        y: 0.5,
+      },
+      colors: [
+        "#FF5C39",
+        "#0F172A",
+        "#FF9F7F",
+        "#FED7CC",
+      ],
     });
   }, []);
 
-  // ============================================================
-  // LIVE STATUS CHECK
-  // ============================================================
+  /* ============================================================
+     LIVE BOOKING + PRICING CHECK
+
+     IMPORTANT:
+     service_fee is NOT selected.
+  ============================================================ */
 
   useEffect(() => {
-    if (!bookingId.current) return;
+    if (!state?.bookingReference) {
+      return;
+    }
 
-    const interval = setInterval(async () => {
-      const { data, error } = await supabase
-        .from("bookings")
-        .select("booking_status")
-        .eq("booking_id", bookingId.current)
-        .single();
-
-      if (!error && data?.booking_status) {
-        setBookingStatus(data.booking_status);
-      }
-    }, 3000);
-
-    return () => clearInterval(interval);
-  }, [state]);
-
-  // ============================================================
-  // SAVE BOOKING
-  // ============================================================
-
-  useEffect(() => {
-    if (!state) return;
-    if (savedRef.current) return;
-
-    const saveBooking = async () => {
-      try {
-        savedRef.current = true;
-        setSaving(true);
-
+    const checkBooking =
+      async () => {
         const {
-          form,
-          worker,
-          addressId,
-          totalCost,
-          materialsCost = 0,
-        } = state;
-
-        // ======================================================
-        // WORKER PACKAGE PRICE
-        // ======================================================
-
-        let packagePrice = 0;
-
-        switch (form?.bookingType) {
-          case "quick_service":
-            packagePrice =
-              Number(worker?.visitCharge) ||
-              Number(worker?.startingPrice) ||
-              0;
-            break;
-
-          case "half_day":
-            packagePrice = Number(worker?.halfDayPrice) || 0;
-            break;
-
-          case "full_day":
-            packagePrice = Number(worker?.fullDayPrice) || 0;
-            break;
-
-          case "monthly":
-            packagePrice = Number(worker?.monthlyPrice) || 0;
-            break;
-
-          default:
-            packagePrice = Number(totalCost) || 0;
-        }
-
-        // ======================================================
-        // SERVICE CHARGE REMOVED
-        // ======================================================
-
-        const serviceFee = 0;
-
-        // ======================================================
-        // GRAND TOTAL
-        //
-        // Worker Fee + Materials
-        // NO SERVICE FEE
-        // ======================================================
-
-        const finalTotal =
-          Number(totalCost) + Number(materialsCost);
-
-        const {
-          data: { user },
-        } = await supabase.auth.getUser();
-
-        // ======================================================
-        // BOOKING DATA
-        // ======================================================
-
-        const bookingData = {
-          booking_id: bookingId.current,
-
-          booking_status: "pending",
-
-          worker_id: worker?.id || null,
-
-          worker_name: worker?.name || "",
-
-          worker_photo: worker?.photo || "",
-
-          worker_specialty: worker?.specialty || "",
-
-          worker_rating: worker?.rating || 0,
-
-          service_type: form?.serviceType || "",
-
-          description: form?.description || "",
-
-          booking_date: form?.date || null,
-
-          booking_time: form?.time || "",
-
-          customer_name: form?.name || "",
-
-          customer_phone: form?.phone || "",
-
-          customer_email: user?.email || form?.email || "",
-
-          address_id: addressId || null,
-
-          notes: form?.notes || "",
-
-          booking_type: form?.bookingType || "quick_service",
-
-          package_price: packagePrice,
-
-          selected_materials: form?.selectedMaterials || {},
-
-          total_cost: Number(totalCost) || 0,
-
-          // SERVICE FEE = 0
-          service_fee: 0,
-
-          materials_cost: Number(materialsCost) || 0,
-
-          // GRAND TOTAL = WORKER + MATERIALS
-          grand_total: finalTotal,
-        };
-
-        console.log("FINAL BOOKING DATA:", bookingData);
-        console.log("SERVICE FEE:", 0);
-        console.log("GRAND TOTAL:", finalTotal);
-
-        // ======================================================
-        // SAVE
-        // ======================================================
-
-        const { data, error } = await supabase
+          data,
+          error,
+        } = await supabase
           .from("bookings")
-          .insert([bookingData])
-          .select()
-          .single();
+          .select(
+            `
+              booking_status,
+              total_cost,
+              materials_cost,
+              grand_total
+            `,
+          )
+          .eq(
+            "booking_id",
+            state.bookingReference,
+          )
+          .maybeSingle();
 
         if (error) {
-          console.error("BOOKING SAVE ERROR:", error);
-
-          alert("Booking save failed");
+          console.error(
+            "BOOKING FETCH ERROR:",
+            error,
+          );
 
           return;
         }
 
-        console.log("BOOKING SAVED:", data);
+        if (!data) {
+          console.warn(
+            "BOOKING NOT FOUND:",
+            state.bookingReference,
+          );
 
-        // ======================================================
-        // EMAIL
-        // ======================================================
-
-        try {
-          await fetch("/api/send-booking-email", {
-            method: "POST",
-
-            headers: {
-              "Content-Type": "application/json",
-            },
-
-            body: JSON.stringify({
-              bookingId: bookingId.current,
-
-              worker,
-
-              form,
-
-              totalCost,
-
-              // SERVICE FEE REMOVED
-              serviceFee: 0,
-
-              materialsCost,
-
-              // FINAL TOTAL
-              grandTotal: finalTotal,
-
-              categoryMaterials: [],
-            }),
-          });
-
-          console.log("EMAIL SENT");
-        } catch (emailError) {
-          console.error("EMAIL ERROR:", emailError);
+          return;
         }
-      } catch (error) {
-        console.error("BOOKING SAVE FAILED:", error);
-      } finally {
-        setSaving(false);
-      }
+
+        /* =====================================
+           STATUS
+        ===================================== */
+
+        if (data.booking_status) {
+          setBookingStatus(
+            data.booking_status as BookingStatus,
+          );
+        }
+
+        /* =====================================
+           ACTUAL DATABASE PRICING
+
+           SERVICE CHARGE IGNORED
+        ===================================== */
+
+        const dbTotalCost =
+          Number(
+            data.total_cost || 0,
+          );
+
+        const dbMaterialsCost =
+          Number(
+            data.materials_cost || 0,
+          );
+
+        const calculatedGrandTotal =
+          dbTotalCost +
+          dbMaterialsCost;
+
+        setBookingPricing({
+          totalCost:
+            dbTotalCost,
+
+          materialsCost:
+            dbMaterialsCost,
+
+          grandTotal:
+            calculatedGrandTotal,
+        });
+      };
+
+    /* =========================================
+       FETCH IMMEDIATELY
+    ========================================= */
+
+    void checkBooking();
+
+    /* =========================================
+       KEEP STATUS / PRICING UPDATED
+
+       This DOES NOT trigger WhatsApp.
+    ========================================= */
+
+    const interval =
+      window.setInterval(() => {
+        void checkBooking();
+      }, 3000);
+
+    return () => {
+      window.clearInterval(
+        interval,
+      );
     };
+  }, [
+    state?.bookingReference,
+  ]);
 
-    saveBooking();
-  }, [state]);
+  /* ============================================================
+     AUTO WHATSAPP — ONLY ONCE
 
-  // ============================================================
-  // LOAD CUSTOMER ADDRESS
-  // ============================================================
+     IMPORTANT:
+     DO NOT depend on bookingPricing.
+     Pricing updates every 3 seconds.
 
-  useEffect(() => {
-    const loadAddress = async () => {
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
-
-      if (!user?.email) return;
-
-      const { data, error } = await supabase
-        .from("customer_addresses")
-        .select("*")
-        .eq("customer_email", user.email)
-        .order("is_default", { ascending: false })
-        .order("created_at", { ascending: false })
-        .limit(1)
-        .maybeSingle();
-
-      if (error) {
-        console.error("ADDRESS FETCH ERROR:", error);
-        return;
-      }
-
-      setCustomerAddress(data);
-    };
-
-    loadAddress();
-  }, []);
-
-  // ============================================================
-  // AUTO WHATSAPP
-  // ============================================================
+     This effect waits until state is loaded,
+     then opens WhatsApp exactly once.
+  ============================================================ */
 
   useEffect(() => {
     if (!state) return;
 
-    const timer = setTimeout(() => {
-      const message = encodeURIComponent(buildWhatsAppMessage());
+    if (!bookingId.current) {
+      return;
+    }
 
-      window.open(
-        `https://wa.me/918602190366?text=${message}`,
-        "_blank"
+    if (whatsappOpened.current) {
+      return;
+    }
+
+    whatsappOpened.current = true;
+
+    const timer =
+      window.setTimeout(() => {
+        const message =
+          encodeURIComponent(
+            buildWhatsAppMessage(
+              state,
+              bookingPricing,
+              bookingId.current,
+              customerAddress,
+              bookingStatus,
+            ),
+          );
+
+        window.open(
+          `https://wa.me/918602190366?text=${message}`,
+          "_blank",
+        );
+
+        setWaSent(true);
+      }, 2500);
+
+    return () => {
+      window.clearTimeout(
+        timer,
       );
-
-      setWaSent(true);
-    }, 2500);
-
-    return () => clearTimeout(timer);
+    };
   }, [state]);
 
-  // ============================================================
-  // LOADING
-  // ============================================================
+  /* ============================================================
+     LOADING
+  ============================================================ */
 
   if (!state) {
     return (
@@ -400,191 +477,108 @@ export default function Confirmation() {
     );
   }
 
-  // ============================================================
-  // STATE
-  // ============================================================
+  /* ============================================================
+     STATE
+  ============================================================ */
 
   const {
     form,
     worker,
-    totalCost = 0,
-    materialsCost = 0,
   } = state;
 
-  // ============================================================
-  // FINAL GRAND TOTAL
-  //
-  // IMPORTANT:
-  // SERVICE FEE IS NOT INCLUDED
-  // ============================================================
+  /* ============================================================
+     ACTUAL PRICES
+
+     SERVICE FEE REMOVED
+  ============================================================ */
+
+  const totalCost =
+    Number(
+      bookingPricing.totalCost || 0,
+    );
+
+  const materialsCost =
+    Number(
+      bookingPricing.materialsCost || 0,
+    );
 
   const grandTotal =
-    Number(totalCost) + Number(materialsCost);
+    totalCost +
+    materialsCost;
 
-  // ============================================================
-  // BOOKING TYPE
-  // ============================================================
+  /* ============================================================
+     BOOKING TYPE
+  ============================================================ */
 
-  const getBookingTypeLabel = () => {
-    switch (form?.bookingType) {
-      case "quick_service":
-        return "⚡ Quick Service";
+  const getBookingTypeLabel =
+    () => {
+      switch (
+        form?.bookingType
+      ) {
+        case "quick_service":
+          return "⚡ Quick Service";
 
-      case "half_day":
-        return "🌤️ Half Day";
+        case "half_day":
+          return "🌤️ Half Day";
 
-      case "full_day":
-        return "☀️ Full Day";
+        case "full_day":
+          return "☀️ Full Day";
 
-      case "monthly":
-        return "📅 Monthly";
+        case "monthly":
+          return "📅 Monthly";
 
-      default:
-        return "⚡ Quick Service";
+        case "visit_charge":
+          return "📍 Visit Charge";
+
+        default:
+          return "⚡ Quick Service";
+      }
+    };
+
+  /* ============================================================
+     DATE
+  ============================================================ */
+
+  const formatDate = (
+    dateStr: string,
+  ) => {
+    if (!dateStr) {
+      return "—";
     }
-  };
-
-  // ============================================================
-  // DATE
-  // ============================================================
-
-  const formatDate = (dateStr: string) => {
-    if (!dateStr) return "—";
 
     return new Date(
-      dateStr + "T00:00:00"
-    ).toLocaleDateString("en-US", {
-      weekday: "long",
-      month: "long",
-      day: "numeric",
-      year: "numeric",
-    });
+      `${dateStr}T00:00:00`,
+    ).toLocaleDateString(
+      "en-US",
+      {
+        weekday: "long",
+        month: "long",
+        day: "numeric",
+        year: "numeric",
+      },
+    );
   };
 
-  // ============================================================
-  // WHATSAPP MESSAGE
-  // ============================================================
+  /* ============================================================
+     ADDRESS
+  ============================================================ */
 
-  function buildWhatsAppMessage() {
-    const materialLines =
-      Array.isArray(form?.selectedMaterials)
-        ? form.selectedMaterials.map(
-            (item: any, index: number) =>
-              `┃ ${index + 1}. ${item.name}
-┃ Qty: ${item.qty || 1}
-┃ Price: ₹${item.price || 0}
-┃ Total: ₹${(
-                (item.price || 0) *
-                (item.qty || 1)
-              ).toFixed(2)}`
-          )
-        : [];
+  const addressText = [
+    customerAddress?.house_no,
+    customerAddress?.address,
+    customerAddress?.landmark,
+    customerAddress?.city,
+    customerAddress?.district,
+    customerAddress?.state,
+    customerAddress?.country,
+    customerAddress?.pincode,
+  ]
+    .filter(Boolean)
+    .join(", ");
 
-    const lines = [
-      `╔══════════════════════╗`,
-      ` 🛠️ *WORKKERZ BOOKING*`,
-      `╚══════════════════════╝`,
-      ``,
-
-      `✅ *Booking Submitted Successfully!*`,
-      ``,
-
-      `🆔 *Booking ID*`,
-      `┃ ${bookingId.current}`,
-      ``,
-
-      `👷 *Worker Details*`,
-      `┃ ${worker.name}`,
-      `┃ ${worker.specialty}`,
-      `┃ ⭐ ${worker.rating} Rating`,
-      ``,
-
-      `👤 *Customer Details*`,
-      `┃ ${form.name}`,
-      `┃ ${form.phone}`,
-      `┃ ${form.email}`,
-      ``,
-
-      `📍 *Service Address*`,
-      `┃ ${form.address || ""}`,
-      `┃ ${form.city || ""}, ${form.state || ""}`,
-      `┃ ${form.pincode || ""}`,
-      ``,
-
-      `📅 *Booking Schedule*`,
-      `┃ Date: ${formatDate(form.date)}`,
-      `┃ Time: ${form.time}`,
-      `┃ Duration: ${form.duration} hour(s)`,
-      ``,
-
-      `🔧 *Service Type*`,
-      `┃ ${form.serviceType}`,
-      ``,
-
-      form.description
-        ? [
-            `📝 *Description*`,
-            `┃ ${form.description}`,
-            ``,
-          ]
-        : [],
-
-      materialLines.length > 0
-        ? [
-            `📦 *Selected Materials*`,
-            `┃────────────────────`,
-            ...materialLines,
-            ``,
-          ]
-        : [],
-
-      `💳 *Payment Summary*`,
-      `┃────────────────────`,
-
-      // WORKER CHARGE
-      `┃ Worker Charges : ₹${Number(
-        totalCost
-      ).toFixed(2)}`,
-
-      // MATERIALS
-      materialsCost > 0
-        ? `┃ Materials Cost : ₹${Number(
-            materialsCost
-          ).toFixed(2)}`
-        : null,
-
-      // NO SERVICE CHARGE
-      `┃ Service Charge : ₹0`,
-
-      `┃────────────────────`,
-
-      // FINAL TOTAL
-      `┃ 💰 *Grand Total : ₹${Number(
-        grandTotal
-      ).toFixed(2)}*`,
-
-      ``,
-
-      `🛡️ *Booking Status*`,
-      `┃ Pending Admin Approval`,
-      ``,
-
-      `🚀 Powered by Workkerz`,
-      `👷 Trusted Workers • Fast Booking • Secure Platform`,
-      ``,
-
-      `══════════════════════`,
-    ];
-
-    return lines
-      .flat()
-      .filter(Boolean)
-      .join("\n");
-  }
-
-  // ============================================================
-  // UI
-  // ============================================================
+  /* ============================================================
+     UI
+  ============================================================ */
 
   return (
     <div className="mx-auto max-w-4xl px-4 pb-28">
@@ -627,7 +621,8 @@ export default function Confirmation() {
                 </p>
 
                 <p className="font-mono text-[13px] font-bold text-slate-900">
-                  {bookingId.current}
+                  {bookingId.current ||
+                    "—"}
                 </p>
               </div>
 
@@ -644,14 +639,20 @@ export default function Confirmation() {
 
         <div className="space-y-2">
 
-          {/* WORKER */}
+          {/* ====================================================
+              WORKER
+          ==================================================== */}
 
           <div className="rounded-2xl border border-emerald-100 bg-linear-to-r from-white to-emerald-50 p-3 shadow-sm">
             <div className="flex gap-3">
               <div className="relative">
                 <img
-                  src={worker.photo}
-                  alt={worker.name}
+                  src={
+                    worker.photo
+                  }
+                  alt={
+                    worker.name
+                  }
                   className="h-16 w-16 rounded-2xl object-cover ring-2 ring-emerald-100"
                 />
 
@@ -662,16 +663,23 @@ export default function Confirmation() {
                 <div className="flex items-start justify-between gap-2">
                   <div className="min-w-0">
                     <h2 className="truncate text-[15px] font-bold text-gray-900">
-                      {worker.name}
+                      {
+                        worker.name
+                      }
                     </h2>
 
                     <p className="mt-0.5 truncate text-xs text-gray-500">
-                      {worker.specialty}
+                      {
+                        worker.specialty
+                      }
                     </p>
                   </div>
 
                   <div className="flex items-center gap-1 rounded bg-green-600 px-2 py-0.5 text-[11px] font-medium text-white">
-                    ⭐ {worker.rating}
+                    ⭐{" "}
+                    {
+                      worker.rating
+                    }
                   </div>
                 </div>
 
@@ -690,7 +698,9 @@ export default function Confirmation() {
             </div>
           </div>
 
-          {/* BOOKING DETAILS */}
+          {/* ====================================================
+              BOOKING DETAILS
+          ==================================================== */}
 
           <div className="mt-2 rounded-2xl border border-slate-100 bg-white p-3 shadow-sm">
             <div className="mb-2 flex items-center justify-between">
@@ -700,20 +710,26 @@ export default function Confirmation() {
 
               <span
                 className={`rounded-full px-2 py-0.5 text-[10px] font-semibold ${
-                  bookingStatus === "confirmed"
+                  bookingStatus ===
+                  "confirmed"
                     ? "bg-emerald-100 text-emerald-700"
-                    : bookingStatus === "pending"
+                    : bookingStatus ===
+                      "pending"
                       ? "bg-amber-100 text-amber-700"
-                      : bookingStatus === "rejected"
+                      : bookingStatus ===
+                        "rejected"
                         ? "bg-red-100 text-red-700"
                         : "bg-slate-100 text-slate-700"
                 }`}
               >
-                {bookingStatus === "confirmed"
+                {bookingStatus ===
+                "confirmed"
                   ? "CONFIRMED"
-                  : bookingStatus === "pending"
+                  : bookingStatus ===
+                    "pending"
                     ? "PENDING"
-                    : bookingStatus === "rejected"
+                    : bookingStatus ===
+                      "rejected"
                       ? "REJECTED"
                       : "CANCELLED"}
               </span>
@@ -722,54 +738,67 @@ export default function Confirmation() {
             <div className="space-y-1.5">
               <MiniRow
                 label="Service"
-                value={form.serviceType}
+                value={
+                  form.serviceType ||
+                  "—"
+                }
               />
 
               <MiniRow
                 label="Date"
-                value={formatDate(form.date)}
+                value={formatDate(
+                  form.date,
+                )}
               />
 
               <MiniRow
                 label="Time"
-                value={form.time}
+                value={
+                  form.time ||
+                  "—"
+                }
               />
 
               <MiniRow
                 label="Customer"
-                value={form.name}
+                value={
+                  form.name ||
+                  "—"
+                }
               />
 
               <MiniRow
                 label="Phone"
-                value={form.phone}
+                value={
+                  form.phone ||
+                  "—"
+                }
               />
 
               <MiniRow
                 label="Description"
-                value={form.description || "—"}
+                value={
+                  form.description ||
+                  "—"
+                }
               />
 
               <MiniRow
                 label="Notes"
-                value={form.notes || "—"}
+                value={
+                  form.notes ||
+                  "—"
+                }
               />
+
+              {/* ADDRESS */}
 
               <div className="flex items-start gap-2 rounded-xl bg-slate-50 px-2.5 py-2">
                 <MapPin className="mt-0.5 h-3.5 w-3.5 shrink-0 text-emerald-600" />
 
                 <p className="text-[11px] leading-4 text-slate-600">
-                  {[
-                    customerAddress?.house_no,
-                    customerAddress?.address,
-                    customerAddress?.landmark,
-                    customerAddress?.city,
-                    customerAddress?.district,
-                    customerAddress?.state,
-                    customerAddress?.pincode,
-                  ]
-                    .filter(Boolean)
-                    .join(", ") || "Address not available"}
+                  {addressText ||
+                    "Address not available"}
                 </p>
               </div>
             </div>
@@ -781,24 +810,36 @@ export default function Confirmation() {
 
           <div className="mt-2 rounded-2xl bg-[#072566] p-3.5 text-white shadow-xl">
             <div>
+
+              {/* WORKER FEE */}
+
               <PriceRow
                 label="Worker Fee"
                 value={`₹${Number(
-                  totalCost
-                ).toLocaleString("en-IN")}`}
+                  totalCost,
+                ).toLocaleString(
+                  "en-IN",
+                )}`}
               />
 
-              {materialsCost > 0 && (
+              {/* MATERIALS */}
+
+              {materialsCost >
+                0 && (
                 <PriceRow
                   label="Materials"
                   value={`₹${Number(
-                    materialsCost
-                  ).toLocaleString("en-IN")}`}
+                    materialsCost,
+                  ).toLocaleString(
+                    "en-IN",
+                  )}`}
                 />
               )}
             </div>
 
             <div className="my-3 h-px bg-white/10" />
+
+            {/* GRAND TOTAL */}
 
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">
@@ -808,21 +849,27 @@ export default function Confirmation() {
 
                 <span className="text-[15px] font-bold text-white">
                   ₹
-                  {Number(grandTotal).toLocaleString(
-                    "en-IN"
+                  {Number(
+                    grandTotal,
+                  ).toLocaleString(
+                    "en-IN",
                   )}
                 </span>
               </div>
 
               <div className="rounded-lg bg-white/10 px-2.5 py-1.5 backdrop-blur-sm">
                 <p className="text-[11px] font-semibold leading-none text-white">
-                  {getBookingTypeLabel()}
+                  {
+                    getBookingTypeLabel()
+                  }
                 </p>
               </div>
             </div>
           </div>
 
-          {/* SECURITY */}
+          {/* ====================================================
+              SECURITY
+          ==================================================== */}
 
           <div className="mt-2 rounded-2xl border border-emerald-200 bg-linear-to-r from-emerald-50 to-white px-3 py-2.5">
             <div className="flex items-center gap-2">
@@ -842,10 +889,32 @@ export default function Confirmation() {
             </div>
           </div>
 
-          {/* WHATSAPP */}
+          {/* ====================================================
+              WHATSAPP STATUS
+          ==================================================== */}
 
           {!waSent && (
             <div className="mt-5 rounded-3xl border border-gray-100 bg-white p-5 shadow-sm">
+              <div className="flex items-center gap-3">
+                <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-[#25D366]/10">
+                  <MessageCircle className="h-5 w-5 text-[#25D366]" />
+                </div>
+
+                <div>
+                  <div className="text-sm font-bold text-[#0F172A]">
+                    Booking Details
+                  </div>
+
+                  <div className="mt-0.5 text-xs text-[#64748B]">
+                    Opening WhatsApp receipt...
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {waSent && (
+            <div className="mt-5 rounded-3xl border border-green-100 bg-green-50 p-5 shadow-sm">
               <div className="flex items-center gap-3">
                 <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-[#25D366]/10">
                   <MessageCircle className="h-5 w-5 text-[#25D366]" />
@@ -873,6 +942,7 @@ export default function Confirmation() {
       <div className="fixed inset-x-0 bottom-0 z-50 md:hidden">
         <div className="border-t border-slate-200 bg-white/95 px-3 pt-4 pb-[calc(env(safe-area-inset-bottom)+10px)] shadow-[0_-8px_24px_rgba(15,23,42,0.08)] backdrop-blur-xl">
           <div className="flex items-center gap-3">
+
             <Link
               href="/"
               className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-slate-100 transition active:scale-95"
@@ -884,10 +954,13 @@ export default function Confirmation() {
               href="/browse"
               className="flex flex-1 items-center justify-center gap-2 rounded-xl bg-linear-to-r from-cyan-500 to-emerald-500 px-4 py-3 text-sm font-semibold text-white shadow-lg shadow-cyan-500/20 transition active:scale-[0.98]"
             >
-              <span>Book Another Worker</span>
+              <span>
+                Book Another Worker
+              </span>
 
               <ChevronRight className="h-4 w-4" />
             </Link>
+
           </div>
         </div>
       </div>
@@ -895,9 +968,246 @@ export default function Confirmation() {
   );
 }
 
-// ============================================================
-// PRICE ROW
-// ============================================================
+/* ============================================================
+   WHATSAPP MESSAGE
+   SERVICE CHARGE REMOVED
+============================================================ */
+
+function buildWhatsAppMessage(
+  state: ConfirmationState,
+  bookingPricing: BookingPricing,
+  bookingReference: string,
+  customerAddress: CustomerAddress | null,
+  bookingStatus: BookingStatus,
+) {
+  const {
+    form,
+    worker,
+  } = state;
+
+  const totalCost =
+    Number(
+      bookingPricing.totalCost || 0,
+    );
+
+  const materialsCost =
+    Number(
+      bookingPricing.materialsCost || 0,
+    );
+
+  const grandTotal =
+    totalCost +
+    materialsCost;
+
+  const selectedMaterials =
+    Array.isArray(
+      form?.selectedMaterials,
+    )
+      ? form.selectedMaterials
+      : [];
+
+  const materialLines =
+    selectedMaterials.map(
+      (
+        item: any,
+        index: number,
+      ) =>
+        `┃ ${index + 1}. ${
+          item.name ||
+          "Material"
+        }
+┃ Qty: ${
+          item.qty || 1
+        }
+┃ Price: ₹${Number(
+          item.price || 0,
+        ).toFixed(2)}
+┃ Total: ₹${(
+          Number(
+            item.price || 0,
+          ) *
+          Number(
+            item.qty || 1,
+          )
+        ).toFixed(2)}`,
+    );
+
+  const addressText = [
+    customerAddress?.house_no,
+    customerAddress?.address,
+    customerAddress?.landmark,
+    customerAddress?.city,
+    customerAddress?.district,
+    customerAddress?.state,
+    customerAddress?.country,
+    customerAddress?.pincode,
+  ]
+    .filter(Boolean)
+    .join(", ");
+
+  const formatDate = (
+    dateStr: string,
+  ) => {
+    if (!dateStr) {
+      return "—";
+    }
+
+    return new Date(
+      `${dateStr}T00:00:00`,
+    ).toLocaleDateString(
+      "en-US",
+      {
+        weekday: "long",
+        month: "long",
+        day: "numeric",
+        year: "numeric",
+      },
+    );
+  };
+
+  const statusText =
+    bookingStatus ===
+    "confirmed"
+      ? "Confirmed"
+      : bookingStatus ===
+        "rejected"
+        ? "Rejected"
+        : bookingStatus ===
+          "cancelled"
+          ? "Cancelled"
+          : "Pending Admin Approval";
+
+  const lines: any[] = [
+    `╔══════════════════════╗`,
+    ` 🛠️ *WORKKERZ BOOKING*`,
+    `╚══════════════════════╝`,
+    ``,
+
+    `✅ *Booking Submitted Successfully!*`,
+    ``,
+
+    `🆔 *Booking ID*`,
+    `┃ ${bookingReference}`,
+    ``,
+
+    `👷 *Worker Details*`,
+    `┃ ${worker?.name || "—"}`,
+    `┃ ${worker?.specialty || "—"}`,
+    `┃ ⭐ ${worker?.rating || 0} Rating`,
+    ``,
+
+    `👤 *Customer Details*`,
+    `┃ ${form?.name || "—"}`,
+    `┃ ${form?.phone || "—"}`,
+    `┃ ${form?.email || "—"}`,
+    ``,
+
+    `📍 *Service Address*`,
+    `┃ ${
+      addressText ||
+      "Address not available"
+    }`,
+    ``,
+
+    `📅 *Booking Schedule*`,
+    `┃ Date: ${formatDate(
+      form?.date,
+    )}`,
+    `┃ Time: ${
+      form?.time || "—"
+    }`,
+    `┃ Duration: ${
+      form?.duration ||
+      "—"
+    } hour(s)`,
+    ``,
+
+    `🔧 *Service Type*`,
+    `┃ ${
+      form?.serviceType ||
+      "—"
+    }`,
+    ``,
+  ];
+
+  /* ==========================================================
+     DESCRIPTION
+  ========================================================== */
+
+  if (
+    form?.description
+  ) {
+    lines.push(
+      `📝 *Description*`,
+      `┃ ${form.description}`,
+      ``,
+    );
+  }
+
+  /* ==========================================================
+     MATERIALS
+  ========================================================== */
+
+  if (
+    materialLines.length >
+    0
+  ) {
+    lines.push(
+      `📦 *Selected Materials*`,
+      `┃────────────────────`,
+      ...materialLines,
+      ``,
+    );
+  }
+
+  /* ==========================================================
+     PAYMENT
+
+     NO SERVICE CHARGE
+  ========================================================== */
+
+  lines.push(
+    `💳 *Payment Summary*`,
+    `┃────────────────────`,
+
+    `┃ Worker Charges : ₹${totalCost.toFixed(
+      2,
+    )}`,
+
+    materialsCost > 0
+      ? `┃ Materials Cost : ₹${materialsCost.toFixed(
+          2,
+        )}`
+      : null,
+
+    `┃────────────────────`,
+
+    `┃ 💰 *Grand Total : ₹${grandTotal.toFixed(
+      2,
+    )}*`,
+
+    ``,
+
+    `🛡️ *Booking Status*`,
+    `┃ ${statusText}`,
+    ``,
+
+    `🚀 Powered by Workkerz`,
+    `👷 Trusted Workers • Fast Booking • Secure Platform`,
+    ``,
+
+    `══════════════════════`,
+  );
+
+  return lines
+    .flat()
+    .filter(Boolean)
+    .join("\n");
+}
+
+/* ============================================================
+   PRICE ROW
+============================================================ */
 
 function PriceRow({
   label,
@@ -919,9 +1229,9 @@ function PriceRow({
   );
 }
 
-// ============================================================
-// MINI ROW
-// ============================================================
+/* ============================================================
+   MINI ROW
+============================================================ */
 
 function MiniRow({
   label,

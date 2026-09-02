@@ -9,61 +9,133 @@ import { supabase } from "@/lib/supabase";
 
 import { ChevronLeft } from "lucide-react";
 
-import type { PricingType, PriceKey } from "@/app/data/workers";
+import type {
+  PricingType,
+  PriceKey,
+} from "@/app/data/workers";
 
 type Props = {
   onBack?: () => void;
   onCreated?: (worker: unknown) => void;
 };
 
-type Device = "desktop" | "tablet" | "mobile";
+type Device =
+  | "desktop"
+  | "tablet"
+  | "mobile";
 
 export default function WorkerOnboardForm({
   onBack,
   onCreated,
 }: Props) {
-  const [device, setDevice] = useState<Device>("desktop");
+  const [device, setDevice] =
+    useState<Device>("desktop");
 
   /* =====================================================
      BASIC INFORMATION
   ===================================================== */
 
-  const [name, setName] = useState("");
-  const [phone, setPhone] = useState("");
-  const [specialty, setSpecialty] = useState("");
-  const [location, setLocation] = useState("");
-  const [labourChauk, setLabourChauk] = useState("");
+  const [name, setName] =
+    useState("");
+
+  const [phone, setPhone] =
+    useState("");
+
+  const [specialty, setSpecialty] =
+    useState("");
+
+  const [location, setLocation] =
+    useState("");
+
+  const [labourChauk, setLabourChauk] =
+    useState("");
 
   /* =====================================================
      PHOTO
   ===================================================== */
 
-  const [photo, setPhoto] = useState<File | null>(null);
+  const [photo, setPhoto] =
+    useState<File | null>(null);
 
   /* =====================================================
      CATEGORY
   ===================================================== */
 
-  const [category, setCategory] = useState("");
-  const [subcategory, setSubcategory] = useState("");
+  const [category, setCategory] =
+    useState("");
+
+  const [subcategory, setSubcategory] =
+    useState("");
 
   /* =====================================================
      SERVICE TYPES
-     
-     SINGLE SOURCE OF TRUTH
+
+     Multiple services allowed.
+
+     Example:
+     [
+       "Repair",
+       "Installation",
+       "Emergency"
+     ]
+
+     IMPORTANT:
+     Service names are completely separate from
+     Display Charge.
   ===================================================== */
 
-  const [serviceTypes, setServiceTypes] = useState<string[]>([]);
+  const [serviceTypes, setServiceTypes] =
+    useState<string[]>([]);
+
+  /* =====================================================
+     DISPLAY CHARGE
+
+     ONLY ONE pricing option can be selected.
+
+     IMPORTANT:
+     This does NOT contain a service name.
+
+     Allowed values:
+
+     per_job
+     half_day
+     full_day
+     monthly
+     visit_charge
+
+     Example:
+
+     startingPrice = 300
+     halfDayPrice = 600
+     fullDayPrice = 1000
+
+     displayService = "half_day"
+
+     Database:
+     workers.display_service = "half_day"
+  ===================================================== */
+
+  const [displayService, setDisplayService] =
+    useState<PriceKey | null>(null);
 
   /* =====================================================
      PROFESSIONAL INFORMATION
   ===================================================== */
 
-  const [experience, setExperience] = useState("");
-  const [responseTime, setResponseTime] = useState("");
-  const [bio, setBio] = useState("");
-  const [skills, setSkills] = useState<string[]>([]);
-  const [certifications, setCertifications] = useState<string[]>([]);
+  const [experience, setExperience] =
+    useState("");
+
+  const [responseTime, setResponseTime] =
+    useState("");
+
+  const [bio, setBio] =
+    useState("");
+
+  const [skills, setSkills] =
+    useState<string[]>([]);
+
+  const [certifications, setCertifications] =
+    useState<string[]>([]);
 
   /* =====================================================
      PRICING
@@ -72,40 +144,63 @@ export default function WorkerOnboardForm({
   const [pricingType, setPricingType] =
     useState<PricingType>("custom");
 
-  const [startingPrice, setStartingPrice] = useState("");
-  const [halfDayPrice, setHalfDayPrice] = useState("");
-  const [fullDayPrice, setFullDayPrice] = useState("");
-  const [monthlyPrice, setMonthlyPrice] = useState("");
-  const [visitCharge, setVisitCharge] = useState("");
+  const [startingPrice, setStartingPrice] =
+    useState("");
+
+  const [halfDayPrice, setHalfDayPrice] =
+    useState("");
+
+  const [fullDayPrice, setFullDayPrice] =
+    useState("");
+
+  const [monthlyPrice, setMonthlyPrice] =
+    useState("");
+
+  const [visitCharge, setVisitCharge] =
+    useState("");
 
   /* =====================================================
      VISIBLE PRICING TYPES
-     
-     SINGLE SOURCE OF TRUTH
-     
-     Database:
-     public.workers.visible_pricing_types
+
+     This is separate from display_service.
+
+     visible_pricing_types:
+     [
+       "per_job",
+       "half_day"
+     ]
+
+     display_service:
+     "half_day"
   ===================================================== */
 
-  const [visiblePricingTypes, setVisiblePricingTypes] =
-    useState<PriceKey[]>([
-      "per_job",
-      "half_day",
-    ]);
+  const [
+    visiblePricingTypes,
+    setVisiblePricingTypes,
+  ] = useState<PriceKey[]>([
+    "per_job",
+    "half_day",
+  ]);
 
   /* =====================================================
      AVAILABILITY
   ===================================================== */
 
-  const [available, setAvailable] = useState(true);
+  const [available, setAvailable] =
+    useState(true);
 
   /* =====================================================
      SAVE STATE
   ===================================================== */
 
-  const [saving, setSaving] = useState(false);
-  const [error, setError] = useState("");
-  const [success, setSuccess] = useState("");
+  const [saving, setSaving] =
+    useState(false);
+
+  const [error, setError] =
+    useState("");
+
+  const [success, setSuccess] =
+    useState("");
 
   /* =====================================================
      DEVICE DETECTION
@@ -113,7 +208,8 @@ export default function WorkerOnboardForm({
 
   useEffect(() => {
     const detectDevice = () => {
-      const ua = navigator.userAgent.toLowerCase();
+      const ua =
+        navigator.userAgent.toLowerCase();
 
       if (!ua.includes("android")) {
         setDevice("desktop");
@@ -125,15 +221,25 @@ export default function WorkerOnboardForm({
         window.innerHeight,
       );
 
-      setDevice(shortest >= 600 ? "tablet" : "mobile");
+      setDevice(
+        shortest >= 600
+          ? "tablet"
+          : "mobile",
+      );
     };
 
     detectDevice();
 
-    window.addEventListener("resize", detectDevice);
+    window.addEventListener(
+      "resize",
+      detectDevice,
+    );
 
     return () => {
-      window.removeEventListener("resize", detectDevice);
+      window.removeEventListener(
+        "resize",
+        detectDevice,
+      );
     };
   }, []);
 
@@ -145,25 +251,39 @@ export default function WorkerOnboardForm({
     file: File,
   ): Promise<string> => {
     const extension =
-      file.name.split(".").pop()?.toLowerCase() || "jpg";
+      file.name
+        .split(".")
+        .pop()
+        ?.toLowerCase() || "jpg";
 
     const safeName =
       name
         .trim()
         .toLowerCase()
         .replace(/[^a-z0-9]+/g, "-")
-        .replace(/^-+|-+$/g, "") || "worker";
+        .replace(
+          /^-+|-+$/g,
+          "",
+        ) || "worker";
 
-    const path = `workers/${safeName}-${Date.now()}.${extension}`;
+    const path =
+      `workers/${safeName}-${Date.now()}.${extension}`;
 
-    const { error: uploadError } =
+    const {
+      error: uploadError,
+    } =
       await supabase.storage
         .from("workers")
-        .upload(path, file, {
-          cacheControl: "3600",
-          upsert: false,
-          contentType: file.type,
-        });
+        .upload(
+          path,
+          file,
+          {
+            cacheControl: "3600",
+            upsert: false,
+            contentType:
+              file.type,
+          },
+        );
 
     if (uploadError) {
       throw new Error(
@@ -172,9 +292,10 @@ export default function WorkerOnboardForm({
       );
     }
 
-    const { data } = supabase.storage
-      .from("workers")
-      .getPublicUrl(path);
+    const { data } =
+      supabase.storage
+        .from("workers")
+        .getPublicUrl(path);
 
     if (!data?.publicUrl) {
       throw new Error(
@@ -197,7 +318,8 @@ export default function WorkerOnboardForm({
       return;
     }
 
-    const number = Number(value);
+    const number =
+      Number(value);
 
     if (!Number.isFinite(number)) {
       throw new Error(
@@ -220,19 +342,63 @@ export default function WorkerOnboardForm({
     price: PriceKey,
     checked: boolean,
   ) => {
-    setVisiblePricingTypes((current) => {
-      if (checked) {
-        if (current.includes(price)) {
-          return current;
+    setVisiblePricingTypes(
+      (current) => {
+        if (checked) {
+          if (
+            current.includes(price)
+          ) {
+            return current;
+          }
+
+          return [
+            ...current,
+            price,
+          ];
         }
 
-        return [...current, price];
-      }
+        return current.filter(
+          (item) =>
+            item !== price,
+        );
+      },
+    );
+  };
 
-      return current.filter(
-        (item) => item !== price,
+  /* =====================================================
+     DISPLAY CHARGE CHANGE
+
+     IMPORTANT:
+     Display Charge is selected from PricingSection.
+
+     It is NOT related to serviceTypes.
+
+     Example:
+
+     Half Day ₹600
+     ↓
+     displayService = "half_day"
+  ===================================================== */
+
+  const handleDisplayServiceChange = (
+    price: PriceKey | null,
+  ) => {
+    if (!price) {
+      setDisplayService(null);
+
+      console.log(
+        "DISPLAY CHARGE CLEARED",
       );
-    });
+
+      return;
+    }
+
+    setDisplayService(price);
+
+    console.log(
+      "DISPLAY CHARGE SELECTED:",
+      price,
+    );
   };
 
   /* =====================================================
@@ -253,20 +419,30 @@ export default function WorkerOnboardForm({
       =============================================== */
 
       if (!name.trim()) {
-        throw new Error("Worker name is required.");
+        throw new Error(
+          "Worker name is required.",
+        );
       }
 
-      if (name.trim().length < 2) {
+      if (
+        name.trim().length < 2
+      ) {
         throw new Error(
           "Worker name must be at least 2 characters.",
         );
       }
 
       if (!phone.trim()) {
-        throw new Error("Phone number is required.");
+        throw new Error(
+          "Phone number is required.",
+        );
       }
 
-      if (!/^[6-9]\d{9}$/.test(phone.trim())) {
+      if (
+        !/^[6-9]\d{9}$/.test(
+          phone.trim(),
+        )
+      ) {
         throw new Error(
           "Enter a valid 10 digit mobile number.",
         );
@@ -278,29 +454,54 @@ export default function WorkerOnboardForm({
         );
       }
 
-      if (!subcategory.trim()) {
+      if (
+        !subcategory.trim()
+      ) {
         throw new Error(
           "Worker subcategory is required.",
         );
       }
 
       if (!specialty.trim()) {
-        throw new Error("Specialty is required.");
+        throw new Error(
+          "Specialty is required.",
+        );
       }
 
       if (!location.trim()) {
-        throw new Error("Location is required.");
+        throw new Error(
+          "Location is required.",
+        );
       }
 
       /* ===============================================
          PRICE VALIDATION
       =============================================== */
 
-      validatePrice(startingPrice, "Starting price");
-      validatePrice(halfDayPrice, "Half day price");
-      validatePrice(fullDayPrice, "Full day price");
-      validatePrice(monthlyPrice, "Monthly price");
-      validatePrice(visitCharge, "Visit charge");
+      validatePrice(
+        startingPrice,
+        "Starting price",
+      );
+
+      validatePrice(
+        halfDayPrice,
+        "Half day price",
+      );
+
+      validatePrice(
+        fullDayPrice,
+        "Full day price",
+      );
+
+      validatePrice(
+        monthlyPrice,
+        "Monthly price",
+      );
+
+      validatePrice(
+        visitCharge,
+        "Visit charge",
+      );
 
       /* ===============================================
          CLEAN VISIBLE PRICES
@@ -308,54 +509,105 @@ export default function WorkerOnboardForm({
 
       const cleanVisiblePricingTypes =
         Array.from(
-          new Set(visiblePricingTypes),
+          new Set(
+            visiblePricingTypes,
+          ),
         );
-
-      setSaving(true);
-
-      /* ===============================================
-         AUTH
-      =============================================== */
-
-      const {
-        data: { session },
-      } = await supabase.auth.getSession();
-
-      if (!session?.user) {
-        throw new Error(
-          "Your admin session has expired. Please login again.",
-        );
-      }
-
-      /* ===============================================
-         PHOTO
-      =============================================== */
-
-      let photoUrl: string | null = null;
-
-      if (photo) {
-        photoUrl = await uploadWorkerPhoto(photo);
-      }
 
       /* ===============================================
          CLEAN SERVICES
+
+         Services are independent from display charge.
       =============================================== */
 
-      const cleanServices = Array.from(
-        new Map(
-          serviceTypes
-            .filter(
-              (service): service is string =>
-                typeof service === "string",
-            )
-            .map((service) => service.trim())
-            .filter(Boolean)
-            .map((service) => [
-              service.toLowerCase(),
-              service,
-            ]),
-        ).values(),
-      );
+      const cleanServices =
+        Array.from(
+          new Map(
+            serviceTypes
+              .filter(
+                (
+                  service,
+                ): service is string =>
+                  typeof service ===
+                  "string",
+              )
+              .map((service) =>
+                service.trim(),
+              )
+              .filter(Boolean)
+              .map(
+                (service) => [
+                  service.toLowerCase(),
+                  service,
+                ],
+              ),
+          ).values(),
+        );
+
+      /* ===============================================
+         FILLED PRICING OPTIONS
+
+         Only prices greater than 0 are considered
+         valid Display Charge options.
+      =============================================== */
+
+      const filledPricing: Record<
+        PriceKey,
+        number
+      > = {
+        per_job:
+          Number(
+            startingPrice || 0,
+          ),
+
+        half_day:
+          Number(
+            halfDayPrice || 0,
+          ),
+
+        full_day:
+          Number(
+            fullDayPrice || 0,
+          ),
+
+        monthly:
+          Number(
+            monthlyPrice || 0,
+          ),
+
+        visit_charge:
+          Number(
+            visitCharge || 0,
+          ),
+      };
+
+      /* ===============================================
+         DISPLAY CHARGE VALIDATION
+
+         displayService must point to a filled price.
+      =============================================== */
+
+      if (displayService) {
+        const selectedPrice =
+          filledPricing[
+            displayService
+          ];
+
+        if (
+          !Number.isFinite(
+            selectedPrice,
+          ) ||
+          selectedPrice <= 0
+        ) {
+          throw new Error(
+            "Display charge must be selected from a filled pricing option.",
+          );
+        }
+      }
+
+      /* ===============================================
+         LOG
+      =============================================== */
 
       console.log(
         "================================",
@@ -372,9 +624,51 @@ export default function WorkerOnboardForm({
       );
 
       console.log(
+        "DISPLAY CHARGE:",
+        displayService,
+      );
+
+      console.log(
+        "FILLED PRICING:",
+        filledPricing,
+      );
+
+      console.log(
         "VISIBLE PRICING TYPES:",
         cleanVisiblePricingTypes,
       );
+
+      setSaving(true);
+
+      /* ===============================================
+         AUTH
+      =============================================== */
+
+      const {
+        data: { session },
+      } =
+        await supabase.auth.getSession();
+
+      if (!session?.user) {
+        throw new Error(
+          "Your admin session has expired. Please login again.",
+        );
+      }
+
+      /* ===============================================
+         PHOTO
+      =============================================== */
+
+      let photoUrl:
+        | string
+        | null = null;
+
+      if (photo) {
+        photoUrl =
+          await uploadWorkerPhoto(
+            photo,
+          );
+      }
 
       /* ===============================================
          DATABASE PAYLOAD
@@ -382,34 +676,62 @@ export default function WorkerOnboardForm({
 
       const workerData = {
         name: name.trim(),
+
         phone: phone.trim(),
-        category: category.trim(),
-        subcategory: subcategory.trim(),
-        specialty: specialty.trim(),
-        location: location.trim(),
+
+        category:
+          category.trim(),
+
+        subcategory:
+          subcategory.trim(),
+
+        specialty:
+          specialty.trim(),
+
+        location:
+          location.trim(),
 
         labour_chauk:
-          labourChauk.trim() || null,
+          labourChauk.trim() ||
+          null,
 
         years_experience:
-          Number(experience) || 0,
+          Number(experience) ||
+          0,
 
         bio:
           bio.trim() || null,
 
         response_time:
-          responseTime.trim() || null,
+          responseTime.trim() ||
+          null,
 
         skills:
           Array.isArray(skills)
             ? [...skills]
             : [],
 
+        /* =========================================
+           ALL SELECTED SERVICES
+        ========================================= */
+
         services:
           cleanServices,
 
+        /* =========================================
+           ONE DISPLAY CHARGE
+
+           Example:
+           "half_day"
+        ========================================= */
+
+        display_service:
+          displayService,
+
         certifications:
-          Array.isArray(certifications)
+          Array.isArray(
+            certifications,
+          )
             ? [...certifications]
             : [],
 
@@ -417,19 +739,30 @@ export default function WorkerOnboardForm({
           pricingType,
 
         starting_price:
-          Number(startingPrice) || 0,
+          Number(startingPrice) ||
+          0,
 
         half_day_price:
-          Number(halfDayPrice) || 0,
+          Number(halfDayPrice) ||
+          0,
 
         full_day_price:
-          Number(fullDayPrice) || 0,
+          Number(fullDayPrice) ||
+          0,
 
         monthly_price:
-          Number(monthlyPrice) || 0,
+          Number(monthlyPrice) ||
+          0,
 
         visit_charge:
-          Number(visitCharge) || 0,
+          Number(visitCharge) ||
+          0,
+
+        /* =========================================
+           VISIBLE PRICING
+
+           Separate from display_service.
+        ========================================= */
 
         visible_pricing_types:
           cleanVisiblePricingTypes,
@@ -452,11 +785,12 @@ export default function WorkerOnboardForm({
       const {
         data: worker,
         error: insertError,
-      } = await supabase
-        .from("workers")
-        .insert(workerData)
-        .select("*")
-        .single();
+      } =
+        await supabase
+          .from("workers")
+          .insert(workerData)
+          .select("*")
+          .single();
 
       /* ===============================================
          ERROR
@@ -468,19 +802,28 @@ export default function WorkerOnboardForm({
           insertError,
         );
 
-        if (insertError.code === "23505") {
+        if (
+          insertError.code ===
+          "23505"
+        ) {
           throw new Error(
             "This worker already exists with the same name, category, subcategory, specialty and location.",
           );
         }
 
-        if (insertError.code === "42501") {
+        if (
+          insertError.code ===
+          "42501"
+        ) {
           throw new Error(
             "You do not have permission to add workers.",
           );
         }
 
-        if (insertError.code === "23503") {
+        if (
+          insertError.code ===
+          "23503"
+        ) {
           throw new Error(
             "Worker data contains an invalid reference.",
           );
@@ -511,9 +854,22 @@ export default function WorkerOnboardForm({
         "SAVED SERVICES:",
         (
           worker as {
-            services?: string[] | null;
+            services?:
+              | string[]
+              | null;
           }
         ).services,
+      );
+
+      console.log(
+        "SAVED DISPLAY SERVICE:",
+        (
+          worker as {
+            display_service?:
+              | string
+              | null;
+          }
+        ).display_service,
       );
 
       console.log(
@@ -524,7 +880,8 @@ export default function WorkerOnboardForm({
               | string[]
               | null;
           }
-        ).visible_pricing_types,
+        )
+          .visible_pricing_types,
       );
 
       /* ===============================================
@@ -534,7 +891,9 @@ export default function WorkerOnboardForm({
       const workerCode =
         (
           worker as {
-            worker_code?: string | null;
+            worker_code?:
+              | string
+              | null;
           }
         ).worker_code;
 
@@ -583,12 +942,21 @@ export default function WorkerOnboardForm({
 
   return (
     <div className="min-h-screen bg-[#F5F7FA]">
+
+      {/* =================================================
+          HEADER
+      ================================================= */}
+
       <header className="sticky top-0 z-40 border-b border-[#E9ECF1] bg-white/95 px-3 pt-12 pb-3 backdrop-blur-md sm:px-4 sm:pt-8 sm:pb-3.5 md:pt-6 lg:px-6 lg:pt-4 lg:pb-4">
+
         <div className="mx-auto flex w-full max-w-5xl items-center gap-2.5 sm:gap-3">
+
           {onBack && (
             <button
               type="button"
-              onClick={handleCancel}
+              onClick={
+                handleCancel
+              }
               disabled={saving}
               aria-label="Go back"
               className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl text-[#334155] transition hover:bg-[#F1F5F9] active:scale-95 disabled:cursor-not-allowed disabled:opacity-50 sm:h-10 sm:w-10"
@@ -601,6 +969,7 @@ export default function WorkerOnboardForm({
           )}
 
           <div className="min-w-0 flex-1">
+
             <h1 className="truncate text-base font-bold leading-5 text-[#0F172A] sm:text-lg sm:leading-6">
               Worker Onboarding
             </h1>
@@ -608,16 +977,30 @@ export default function WorkerOnboardForm({
             <p className="mt-0.5 truncate text-[11px] leading-4 text-[#64748B] sm:text-xs">
               Add a new worker
             </p>
+
           </div>
         </div>
       </header>
 
+      {/* =================================================
+          MAIN
+      ================================================= */}
+
       <main className="mx-auto w-full max-w-5xl px-3 pt-3 pb-32 sm:px-4 sm:pt-4 sm:pb-32 md:pt-3 lg:px-6 lg:pt-4 lg:pb-32">
+
+        {/* =================================================
+            ERROR
+        ================================================= */}
+
         {error && (
           <div className="mb-3 rounded-xl border border-red-200 bg-red-50 px-3 py-2.5 text-xs font-semibold leading-5 text-red-700 sm:mb-4 sm:px-4 sm:py-3 sm:text-sm">
             {error}
           </div>
         )}
+
+        {/* =================================================
+            SUCCESS
+        ================================================= */}
 
         {success && (
           <div className="mb-3 rounded-xl border border-orange-200 bg-orange-50 px-3 py-2.5 text-xs font-semibold leading-5 text-orange-700 sm:mb-4 sm:px-4 sm:py-3 sm:text-sm">
@@ -625,60 +1008,213 @@ export default function WorkerOnboardForm({
           </div>
         )}
 
+        {/* =================================================
+            FORM SECTIONS
+        ================================================= */}
+
         <WorkerOnboardSections
+          /* =============================================
+             BASIC
+          ============================================= */
+
           name={name}
           phone={phone}
           specialty={specialty}
           location={location}
-          labourChauk={labourChauk}
+          labourChauk={
+            labourChauk
+          }
+
           setName={setName}
           setPhone={setPhone}
-          setSpecialty={setSpecialty}
-          setLocation={setLocation}
-          setLabourChauk={setLabourChauk}
+          setSpecialty={
+            setSpecialty
+          }
+          setLocation={
+            setLocation
+          }
+          setLabourChauk={
+            setLabourChauk
+          }
+
+          /* =============================================
+             PHOTO
+          ============================================= */
+
           photo={photo}
           setPhoto={setPhoto}
+
+          /* =============================================
+             CATEGORY
+          ============================================= */
+
           category={category}
-          setCategory={setCategory}
-          subcategory={subcategory}
-          setSubcategory={setSubcategory}
-          serviceTypes={serviceTypes}
-          setServiceTypes={setServiceTypes}
-          experience={experience}
-          setExperience={setExperience}
-          responseTime={responseTime}
-          setResponseTime={setResponseTime}
+          setCategory={
+            setCategory
+          }
+
+          subcategory={
+            subcategory
+          }
+          setSubcategory={
+            setSubcategory
+          }
+
+          /* =============================================
+             SERVICES
+          ============================================= */
+
+          serviceTypes={
+            serviceTypes
+          }
+          setServiceTypes={
+            setServiceTypes
+          }
+
+          /* =============================================
+             DISPLAY CHARGE
+          ============================================= */
+
+          displayService={
+            displayService
+          }
+
+          setDisplayService={
+            handleDisplayServiceChange
+          }
+
+          /* =============================================
+             PROFESSIONAL
+          ============================================= */
+
+          experience={
+            experience
+          }
+          setExperience={
+            setExperience
+          }
+
+          responseTime={
+            responseTime
+          }
+          setResponseTime={
+            setResponseTime
+          }
+
           bio={bio}
           setBio={setBio}
+
           skills={skills}
           setSkills={setSkills}
-          services={serviceTypes}
-          setServices={setServiceTypes}
-          certifications={certifications}
-          setCertifications={setCertifications}
-          pricingType={pricingType}
-          setPricingType={setPricingType}
-          startingPrice={startingPrice}
-          setStartingPrice={setStartingPrice}
-          halfDayPrice={halfDayPrice}
-          setHalfDayPrice={setHalfDayPrice}
-          fullDayPrice={fullDayPrice}
-          setFullDayPrice={setFullDayPrice}
-          monthlyPrice={monthlyPrice}
-          setMonthlyPrice={setMonthlyPrice}
-          visitCharge={visitCharge}
-          setVisitCharge={setVisitCharge}
-          visiblePricingTypes={visiblePricingTypes}
-          setVisiblePricingTypes={setVisiblePricingTypes}
-          handleVisiblePriceChange={handleVisiblePriceChange}
-          available={available}
-          setAvailable={setAvailable}
-          categories={WORKER_CATEGORIES}
+
+          services={
+            serviceTypes
+          }
+          setServices={
+            setServiceTypes
+          }
+
+          certifications={
+            certifications
+          }
+          setCertifications={
+            setCertifications
+          }
+
+          /* =============================================
+             PRICING
+          ============================================= */
+
+          pricingType={
+            pricingType
+          }
+          setPricingType={
+            setPricingType
+          }
+
+          startingPrice={
+            startingPrice
+          }
+          setStartingPrice={
+            setStartingPrice
+          }
+
+          halfDayPrice={
+            halfDayPrice
+          }
+          setHalfDayPrice={
+            setHalfDayPrice
+          }
+
+          fullDayPrice={
+            fullDayPrice
+          }
+          setFullDayPrice={
+            setFullDayPrice
+          }
+
+          monthlyPrice={
+            monthlyPrice
+          }
+          setMonthlyPrice={
+            setMonthlyPrice
+          }
+
+          visitCharge={
+            visitCharge
+          }
+          setVisitCharge={
+            setVisitCharge
+          }
+
+          /* =============================================
+             VISIBLE PRICING
+          ============================================= */
+
+          visiblePricingTypes={
+            visiblePricingTypes
+          }
+
+          setVisiblePricingTypes={
+            setVisiblePricingTypes
+          }
+
+          handleVisiblePriceChange={
+            handleVisiblePriceChange
+          }
+
+          /* =============================================
+             AVAILABILITY
+          ============================================= */
+
+          available={
+            available
+          }
+          setAvailable={
+            setAvailable
+          }
+
+          /* =============================================
+             OTHER
+          ============================================= */
+
+          categories={
+            WORKER_CATEGORIES
+          }
+
           device={device}
-          onCancel={handleCancel}
-          onSave={handleSave}
+
+          onCancel={
+            handleCancel
+          }
+
+          onSave={
+            handleSave
+          }
+
           saving={saving}
         />
+
       </main>
     </div>
   );

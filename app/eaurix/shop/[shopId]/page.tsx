@@ -3,6 +3,7 @@
 import {
   useEffect,
   useMemo,
+  useRef,
   useState,
 } from "react";
 
@@ -14,8 +15,6 @@ import {
   MapPin,
   BadgeCheck,
   Package,
-  Plus,
-  Minus,
   X,
 } from "lucide-react";
 
@@ -25,6 +24,8 @@ import {
 } from "next/navigation";
 
 import { EAurixCart } from "../../components/EAurixCart";
+
+import ProductsGrid from "../../components/shop/ProductsGrid";
 
 import {
   getShop,
@@ -50,31 +51,18 @@ function getImageUrl(url?: string) {
   return url.trim();
 }
 
-function getProductName(
-  product: Product,
-) {
+function getProductName(product: Product) {
   return product.name || "Product";
 }
 
-function getProductImage(
-  product: Product,
-) {
-  return (
-    product.image ||
-    "/placeholder-product.png"
-  );
+function getProductImage(product: Product) {
+  return product.image || "/placeholder-product.png";
 }
 
-function getProductPrice(
-  product: Product,
-) {
-  const value = Number(
-    product.price ?? 0,
-  );
+function getProductPrice(product: Product) {
+  const value = Number(product.price ?? 0);
 
-  return Number.isFinite(value)
-    ? value
-    : 0;
+  return Number.isFinite(value) ? value : 0;
 }
 
 /* =========================================================
@@ -86,15 +74,10 @@ function ShopImage({
 }: {
   shop: Shop;
 }) {
-  const [imageError, setImageError] =
-    useState(false);
+  const [imageError, setImageError] = useState(false);
+  const [imageLoaded, setImageLoaded] = useState(false);
 
-  const [imageLoaded, setImageLoaded] =
-    useState(false);
-
-  const image = getImageUrl(
-    shop.logo,
-  );
+  const image = getImageUrl(shop.logo);
 
   if (!image || imageError) {
     return (
@@ -118,83 +101,16 @@ function ShopImage({
 
       <img
         src={image}
-        alt={
-          shop.shop_name ||
-          "Shop"
-        }
+        alt={shop.shop_name || "Shop"}
         loading="eager"
         referrerPolicy="no-referrer"
-        onLoad={() =>
-          setImageLoaded(true)
-        }
+        onLoad={() => setImageLoaded(true)}
         onError={() => {
           setImageError(true);
           setImageLoaded(true);
         }}
         className={`relative h-full w-full object-cover transition-opacity duration-300 ${
-          imageLoaded
-            ? "opacity-100"
-            : "opacity-0"
-        }`}
-      />
-    </>
-  );
-}
-
-/* =========================================================
-   PRODUCT IMAGE
-========================================================= */
-
-function ProductImage({
-  product,
-}: {
-  product: Product;
-}) {
-  const [imageError, setImageError] =
-    useState(false);
-
-  const [imageLoaded, setImageLoaded] =
-    useState(false);
-
-  const image =
-    getProductImage(product);
-
-  if (!image || imageError) {
-    return (
-      <div className="flex h-full w-full items-center justify-center bg-slate-50">
-        <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-white shadow-sm">
-          <Package
-            size={22}
-            strokeWidth={1.6}
-            className="text-slate-300"
-          />
-        </div>
-      </div>
-    );
-  }
-
-  return (
-    <>
-      {!imageLoaded && (
-        <div className="absolute inset-0 animate-pulse bg-slate-100" />
-      )}
-
-      <img
-        src={image}
-        alt={getProductName(product)}
-        loading="lazy"
-        referrerPolicy="no-referrer"
-        onLoad={() =>
-          setImageLoaded(true)
-        }
-        onError={() => {
-          setImageError(true);
-          setImageLoaded(true);
-        }}
-        className={`h-full w-full object-cover transition duration-300 ${
-          imageLoaded
-            ? "opacity-100"
-            : "opacity-0"
+          imageLoaded ? "opacity-100" : "opacity-0"
         }`}
       />
     </>
@@ -280,12 +196,8 @@ function ShopProductsSkeleton() {
         </div>
 
         <div className="grid grid-cols-2 gap-2.5">
-          {Array.from({
-            length: 6,
-          }).map((_, index) => (
-            <ProductSkeleton
-              key={index}
-            />
+          {Array.from({ length: 6 }).map((_, index) => (
+            <ProductSkeleton key={index} />
           ))}
         </div>
       </section>
@@ -294,181 +206,15 @@ function ShopProductsSkeleton() {
 }
 
 /* =========================================================
-   PRODUCT CARD
-========================================================= */
-
-function ProductCard({
-  product,
-  quantity,
-  onAdd,
-  onRemove,
-}: {
-  product: Product;
-  quantity: number;
-  onAdd: () => void;
-  onRemove: () => void;
-}) {
-  const name = getProductName(product);
-  const price = getProductPrice(product);
-
-  const outOfStock =
-    typeof product.stock === "number" &&
-    product.stock <= 0;
-
-  const hasDiscount =
-    product.originalPrice &&
-    product.originalPrice > price;
-
-  return (
-    <div className="group overflow-hidden rounded-[18px] border border-slate-200/80 bg-white shadow-[0_2px_10px_rgba(15,23,42,0.055)] transition-all duration-200 active:scale-[0.985]">
-      {/* IMAGE */}
-      <div className="relative aspect-[1/0.92] overflow-hidden bg-slate-50">
-        <ProductImage product={product} />
-
-        {/* IMAGE GRADIENT */}
-        <div className="pointer-events-none absolute inset-x-0 bottom-0 h-12 bg-gradient-to-t from-black/10 to-transparent" />
-
-        {/* CATEGORY */}
-        {product.categoryLabel && (
-          <span className="absolute left-2 top-2 max-w-[72%] truncate rounded-full border border-white/70 bg-white/95 px-2 py-1 text-[7px] font-extrabold uppercase tracking-wide text-slate-600 shadow-sm backdrop-blur">
-            {product.categoryLabel}
-          </span>
-        )}
-
-        {/* BADGE */}
-        {product.badge && (
-          <span className="absolute right-2 top-2 max-w-[65%] truncate rounded-full bg-emerald-600 px-2 py-1 text-[7px] font-extrabold uppercase tracking-wide text-white shadow-sm">
-            {product.badge}
-          </span>
-        )}
-
-        {/* DISCOUNT */}
-        {hasDiscount && (
-          <span className="absolute bottom-2 left-2 rounded-md bg-white/95 px-1.5 py-1 text-[7px] font-black text-emerald-700 shadow-sm">
-            {Math.round(
-              ((Number(product.originalPrice) - price) /
-                Number(product.originalPrice)) *
-                100,
-            )}
-            % OFF
-          </span>
-        )}
-
-        {/* OUT OF STOCK */}
-        {outOfStock && (
-          <div className="absolute inset-0 flex items-center justify-center bg-slate-900/40 backdrop-blur-[1px]">
-            <span className="rounded-full bg-white px-2.5 py-1.5 text-[8px] font-black tracking-wide text-red-600 shadow-md">
-              OUT OF STOCK
-            </span>
-          </div>
-        )}
-      </div>
-
-      {/* DETAILS */}
-      <div className="p-2.5">
-        {/* NAME */}
-        <h3 className="line-clamp-2 min-h-[32px] text-[11px] font-extrabold leading-4 text-slate-900">
-          {name}
-        </h3>
-
-        {/* BRAND + UNIT */}
-        <div className="mt-1 flex min-w-0 items-center gap-1.5">
-          {product.brand && (
-            <span className="max-w-[55%] truncate text-[8px] font-bold text-slate-500">
-              {product.brand}
-            </span>
-          )}
-
-          {product.brand && product.unit && (
-            <span className="h-1 w-1 shrink-0 rounded-full bg-slate-300" />
-          )}
-
-          {product.unit && (
-            <span className="truncate text-[8px] font-semibold text-slate-400">
-              1 {product.unit}
-            </span>
-          )}
-        </div>
-
-        {/* PRICE + CART */}
-        <div className="mt-2.5 flex items-end justify-between gap-2">
-          {/* PRICE */}
-          <div className="min-w-0">
-            <div className="flex items-baseline gap-1">
-              <span className="text-[15px] font-black leading-none text-emerald-700">
-                ₹{price.toLocaleString("en-IN")}
-              </span>
-            </div>
-
-            {hasDiscount && (
-              <p className="mt-1 text-[8px] font-semibold leading-none text-slate-400 line-through">
-                ₹
-                {Number(product.originalPrice).toLocaleString(
-                  "en-IN",
-                )}
-              </p>
-            )}
-          </div>
-
-          {/* QUANTITY */}
-          {quantity === 0 ? (
-            <button
-              type="button"
-              onClick={onAdd}
-              disabled={outOfStock}
-              aria-label={`Add ${name}`}
-              className="flex h-8 w-8 shrink-0 items-center justify-center rounded-[10px] bg-emerald-600 text-white shadow-[0_3px_8px_rgba(5,150,105,0.22)] transition-all active:scale-90 disabled:cursor-not-allowed disabled:bg-slate-300 disabled:shadow-none"
-            >
-              <Plus size={16} strokeWidth={3} />
-            </button>
-          ) : (
-            <div className="flex h-8 shrink-0 items-center overflow-hidden rounded-[10px] bg-emerald-600 text-white shadow-[0_3px_8px_rgba(5,150,105,0.22)]">
-              <button
-                type="button"
-                onClick={onRemove}
-                aria-label={`Remove ${name}`}
-                className="flex h-8 w-7 items-center justify-center transition-colors active:bg-emerald-700"
-              >
-                <Minus size={13} strokeWidth={3} />
-              </button>
-
-              <span className="flex min-w-5 items-center justify-center text-[10px] font-black">
-                {quantity}
-              </span>
-
-              <button
-                type="button"
-                onClick={onAdd}
-                disabled={
-                  typeof product.stock === "number" &&
-                  product.stock > 0 &&
-                  quantity >= product.stock
-                }
-                aria-label={`Increase ${name}`}
-                className="flex h-8 w-7 items-center justify-center transition-colors active:bg-emerald-700 disabled:cursor-not-allowed disabled:opacity-40"
-              >
-                <Plus size={13} strokeWidth={3} />
-              </button>
-            </div>
-          )}
-        </div>
-      </div>
-    </div>
-  );
-}
-/* =========================================================
    MAIN PAGE
 ========================================================= */
 
 export default function ShopProductsPage() {
-  const router =
-    useRouter();
+  const router = useRouter();
 
-  const params =
-    useParams();
+  const params = useParams();
 
-  const shopId =
-    String(params.shopId);
+  const shopId = String(params.shopId);
 
   /* =======================================================
      GLOBAL CART
@@ -480,22 +226,57 @@ export default function ShopProductsPage() {
     updateQty,
   } = usePlatform();
 
-  const [shop, setShop] =
-    useState<Shop | null>(
-      null,
-    );
+  /* =======================================================
+     SHOP
+  ======================================================= */
 
-  const [products, setProducts] =
-    useState<Product[]>([]);
+  const [shop, setShop] = useState<Shop | null>(null);
 
-  const [loading, setLoading] =
-    useState(true);
+  /* =======================================================
+     PRODUCTS
+  ======================================================= */
 
-  const [search, setSearch] =
-    useState("");
+  const [products, setProducts] = useState<Product[]>([]);
 
-  const [cartOpen, setCartOpen] =
-    useState(false);
+  const [loading, setLoading] = useState(true);
+
+  /* =======================================================
+     SEARCH
+  ======================================================= */
+
+  const [search, setSearch] = useState("");
+
+  /* =======================================================
+     PRODUCTS GRID STATE
+  ======================================================= */
+
+  const [sort, setSort] = useState("default");
+
+  const [activeCategory, setActiveCategory] =
+    useState<string | null>(null);
+
+  const [sidebarOpen, setSidebarOpen] = useState(false);
+
+  const categoryRef = useRef<HTMLDivElement | null>(null);
+
+  const loadMoreRef = useRef<HTMLDivElement | null>(null);
+
+  /* =======================================================
+     CART
+  ======================================================= */
+
+  const [cartOpen, setCartOpen] = useState(false);
+
+  /* =======================================================
+     SORT LABELS
+  ======================================================= */
+
+  const sortLabels: Record<string, string> = {
+    default: "Recommended",
+    price_asc: "Price: Low to High",
+    price_desc: "Price: High to Low",
+    rating: "Top Rated",
+  };
 
   /* =======================================================
      LOAD SHOP
@@ -506,10 +287,11 @@ export default function ShopProductsPage() {
 
     async function loadShop() {
       try {
-        const data =
-          await getShop(shopId);
+        const data = await getShop(shopId);
 
-        if (!mounted) return;
+        if (!mounted) {
+          return;
+        }
 
         setShop(data);
       } catch (error) {
@@ -544,10 +326,11 @@ export default function ShopProductsPage() {
       try {
         setLoading(true);
 
-        const data =
-          await getProducts(shopId);
+        const data = await getProducts(shopId);
 
-        if (!mounted) return;
+        if (!mounted) {
+          return;
+        }
 
         setProducts(data);
       } catch (error) {
@@ -576,60 +359,134 @@ export default function ShopProductsPage() {
   }, [shopId]);
 
   /* =======================================================
+     CATEGORIES
+  ======================================================= */
+
+  const categories = useMemo(() => {
+    const map = new Map<
+      string,
+      {
+        id: string;
+        name: string;
+      }
+    >();
+
+    for (const product of products) {
+      const categoryId = String(
+        product.category ||
+          product.categoryLabel ||
+          "other",
+      );
+
+      const categoryName = String(
+        product.categoryLabel ||
+          product.category ||
+          "Other",
+      );
+
+      if (!map.has(categoryId)) {
+        map.set(categoryId, {
+          id: categoryId,
+          name: categoryName,
+        });
+      }
+    }
+
+    return Array.from(map.values());
+  }, [products]);
+
+  /* =======================================================
      FILTER PRODUCTS
   ======================================================= */
 
-  const filteredProducts =
-    useMemo(() => {
-      const query =
-        search
-          .trim()
-          .toLowerCase();
+  const filteredProducts = useMemo(() => {
+    const query = search.trim().toLowerCase();
 
-      if (!query) {
-        return products;
-      }
+    let result = [...products];
 
-      return products.filter(
-        (product) => {
-          const name =
-            String(
-              product.name || "",
-            ).toLowerCase();
+    /* CATEGORY */
 
-          const category =
-            String(
-              product.categoryLabel ||
-                product.category ||
-                "",
-            ).toLowerCase();
+    if (activeCategory) {
+      result = result.filter((product) => {
+        const category = String(
+          product.category ||
+            product.categoryLabel ||
+            "other",
+        );
 
-          const brand =
-            String(
-              product.brand || "",
-            ).toLowerCase();
+        return category === activeCategory;
+      });
+    }
 
-          const material =
-            String(
-              product.materialName ||
-                "",
-            ).toLowerCase();
+    /* SEARCH */
 
-          return (
-            name.includes(query) ||
-            category.includes(query) ||
-            brand.includes(query) ||
-            material.includes(query)
-          );
-        },
+    if (query) {
+      result = result.filter((product) => {
+        const name = String(
+          product.name || "",
+        ).toLowerCase();
+
+        const category = String(
+          product.categoryLabel ||
+            product.category ||
+            "",
+        ).toLowerCase();
+
+        const brand = String(
+          product.brand || "",
+        ).toLowerCase();
+
+        const material = String(
+          product.materialName || "",
+        ).toLowerCase();
+
+        return (
+          name.includes(query) ||
+          category.includes(query) ||
+          brand.includes(query) ||
+          material.includes(query)
+        );
+      });
+    }
+
+    /* SORT */
+
+    if (sort === "price_asc") {
+      result.sort(
+        (a, b) =>
+          getProductPrice(a) -
+          getProductPrice(b),
       );
-    }, [
-      products,
-      search,
-    ]);
+    }
+
+    if (sort === "price_desc") {
+      result.sort(
+        (a, b) =>
+          getProductPrice(b) -
+          getProductPrice(a),
+      );
+    }
+
+    return result;
+  }, [
+    products,
+    search,
+    activeCategory,
+    sort,
+  ]);
 
   /* =======================================================
-     PRODUCT QUANTITY FROM GLOBAL CART
+     PRODUCTS GRID DATA
+  ======================================================= */
+
+  const paginatedProducts =
+    filteredProducts;
+
+  const visibleProducts =
+    filteredProducts;
+
+  /* =======================================================
+     PRODUCT QUANTITY
   ======================================================= */
 
   const getProductQuantity = (
@@ -637,8 +494,8 @@ export default function ShopProductsPage() {
   ) => {
     const item = cart.find(
       (cartItem) =>
-        cartItem.productId ===
-        productId,
+        cartItem.productId === productId &&
+        !cartItem.variantId,
     );
 
     return item?.qty || 0;
@@ -682,13 +539,12 @@ export default function ShopProductsPage() {
   const addProduct = (
     product: Product,
   ) => {
-    const productId =
-      String(product.id);
+    const productId = String(
+      product.id,
+    );
 
     const currentQuantity =
-      getProductQuantity(
-        productId,
-      );
+      getProductQuantity(productId);
 
     /* STOCK CHECK */
 
@@ -710,7 +566,7 @@ export default function ShopProductsPage() {
       return;
     }
 
-    /* GLOBAL CART */
+    /* ADD TO GLOBAL CART */
 
     addToCart({
       productId,
@@ -720,7 +576,8 @@ export default function ShopProductsPage() {
         "Product",
 
       brand:
-        product.brand || "",
+        product.brand ||
+        "",
 
       price:
         getProductPrice(
@@ -740,12 +597,13 @@ export default function ShopProductsPage() {
         "#10B981",
 
       unit:
-        product.unit || "",
+        product.unit ||
+        "",
     });
   };
 
   /* =======================================================
-     REMOVE / DECREASE PRODUCT
+     REMOVE PRODUCT
   ======================================================= */
 
   const removeProduct = (
@@ -754,14 +612,20 @@ export default function ShopProductsPage() {
     const item = cart.find(
       (cartItem) =>
         cartItem.productId ===
-        productId,
+          productId &&
+        !cartItem.variantId,
     );
 
-    if (!item) return;
+    if (!item) {
+      return;
+    }
 
     updateQty(
       item.id,
-      item.qty - 1,
+      Math.max(
+        0,
+        Number(item.qty || 0) - 1,
+      ),
     );
   };
 
@@ -818,8 +682,9 @@ export default function ShopProductsPage() {
      SHOP IMAGE
   ======================================================= */
 
-  const shopImage =
-    getImageUrl(shop.logo);
+  const shopImage = getImageUrl(
+    shop.logo,
+  );
 
   /* =======================================================
      UI
@@ -896,9 +761,7 @@ export default function ShopProductsPage() {
           <div className="relative flex items-center gap-3 p-4">
             <div className="relative h-16 w-16 shrink-0 overflow-hidden rounded-2xl border-2 border-white/80 bg-white shadow-lg">
               {shopImage ? (
-                <ShopImage
-                  shop={shop}
-                />
+                <ShopImage shop={shop} />
               ) : (
                 <div className="flex h-full w-full items-center justify-center bg-slate-50">
                   <Store
@@ -1019,7 +882,7 @@ export default function ShopProductsPage() {
           PRODUCTS HEADER
       =================================================== */}
 
-      <section className="px-3 pb-2 pt-5">
+      <section className="px-3 pb-1 pt-5">
         <div className="flex items-end justify-between gap-2">
           <div>
             <h2 className="text-[15px] font-black leading-5 text-slate-900">
@@ -1027,9 +890,7 @@ export default function ShopProductsPage() {
             </h2>
 
             <p className="mt-0.5 text-[9px] font-medium text-slate-500">
-              {
-                filteredProducts.length
-              }{" "}
+              {filteredProducts.length}{" "}
               {filteredProducts.length ===
               1
                 ? "product"
@@ -1047,80 +908,35 @@ export default function ShopProductsPage() {
       </section>
 
       {/* ===================================================
-          PRODUCTS
+          PRODUCTS GRID
+          
+          USING ProductsGrid.tsx
       =================================================== */}
 
-      <section className="px-3">
-        {!filteredProducts.length ? (
-          <div className="rounded-2xl border border-slate-100 bg-white px-5 py-12 text-center shadow-sm">
-            <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-slate-50">
-              {search ? (
-                <Search
-                  size={23}
-                  className="text-slate-400"
-                />
-              ) : (
-                <Package
-                  size={23}
-                  className="text-slate-400"
-                />
-              )}
-            </div>
-
-            <h3 className="mt-4 text-sm font-black text-slate-800">
-              {search
-                ? "No products found"
-                : "No products available"}
-            </h3>
-
-            <p className="mt-1 text-[10px] leading-4 text-slate-500">
-              {search
-                ? "Try another product name, brand or category."
-                : "This shop has not added any products yet."}
-            </p>
-
-            {search && (
-              <button
-                type="button"
-                onClick={() =>
-                  setSearch("")
-                }
-                className="mt-4 rounded-xl bg-emerald-600 px-4 py-2 text-[10px] font-black text-white active:scale-95"
-              >
-                Clear Search
-              </button>
-            )}
-          </div>
-        ) : (
-          <div className="grid grid-cols-2 gap-2.5">
-            {filteredProducts.map(
-              (product) => (
-                <ProductCard
-                  key={product.id}
-                  product={product}
-                  quantity={getProductQuantity(
-                    String(
-                      product.id,
-                    ),
-                  )}
-                  onAdd={() =>
-                    addProduct(
-                      product,
-                    )
-                  }
-                  onRemove={() =>
-                    removeProduct(
-                      String(
-                        product.id,
-                      ),
-                    )
-                  }
-                />
-              ),
-            )}
-          </div>
-        )}
-      </section>
+      <ProductsGrid
+        loading={loading}
+        sort={sort}
+        setSort={setSort}
+        sortLabels={sortLabels}
+        categories={categories}
+        activeCategory={activeCategory}
+        setActiveCategory={setActiveCategory}
+        categoryRef={categoryRef}
+        sidebarOpen={sidebarOpen}
+        setSidebarOpen={setSidebarOpen}
+        products={filteredProducts as any}
+        search={search}
+        setSearch={setSearch}
+        paginatedProducts={
+          paginatedProducts as any
+        }
+        visibleProducts={
+          visibleProducts as any
+        }
+        cart={cart}
+        addToCart={addToCart}
+        loadMoreRef={loadMoreRef}
+      />
 
       {/* ===================================================
           CART BAR
