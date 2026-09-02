@@ -56,6 +56,8 @@ type ApiWorker = {
   specialty?: string | null;
 
   services?: string[] | null;
+  displayService?: PriceKey | null;
+  display_service?: PriceKey | null;
 
   pricing_type?: string | null;
   pricingType?: PricingType | null;
@@ -207,6 +209,11 @@ function normalizeWorker(
       Array.isArray(row.services)
         ? row.services
         : [],
+
+    displayService:
+      row.displayService ??
+      row.display_service ??
+      null,
 
     pricingType:
       pricingValue(
