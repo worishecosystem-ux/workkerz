@@ -9,7 +9,6 @@ import WorkCategories from "./WorkCategories";
 import PlatformToggle from "./PlatformToggle";
 export default function HomeBanner() {
   const { platform, setPlatform } = usePlatform();
-  const [mobileOpen, setMobileOpen] = useState(false);
   const router = useRouter();
 
   const isEaurix = platform === "eaurix";

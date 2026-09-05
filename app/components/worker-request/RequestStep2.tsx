@@ -1,11 +1,24 @@
 "use client";
 
+import { useState } from "react";
 import {
-  BriefcaseBusiness,
-  ChevronDown,
+  Brush,
+  Car,
+  Check,
+  ChefHat,
+  Droplets,
+  Hammer,
+  HardHat,
   Minus,
   Plus,
+  ShieldCheck,
+  Sparkles,
+  SprayCan,
+  SquareStack,
   Users,
+  Wrench,
+  Zap,
+  X,
 } from "lucide-react";
 
 import type { WorkerGroup } from "@/app/components/ProjectWorkerGroups";
@@ -13,77 +26,102 @@ import type { WorkerGroup } from "@/app/components/ProjectWorkerGroups";
 interface RequestStep2Props {
   projectName: string;
   setProjectName: (value: string) => void;
-
   projectType: string;
   setProjectType: (value: string) => void;
-
   workerGroups: WorkerGroup[];
   setWorkerGroups: (value: WorkerGroup[]) => void;
-
   onNext: () => void;
   onBack: () => void;
 }
 
-/* =========================================================
-   WORKER TYPES / ALL WORKKERZ CATEGORIES
-========================================================= */
-
 const workerTypes = [
-  // Core Workforce
   "Labour",
   "Driver",
   "Mechanic",
   "Painter",
   "Washer",
   "Office Worker",
-
-  // Home & Professional Services
   "Home Services",
   "Home Contractor",
   "Electrician",
   "Plumber",
   "Carpenter",
-
-  // Construction
   "Construction",
   "Mason",
   "Tile Mason",
   "Bar Bender",
   "Welder",
   "Helper",
-
-  // Business & Industry
   "Factory",
   "Restaurant",
-
-  // Personal & Security Services
   "Salon & Beauty",
   "Security",
   "Event Services",
+  "Cleaner / Sweeper",
+  "Daily-Wage / Skilled Trades",
+  "Tiles & Marble Contractor",
+  "Mason / Bricklayer",
+  "AC Technician",
+  "Cook / Kitchen Helper",
+  "Pest Control Service",
+  "Car Wash Services",
 ];
 
-/* =========================================================
-   PROJECT TYPES
-========================================================= */
+const popularCategories = [
+  ["Cleaner / Sweeper", Sparkles, "text-purple-500"],
+  ["Daily-Wage / Skilled Trades", HardHat, "text-orange-400"],
+  ["Painter", Brush, "text-pink-500"],
+  ["Tiles & Marble Contractor", SquareStack, "text-purple-500"],
+  ["Mason / Bricklayer", Hammer, "text-amber-700"],
+  ["Plumber", Droplets, "text-sky-500"],
+  ["AC Technician", Wrench, "text-cyan-500"],
+  ["Electrician", Zap, "text-orange-500"],
+  ["Cook / Kitchen Helper", ChefHat, "text-red-500"],
+  ["Car Wash Services", Car, "text-sky-500"],
+  ["Pest Control Service", SprayCan, "text-pink-500"],
+  ["Security", ShieldCheck, "text-slate-500"],
+] as const;
 
-const projectTypes = [
-  "Construction",
-  "House Work",
-  "Commercial",
-  "Factory",
-  "Road Work",
-  "Renovation",
-  "Interior Work",
-  "Maintenance",
-  "Event Work",
-  "Office Work",
-  "Industrial Work",
-  "Other",
-];
+function getIcon(category: string) {
+  if (category.includes("Cleaner")) return Sparkles;
+  if (category.includes("Painter")) return Brush;
+  if (category.includes("Plumber")) return Droplets;
+  if (category.includes("Electrician")) return Zap;
+  if (category.includes("Mason")) return Hammer;
+  if (category.includes("Tile")) return SquareStack;
+  if (category.includes("AC")) return Wrench;
+  if (category.includes("Cook")) return ChefHat;
+  if (category.includes("Car Wash")) return Car;
+  if (category.includes("Pest")) return SprayCan;
+  if (category.includes("Security")) return ShieldCheck;
+  if (category.includes("Mechanic")) return Wrench;
+  if (category.includes("Carpenter")) return Hammer;
 
-/* =========================================================
-   COMPONENT
-========================================================= */
+  return HardHat;
+}
+
+function getColor(category: string) {
+  if (
+    category.includes("Cleaner") ||
+    category.includes("Painter") ||
+    category.includes("Pest")
+  ) {
+    return "text-pink-500";
+  }
+
+  if (
+    category.includes("Plumber") ||
+    category.includes("Car Wash")
+  ) {
+    return "text-sky-500";
+  }
+
+  if (category.includes("Electrician")) return "text-orange-500";
+  if (category.includes("AC")) return "text-cyan-500";
+  if (category.includes("Mason")) return "text-amber-700";
+
+  return "text-slate-500";
+}
 
 export default function RequestStep2({
   projectName,
@@ -92,517 +130,586 @@ export default function RequestStep2({
   setProjectType,
   workerGroups,
   setWorkerGroups,
-  onNext,
-  onBack,
 }: RequestStep2Props) {
-  /* =======================================================
-     TOTAL WORKERS
-  ======================================================= */
+  const [quantityCategory, setQuantityCategory] =
+    useState<string | null>(null);
+
+  const [quantity, setQuantity] = useState(1);
+
+  const getQuantity = (category: string) =>
+    Number(
+      workerGroups.find(
+        (item) => item.category === category,
+      )?.workers_required || 0,
+    );
+
+  const openQuantity = (category: string) => {
+    const existing = getQuantity(category);
+
+    setQuantity(existing > 0 ? existing : 1);
+    setQuantityCategory(category);
+  };
+
+  const saveQuantity = () => {
+    if (!quantityCategory) return;
+
+    const cleanQuantity = Math.max(
+      1,
+      Math.min(999, Number(quantity) || 1),
+    );
+
+    const exists = workerGroups.some(
+      (item) => item.category === quantityCategory,
+    );
+
+    if (exists) {
+      setWorkerGroups(
+        workerGroups.map((item) =>
+          item.category === quantityCategory
+            ? {
+                ...item,
+                workers_required: cleanQuantity,
+              }
+            : item,
+        ),
+      );
+    } else {
+      setWorkerGroups([
+        ...workerGroups,
+        {
+          id: `${Date.now()}-${quantityCategory}`,
+          category: quantityCategory,
+          workers_required: cleanQuantity,
+        },
+      ]);
+    }
+
+    setQuantityCategory(null);
+  };
+
+  const removeCategory = (category: string) => {
+    setWorkerGroups(
+      workerGroups.filter(
+        (item) => item.category !== category,
+      ),
+    );
+  };
 
   const totalWorkers = workerGroups.reduce(
-    (total, group) =>
-      total + Math.max(0, Number(group.workers_required) || 0),
+    (sum, item) =>
+      sum +
+      Math.max(
+        0,
+        Number(item.workers_required) || 0,
+      ),
     0,
   );
 
-  /* =======================================================
-     GET QUANTITY
-  ======================================================= */
-
-  function getQuantity(category: string) {
-    const group = workerGroups.find(
-      (item) => item.category === category,
-    );
-
-    return group ? Number(group.workers_required) || 0 : 0;
-  }
-
-  /* =======================================================
-     UPDATE QUANTITY
-  ======================================================= */
-
-  function updateQuantity(category: string, quantity: number) {
-    const safeQuantity = Math.max(
-      0,
-      Math.min(100, quantity),
-    );
-
-    const existing = workerGroups.find(
-      (group) => group.category === category,
-    );
-
-    /* =====================================================
-       REMOVE WHEN ZERO
-    ===================================================== */
-
-    if (safeQuantity === 0) {
-      setWorkerGroups(
-        workerGroups.filter(
-          (group) => group.category !== category,
-        ),
-      );
-
-      return;
-    }
-
-    /* =====================================================
-       UPDATE EXISTING
-    ===================================================== */
-
-    if (existing) {
-      setWorkerGroups(
-        workerGroups.map((group) =>
-          group.category === category
-            ? {
-                ...group,
-                workers_required: safeQuantity,
-              }
-            : group,
-        ),
-      );
-
-      return;
-    }
-
-    /* =====================================================
-       ADD NEW
-    ===================================================== */
-
-    setWorkerGroups([
-      ...workerGroups,
-      {
-        id: `${Date.now()}-${category}`,
-        category,
-        workers_required: safeQuantity,
-      },
-    ]);
-  }
-
-  /* =======================================================
-     ADD WORKER
-  ======================================================= */
-
-  function addWorkerType(category: string) {
-    if (getQuantity(category) > 0) {
-      return;
-    }
-
-    updateQuantity(category, 1);
-  }
-
-  /* =======================================================
-     REMOVE WORKER TYPE
-  ======================================================= */
-
-  function removeWorkerType(category: string) {
-    updateQuantity(category, 0);
-  }
-
-  /* =======================================================
-     SELECTED TYPES
-  ======================================================= */
-
-  const selectedTypes = workerTypes.filter(
-    (category) => getQuantity(category) > 0,
-  );
-
-  /* =======================================================
-     AVAILABLE TYPES
-  ======================================================= */
-
-  const availableTypes = workerTypes.filter(
-    (category) => getQuantity(category) === 0,
-  );
-
-  /* =======================================================
-     CAN CONTINUE
-  ======================================================= */
-
-  const canContinue =
-    projectName.trim().length > 0 &&
-    projectType.trim().length > 0 &&
-    totalWorkers > 0;
-
-  /* =======================================================
-     UI
-  ======================================================= */
+  const QuantityIcon = quantityCategory
+    ? getIcon(quantityCategory)
+    : HardHat;
 
   return (
-    <section className="overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-[0_10px_40px_rgba(0,0,0,0.05)]">
-      {/* ===================================================
-          HEADER
-      =================================================== */}
+    <>
+      {/* =====================================================
+          STEP 2 FORM
+          ONLY THIS AREA SCROLLS
+      ===================================================== */}
 
-      <div className="border-b border-gray-100 px-4 py-4 sm:px-5">
-        <div className="flex items-center gap-3">
-          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-emerald-50 text-emerald-600">
-            <Users className="h-5 w-5" />
-          </div>
+      <section
+        className="
+        relative
+        mx-auto
+        flex
+        w-full
+        max-w-[520px]
+        flex-col
+        overflow-hidden
+        rounded-2xl
+        border
+        border-gray-200
+        bg-white
+        shadow-[0_8px_30px_rgba(0,0,0,0.06)]
 
-          <div>
-            <p className="text-[9px] font-black uppercase tracking-[0.14em] text-emerald-600">
-              Step 2
-            </p>
+        h-[calc(100dvh-185px)]
+        min-h-[430px]
+        max-h-[680px]
 
-            <h1 className="mt-0.5 text-base font-black tracking-tight text-gray-950">
-              Workers Required
-            </h1>
-
-            <p className="mt-0.5 text-[10px] leading-4 text-gray-500">
-              Select workers and set the required quantity.
-            </p>
-          </div>
-        </div>
-      </div>
-
-      {/* ===================================================
-          PROJECT DETAILS
-      =================================================== */}
-
-      <div className="space-y-4 p-4 sm:p-5">
+        sm:h-[calc(96dvh-185px)]
+        sm:min-h-[480px]
+        sm:max-h-[650px]
+      "
+      >
         {/* =================================================
-            PROJECT NAME
+            HEADER
         ================================================= */}
 
-        <div>
-          <label className="flex items-center gap-1 text-[10px] font-bold text-gray-700">
-            <BriefcaseBusiness className="h-3.5 w-3.5 text-emerald-600" />
+        <div className="shrink-0 border-b border-gray-100 bg-white px-3 py-2.5">
+          <div className="flex items-center gap-2.5">
+            <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-emerald-50 text-emerald-600">
+              <HardHat className="h-4 w-4" />
+            </div>
 
-            Project Name
+            <div className="min-w-0">
+              <h1 className="text-sm font-black leading-tight tracking-tight text-gray-950">
+                Work Categories
+              </h1>
 
-            <span className="text-red-500">*</span>
-          </label>
+              <p className="text-[9px] leading-3 text-gray-500">
+                Select workers and required quantity.
+              </p>
+            </div>
 
-          <div className="mt-1.5 flex h-11 items-center rounded-xl border border-gray-200 bg-gray-50 px-3 transition focus-within:border-emerald-500 focus-within:bg-white focus-within:ring-2 focus-within:ring-emerald-500/10">
-            <input
-              value={projectName}
-              onChange={(event) =>
-                setProjectName(event.target.value)
-              }
-              placeholder="e.g. House Construction"
-              autoComplete="off"
-              className="min-w-0 w-full bg-transparent text-xs font-medium text-gray-900 outline-none placeholder:text-gray-400"
-            />
-          </div>
-        </div>
-
-        {/* =================================================
-            PROJECT TYPE
-        ================================================= */}
-
-        <div>
-          <label className="text-[10px] font-bold text-gray-700">
-            Project Type
-            <span className="ml-0.5 text-red-500">*</span>
-          </label>
-
-          <div className="relative mt-1.5">
-            <select
-              value={projectType}
-              onChange={(event) =>
-                setProjectType(event.target.value)
-              }
-              className="h-11 w-full appearance-none rounded-xl border border-gray-200 bg-gray-50 px-3 pr-9 text-xs font-semibold text-gray-800 outline-none focus:border-emerald-500 focus:bg-white"
-            >
-              <option value="">
-                Select Project Type
-              </option>
-
-              {projectTypes.map((type) => (
-                <option key={type} value={type}>
-                  {type}
-                </option>
-              ))}
-            </select>
-
-            <ChevronDown className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
+            {workerGroups.length > 0 && (
+              <span className="ml-auto shrink-0 rounded-full bg-emerald-50 px-2 py-1 text-[8px] font-black text-emerald-600">
+                {totalWorkers} workers
+              </span>
+            )}
           </div>
         </div>
 
         {/* =================================================
-            TOTAL WORKERS
+            SCROLL AREA
         ================================================= */}
 
-        <div className="flex items-center justify-between rounded-xl border border-emerald-100 bg-emerald-50/70 px-3 py-3">
-          <div>
-            <p className="text-[9px] font-black uppercase tracking-wide text-emerald-600">
-              Total Workers
-            </p>
+        <div
+          className="
+          min-h-0
+          flex-1
+          overflow-y-auto
+          overscroll-contain
+          scroll-smooth
+          px-3
+          pb-30
+          pt-3
+          [scrollbar-width:thin]
+          [-webkit-overflow-scrolling:touch]
+        "
+        >
+          <div className="space-y-2.5">
+            {/* =================================================
+                PROJECT NAME
+            ================================================= */}
 
-            <p className="mt-0.5 text-xs font-bold text-gray-600">
-              Workers required for this project
-            </p>
-          </div>
+            <div>
+              <label className="text-[9px] font-bold leading-none text-gray-700">
+                Project Name
+              </label>
 
-          <div className="flex h-10 min-w-10 items-center justify-center rounded-xl bg-white px-3 text-lg font-black text-emerald-700 shadow-sm">
-            {totalWorkers}
-          </div>
-        </div>
+              <div className="mt-1 flex h-9 items-center rounded-lg border border-gray-200 bg-gray-50 px-2.5 transition focus-within:border-emerald-500 focus-within:bg-white focus-within:ring-2 focus-within:ring-emerald-500/10">
+                <HardHat className="h-3.5 w-3.5 shrink-0 text-gray-400" />
 
-        {/* =================================================
-            SELECTED WORKERS
-        ================================================= */}
+                <input
+                  value={projectName}
+                  onChange={(event) =>
+                    setProjectName(event.target.value)
+                  }
+                  placeholder="e.g. House Construction"
+                  maxLength={100}
+                  className="ml-2 min-w-0 w-full bg-transparent text-[10px] font-medium text-gray-900 outline-none placeholder:text-gray-400"
+                />
+              </div>
+            </div>
 
-        <div>
-          <div className="mb-2 flex items-center justify-between">
-            <label className="text-[10px] font-black text-gray-800">
-              Select Workers
-            </label>
+            {/* =================================================
+                PROJECT TYPE
+            ================================================= */}
 
-            <span className="text-[9px] font-medium text-gray-400">
-              Use + / − to adjust
-            </span>
-          </div>
+            <div>
+              <label className="text-[9px] font-bold leading-none text-gray-700">
+                Project Type
+              </label>
 
-          <div className="space-y-2">
-            {selectedTypes.length === 0 && (
-              <div className="rounded-xl border border-dashed border-gray-200 bg-gray-50 px-4 py-5 text-center">
-                <Users className="mx-auto h-6 w-6 text-gray-300" />
+              <div className="mt-1 grid grid-cols-3 gap-1.5">
+                {[
+                  "Construction",
+                  "Renovation",
+                  "Commercial",
+                  "Residential",
+                  "Industrial",
+                  "Other",
+                ].map((type) => {
+                  const active = projectType === type;
 
-                <p className="mt-1.5 text-[10px] font-bold text-gray-500">
-                  No worker selected
-                </p>
+                  return (
+                    <button
+                      key={type}
+                      type="button"
+                      onClick={() =>
+                        setProjectType(type)
+                      }
+                      className={`h-8 rounded-lg border px-1 text-[8px] font-black transition active:scale-[0.97] ${
+                        active
+                          ? "border-emerald-500 bg-emerald-50 text-emerald-700"
+                          : "border-gray-200 bg-gray-50 text-gray-600"
+                      }`}
+                    >
+                      {type}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
 
-                <p className="mt-0.5 text-[9px] text-gray-400">
-                  Add a worker type below
-                </p>
+            {/* =================================================
+                SELECTED WORKERS
+            ================================================= */}
+
+            {workerGroups.length > 0 && (
+              <div>
+                <div className="mb-1.5 flex items-center justify-between">
+                  <label className="text-[9px] font-bold leading-none text-gray-700">
+                    Selected Workers
+                  </label>
+
+                  <button
+                    type="button"
+                    onClick={() => setWorkerGroups([])}
+                    className="text-[8px] font-bold text-gray-400 active:scale-95"
+                  >
+                    Clear All
+                  </button>
+                </div>
+
+                <div className="space-y-1.5">
+                  {workerGroups.map((item) => {
+                    const Icon = getIcon(item.category);
+
+                    const itemQuantity = Math.max(
+                      1,
+                      Number(item.workers_required) || 1,
+                    );
+
+                    return (
+                      <div
+                        key={item.id}
+                        className="flex min-h-10 items-center rounded-lg border border-emerald-100 bg-emerald-50/60 px-2"
+                      >
+                        <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md bg-white">
+                          <Icon
+                            className={`h-4 w-4 ${getColor(
+                              item.category,
+                            )}`}
+                          />
+                        </div>
+
+                        <div className="ml-2 min-w-0 flex-1">
+                          <p className="truncate text-[9px] font-black text-gray-800">
+                            {item.category}
+                          </p>
+
+                          <p className="text-[8px] font-medium text-emerald-600">
+                            {itemQuantity}{" "}
+                            {itemQuantity === 1
+                              ? "Worker"
+                              : "Workers"}
+                          </p>
+                        </div>
+
+                        <button
+                          type="button"
+                          onClick={() =>
+                            openQuantity(item.category)
+                          }
+                          className="mr-1 rounded-md bg-white px-2 py-1 text-[8px] font-black text-emerald-600 shadow-sm"
+                        >
+                          Edit
+                        </button>
+
+                        <button
+                          type="button"
+                          onClick={() =>
+                            removeCategory(item.category)
+                          }
+                          className="flex h-6 w-6 items-center justify-center rounded-md text-gray-400 active:scale-90"
+                        >
+                          <X className="h-3.5 w-3.5" />
+                        </button>
+                      </div>
+                    );
+                  })}
+                </div>
               </div>
             )}
 
-            {selectedTypes.map((category) => {
-              const quantity = getQuantity(category);
+            {/* =================================================
+                POPULAR CATEGORIES
+            ================================================= */}
 
-              return (
-                <WorkerRow
-                  key={category}
-                  category={category}
-                  quantity={quantity}
-                  onDecrease={() =>
-                    updateQuantity(
-                      category,
-                      quantity - 1,
-                    )
-                  }
-                  onIncrease={() =>
-                    updateQuantity(
-                      category,
-                      quantity + 1,
-                    )
-                  }
-                  onRemove={() =>
-                    removeWorkerType(category)
-                  }
-                />
-              );
-            })}
+            <div>
+              <div className="mb-1.5 flex items-center justify-between">
+                <label className="text-[9px] font-bold leading-none text-gray-700">
+                  Popular Categories
+                </label>
+              </div>
+
+              <div className="grid grid-cols-4 gap-1.5">
+                {popularCategories.map(
+                  ([name, Icon, color]) => {
+                    const selected =
+                      getQuantity(name) > 0;
+
+                    return (
+                      <button
+                        key={name}
+                        type="button"
+                        onClick={() =>
+                          openQuantity(name)
+                        }
+                        className={`relative flex h-[76px] flex-col items-center justify-center rounded-lg border px-1 text-center transition active:scale-[0.97] ${
+                          selected
+                            ? "border-emerald-500 bg-emerald-50"
+                            : "border-gray-200 bg-gray-50"
+                        }`}
+                      >
+                        {selected && (
+                          <span className="absolute right-1 top-1 flex h-3.5 min-w-3.5 items-center justify-center rounded-full bg-emerald-500 px-0.5 text-[7px] font-black text-white">
+                            {getQuantity(name)}
+                          </span>
+                        )}
+
+                        <Icon
+                          className={`h-6 w-6 stroke-[1.5] ${color}`}
+                        />
+
+                        <span className="mt-1 line-clamp-2 text-[7.5px] font-bold leading-[10px] text-gray-700">
+                          {name}
+                        </span>
+                      </button>
+                    );
+                  },
+                )}
+              </div>
+            </div>
+
+            {/* =================================================
+                ALL CATEGORIES
+            ================================================= */}
+
+            <div>
+              <div className="mb-1.5 flex items-center justify-between">
+                <label className="text-[9px] font-bold leading-none text-gray-700">
+                  All Categories
+                </label>
+
+                {totalWorkers > 0 && (
+                  <span className="text-[8px] font-bold text-emerald-600">
+                    {totalWorkers} total
+                  </span>
+                )}
+              </div>
+
+              <div className="grid grid-cols-2 gap-1.5">
+                {workerTypes.map((category) => {
+                  const selected =
+                    getQuantity(category) > 0;
+
+                  const Icon = getIcon(category);
+
+                  return (
+                    <button
+                      key={category}
+                      type="button"
+                      onClick={() =>
+                        openQuantity(category)
+                      }
+                      className={`flex h-9 items-center rounded-lg border px-2 text-left transition active:scale-[0.98] ${
+                        selected
+                          ? "border-emerald-400 bg-emerald-50"
+                          : "border-gray-200 bg-gray-50"
+                      }`}
+                    >
+                      <Icon
+                        className={`h-4 w-4 shrink-0 ${getColor(
+                          category,
+                        )}`}
+                      />
+
+                      <span className="ml-1.5 min-w-0 flex-1 truncate text-[9px] font-bold text-gray-700">
+                        {category}
+                      </span>
+
+                      {selected ? (
+                        <span className="ml-1 flex h-4 min-w-4 shrink-0 items-center justify-center rounded bg-emerald-500 px-0.5 text-[7px] font-black text-white">
+                          {getQuantity(category)}
+                        </span>
+                      ) : (
+                        <span className="ml-1 flex h-4 w-4 shrink-0 items-center justify-center rounded border border-gray-300 bg-white">
+                          <Plus className="h-2.5 w-2.5 text-gray-400" />
+                        </span>
+                      )}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* EXTRA BOTTOM SPACE */}
+            <div className="h-10 shrink-0" />
           </div>
         </div>
+      </section>
 
-        {/* =================================================
-            ADD WORKER TYPE
-        ================================================= */}
+      {/* =====================================================
+          QUANTITY POPUP
+      ===================================================== */}
 
-        {availableTypes.length > 0 && (
-          <div>
-            <p className="mb-2 text-[10px] font-black text-gray-700">
-              + Add Worker Type
-            </p>
+      {quantityCategory && (
+        <div
+          className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/45 px-4 backdrop-blur-[2px]"
+          onClick={() => setQuantityCategory(null)}
+        >
+          <div
+            className="w-full max-w-[360px] overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-2xl"
+            onClick={(event) =>
+              event.stopPropagation()
+            }
+          >
+            {/* POPUP HEADER */}
 
-            <div className="flex flex-wrap gap-1.5">
-              {availableTypes.map((category) => (
-                <button
-                  key={category}
-                  type="button"
-                  onClick={() =>
-                    addWorkerType(category)
-                  }
-                  className="rounded-lg border border-gray-200 bg-gray-50 px-2.5 py-2 text-[9px] font-bold text-gray-600 transition hover:border-emerald-300 hover:bg-emerald-50 hover:text-emerald-700 active:scale-95"
-                >
-                  + {category}
-                </button>
-              ))}
+            <div className="flex items-center justify-between border-b border-gray-100 px-3 py-2.5">
+              <div className="flex min-w-0 items-center gap-2">
+                <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-emerald-50">
+                  <QuantityIcon
+                    className={`h-4 w-4 ${getColor(
+                      quantityCategory,
+                    )}`}
+                  />
+                </div>
+
+                <div className="min-w-0">
+                  <p className="text-[8px] font-black uppercase tracking-[0.1em] text-emerald-600">
+                    Worker Requirement
+                  </p>
+
+                  <h3 className="truncate text-[12px] font-black text-gray-900">
+                    {quantityCategory}
+                  </h3>
+                </div>
+              </div>
+
+              <button
+                type="button"
+                onClick={() =>
+                  setQuantityCategory(null)
+                }
+                className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-gray-100 text-gray-500 active:scale-90"
+              >
+                <X className="h-3.5 w-3.5" />
+              </button>
+            </div>
+
+            {/* PREVIEW */}
+
+            <div className="px-3 pt-3">
+              <div className="rounded-xl border border-emerald-100 bg-emerald-50/60 p-3">
+                <div className="flex items-center gap-3">
+                  <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-white shadow-sm">
+                    <QuantityIcon
+                      className={`h-7 w-7 ${getColor(
+                        quantityCategory,
+                      )}`}
+                    />
+                  </div>
+
+                  <div className="min-w-0 flex-1">
+                    <p className="text-[10px] font-black text-gray-800">
+                      {quantityCategory}
+                    </p>
+
+                    <p className="mt-0.5 text-[8px] font-medium text-gray-500">
+                      Required workers
+                    </p>
+                  </div>
+
+                  <div className="flex items-center gap-1.5 rounded-lg bg-white p-1 shadow-sm">
+                    <button
+                      type="button"
+                      onClick={() =>
+                        setQuantity((value) =>
+                          Math.max(
+                            1,
+                            value - 1,
+                          ),
+                        )
+                      }
+                      className="flex h-7 w-7 items-center justify-center rounded-md bg-gray-100 text-gray-700 active:scale-90"
+                    >
+                      <Minus className="h-3 w-3" />
+                    </button>
+
+                    <span className="w-6 text-center text-sm font-black text-gray-900">
+                      {quantity}
+                    </span>
+
+                    <button
+                      type="button"
+                      onClick={() =>
+                        setQuantity((value) =>
+                          Math.min(
+                            999,
+                            value + 1,
+                          ),
+                        )
+                      }
+                      className="flex h-7 w-7 items-center justify-center rounded-md bg-emerald-600 text-white active:scale-90"
+                    >
+                      <Plus className="h-3 w-3" />
+                    </button>
+                  </div>
+                </div>
+              </div>
+
+              {/* WORKER PREVIEW */}
+
+              <div className="mt-2.5 flex items-center justify-between rounded-lg border border-gray-100 bg-gray-50 px-2.5 py-2">
+                <div className="flex items-center gap-1.5">
+                  <Users className="h-3.5 w-3.5 text-emerald-600" />
+
+                  <span className="text-[9px] font-bold text-gray-600">
+                    Worker Preview
+                  </span>
+                </div>
+
+                <span className="text-[9px] font-black text-emerald-600">
+                  {quantity}{" "}
+                  {quantity === 1
+                    ? "Worker"
+                    : "Workers"}
+                </span>
+              </div>
+            </div>
+
+            {/* ACTIONS */}
+
+            <div className="flex gap-2 px-3 py-3">
+              <button
+                type="button"
+                onClick={() =>
+                  setQuantityCategory(null)
+                }
+                className="h-9 flex-1 rounded-lg border border-gray-200 bg-gray-50 text-[10px] font-black text-gray-600 active:scale-[0.98]"
+              >
+                Cancel
+              </button>
+
+              <button
+                type="button"
+                onClick={saveQuantity}
+                className="h-9 flex-[1.5] rounded-lg bg-emerald-600 text-[10px] font-black text-white active:scale-[0.98]"
+              >
+                <span className="flex items-center justify-center gap-1.5">
+                  <Check className="h-3.5 w-3.5" />
+                  Add {quantity}{" "}
+                  {quantity === 1
+                    ? "Worker"
+                    : "Workers"}
+                </span>
+              </button>
             </div>
           </div>
-        )}
-
-        {/* =================================================
-            SUMMARY
-        ================================================= */}
-
-        {selectedTypes.length > 0 && (
-          <div className="rounded-xl border border-gray-100 bg-gray-50 px-3 py-3">
-            <p className="text-[9px] font-black uppercase tracking-wide text-gray-400">
-              Requirement Summary
-            </p>
-
-            <p className="mt-1 text-[11px] font-bold leading-5 text-gray-700">
-              {selectedTypes
-                .map(
-                  (category) =>
-                    `${category} × ${getQuantity(category)}`,
-                )
-                .join(", ")}
-            </p>
-          </div>
-        )}
-
-        {/* =================================================
-            WORKER COUNT INFO
-        ================================================= */}
-
-        <div className="rounded-xl border border-gray-100 bg-white px-3 py-2.5">
-          <div className="flex items-center justify-between">
-            <span className="text-[9px] font-medium text-gray-400">
-              Worker Types
-            </span>
-
-            <span className="text-[10px] font-black text-gray-700">
-              {selectedTypes.length}
-            </span>
-          </div>
-
-          <div className="mt-1.5 flex items-center justify-between">
-            <span className="text-[9px] font-medium text-gray-400">
-              Total Requirement
-            </span>
-
-            <span className="text-[10px] font-black text-emerald-600">
-              {totalWorkers} Workers
-            </span>
-          </div>
         </div>
-      </div>
-
-      {/* ===================================================
-          FOOTER
-      =================================================== */}
-
-      <div className="border-t border-gray-100 px-4 py-3 sm:px-5">
-        <p className="text-center text-[9px] font-medium text-gray-400">
-          You can add multiple worker types to one request.
-        </p>
-
-        {/* =================================================
-            ACTION BUTTONS
-        ================================================= */}
-
-        <div className="mt-3 flex gap-2">
-          <button
-            type="button"
-            onClick={onBack}
-            className="h-11 flex-1 rounded-xl border border-gray-200 bg-white text-xs font-black text-gray-600 transition hover:bg-gray-50 active:scale-[0.98]"
-          >
-            Back
-          </button>
-
-          <button
-            type="button"
-            onClick={onNext}
-            disabled={!canContinue}
-            className="h-11 flex-[1.5] rounded-xl bg-emerald-600 text-xs font-black text-white shadow-sm transition hover:bg-emerald-700 active:scale-[0.98] disabled:cursor-not-allowed disabled:bg-gray-200 disabled:text-gray-400 disabled:shadow-none"
-          >
-            Continue
-          </button>
-        </div>
-
-        {!canContinue && (
-          <p className="mt-2 text-center text-[9px] font-medium text-gray-400">
-            Enter project details and select at least one worker.
-          </p>
-        )}
-      </div>
-    </section>
-  );
-}
-
-/* =========================================================
-   WORKER ROW
-========================================================= */
-
-function WorkerRow({
-  category,
-  quantity,
-  onDecrease,
-  onIncrease,
-  onRemove,
-}: {
-  category: string;
-  quantity: number;
-  onDecrease: () => void;
-  onIncrease: () => void;
-  onRemove: () => void;
-}) {
-  return (
-    <div className="flex min-h-[58px] items-center gap-2.5 rounded-xl border border-gray-200 bg-white px-3 py-2 shadow-sm">
-      {/* =================================================
-          ICON
-      ================================================= */}
-
-      <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-emerald-50 text-emerald-600">
-        <Users className="h-4 w-4" />
-      </div>
-
-      {/* =================================================
-          NAME
-      ================================================= */}
-
-      <div className="min-w-0 flex-1">
-        <p className="truncate text-xs font-black text-gray-900">
-          {category}
-        </p>
-
-        <p className="mt-0.5 text-[8px] font-medium text-gray-400">
-          Workers required
-        </p>
-      </div>
-
-      {/* =================================================
-          QUANTITY
-      ================================================= */}
-
-      <div className="flex h-9 items-center overflow-hidden rounded-lg border border-gray-200 bg-gray-50">
-        {/* DECREASE */}
-
-        <button
-          type="button"
-          onClick={onDecrease}
-          disabled={quantity <= 1}
-          className="flex h-9 w-9 items-center justify-center text-gray-500 transition hover:bg-gray-100 hover:text-gray-800 active:scale-95 disabled:cursor-not-allowed disabled:opacity-30"
-          aria-label={`Decrease ${category}`}
-        >
-          <Minus className="h-3.5 w-3.5" />
-        </button>
-
-        {/* NUMBER */}
-
-        <div className="flex h-9 min-w-9 items-center justify-center border-x border-gray-200 bg-white px-2 text-xs font-black text-gray-900">
-          {quantity}
-        </div>
-
-        {/* INCREASE */}
-
-        <button
-          type="button"
-          onClick={onIncrease}
-          disabled={quantity >= 100}
-          className="flex h-9 w-9 items-center justify-center text-emerald-600 transition hover:bg-emerald-50 active:scale-95 disabled:cursor-not-allowed disabled:opacity-30"
-          aria-label={`Increase ${category}`}
-        >
-          <Plus className="h-3.5 w-3.5" />
-        </button>
-      </div>
-
-      {/* =================================================
-          REMOVE
-      ================================================= */}
-
-      <button
-        type="button"
-        onClick={onRemove}
-        className="hidden text-[9px] font-bold text-red-400 hover:text-red-600 sm:block"
-      >
-        Remove
-      </button>
-    </div>
+      )}
+    </>
   );
 }

@@ -32,99 +32,30 @@ const durations = [
 export default function RequestStep4({
   workDate,
   setWorkDate,
-
   startTime,
   setStartTime,
-
   duration,
   setDuration,
-
-  onNext,
-  onBack,
 }: RequestStep4Props) {
-  const today = new Date()
-    .toISOString()
-    .split("T")[0];
-
-  function handleNext() {
-    if (!workDate) return;
-
-    onNext();
-  }
+  const today = new Date().toISOString().split("T")[0];
 
   return (
-    <section
-      className="
-        overflow-hidden
-        rounded-2xl
-        border
-        border-gray-200
-        bg-white
-        shadow-[0_10px_40px_rgba(0,0,0,0.05)]
-      "
-    >
+    <section className="overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-[0_10px_40px_rgba(0,0,0,0.05)]">
+
       {/* HEADER */}
+      <div className="border-b border-gray-100 px-4 py-3.5 sm:px-5">
+        <div className="flex items-center gap-2.5">
 
-      <div
-        className="
-          border-b
-          border-gray-100
-          px-4
-          py-4
-          sm:px-5
-        "
-      >
-        <div className="flex items-center gap-3">
-
-          <div
-            className="
-              flex
-              h-10
-              w-10
-              shrink-0
-              items-center
-              justify-center
-              rounded-xl
-              bg-emerald-50
-              text-emerald-600
-            "
-          >
-            <CalendarDays className="h-5 w-5" />
+          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-emerald-50 text-emerald-600">
+            <CalendarDays className="h-4.5 w-4.5" />
           </div>
 
           <div>
-            <p
-              className="
-                text-[9px]
-                font-black
-                uppercase
-                tracking-[0.14em]
-                text-emerald-600
-              "
-            >
-              Step 4
-            </p>
-
-            <h1
-              className="
-                mt-0.5
-                text-base
-                font-black
-                tracking-tight
-                text-gray-950
-              "
-            >
+            <h1 className="text-[15px] font-black tracking-tight text-gray-950">
               Work Schedule
             </h1>
 
-            <p
-              className="
-                mt-0.5
-                text-[10px]
-                leading-4
-                text-gray-500
-              "
-            >
+            <p className="mt-0.5 text-[9px] leading-3.5 text-gray-500">
               When do you need the workers?
             </p>
           </div>
@@ -133,261 +64,121 @@ export default function RequestStep4({
       </div>
 
       {/* FORM */}
+      <div className="space-y-10 p-3.5 sm:p-4">
 
-      <div className="space-y-5 p-4 sm:p-5">
+        {/* DATE + TIME */}
+        <div className="grid gap-2.5 sm:grid-cols-2">
 
-        {/* DATE */}
-
-        <div>
-          <label
-            className="
-              flex
-              items-center
-              gap-1
-              text-[10px]
-              font-bold
-              text-gray-700
-            "
-          >
-            <CalendarDays className="h-3.5 w-3.5 text-emerald-600" />
-
-            Work Date
-
-            <span className="text-red-500">
-              *
-            </span>
-          </label>
-
-          <div className="relative mt-1.5">
-
-            <input
-              type="date"
-              value={workDate}
-              min={today}
-              onChange={(event) =>
-                setWorkDate(
-                  event.target.value,
-                )
-              }
-              className="
-                h-11
-                w-full
-                rounded-xl
-                border
-                border-gray-200
-                bg-gray-50
-                px-3
-                text-xs
-                font-semibold
-                text-gray-800
-                outline-none
-                transition
-
-                focus:border-emerald-500
-                focus:bg-white
-                focus:ring-2
-                focus:ring-emerald-500/10
-              "
+          {/* DATE */}
+          <div>
+            <FieldLabel
+              icon={<CalendarDays className="h-3.5 w-3.5" />}
+              label="Work Date"
+              required
             />
 
+            <div className="group relative mt-1.5">
+
+              <div className="pointer-events-none absolute left-3 top-1/2 z-10 flex h-7 w-7 -translate-y-1/2 items-center justify-center rounded-lg bg-emerald-50 text-emerald-600">
+                <CalendarDays className="h-3.5 w-3.5" />
+              </div>
+
+              <input
+                type="date"
+                value={workDate}
+                min={today}
+                onChange={(event) =>
+                  setWorkDate(event.target.value)
+                }
+                className="h-11 w-full cursor-pointer appearance-none rounded-xl border border-gray-200 bg-gray-50 pl-12 pr-3 text-xs font-bold text-gray-800 outline-none transition hover:border-gray-300 hover:bg-white focus:border-emerald-500 focus:bg-white focus:ring-4 focus:ring-emerald-500/10 [&::-webkit-calendar-picker-indicator]:cursor-pointer [&::-webkit-calendar-picker-indicator]:opacity-60"
+              />
+
+            </div>
           </div>
-        </div>
 
-        {/* TIME */}
+          {/* TIME */}
+          <div>
+            <FieldLabel
+              icon={<Clock3 className="h-3.5 w-3.5" />}
+              label="Start Time"
+              optional
+            />
 
-        <div>
-          <label
-            className="
-              flex
-              items-center
-              gap-1
-              text-[10px]
-              font-bold
-              text-gray-700
-            "
-          >
-            <Clock3 className="h-3.5 w-3.5 text-emerald-600" />
+            <div className="group relative mt-1.5">
 
-            Start Time
+              <div className="pointer-events-none absolute left-3 top-1/2 z-10 flex h-7 w-7 -translate-y-1/2 items-center justify-center rounded-lg bg-emerald-50 text-emerald-600">
+                <Clock3 className="h-3.5 w-3.5" />
+              </div>
 
-            <span className="ml-1 text-[9px] font-medium text-gray-400">
-              Optional
-            </span>
-          </label>
+              <input
+                type="time"
+                value={startTime}
+                onChange={(event) =>
+                  setStartTime(event.target.value)
+                }
+                className="h-11 w-full cursor-pointer appearance-none rounded-xl border border-gray-200 bg-gray-50 pl-12 pr-3 text-xs font-bold text-gray-800 outline-none transition hover:border-gray-300 hover:bg-white focus:border-emerald-500 focus:bg-white focus:ring-4 focus:ring-emerald-500/10 [&::-webkit-calendar-picker-indicator]:cursor-pointer [&::-webkit-calendar-picker-indicator]:opacity-60"
+              />
 
-          <input
-            type="time"
-            value={startTime}
-            onChange={(event) =>
-              setStartTime(
-                event.target.value,
-              )
-            }
-            className="
-              mt-1.5
-              h-11
-              w-full
-              rounded-xl
-              border
-              border-gray-200
-              bg-gray-50
-              px-3
-              text-xs
-              font-semibold
-              text-gray-800
-              outline-none
-              transition
+            </div>
+          </div>
 
-              focus:border-emerald-500
-              focus:bg-white
-              focus:ring-2
-              focus:ring-emerald-500/10
-            "
-          />
         </div>
 
         {/* DURATION */}
-
         <div>
           <div className="flex items-center justify-between">
-
-            <label
-              className="
-                text-[10px]
-                font-black
-                text-gray-700
-              "
-            >
+            <label className="text-[10px] font-bold text-gray-700">
               Work Duration
             </label>
 
-            <span
-              className="
-                text-[9px]
-                font-medium
-                text-gray-400
-              "
-            >
+            <span className="text-[9px] font-medium text-gray-400">
               Select one
             </span>
-
           </div>
 
-          <div
-            className="
-              mt-2
-              grid
-              grid-cols-2
-              gap-2
-              sm:grid-cols-3
-            "
-          >
-            {durations.map(
-              (item) => {
-                const active =
-                  duration ===
-                  item;
+          <div className="mt-1.5 grid grid-cols-3 gap-1.5 sm:grid-cols-6">
 
-                return (
-                  <button
-                    key={item}
-                    type="button"
-                    onClick={() =>
-                      setDuration(
-                        item,
-                      )
-                    }
-                    className={`
-                      relative
-                      flex
-                      min-h-11
-                      items-center
-                      justify-center
-                      rounded-xl
-                      border
-                      px-3
-                      text-[10px]
-                      font-black
-                      transition
-                      active:scale-[.98]
+            {durations.map((item) => {
+              const active = duration === item;
 
-                      ${
-                        active
-                          ? `
-                            border-emerald-500
-                            bg-emerald-50
-                            text-emerald-700
-                            shadow-sm
-                          `
-                          : `
-                            border-gray-200
-                            bg-gray-50
-                            text-gray-600
-                            hover:border-emerald-200
-                          `
-                      }
-                    `}
-                  >
-                    {active && (
-                      <span
-                        className="
-                          absolute
-                          right-2
-                          top-2
-                          flex
-                          h-4
-                          w-4
-                          items-center
-                          justify-center
-                          rounded-full
-                          bg-emerald-500
-                          text-white
-                        "
-                      >
-                        <Check className="h-2.5 w-2.5" />
-                      </span>
-                    )}
+              return (
+                <button
+                  key={item}
+                  type="button"
+                  onClick={() => setDuration(item)}
+                  className={`relative flex min-h-10 items-center justify-center rounded-xl border px-2 text-[9px] font-black transition active:scale-[.98] ${
+                    active
+                      ? "border-emerald-500 bg-emerald-50 text-emerald-700 shadow-sm"
+                      : "border-gray-200 bg-gray-50 text-gray-600 hover:border-emerald-200 hover:bg-white"
+                  }`}
+                >
+                  {active && (
+                    <span className="absolute right-1.5 top-1.5 flex h-3.5 w-3.5 items-center justify-center rounded-full bg-emerald-500 text-white">
+                      <Check className="h-2 w-2" />
+                    </span>
+                  )}
 
-                    {item}
-                  </button>
-                );
-              },
-            )}
+                  {item}
+                </button>
+              );
+            })}
+
           </div>
         </div>
 
         {/* SUMMARY */}
+        <div className="rounded-xl border border-emerald-100 bg-emerald-50/60 px-3 py-2.5">
 
-        <div
-          className="
-            rounded-xl
-            border
-            border-emerald-100
-            bg-emerald-50/60
-            px-3
-            py-3
-          "
-        >
-          <p
-            className="
-              text-[9px]
-              font-black
-              uppercase
-              tracking-wide
-              text-emerald-600
-            "
-          >
-            Schedule Summary
-          </p>
+          <div className="flex items-center gap-1.5">
+            <CalendarDays className="h-3.5 w-3.5 text-emerald-600" />
 
-          <div
-            className="
-              mt-1.5
-              flex
-              flex-wrap
-              gap-1.5
-            "
-          >
+            <p className="text-[9px] font-black uppercase tracking-wide text-emerald-600">
+              Schedule Summary
+            </p>
+          </div>
+
+          <div className="mt-1.5 flex flex-wrap gap-1.5">
+
             {workDate && (
               <SummaryBadge>
                 {formatDate(workDate)}
@@ -400,37 +191,69 @@ export default function RequestStep4({
               </SummaryBadge>
             )}
 
-            <SummaryBadge>
-              {duration}
-            </SummaryBadge>
+            {duration && (
+              <SummaryBadge>
+                {duration}
+              </SummaryBadge>
+            )}
+
           </div>
         </div>
 
       </div>
 
       {/* FOOTER */}
-
-      <div
-        className="
-          border-t
-          border-gray-100
-          px-4
-          py-3
-          sm:px-5
-        "
-      >
-        <p
-          className="
-            text-center
-            text-[9px]
-            font-medium
-            text-gray-400
-          "
-        >
+      <div className="border-t border-gray-100 px-4 py-2.5 sm:px-5">
+        <p className="text-center text-[9px] font-medium text-gray-400">
           You can change the schedule before submitting.
         </p>
       </div>
+
     </section>
+  );
+}
+
+/* =========================================================
+   FIELD LABEL
+========================================================= */
+
+function FieldLabel({
+  icon,
+  label,
+  required,
+  optional,
+}: {
+  icon?: React.ReactNode;
+  label: string;
+  required?: boolean;
+  optional?: boolean;
+}) {
+  return (
+    <div className="flex items-center gap-1">
+
+      {icon && (
+        <span className="text-emerald-600">
+          {icon}
+        </span>
+      )}
+
+      <label className="text-[10px] font-bold text-gray-700">
+        {label}
+      </label>
+
+      {required && (
+        <span className="text-red-500">
+          *
+        </span>
+      )}
+
+      {optional && (
+        <span className="ml-0.5 text-[8px] font-medium text-gray-400">
+          Optional
+        </span>
+      )}
+
+    </div>
   );
 }
 
@@ -444,18 +267,7 @@ function SummaryBadge({
   children: React.ReactNode;
 }) {
   return (
-    <span
-      className="
-        rounded-lg
-        bg-white
-        px-2.5
-        py-1.5
-        text-[9px]
-        font-bold
-        text-gray-700
-        shadow-sm
-      "
-    >
+    <span className="rounded-lg bg-white px-2.5 py-1.5 text-[9px] font-bold text-gray-700 shadow-sm">
       {children}
     </span>
   );
@@ -465,50 +277,30 @@ function SummaryBadge({
    FORMAT DATE
 ========================================================= */
 
-function formatDate(
-  value: string,
-) {
+function formatDate(value: string) {
   if (!value) return "";
 
-  const date =
-    new Date(
-      `${value}T00:00:00`,
-    );
+  const date = new Date(`${value}T00:00:00`);
 
-  return date.toLocaleDateString(
-    "en-IN",
-    {
-      day: "2-digit",
-      month: "short",
-      year: "numeric",
-    },
-  );
+  return date.toLocaleDateString("en-IN", {
+    day: "2-digit",
+    month: "short",
+    year: "numeric",
+  });
 }
 
 /* =========================================================
    FORMAT TIME
 ========================================================= */
 
-function formatTime(
-  value: string,
-) {
+function formatTime(value: string) {
   if (!value) return "";
 
-  const [
-    hours,
-    minutes,
-  ] = value.split(":");
+  const [hours, minutes] = value.split(":");
 
-  const hour =
-    Number(hours);
-
-  const suffix =
-    hour >= 12
-      ? "PM"
-      : "AM";
-
-  const formattedHour =
-    hour % 12 || 12;
+  const hour = Number(hours);
+  const suffix = hour >= 12 ? "PM" : "AM";
+  const formattedHour = hour % 12 || 12;
 
   return `${formattedHour}:${minutes} ${suffix}`;
 }

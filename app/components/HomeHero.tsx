@@ -1,16 +1,7 @@
 "use client";
 
-import {
-  FormEvent,
-  useEffect,
-  useState,
-} from "react";
-
-import {
-  Sparkles,
-  Users,
-  X,
-} from "lucide-react";
+import { FormEvent, useEffect, useState } from "react";
+import { Sparkles, Users, X } from "lucide-react";
 
 import { Capacitor } from "@capacitor/core";
 import { Keyboard } from "@capacitor/keyboard";
@@ -20,7 +11,6 @@ import { supabase } from "@/lib/supabase";
 import type { WorkerGroup } from "@/app/components/ProjectWorkerGroups";
 
 import RequestProgress from "./worker-request/RequestProgress";
-
 import RequestStep1 from "./worker-request/RequestStep1";
 import RequestStep2 from "./worker-request/RequestStep2";
 import RequestStep3 from "./worker-request/RequestStep3";
@@ -59,10 +49,7 @@ export const states = [
   "Other",
 ];
 
-export const districtsByState: Record<
-  string,
-  string[]
-> = {
+export const districtsByState: Record<string, string[]> = {
   "Madhya Pradesh": [
     "Bhopal",
     "Gwalior",
@@ -72,7 +59,6 @@ export const districtsByState: Record<
     "Sagar",
     "Other",
   ],
-
   Chhattisgarh: [
     "Bilaspur",
     "Raipur",
@@ -81,7 +67,6 @@ export const districtsByState: Record<
     "Rajnandgaon",
     "Other",
   ],
-
   Rajasthan: [
     "Jaipur",
     "Kota",
@@ -89,7 +74,6 @@ export const districtsByState: Record<
     "Jodhpur",
     "Other",
   ],
-
   Maharashtra: [
     "Mumbai",
     "Pune",
@@ -97,7 +81,6 @@ export const districtsByState: Record<
     "Nashik",
     "Other",
   ],
-
   "Uttar Pradesh": [
     "Lucknow",
     "Kanpur",
@@ -105,7 +88,6 @@ export const districtsByState: Record<
     "Varanasi",
     "Other",
   ],
-
   Other: ["Other"],
 };
 
@@ -259,21 +241,44 @@ export default function HomeHero({
   }, [openRequest]);
 
   /* =======================================================
-     LOCK BODY
+     LOCK BODY + HTML SCROLL
   ======================================================= */
 
   useEffect(() => {
     if (!requestOpen) return;
 
-    const previousOverflow =
+    const previousBodyOverflow =
       document.body.style.overflow;
 
-    document.body.style.overflow =
+    const previousBodyHeight =
+      document.body.style.height;
+
+    const previousHtmlOverflow =
+      document.documentElement.style.overflow;
+
+    const previousHtmlHeight =
+      document.documentElement.style.height;
+
+    document.body.style.overflow = "hidden";
+    document.body.style.height = "100dvh";
+
+    document.documentElement.style.overflow =
       "hidden";
+    document.documentElement.style.height =
+      "100dvh";
 
     return () => {
       document.body.style.overflow =
-        previousOverflow;
+        previousBodyOverflow;
+
+      document.body.style.height =
+        previousBodyHeight;
+
+      document.documentElement.style.overflow =
+        previousHtmlOverflow;
+
+      document.documentElement.style.height =
+        previousHtmlHeight;
     };
   }, [requestOpen]);
 
@@ -310,54 +315,52 @@ export default function HomeHero({
 
     let cancelled = false;
 
-    const setupKeyboard =
-      async () => {
-        const show =
-          await Keyboard.addListener(
-            "keyboardWillShow",
-            () => {
-              setKeyboardOpen(true);
-            },
-          );
+    const setupKeyboard = async () => {
+      const show =
+        await Keyboard.addListener(
+          "keyboardWillShow",
+          () => {
+            setKeyboardOpen(true);
+          },
+        );
 
-        const hide =
-          await Keyboard.addListener(
-            "keyboardWillHide",
-            () => {
-              setKeyboardOpen(false);
-            },
-          );
+      const hide =
+        await Keyboard.addListener(
+          "keyboardWillHide",
+          () => {
+            setKeyboardOpen(false);
+          },
+        );
 
-        const didShow =
-          await Keyboard.addListener(
-            "keyboardDidShow",
-            () => {
-              setKeyboardOpen(true);
-            },
-          );
+      const didShow =
+        await Keyboard.addListener(
+          "keyboardDidShow",
+          () => {
+            setKeyboardOpen(true);
+          },
+        );
 
-        const didHide =
-          await Keyboard.addListener(
-            "keyboardDidHide",
-            () => {
-              setKeyboardOpen(false);
-            },
-          );
+      const didHide =
+        await Keyboard.addListener(
+          "keyboardDidHide",
+          () => {
+            setKeyboardOpen(false);
+          },
+        );
 
-        if (cancelled) {
-          await show.remove();
-          await hide.remove();
-          await didShow.remove();
-          await didHide.remove();
+      if (cancelled) {
+        await show.remove();
+        await hide.remove();
+        await didShow.remove();
+        await didHide.remove();
+        return;
+      }
 
-          return;
-        }
-
-        showListener = show;
-        hideListener = hide;
-        didShowListener = didShow;
-        didHideListener = didHide;
-      };
+      showListener = show;
+      hideListener = hide;
+      didShowListener = didShow;
+      didHideListener = didHide;
+    };
 
     setupKeyboard();
 
@@ -399,30 +402,14 @@ export default function HomeHero({
         handleKeyDown,
       );
     };
-  }, [
-    requestOpen,
-    submitting,
-  ]);
+  }, [requestOpen, submitting]);
 
   /* =======================================================
      ERROR
   ======================================================= */
 
-  function showError(
-    message: string,
-  ) {
+  function showError(message: string) {
     setError(message);
-
-    requestAnimationFrame(() => {
-      document
-        .querySelector(
-          "[data-request-error]",
-        )
-        ?.scrollIntoView({
-          behavior: "smooth",
-          block: "center",
-        });
-    });
   }
 
   /* =======================================================
@@ -435,10 +422,7 @@ export default function HomeHero({
     }
 
     const mobile =
-      requesterMobile.replace(
-        /\D/g,
-        "",
-      );
+      requesterMobile.replace(/\D/g, "");
 
     if (mobile.length !== 10) {
       return "Please enter a valid 10-digit mobile number.";
@@ -553,23 +537,19 @@ export default function HomeHero({
 
     switch (currentStep) {
       case 1:
-        validationError =
-          validateStep1();
+        validationError = validateStep1();
         break;
 
       case 2:
-        validationError =
-          validateStep2();
+        validationError = validateStep2();
         break;
 
       case 3:
-        validationError =
-          validateStep3();
+        validationError = validateStep3();
         break;
 
       case 4:
-        validationError =
-          validateStep4();
+        validationError = validateStep4();
         break;
 
       default:
@@ -577,9 +557,7 @@ export default function HomeHero({
     }
 
     if (validationError) {
-      showError(
-        validationError,
-      );
+      showError(validationError);
       return;
     }
 
@@ -589,11 +567,6 @@ export default function HomeHero({
         TOTAL_STEPS,
       ),
     );
-
-    window.scrollTo({
-      top: 0,
-      behavior: "smooth",
-    });
   }
 
   /* =======================================================
@@ -604,10 +577,7 @@ export default function HomeHero({
     setError("");
 
     setCurrentStep((prev) =>
-      Math.max(
-        prev - 1,
-        1,
-      ),
+      Math.max(prev - 1, 1),
     );
   }
 
@@ -618,11 +588,7 @@ export default function HomeHero({
   function resetForm() {
     setCurrentStep(1);
 
-    /* REQUESTER */
-
-    setRequesterType(
-      "individual",
-    );
+    setRequesterType("individual");
 
     setRequesterName("");
     setRequesterMobile("");
@@ -631,12 +597,8 @@ export default function HomeHero({
     setGstin("");
     setRequesterAddress("");
 
-    /* PROJECT */
-
     setProjectName("");
-    setProjectType(
-      "Construction",
-    );
+    setProjectType("Construction");
 
     setWorkerGroups([
       {
@@ -646,8 +608,6 @@ export default function HomeHero({
       },
     ]);
 
-    /* LOCATION */
-
     setRequestLocation("");
     setFullAddress("");
     setLocality("");
@@ -655,18 +615,12 @@ export default function HomeHero({
     setState("");
     setPincode("");
 
-    /* SCHEDULE */
-
     setWorkDate("");
     setStartTime("");
     setDuration("1 Day");
 
-    /* DETAILS */
-
     setBudget("");
     setRequirement("");
-
-    /* SYSTEM */
 
     setError("");
     setSubmitted(false);
@@ -681,9 +635,7 @@ export default function HomeHero({
     if (submitting) return;
 
     setRequestOpen(false);
-
     setKeyboardOpen(false);
-
     setError("");
 
     onRequestClose?.();
@@ -746,182 +698,153 @@ export default function HomeHero({
       validateForm();
 
     if (validationError) {
-      showError(
-        validationError,
-      );
+      showError(validationError);
       return;
     }
 
     try {
       setSubmitting(true);
 
-      /* =====================================================
-         GET CURRENT USER
-      ===================================================== */
-
       const {
         data: { user },
-      } =
-        await supabase.auth.getUser();
+      } = await supabase.auth.getUser();
 
-      /* =====================================================
-         INSERT REQUEST
-         BACKEND UNCHANGED
-      ===================================================== */
-
-      const {
-        error: insertError,
-      } = await supabase
-        .from("worker_requests")
-        .insert({
-          /* PROJECT */
-
-          project_name:
-            projectName.trim(),
-
-          project_type:
-            projectType,
-
-          /* WORKER GROUPS */
-
-          workers_required:
-            workerGroups.reduce(
-              (
-                total,
-                group,
-              ) =>
-                total +
-                Math.max(
-                  1,
-                  Number(
-                    group.workers_required,
-                  ) || 1,
-                ),
-              0,
+      const totalWorkers =
+        workerGroups.reduce(
+          (total, group) =>
+            total +
+            Math.max(
+              1,
+              Number(
+                group.workers_required,
+              ) || 1,
             ),
+          0,
+        );
 
-          category:
-            workerGroups
-              .map(
-                (group) =>
-                  group.category,
-              )
-              .filter(Boolean)
-              .join(", "),
-
-          requirements:
-            workerGroups.map(
-              (group) => ({
-                category:
-                  group.category,
-
-                workers_required:
-                  Math.max(
-                    1,
-                    Number(
-                      group.workers_required,
-                    ) || 1,
-                  ),
-              }),
-            ),
-
-          /* LOCATION */
-
-          location:
-            requestLocation,
-
-          /* REQUESTER */
-
-          requester_type:
-            requesterType,
-
-          requester_name:
-            requesterName.trim(),
-
-          requester_mobile:
-            requesterMobile
-              .replace(
-                /\D/g,
-                "",
-              )
-              .slice(
-                0,
-                10,
+      const requirements =
+        workerGroups.map(
+          (group) => ({
+            category: group.category,
+            workers_required:
+              Math.max(
+                1,
+                Number(
+                  group.workers_required,
+                ) || 1,
               ),
+          }),
+        );
 
-          requester_email:
-            requesterEmail.trim() ||
-            null,
+      const categories =
+        workerGroups
+          .map(
+            (group) =>
+              group.category,
+          )
+          .filter(Boolean)
+          .join(", ");
 
-          company_name:
-            requesterType ===
-            "individual"
-              ? null
-              : companyName.trim() ||
-                null,
+      const { error: insertError } =
+        await supabase
+          .from("worker_requests")
+          .insert({
+            project_name:
+              projectName.trim(),
 
-          gstin:
-            requesterType ===
-            "individual"
-              ? null
-              : gstin
-                  .replace(
-                    /\s/g,
-                    "",
-                  )
-                  .toUpperCase() ||
-                null,
+            project_type:
+              projectType,
 
-          requester_address:
-            requesterAddress.trim() ||
-            null,
+            workers_required:
+              totalWorkers,
 
-          requester_user_id:
-            user?.id || null,
+            total_workers:
+              totalWorkers,
 
-          /* WORK ADDRESS */
+            category:
+              categories,
 
-          full_address:
-            fullAddress.trim(),
+            requirements:
+              requirements,
 
-          locality:
-            locality.trim(),
+            location:
+              requestLocation,
 
-          district,
+            requester_type:
+              requesterType,
 
-          state,
+            requester_name:
+              requesterName.trim(),
 
-          pincode,
+            requester_mobile:
+              requesterMobile
+                .replace(/\D/g, "")
+                .slice(0, 10),
 
-          /* SCHEDULE */
+            requester_email:
+              requesterEmail.trim() ||
+              null,
 
-          work_date:
-            workDate,
+            company_name:
+              requesterType ===
+              "individual"
+                ? null
+                : companyName.trim() ||
+                  null,
 
-          start_time:
-            startTime || null,
+            gstin:
+              requesterType ===
+              "individual"
+                ? null
+                : gstin
+                    .replace(/\s/g, "")
+                    .toUpperCase() ||
+                  null,
 
-          duration,
+            requester_address:
+              requesterAddress.trim() ||
+              null,
 
-          /* WORK DETAILS */
+            requester_user_id:
+              user?.id || null,
 
-          budget: budget
-            ? Number(budget)
-            : null,
+            full_address:
+              fullAddress.trim(),
 
-          requirement:
-            requirement.trim(),
+            locality:
+              locality.trim(),
 
-          /* SYSTEM */
+            district,
 
-          status: "pending",
+            state,
 
-          source: "home",
-        });
+            pincode,
 
-      /* =====================================================
-         INSERT ERROR
-      ===================================================== */
+            work_date:
+              workDate,
+
+            start_time:
+              startTime || null,
+
+            duration,
+
+            budget:
+              budget
+                ? Number(budget)
+                : null,
+
+            requirement:
+              requirement.trim(),
+
+            status:
+              "pending",
+
+            source:
+              "home",
+
+            is_deleted:
+              false,
+          });
 
       if (insertError) {
         console.error(
@@ -936,10 +859,6 @@ export default function HomeHero({
         return;
       }
 
-      /* =====================================================
-         SUCCESS
-      ===================================================== */
-
       setSubmitted(true);
 
       window.dispatchEvent(
@@ -950,9 +869,7 @@ export default function HomeHero({
 
       setTimeout(() => {
         resetForm();
-
         setRequestOpen(false);
-
         onRequestClose?.();
       }, 1200);
     } catch (submitError) {
@@ -976,136 +893,53 @@ export default function HomeHero({
   return (
     <>
       {requestOpen && (
-        <div
-          className="
-            fixed
-            inset-0
-            z-[9999]
-            bg-black/70
-            backdrop-blur-md
-          "
-        >
-          <div
-            className="
-              flex
-              h-[100dvh]
-              w-full
-              items-center
-              justify-center
-              p-0
-              sm:p-3
-              lg:p-5
-            "
-          >
-            <div
-              className="
-                relative
-                flex
-                h-[100dvh]
-                w-full
-                flex-col
-                overflow-hidden
-                bg-[#f6faf8]
+        <div className="fixed inset-0 z-[9999] h-[100dvh] w-full overflow-hidden overscroll-none bg-black/70 backdrop-blur-md">
+          <div className="flex h-[100dvh] w-full items-center justify-center overflow-hidden p-0 sm:p-3 lg:p-5">
+            <div className="relative flex h-[100dvh] w-full min-h-0 flex-col overflow-hidden overscroll-none bg-[#f6faf8] sm:h-[96dvh] sm:rounded-3xl sm:border sm:border-white/30 sm:shadow-[0_30px_100px_rgba(0,0,0,0.25)] lg:max-w-6xl">
 
-                sm:h-[96dvh]
-                sm:rounded-3xl
-                sm:border
-                sm:border-white/30
-                sm:shadow-[0_30px_100px_rgba(0,0,0,0.25)]
+              {/* =================================================
+                  BACKGROUND IMAGE
+              ================================================= */}
 
-                lg:max-w-6xl
-              "
-            >
+              <div className="pointer-events-none absolute inset-x-0 top-22 z-0 h-50 overflow-hidden sm:h-77.5 lg:h-85">
+                <div
+                  className="absolute inset-0 bg-cover bg-center bg-no-repeat"
+                  style={{
+                    backgroundImage:
+                      "url('/images/worker-request-bg.png')",
+                  }}
+                />
+
+                <div className="absolute inset-0 bg-gradient-to-b from-black/45 via-black/15 to-[#f6faf8]" />
+
+                <div className="absolute inset-0 bg-emerald-950/10" />
+              </div>
 
               {/* =================================================
                   HEADER
               ================================================= */}
 
-              <header
-                className="
-                  relative
-                  z-30
-                  flex
-                  shrink-0
-                  items-center
-                  justify-between
-                  border-b
-                  border-white/20
-                  bg-gradient-to-r
-                  from-[#047a3b]
-                  via-[#079d49]
-                  to-[#0ab957]
-                  px-3
-                  py-2.5
-                  pt-[max(10px,env(safe-area-inset-top))]
-                  text-white
-                  sm:px-5
-                "
-              >
-                <div
-                  className="
-                    flex
-                    min-w-0
-                    items-center
-                    gap-2.5
-                  "
-                >
-                  <div
-                    className="
-                      flex
-                      h-9
-                      w-9
-                      shrink-0
-                      items-center
-                      justify-center
-                      rounded-xl
-                      bg-white/15
-                      ring-1
-                      ring-white/20
-                    "
-                  >
+              <header className="relative z-40 flex shrink-0 items-center justify-between bg-gradient-to-r from-[#047a3b]/95 via-[#079d49]/95 to-[#0ab957]/95 px-3 py-2.5 pt-[max(10px,env(safe-area-inset-top))] text-white shadow-sm sm:px-5">
+                <div className="flex min-w-0 items-center gap-2.5">
+                  <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-white/15 ring-1 ring-white/20">
                     <Users className="h-4.5 w-4.5" />
                   </div>
 
                   <div className="min-w-0">
-
                     <div className="flex items-center gap-1.5">
-
-                      <p
-                        className="
-                          text-[8px]
-                          font-black
-                          uppercase
-                          tracking-[0.18em]
-                          text-emerald-100
-                        "
-                      >
+                      <p className="text-[8px] font-black uppercase tracking-[0.18em] text-emerald-100">
                         Workkerz
                       </p>
 
-                      <span
-                        className="
-                          flex
-                          items-center
-                          gap-1
-                          rounded-full
-                          bg-white/15
-                          px-1.5
-                          py-0.5
-                          text-[7px]
-                          font-bold
-                        "
-                      >
+                      <span className="flex items-center gap-1 rounded-full bg-white/15 px-1.5 py-0.5 text-[7px] font-bold">
                         <Sparkles className="h-2.5 w-2.5" />
                         PREMIUM
                       </span>
-
                     </div>
 
                     <h2 className="truncate text-sm font-black">
                       Request Worker
                     </h2>
-
                   </div>
                 </div>
 
@@ -1114,22 +948,7 @@ export default function HomeHero({
                   onClick={closeForm}
                   disabled={submitting}
                   aria-label="Close"
-                  className="
-                    flex
-                    h-10
-                    w-10
-                    shrink-0
-                    items-center
-                    justify-center
-                    rounded-xl
-                    bg-white/10
-                    ring-1
-                    ring-white/15
-                    transition
-                    active:scale-95
-                    hover:bg-white/20
-                    disabled:opacity-50
-                  "
+                  className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-white/10 ring-1 ring-white/15 transition active:scale-95 hover:bg-white/20 disabled:opacity-50"
                 >
                   <X className="h-4 w-4" />
                 </button>
@@ -1139,42 +958,24 @@ export default function HomeHero({
                   PROGRESS
               ================================================= */}
 
-              <RequestProgress
-                currentStep={
-                  currentStep
-                }
-              />
+              <div className="relative z-40 shrink-0">
+                <RequestProgress
+                  currentStep={currentStep}
+                />
+              </div>
 
               {/* =================================================
-                  CONTENT
+                  FIXED FORM AREA
               ================================================= */}
 
               <div
-                className="
-                  min-h-0
-                  flex-1
-                  overflow-y-auto
-                  overscroll-contain
-                  scroll-smooth
-                  [webkit-overflow-scrolling:touch]
-                "
+                data-request-scroll
+                className="relative z-20 min-h-0 flex-1 overflow-hidden overscroll-none"
               >
                 <form
-                  onSubmit={
-                    submitRequest
-                  }
-                  className="
-                    mx-auto
-                    w-full
-                    max-w-5xl
-                    px-3
-                    py-3
-                    pb-[calc(110px+env(safe-area-inset-bottom))]
-                    sm:px-5
-                    sm:py-5
-                  "
+                  onSubmit={submitRequest}
+                  className="relative mx-auto h-full w-full max-w-5xl overflow-hidden px-3 pb-24 pt-12 sm:px-5 sm:pb-24 sm:pt-4 lg:pt-5"
                 >
-
                   {/* =================================================
                       STEP 1
                   ================================================= */}
@@ -1187,50 +988,39 @@ export default function HomeHero({
                       setRequesterType={
                         setRequesterType
                       }
-
                       requesterName={
                         requesterName
                       }
                       setRequesterName={
                         setRequesterName
                       }
-
                       requesterMobile={
                         requesterMobile
                       }
                       setRequesterMobile={
                         setRequesterMobile
                       }
-
                       requesterEmail={
                         requesterEmail
                       }
                       setRequesterEmail={
                         setRequesterEmail
                       }
-
                       companyName={
                         companyName
                       }
                       setCompanyName={
                         setCompanyName
                       }
-
                       gstin={gstin}
-                      setGstin={
-                        setGstin
-                      }
-
+                      setGstin={setGstin}
                       requesterAddress={
                         requesterAddress
                       }
                       setRequesterAddress={
                         setRequesterAddress
                       }
-
-                      onNext={
-                        nextStep
-                      }
+                      onNext={nextStep}
                     />
                   )}
 
@@ -1246,25 +1036,19 @@ export default function HomeHero({
                       setProjectName={
                         setProjectName
                       }
-
                       projectType={
                         projectType
                       }
                       setProjectType={
                         setProjectType
                       }
-
                       workerGroups={
                         workerGroups
                       }
                       setWorkerGroups={
                         setWorkerGroups
                       }
-
-                      onNext={
-                        nextStep
-                      }
-
+                      onNext={nextStep}
                       onBack={
                         previousStep
                       }
@@ -1283,44 +1067,29 @@ export default function HomeHero({
                       setRequestLocation={
                         setRequestLocation
                       }
-
                       fullAddress={
                         fullAddress
                       }
                       setFullAddress={
                         setFullAddress
                       }
-
-                      locality={
-                        locality
-                      }
+                      locality={locality}
                       setLocality={
                         setLocality
                       }
-
                       state={state}
-                      setState={
-                        setState
-                      }
-
+                      setState={setState}
                       district={
                         district
                       }
                       setDistrict={
                         setDistrict
                       }
-
-                      pincode={
-                        pincode
-                      }
+                      pincode={pincode}
                       setPincode={
                         setPincode
                       }
-
-                      onNext={
-                        nextStep
-                      }
-
+                      onNext={nextStep}
                       onBack={
                         previousStep
                       }
@@ -1333,31 +1102,23 @@ export default function HomeHero({
 
                   {currentStep === 4 && (
                     <RequestStep4
-                      workDate={
-                        workDate
-                      }
+                      workDate={workDate}
                       setWorkDate={
                         setWorkDate
                       }
-
                       startTime={
                         startTime
                       }
                       setStartTime={
                         setStartTime
                       }
-
                       duration={
                         duration
                       }
                       setDuration={
                         setDuration
                       }
-
-                      onNext={
-                        nextStep
-                      }
-
+                      onNext={nextStep}
                       onBack={
                         previousStep
                       }
@@ -1370,56 +1131,41 @@ export default function HomeHero({
 
                   {currentStep === 5 && (
                     <RequestStep5
-                      budget={
-                        budget
-                      }
-                      setBudget={
-                        setBudget
-                      }
-
+                      budget={budget}
+                      setBudget={setBudget}
                       requirement={
                         requirement
                       }
                       setRequirement={
                         setRequirement
                       }
-
                       workerGroups={
                         workerGroups
                       }
-
                       projectName={
                         projectName
                       }
-
                       projectType={
                         projectType
                       }
-
                       requestLocation={
                         requestLocation
                       }
-
                       workDate={
                         workDate
                       }
-
                       startTime={
                         startTime
                       }
-
                       duration={
                         duration
                       }
-
                       submitting={
                         submitting
                       }
-
                       submitted={
                         submitted
                       }
-
                       onBack={
                         previousStep
                       }
@@ -1433,15 +1179,7 @@ export default function HomeHero({
                   {error && (
                     <div
                       data-request-error
-                      className="
-                        mt-3
-                        rounded-xl
-                        border
-                        border-red-100
-                        bg-red-50
-                        px-3
-                        py-2.5
-                      "
+                      className="absolute bottom-24 left-3 right-3 z-[90] rounded-xl border border-red-100 bg-red-50/95 px-3 py-2.5 shadow-lg backdrop-blur-md sm:left-5 sm:right-5"
                     >
                       <p className="text-[11px] font-bold text-red-600">
                         {error}
@@ -1450,160 +1188,99 @@ export default function HomeHero({
                   )}
 
                   {/* =================================================
-                      ACTION BAR
+                      SUCCESS
                   ================================================= */}
 
-                  {!keyboardOpen && (
-                    <div
-                      className="
-                        fixed
-                        inset-x-0
-                        bottom-0
-                        z-[100]
-                        border-t
-                        border-gray-100
-                        bg-white/95
-                        p-2.5
-                        pb-[calc(10px+env(safe-area-inset-bottom))]
-                        shadow-[0_-6px_25px_rgba(0,0,0,0.08)]
-                        backdrop-blur-xl
-                        sm:p-3
-                      "
-                    >
-                      <div className="mx-auto max-w-5xl">
+                  {submitted && (
+                    <div className="absolute bottom-24 left-3 right-3 z-[90] rounded-2xl border border-emerald-200/50 bg-emerald-50/95 px-4 py-3 text-center shadow-lg backdrop-blur-md sm:left-5 sm:right-5">
+                      <p className="text-xs font-black text-emerald-700">
+                        Your worker request has been submitted successfully!
+                      </p>
 
-                        <div className="flex gap-2">
-
-                          {/* BACK */}
-
-                          {currentStep > 1 && (
-                            <button
-                              type="button"
-                              onClick={
-                                previousStep
-                              }
-                              disabled={
-                                submitting
-                              }
-                              className="
-                                flex
-                                h-12
-                                w-24
-                                shrink-0
-                                items-center
-                                justify-center
-                                rounded-xl
-                                border
-                                border-gray-200
-                                bg-white
-                                text-xs
-                                font-black
-                                text-gray-700
-                                transition
-                                active:scale-[.98]
-                                disabled:opacity-50
-                              "
-                            >
-                              Back
-                            </button>
-                          )}
-
-                          {/* CONTINUE */}
-
-                          {currentStep <
-                          TOTAL_STEPS ? (
-                            <button
-                              type="button"
-                              onClick={
-                                nextStep
-                              }
-                              disabled={
-                                submitting
-                              }
-                              className="
-                                flex
-                                h-12
-                                flex-1
-                                items-center
-                                justify-center
-                                rounded-xl
-                                bg-gradient-to-r
-                                from-[#078c43]
-                                to-[#09b653]
-                                text-xs
-                                font-black
-                                text-white
-                                shadow-lg
-                                shadow-emerald-600/20
-                                transition
-                                active:scale-[.99]
-                                hover:brightness-105
-                                disabled:opacity-60
-                              "
-                            >
-                              Continue
-                            </button>
-                          ) : (
-                            <button
-                              type="submit"
-                              disabled={
-                                submitting ||
-                                submitted
-                              }
-                              className="
-                                flex
-                                h-12
-                                flex-1
-                                items-center
-                                justify-center
-                                rounded-xl
-                                bg-gradient-to-r
-                                from-[#078c43]
-                                to-[#09b653]
-                                text-xs
-                                font-black
-                                text-white
-                                shadow-lg
-                                shadow-emerald-600/20
-                                transition
-                                active:scale-[.99]
-                                hover:brightness-105
-                                disabled:cursor-not-allowed
-                                disabled:opacity-60
-                              "
-                            >
-                              {submitting
-                                ? "Submitting..."
-                                : submitted
-                                  ? "Request Submitted"
-                                  : "Submit Worker Request"}
-                            </button>
-                          )}
-
-                        </div>
-
-                        <div
-                          className="
-                            mt-1.5
-                            text-center
-                            text-[9px]
-                            font-medium
-                            text-gray-400
-                          "
-                        >
-                          {currentStep ===
-                          TOTAL_STEPS
-                            ? "Review your request before submitting"
-                            : `Step ${currentStep} of ${TOTAL_STEPS}`}
-                        </div>
-
-                      </div>
+                      <p className="mt-0.5 text-[10px] text-emerald-600">
+                        We will connect you with the best workers.
+                      </p>
                     </div>
                   )}
-
                 </form>
               </div>
 
+              {/* =================================================
+                  FIXED BOTTOM ACTION BAR
+              ================================================= */}
+
+              {!keyboardOpen && (
+                <div className="absolute inset-x-0 bottom-0 z-[100] shrink-0 border-t border-gray-100 bg-white/95 p-2.5 pb-[calc(10px+env(safe-area-inset-bottom))] shadow-[0_-8px_30px_rgba(0,0,0,0.10)] backdrop-blur-xl sm:p-3">
+                  <div className="mx-auto max-w-5xl">
+                    <div className="flex gap-2">
+
+                      {/* BACK */}
+
+                      {currentStep > 1 && (
+                        <button
+                          type="button"
+                          onClick={
+                            previousStep
+                          }
+                          disabled={
+                            submitting
+                          }
+                          className="flex h-12 w-24 shrink-0 items-center justify-center rounded-xl border border-gray-200 bg-white text-xs font-black text-gray-700 transition active:scale-[.98] disabled:opacity-50"
+                        >
+                          Back
+                        </button>
+                      )}
+
+                      {/* CONTINUE / SUBMIT */}
+
+                      {currentStep <
+                      TOTAL_STEPS ? (
+                        <button
+                          type="button"
+                          onClick={
+                            nextStep
+                          }
+                          disabled={
+                            submitting
+                          }
+                          className="flex h-12 flex-1 items-center justify-center rounded-xl bg-gradient-to-r from-[#078c43] to-[#09b653] text-xs font-black text-white shadow-lg shadow-emerald-600/20 transition active:scale-[.99] hover:brightness-105 disabled:opacity-60"
+                        >
+                          Continue
+                        </button>
+                      ) : (
+                        <button
+                          type="submit"
+                          disabled={
+                            submitting ||
+                            submitted
+                          }
+                          onClick={() => {
+                            document
+                              .querySelector(
+                                "form",
+                              )
+                              ?.requestSubmit();
+                          }}
+                          className="flex h-12 flex-1 items-center justify-center rounded-xl bg-gradient-to-r from-[#078c43] to-[#09b653] text-xs font-black text-white shadow-lg shadow-emerald-600/20 transition active:scale-[.99] hover:brightness-105 disabled:cursor-not-allowed disabled:opacity-60"
+                        >
+                          {submitting
+                            ? "Submitting..."
+                            : submitted
+                              ? "Request Submitted"
+                              : "Submit Worker Request"}
+                        </button>
+                      )}
+                    </div>
+
+                    <div className="mt-1.5 text-center text-[9px] font-medium text-gray-400">
+                      {currentStep ===
+                      TOTAL_STEPS
+                        ? "Review your request before submitting"
+                        : `Step ${currentStep} of ${TOTAL_STEPS}`}
+                    </div>
+                  </div>
+                </div>
+              )}
             </div>
           </div>
         </div>

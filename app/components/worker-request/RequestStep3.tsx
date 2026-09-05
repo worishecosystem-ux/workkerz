@@ -48,10 +48,7 @@ const states = [
   "Other",
 ];
 
-const districtsByState: Record<
-  string,
-  string[]
-> = {
+const districtsByState: Record<string, string[]> = {
   "Madhya Pradesh": [
     "Bhopal",
     "Gwalior",
@@ -101,163 +98,75 @@ const districtsByState: Record<
 export default function RequestStep3({
   requestLocation,
   setRequestLocation,
-
   fullAddress,
   setFullAddress,
-
   locality,
   setLocality,
-
   state,
   setState,
-
   district,
   setDistrict,
-
   pincode,
   setPincode,
-
   onNext,
   onBack,
 }: RequestStep3Props) {
-  const districts =
-    districtsByState[state] || [];
+  const districts = districtsByState[state] || [];
 
-  function handleStateChange(
-    value: string,
-  ) {
+  function handleStateChange(value: string) {
     setState(value);
     setDistrict("");
   }
 
   function handleNext() {
-    if (!requestLocation) {
-      return;
-    }
-
-    if (!fullAddress.trim()) {
-      return;
-    }
-
-    if (!locality.trim()) {
-      return;
-    }
-
-    if (!state) {
-      return;
-    }
-
-    if (!district) {
-      return;
-    }
-
-    if (pincode.length !== 6) {
-      return;
-    }
+    if (!requestLocation) return;
+    if (!fullAddress.trim()) return;
+    if (!locality.trim()) return;
+    if (!state) return;
+    if (!district) return;
+    if (pincode.length !== 6) return;
 
     onNext();
   }
 
   return (
-    <section
-      className="
-        overflow-hidden
-        rounded-2xl
-        border
-        border-gray-200
-        bg-white
-        shadow-[0_10px_40px_rgba(0,0,0,0.05)]
-      "
-    >
+    <section className="overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-[0_10px_40px_rgba(0,0,0,0.05)]">
       {/* HEADER */}
 
-      <div
-        className="
-          border-b
-          border-gray-100
-          px-4
-          py-4
-          sm:px-5
-        "
-      >
-        <div className="flex items-center gap-3">
-
-          <div
-            className="
-              flex
-              h-10
-              w-10
-              shrink-0
-              items-center
-              justify-center
-              rounded-xl
-              bg-emerald-50
-              text-emerald-600
-            "
-          >
-            <MapPinned className="h-5 w-5" />
+      <div className="border-b border-gray-100 px-4 py-3 sm:px-5">
+        <div className="flex items-center gap-2.5">
+          <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-emerald-50 text-emerald-600">
+            <MapPinned className="h-4 w-4" />
           </div>
 
-          <div>
-            <p
-              className="
-                text-[9px]
-                font-black
-                uppercase
-                tracking-[0.14em]
-                text-emerald-600
-              "
-            >
-              Step 3
-            </p>
-
-            <h1
-              className="
-                mt-0.5
-                text-base
-                font-black
-                tracking-tight
-                text-gray-950
-              "
-            >
+          <div className="min-w-0">
+           
+            <h1 className="mt-0.5 text-[14px] font-black tracking-tight text-gray-950">
               Work Address
             </h1>
 
-            <p
-              className="
-                mt-0.5
-                text-[10px]
-                leading-4
-                text-gray-500
-              "
-            >
+            <p className="mt-0.5 text-[9px] leading-3 text-gray-500">
               Where do you need the workers?
             </p>
           </div>
-
         </div>
       </div>
 
       {/* FORM */}
 
-      <div className="space-y-4 p-4 sm:p-5">
-
+      <div className="space-y-4 p-3 sm:p-3.5">
         {/* CITY */}
 
         <div>
           <FieldLabel
-            icon={
-              <MapPin className="h-3.5 w-3.5" />
-            }
+            icon={<MapPin className="h-3.5 w-3.5" />}
             label="Work City"
             required
           />
 
           <SelectBox
             value={requestLocation}
-            onChange={
-              setRequestLocation
-            }
+            onChange={setRequestLocation}
             placeholder="Select work city"
             options={cities}
           />
@@ -267,9 +176,7 @@ export default function RequestStep3({
 
         <div>
           <FieldLabel
-            icon={
-              <MapPin className="h-3.5 w-3.5" />
-            }
+            icon={<MapPin className="h-3.5 w-3.5" />}
             label="Full Work Address"
             required
           />
@@ -277,35 +184,11 @@ export default function RequestStep3({
           <textarea
             value={fullAddress}
             onChange={(event) =>
-              setFullAddress(
-                event.target.value,
-              )
+              setFullAddress(event.target.value)
             }
-            rows={3}
+            rows={2}
             placeholder="House no., street, building, landmark..."
-            className="
-              mt-1.5
-              min-h-[82px]
-              w-full
-              resize-none
-              rounded-xl
-              border
-              border-gray-200
-              bg-gray-50
-              px-3
-              py-2.5
-              text-xs
-              font-medium
-              text-gray-900
-              outline-none
-              placeholder:text-gray-400
-              transition
-
-              focus:border-emerald-500
-              focus:bg-white
-              focus:ring-2
-              focus:ring-emerald-500/10
-            "
+            className="mt-1 min-h-[60px] w-full resize-none rounded-xl border border-gray-200 bg-gray-50 px-3 py-2 text-xs font-medium text-gray-900 outline-none placeholder:text-gray-400 transition focus:border-emerald-500 focus:bg-white focus:ring-2 focus:ring-emerald-500/10"
           />
         </div>
 
@@ -320,39 +203,16 @@ export default function RequestStep3({
           <input
             value={locality}
             onChange={(event) =>
-              setLocality(
-                event.target.value,
-              )
+              setLocality(event.target.value)
             }
             placeholder="e.g. Kolar Road"
-            className="
-              mt-1.5
-              h-11
-              w-full
-              rounded-xl
-              border
-              border-gray-200
-              bg-gray-50
-              px-3
-              text-xs
-              font-medium
-              text-gray-900
-              outline-none
-              placeholder:text-gray-400
-              transition
-
-              focus:border-emerald-500
-              focus:bg-white
-              focus:ring-2
-              focus:ring-emerald-500/10
-            "
+            className="mt-1 h-9 w-full rounded-lg border border-gray-200 bg-gray-50 px-3 text-xs font-medium text-gray-900 outline-none placeholder:text-gray-400 transition focus:border-emerald-500 focus:bg-white focus:ring-2 focus:ring-emerald-500/10"
           />
         </div>
 
         {/* STATE + DISTRICT */}
 
-        <div className="grid gap-3 sm:grid-cols-2">
-
+        <div className="grid grid-cols-2 gap-2">
           <div>
             <FieldLabel
               label="State"
@@ -361,9 +221,7 @@ export default function RequestStep3({
 
             <SelectBox
               value={state}
-              onChange={
-                handleStateChange
-              }
+              onChange={handleStateChange}
               placeholder="Select state"
               options={states}
             />
@@ -377,9 +235,7 @@ export default function RequestStep3({
 
             <SelectBox
               value={district}
-              onChange={
-                setDistrict
-              }
+              onChange={setDistrict}
               placeholder={
                 state
                   ? "Select district"
@@ -389,7 +245,6 @@ export default function RequestStep3({
               disabled={!state}
             />
           </div>
-
         </div>
 
         {/* PINCODE */}
@@ -405,41 +260,14 @@ export default function RequestStep3({
             onChange={(event) =>
               setPincode(
                 event.target.value
-                  .replace(
-                    /\D/g,
-                    "",
-                  )
-                  .slice(
-                    0,
-                    6,
-                  ),
+                  .replace(/\D/g, "")
+                  .slice(0, 6),
               )
             }
             inputMode="numeric"
             maxLength={6}
             placeholder="6-digit pincode"
-            className="
-              mt-1.5
-              h-11
-              w-full
-              rounded-xl
-              border
-              border-gray-200
-              bg-gray-50
-              px-3
-              text-xs
-              font-medium
-              tracking-wide
-              text-gray-900
-              outline-none
-              placeholder:text-gray-400
-              transition
-
-              focus:border-emerald-500
-              focus:bg-white
-              focus:ring-2
-              focus:ring-emerald-500/10
-            "
+            className="mt-1 h-9 w-full rounded-lg border border-gray-200 bg-gray-50 px-3 text-xs font-medium tracking-wide text-gray-900 outline-none placeholder:text-gray-400 transition focus:border-emerald-500 focus:bg-white focus:ring-2 focus:ring-emerald-500/10"
           />
         </div>
 
@@ -448,51 +276,16 @@ export default function RequestStep3({
         {(requestLocation ||
           locality ||
           fullAddress) && (
-          <div
-            className="
-              rounded-xl
-              border
-              border-emerald-100
-              bg-emerald-50/60
-              px-3
-              py-3
-            "
-          >
+          <div className="rounded-lg border border-emerald-100 bg-emerald-50/60 px-3 py-2">
             <div className="flex gap-2">
-
-              <MapPin
-                className="
-                  mt-0.5
-                  h-4
-                  w-4
-                  shrink-0
-                  text-emerald-600
-                "
-              />
+              <MapPin className="mt-0.5 h-3.5 w-3.5 shrink-0 text-emerald-600" />
 
               <div className="min-w-0">
-
-                <p
-                  className="
-                    text-[9px]
-                    font-black
-                    uppercase
-                    tracking-wide
-                    text-emerald-600
-                  "
-                >
+                <p className="text-[9px] font-black uppercase tracking-wide text-emerald-600">
                   Work Location
                 </p>
 
-                <p
-                  className="
-                    mt-1
-                    text-[10px]
-                    font-semibold
-                    leading-4
-                    text-gray-700
-                  "
-                >
+                <p className="mt-0.5 line-clamp-2 text-[9px] font-semibold leading-3.5 text-gray-700">
                   {[
                     fullAddress,
                     locality,
@@ -504,36 +297,17 @@ export default function RequestStep3({
                     .filter(Boolean)
                     .join(", ")}
                 </p>
-
               </div>
-
             </div>
           </div>
         )}
-
       </div>
 
       {/* FOOTER */}
 
-      <div
-        className="
-          border-t
-          border-gray-100
-          px-4
-          py-3
-          sm:px-5
-        "
-      >
-        <p
-          className="
-            text-center
-            text-[9px]
-            font-medium
-            text-gray-400
-          "
-        >
-          Enter the exact location where workers
-          will report.
+      <div className="border-t border-gray-100 px-4 py-2 sm:px-5">
+        <p className="text-center text-[9px] font-medium text-gray-400">
+          Enter the exact location where workers will report.
         </p>
       </div>
     </section>
@@ -554,16 +328,7 @@ function FieldLabel({
   required?: boolean;
 }) {
   return (
-    <label
-      className="
-        flex
-        items-center
-        gap-1
-        text-[10px]
-        font-bold
-        text-gray-700
-      "
-    >
+    <label className="flex items-center gap-1 text-[10px] font-bold text-gray-700">
       {icon && (
         <span className="text-emerald-600">
           {icon}
@@ -593,78 +358,36 @@ function SelectBox({
   disabled = false,
 }: {
   value: string;
-  onChange: (
-    value: string,
-  ) => void;
+  onChange: (value: string) => void;
   options: string[];
   placeholder: string;
   disabled?: boolean;
 }) {
   return (
-    <div className="relative mt-1.5">
-
+    <div className="relative mt-1">
       <select
         value={value}
         disabled={disabled}
         onChange={(event) =>
-          onChange(
-            event.target.value,
-          )
+          onChange(event.target.value)
         }
-        className="
-          h-11
-          w-full
-          appearance-none
-          rounded-xl
-          border
-          border-gray-200
-          bg-gray-50
-          px-3
-          pr-9
-          text-xs
-          font-semibold
-          text-gray-800
-          outline-none
-          transition
-
-          focus:border-emerald-500
-          focus:bg-white
-          focus:ring-2
-          focus:ring-emerald-500/10
-
-          disabled:cursor-not-allowed
-          disabled:opacity-50
-        "
+        className="h-9 w-full appearance-none rounded-lg border border-gray-200 bg-gray-50 px-3 pr-8 text-xs font-semibold text-gray-800 outline-none transition focus:border-emerald-500 focus:bg-white focus:ring-2 focus:ring-emerald-500/10 disabled:cursor-not-allowed disabled:opacity-50"
       >
         <option value="">
           {placeholder}
         </option>
 
-        {options.map(
-          (option) => (
-            <option
-              key={option}
-              value={option}
-            >
-              {option}
-            </option>
-          ),
-        )}
+        {options.map((option) => (
+          <option
+            key={option}
+            value={option}
+          >
+            {option}
+          </option>
+        ))}
       </select>
 
-      <ChevronDown
-        className="
-          pointer-events-none
-          absolute
-          right-3
-          top-1/2
-          h-4
-          w-4
-          -translate-y-1/2
-          text-gray-400
-        "
-      />
-
+      <ChevronDown className="pointer-events-none absolute right-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-gray-400" />
     </div>
   );
 }
