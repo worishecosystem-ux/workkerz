@@ -32,30 +32,39 @@ export interface WorkerBooking {
   booking_id: string;
   booking_status: BookingStatus;
 
+  // Worker
   worker_id: string | null;
   worker_name: string | null;
+  worker_phone: string | null;
   worker_photo: string | null;
   worker_specialty: string | null;
   worker_rating: number | null;
 
+  // Service
   service_type: string | null;
   description: string | null;
 
+  // Schedule
   booking_date: string | null;
   booking_time: string | null;
   booking_type: string | null;
 
+  // Customer
   customer_name: string | null;
   customer_phone: string | null;
   customer_email: string | null;
+
+  // Notes
   notes: string | null;
 
+  // Payment
   total_cost: number;
   service_fee: number;
   materials_cost: number;
   package_price: number;
   grand_total: number;
 
+  // Work
   work_status: string | null;
   worker_available: boolean;
 
@@ -73,6 +82,7 @@ export interface WorkerBooking {
   // Optional reusable customer address relation
   customer_addresses: CustomerAddress | null;
 
+  // Meta
   created_at: string;
 }
 

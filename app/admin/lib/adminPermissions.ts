@@ -9,6 +9,7 @@ export type AdminModule =
   | "orders"
   | "shops"
   | "bookings"
+  | "completed-work"
   | "marketing"
   | "admins";
 
@@ -20,10 +21,7 @@ export type AdminSubRole =
   | "booking_admin"
   | "marketing_admin";
 
-export const ROLE_MODULES: Record<
-  AdminSubRole,
-  AdminModule[]
-> = {
+export const ROLE_MODULES: Record<AdminSubRole, AdminModule[]> = {
   worker_admin: [
     "dashboard",
     "workers",
@@ -47,6 +45,7 @@ export const ROLE_MODULES: Record<
   booking_admin: [
     "dashboard",
     "bookings",
+    "completed-work",
   ],
 
   marketing_admin: [
@@ -60,12 +59,10 @@ export function canAccessModule(
   assignedRoles: AdminSubRole[],
   module: AdminModule,
 ): boolean {
-  // Super Admin → everything
   if (profileRole === "super_admin") {
     return true;
   }
 
-  // Normal Admin → assigned modules only
   return assignedRoles.some((role) =>
     ROLE_MODULES[role]?.includes(module),
   );

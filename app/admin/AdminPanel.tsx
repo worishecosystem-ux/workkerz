@@ -7,6 +7,7 @@ import { Capacitor } from "@capacitor/core";
 
 import MarketingTab from "./components/MarketingTab";
 import WorkerRequestsTab from "./components/worker-requests/WorkerRequestsTab";
+import CompletedWorkTab from "./components/completed-work/CompletedWorkTab";
 
 import {
   LayoutDashboard,
@@ -21,7 +22,8 @@ import {
   Megaphone,
   ChevronLeft,
   ChevronRight,
-   UsersRound
+  UsersRound,
+  Images,
 } from "lucide-react";
 
 import { supabase } from "@/lib/supabase";
@@ -140,6 +142,11 @@ const NAV: {
     icon: CalendarCheck,
   },
   {
+    id: "completed-work",
+    label: "Completed Work",
+    icon: Images,
+  },
+  {
     id: "marketing",
     label: "Marketing",
     icon: Megaphone,
@@ -202,7 +209,9 @@ export default function AdminPanel() {
      NOTIFICATIONS
   ======================================================= */
 
-  const [notifications, setNotifications] = useState<NotificationOrder[]>([]);
+  const [notifications, setNotifications] = useState<NotificationOrder[]>(
+    [],
+  );
 
   const notificationsRef = useRef<NotificationOrder[]>([]);
 
@@ -224,7 +233,8 @@ export default function AdminPanel() {
      REALTIME
   ======================================================= */
 
-  const channelRef = useRef<ReturnType<typeof supabase.channel> | null>(null);
+  const channelRef =
+    useRef<ReturnType<typeof supabase.channel> | null>(null);
 
   const realtimeStarted = useRef(false);
 
@@ -483,9 +493,11 @@ export default function AdminPanel() {
             [
               "dashboard",
               "workers",
+              "worker-requests",
               "orders",
               "shops",
               "bookings",
+              "completed-work",
               "marketing",
             ] as AdminModule[]
           ).find((x) => canAccessModule(data.admin.role, roleNames, x));
@@ -736,7 +748,11 @@ export default function AdminPanel() {
 
               const order = payload.new as NotificationOrder;
 
-              if (REMOVE.includes(String(order.status ?? "").toLowerCase())) {
+              if (
+                REMOVE.includes(
+                  String(order.status ?? "").trim().toLowerCase(),
+                )
+              ) {
                 removeNotification(order.id);
               }
             },
@@ -813,7 +829,7 @@ export default function AdminPanel() {
             <div className="mt-8 h-16 rounded-xl bg-gray-100" />
 
             <div className="mt-6 space-y-2">
-              {[1, 2, 3, 4, 5, 6, 7].map((i) => (
+              {[1, 2, 3, 4, 5, 6, 7, 8].map((i) => (
                 <div key={i} className="h-11 rounded-xl bg-gray-100" />
               ))}
             </div>
@@ -1048,7 +1064,6 @@ export default function AdminPanel() {
 
       {/* =================================================
           BROWSER MOBILE HEADER
-          ONLY WEB
       ================================================= */}
 
       {isBrowser && (
@@ -1059,9 +1074,13 @@ export default function AdminPanel() {
             </div>
 
             <div>
-              <p className="text-sm font-black text-[#0F172A]">Workkerz</p>
+              <p className="text-sm font-black text-[#0F172A]">
+                Workkerz
+              </p>
 
-              <p className="text-[10px] text-[#94A3B8]">Admin Panel</p>
+              <p className="text-[10px] text-[#94A3B8]">
+                Admin Panel
+              </p>
             </div>
           </div>
 
@@ -1194,44 +1213,42 @@ export default function AdminPanel() {
       </aside>
 
       {/* =================================================
-          DESKTOP SIDEBAR — WEBSITE ONLY
+          DESKTOP SIDEBAR
       ================================================= */}
 
       {isBrowser && (
         <aside
           className={`
-      fixed
-      inset-y-0
-      left-0
-      z-40
-      hidden
-      flex-col
-      border-r
-      border-gray-100
-      bg-white
-      transition-[width]
-      duration-300
-      ease-in-out
-      lg:flex
-      ${sidebarCollapsed ? "w-19" : "w-64"}
-    `}
+            fixed
+            inset-y-0
+            left-0
+            z-40
+            hidden
+            flex-col
+            border-r
+            border-gray-100
+            bg-white
+            transition-[width]
+            duration-300
+            ease-in-out
+            lg:flex
+            ${sidebarCollapsed ? "w-19" : "w-64"}
+          `}
         >
-          {/* =====================================================
-        HEADER
-    ===================================================== */}
+          {/* HEADER */}
 
           <div
             className={`
-        flex
-        h-20
-        shrink-0
-        items-center
-        border-b
-        border-gray-100
-        transition-all
-        duration-300
-        ${sidebarCollapsed ? "justify-center px-2" : "px-5"}
-      `}
+              flex
+              h-20
+              shrink-0
+              items-center
+              border-b
+              border-gray-100
+              transition-all
+              duration-300
+              ${sidebarCollapsed ? "justify-center px-2" : "px-5"}
+            `}
           >
             {sidebarCollapsed ? (
               <div className="flex h-10 w-10 items-center justify-center overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm">
@@ -1256,23 +1273,23 @@ export default function AdminPanel() {
                     Workkerz
                   </h1>
 
-                  <p className="text-xs text-[#94A3B8]">Admin Panel</p>
+                  <p className="text-xs text-[#94A3B8]">
+                    Admin Panel
+                  </p>
                 </div>
               </div>
             )}
           </div>
 
-          {/* =====================================================
-        ADMIN PROFILE
-    ===================================================== */}
+          {/* ADMIN PROFILE */}
 
           <div
             className={`
-    shrink-0
-    transition-all
-    duration-300
-    ${sidebarCollapsed ? "px-2 pt-4" : "px-4 pt-4"}
-  `}
+              shrink-0
+              transition-all
+              duration-300
+              ${sidebarCollapsed ? "px-2 pt-4" : "px-4 pt-4"}
+            `}
           >
             {sidebarCollapsed ? (
               <div
@@ -1321,19 +1338,19 @@ export default function AdminPanel() {
 
                 <span
                   className={`
-          mt-3
-          inline-flex
-          rounded-full
-          px-2.5
-          py-1
-          text-[10px]
-          font-bold
-          ${
-            superAdmin
-              ? "bg-purple-50 text-purple-700"
-              : "bg-blue-50 text-blue-700"
-          }
-        `}
+                    mt-3
+                    inline-flex
+                    rounded-full
+                    px-2.5
+                    py-1
+                    text-[10px]
+                    font-bold
+                    ${
+                      superAdmin
+                        ? "bg-purple-50 text-purple-700"
+                        : "bg-blue-50 text-blue-700"
+                    }
+                  `}
                 >
                   {superAdmin ? "Super Admin" : "Admin"}
                 </span>
@@ -1341,22 +1358,21 @@ export default function AdminPanel() {
             )}
           </div>
 
-          {/* =====================================================
-    NAVIGATION
-===================================================== */}
+          {/* NAVIGATION */}
 
           <nav
             className={`
-    flex-1
-    overflow-y-auto
-    transition-all
-    duration-300
-    ${sidebarCollapsed ? "p-2" : "px-4 py-3"}
-  `}
+              flex-1
+              overflow-y-auto
+              transition-all
+              duration-300
+              ${sidebarCollapsed ? "p-2" : "px-4 py-3"}
+            `}
           >
             <div className="space-y-1">
               {visible.map((item) => {
                 const Icon = item.icon;
+
                 const active = tab === item.id;
 
                 return (
@@ -1365,60 +1381,61 @@ export default function AdminPanel() {
                     type="button"
                     onClick={() => {
                       setTab(item.id);
+
                       setDrawer(false);
                     }}
                     title={sidebarCollapsed ? item.label : undefined}
                     aria-label={item.label}
                     className={`
-            group
-            flex
-            min-h-10
-            w-full
-            items-center
-            border-0
-            bg-transparent
-            outline-none
-            transition-all
-            duration-200
-            ${
-              sidebarCollapsed
-                ? "justify-center px-2"
-                : "justify-start gap-3 px-3 py-2"
-            }
-          `}
+                      group
+                      flex
+                      min-h-10
+                      w-full
+                      items-center
+                      border-0
+                      bg-transparent
+                      outline-none
+                      transition-all
+                      duration-200
+                      ${
+                        sidebarCollapsed
+                          ? "justify-center px-2"
+                          : "justify-start gap-3 px-3 py-2"
+                      }
+                    `}
                   >
                     <Icon
                       className={`
-              h-5
-              w-5
-              shrink-0
-              transition-all
-              duration-200
-              ${
-                active
-                  ? "scale-110 text-[#FF5C39]"
-                  : "text-[#64748B] group-hover:text-[#FF5C39]"
-              }
-            `}
+                        h-5
+                        w-5
+                        shrink-0
+                        transition-all
+                        duration-200
+                        ${
+                          active
+                            ? "scale-110 text-[#FF5C39]"
+                            : "text-[#64748B] group-hover:text-[#FF5C39]"
+                        }
+                      `}
                     />
 
                     {!sidebarCollapsed && (
                       <span
                         className={`
-                min-w-0
-                flex-1
-                truncate
-                text-left
-                text-sm
-                font-semibold
-                transition-colors
-                duration-200
-                ${
-                  active
-                    ? "text-[#FF5C39]"
-                    : "text-[#64748B] group-hover:text-[#0F172A]"
-                }
-              `}
+                          min-w-0
+                          flex-1
+                          truncate
+                          text-left
+                          text-sm
+                          font-semibold
+                          transition-colors
+                          duration-200
+                          ${
+                            active
+                              ? "text-[#FF5C39]"
+                              : "text-[#64748B] group-hover:text-[#0F172A]"
+                          }
+                        `}
                       >
                         {item.label}
                       </span>
@@ -1428,9 +1445,8 @@ export default function AdminPanel() {
               })}
             </div>
           </nav>
-          {/* =====================================================
-        COLLAPSE / EXPAND ARROW
-    ===================================================== */}
+
+          {/* COLLAPSE */}
 
           <button
             type="button"
@@ -1438,30 +1454,32 @@ export default function AdminPanel() {
             aria-label={
               sidebarCollapsed ? "Expand sidebar" : "Collapse sidebar"
             }
-            title={sidebarCollapsed ? "Expand sidebar" : "Collapse sidebar"}
+            title={
+              sidebarCollapsed ? "Expand sidebar" : "Collapse sidebar"
+            }
             className="
-        absolute
-        -right-3
-        top-[76px]
-        z-50
-        flex
-        h-7
-        w-7
-        items-center
-        justify-center
-        rounded-full
-        border
-        border-gray-200
-        bg-white
-        text-[#64748B]
-        shadow-md
-        transition-all
-        duration-200
-        hover:scale-105
-        hover:bg-gray-50
-        hover:text-[#FF5C39]
-        active:scale-95
-      "
+              absolute
+              -right-3
+              top-[76px]
+              z-50
+              flex
+              h-7
+              w-7
+              items-center
+              justify-center
+              rounded-full
+              border
+              border-gray-200
+              bg-white
+              text-[#64748B]
+              shadow-md
+              transition-all
+              duration-200
+              hover:scale-105
+              hover:bg-gray-50
+              hover:text-[#FF5C39]
+              active:scale-95
+            "
           >
             {sidebarCollapsed ? (
               <ChevronRight className="h-4 w-4" />
@@ -1492,15 +1510,11 @@ export default function AdminPanel() {
           }
         `}
       >
-        {/* =================================================
-            WEB MOBILE HEADER SPACE
-        ================================================= */}
+        {/* WEB MOBILE HEADER SPACE */}
 
         {isBrowser && <div className="h-16 lg:hidden" />}
 
-        {/* =================================================
-            DASHBOARD
-        ================================================= */}
+        {/* DASHBOARD */}
 
         {tab === "dashboard" && hasAccess("dashboard") && (
           <DashboardTab
@@ -1516,25 +1530,22 @@ export default function AdminPanel() {
           />
         )}
 
-        {/* =================================================
-            WORKERS
-        ================================================= */}
+        {/* WORKERS */}
 
         {tab === "workers" && hasAccess("workers") && (
           <WorkersTab onFormOpenChange={setWorkerFormOpen} />
         )}
 
-        {/* =================================================
-            WORKER REQUESTS
-        ================================================= */}
+        {/* WORKER REQUESTS */}
 
-        {tab === "worker-requests" && hasAccess("worker-requests") && (
-          <WorkerRequestsTab device={isAndroidApp ? "mobile" : "desktop"} />
-        )}
+        {tab === "worker-requests" &&
+          hasAccess("worker-requests") && (
+            <WorkerRequestsTab
+              device={isAndroidApp ? "mobile" : "desktop"}
+            />
+          )}
 
-        {/* =================================================
-            ORDERS
-        ================================================= */}
+        {/* ORDERS */}
 
         {tab === "orders" && hasAccess("orders") && (
           <OrdersTab
@@ -1550,40 +1561,48 @@ export default function AdminPanel() {
           />
         )}
 
-        {/* =================================================
-            SHOPS
-        ================================================= */}
+        {/* SHOPS */}
 
         {tab === "shops" && hasAccess("shops") && <ShopsTab />}
 
-        {/* =================================================
-            BOOKINGS
-        ================================================= */}
+        {/* BOOKINGS */}
 
         {tab === "bookings" && hasAccess("bookings") && <BookingsTab />}
 
         {/* =================================================
-            MARKETING
+            COMPLETED WORK
         ================================================= */}
 
-        {tab === "marketing" && hasAccess("marketing") && <MarketingTab />}
+        {tab === "completed-work" && hasAccess("completed-work") && (
+          <CompletedWorkTab />
+        )}
 
-        {/* =================================================
-            ADMINS
-        ================================================= */}
+        {/* MARKETING */}
+
+        {tab === "marketing" && hasAccess("marketing") && (
+          <MarketingTab />
+        )}
+
+        {/* ADMINS */}
 
         {tab === "admins" && hasAccess("admins") && <AdminsTab />}
       </main>
 
       {/* =================================================
           ANDROID APP BOTTOM NAV
-          ONLY NATIVE ANDROID
       ================================================= */}
 
       {isAndroidApp && !workerFormOpen && !keyboardOpen && (
         <nav className="fixed inset-x-0 bottom-0 z-50 border-t border-gray-100 bg-white/95 pb-[env(safe-area-inset-bottom)] backdrop-blur-xl md:max-lg:inset-x-6 md:max-lg:bottom-3 md:max-lg:rounded-2xl md:max-lg:border md:max-lg:shadow-[0_8px_30px_rgba(15,23,42,0.10)]">
           <div className="grid h-15 w-full grid-cols-5 px-1 md:max-lg:px-8">
-            {(["dashboard", "workers", "orders", "bookings"] as AdminModule[])
+            {(
+              [
+                "dashboard",
+                "workers",
+                "orders",
+                "bookings",
+              ] as AdminModule[]
+            )
               .map((id) => visible.find((item) => item.id === id))
               .filter(Boolean)
               .map((item) => navButton(item!, true))}

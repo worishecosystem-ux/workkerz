@@ -1,7 +1,8 @@
 "use client";
 
+import { useEffect, useState } from "react";
+
 import {
-  ArrowUpRight,
   CalendarDays,
   CheckCircle2,
   Clock3,
@@ -14,6 +15,8 @@ import {
   Wrench,
   X,
 } from "lucide-react";
+
+import { supabase } from "@/lib/supabase";
 
 import type { WorkerBooking } from "../types/booking";
 
@@ -113,9 +116,86 @@ export default function BookingDetails({
   booking,
   onClose,
 }: Props) {
+  const [workerPhone, setWorkerPhone] = useState<string | null>(
+    booking?.worker_phone || null
+  );
+
+  const [workerLoading, setWorkerLoading] = useState(false);
+
+  /*
+   * =========================================================
+   * FETCH WORKER PHONE
+   * workers.phone is the source of truth.
+   * =========================================================
+   */
+
+  useEffect(() => {
+    let cancelled = false;
+
+    async function fetchWorkerPhone() {
+      if (!booking?.worker_id) {
+        setWorkerPhone(null);
+        return;
+      }
+
+      // If already available in booking object,
+      // don't make another request.
+      if (booking.worker_phone) {
+        setWorkerPhone(booking.worker_phone);
+        return;
+      }
+
+      setWorkerLoading(true);
+
+      try {
+        const { data, error } = await supabase
+          .from("workers")
+          .select("phone")
+          .eq("id", booking.worker_id)
+          .maybeSingle();
+
+        if (error) {
+          console.error("FETCH WORKER PHONE ERROR:", error);
+
+          if (!cancelled) {
+            setWorkerPhone(null);
+          }
+
+          return;
+        }
+
+        if (!cancelled) {
+          setWorkerPhone(data?.phone || null);
+        }
+      } catch (error) {
+        console.error("FETCH WORKER PHONE ERROR:", error);
+
+        if (!cancelled) {
+          setWorkerPhone(null);
+        }
+      } finally {
+        if (!cancelled) {
+          setWorkerLoading(false);
+        }
+      }
+    }
+
+    fetchWorkerPhone();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [booking?.worker_id, booking?.worker_phone]);
+
   if (!booking) return null;
 
   const status = getStatus(booking);
+
+  /*
+   * =========================================================
+   * COPY BOOKING ID
+   * =========================================================
+   */
 
   const copyId = async () => {
     if (!booking.booking_id) return;
@@ -126,6 +206,12 @@ export default function BookingDetails({
       // Clipboard unavailable
     }
   };
+
+  /*
+   * =========================================================
+   * ADDRESS CHECK
+   * =========================================================
+   */
 
   const hasAddress =
     Boolean(booking.house_no) ||
@@ -302,6 +388,8 @@ export default function BookingDetails({
               />
 
               <div className="mt-5 space-y-3">
+                {/* CUSTOMER */}
+
                 <ProfileRow
                   label="Customer"
                   name={booking.customer_name}
@@ -311,7 +399,7 @@ export default function BookingDetails({
                     booking.customer_phone ? (
                       <a
                         href={`tel:${booking.customer_phone}`}
-                        className="flex h-9 w-9 items-center justify-center rounded-xl bg-emerald-50 text-emerald-600 transition hover:bg-emerald-100"
+                        className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-emerald-50 text-emerald-600 transition hover:bg-emerald-100"
                         aria-label="Call customer"
                       >
                         <Phone className="h-4 w-4" />
@@ -320,16 +408,35 @@ export default function BookingDetails({
                   }
                 />
 
+                {/* ASSIGNED WORKER */}
+
                 <ProfileRow
                   label="Assigned Worker"
                   name={booking.worker_name}
-                  subtitle={booking.worker_specialty}
+                  subtitle={
+                    workerLoading
+                      ? "Fetching phone number..."
+                      : workerPhone || booking.worker_specialty
+                  }
                   image={booking.worker_photo}
                   icon={<UserRound />}
                   rating={
                     booking.worker_rating
                       ? `${booking.worker_rating} ★`
                       : undefined
+                  }
+                  action={
+                    workerPhone ? (
+                      <a
+                        href={`tel:${workerPhone}`}
+                        className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-emerald-50 text-emerald-600 transition hover:bg-emerald-100"
+                        aria-label={`Call ${
+                          booking.worker_name || "worker"
+                        }`}
+                      >
+                        <Phone className="h-4 w-4" />
+                      </a>
+                    ) : null
                   }
                 />
               </div>
@@ -369,10 +476,7 @@ export default function BookingDetails({
                         </div>
 
                         <p className="mt-1 text-sm font-bold leading-5 text-slate-800">
-                          {[
-                            booking.house_no,
-                            booking.address,
-                          ]
+                          {[booking.house_no, booking.address]
                             .filter(Boolean)
                             .join(", ")}
                         </p>
@@ -459,8 +563,6 @@ export default function BookingDetails({
                   label="Worker Charges"
                   value={booking.total_cost}
                 />
-
-                {/* Service Fee intentionally removed */}
 
                 {Number(booking.materials_cost || 0) > 0 && (
                   <PriceLine
