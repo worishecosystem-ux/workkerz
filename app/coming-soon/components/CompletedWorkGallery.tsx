@@ -32,23 +32,23 @@ interface CompletedBooking {
 
 interface CompletedRequest {
   id: string;
-  workers_required: number;
-  location: string;
-  category: string;
-  work_date: string;
+  workers_required: number | null;
+  location: string | null;
+  category: string | null;
+  work_date: string | null;
   start_time: string | null;
   duration: string | null;
   budget: number | null;
   requirement: string | null;
-  status: string;
+  status: string | null;
   requester_name: string | null;
   requester_mobile: string | null;
   requester_email: string | null;
   company_name: string | null;
   project_name: string | null;
   project_type: string | null;
-  total_workers: number;
-  is_deleted: boolean;
+  total_workers: number | null;
+  is_deleted: boolean | null;
   created_at: string | null;
   worker_name: string | null;
 }
@@ -83,7 +83,7 @@ interface GalleryWork {
 }
 
 /* ============================================================
-   DATE
+   DATE FORMAT
 ============================================================ */
 
 const formatDate = (date: string | null) => {
@@ -103,6 +103,64 @@ const formatDate = (date: string | null) => {
 };
 
 /* ============================================================
+   SAFE IMAGE
+============================================================ */
+
+function GalleryImage({
+  src,
+  alt,
+  className,
+  fallbackIconSize = "small",
+}: {
+  src: string;
+  alt: string;
+  className: string;
+  fallbackIconSize?: "small" | "large";
+}) {
+  const [loaded, setLoaded] = useState(false);
+  const [error, setError] = useState(false);
+
+  if (!src || error) {
+    return (
+      <div className="flex h-full w-full items-center justify-center bg-slate-100">
+        <ImageIcon
+          className={
+            fallbackIconSize === "large"
+              ? "h-7 w-7 text-slate-300"
+              : "h-3.5 w-3.5 text-slate-300"
+          }
+        />
+      </div>
+    );
+  }
+
+  return (
+    <div className="relative h-full w-full overflow-hidden bg-slate-100">
+      {!loaded && (
+        <div className="absolute inset-0 z-10 flex items-center justify-center bg-slate-100">
+          <Loader2 className="h-3.5 w-3.5 animate-spin text-green-500" />
+        </div>
+      )}
+
+      <img
+        src={src}
+        alt={alt}
+        loading="lazy"
+        decoding="async"
+        onLoad={() => setLoaded(true)}
+        onError={() => {
+          console.error("[CompletedWorkGallery] Image failed:", src);
+          setError(true);
+        }}
+        className={`${className} transition-opacity duration-200 ${
+          loaded ? "opacity-100" : "opacity-0"
+        }`}
+      />
+    </div>
+  );
+}
+
+/* ============================================================
    COMPONENT
 ============================================================ */
 
@@ -115,7 +173,7 @@ export default function CompletedWorkGallery() {
   >({});
 
   /* ============================================================
-     FETCH
+     FETCH COMPLETED WORK
   ============================================================ */
 
   useEffect(() => {
@@ -126,32 +184,34 @@ export default function CompletedWorkGallery() {
         setLoading(true);
 
         /* ======================================================
-           COMPLETED BOOKINGS
+           1. BOOKINGS
         ====================================================== */
 
         const { data: bookingData, error: bookingError } =
           await supabase
             .from("bookings")
-            .select(`
-              id,
-              booking_id,
-              worker_request_id,
-              service_type,
-              description,
-              worker_name,
-              worker_photo,
-              customer_name,
-              booking_date,
-              booking_time,
-              created_at
-            `)
+            .select(
+              `
+                id,
+                booking_id,
+                worker_request_id,
+                service_type,
+                description,
+                worker_name,
+                worker_photo,
+                customer_name,
+                booking_date,
+                booking_time,
+                created_at
+              `,
+            )
             .eq("booking_status", "completed")
             .order("booking_date", { ascending: false })
             .order("created_at", { ascending: false });
 
         if (bookingError) {
           console.error(
-            "[CompletedWork] Completed booking fetch error:",
+            "[CompletedWork] Booking fetch error:",
             bookingError,
           );
         }
@@ -160,42 +220,43 @@ export default function CompletedWorkGallery() {
           (bookingData || []) as CompletedBooking[];
 
         /* ======================================================
-           COMPLETED REQUESTS
+           2. WORKER REQUESTS
         ====================================================== */
 
         const { data: requestData, error: requestError } =
           await supabase
             .from("worker_requests")
-            .select(`
-              id,
-              workers_required,
-              location,
-              category,
-              work_date,
-              start_time,
-              duration,
-              budget,
-              requirement,
-              status,
-              requester_name,
-              requester_mobile,
-              requester_email,
-              company_name,
-              project_name,
-              project_type,
-              total_workers,
-              is_deleted,
-              created_at,
-              worker_name
-            `)
-            .eq("status", "completed")
-            .eq("is_deleted", false)
+            .select(
+              `
+                id,
+                workers_required,
+                location,
+                category,
+                work_date,
+                start_time,
+                duration,
+                budget,
+                requirement,
+                status,
+                requester_name,
+                requester_mobile,
+                requester_email,
+                company_name,
+                project_name,
+                project_type,
+                total_workers,
+                is_deleted,
+                created_at,
+                worker_name
+              `,
+            )
+            .or("is_deleted.eq.false,is_deleted.is.null")
             .order("work_date", { ascending: false })
             .order("created_at", { ascending: false });
 
         if (requestError) {
           console.error(
-            "[CompletedWork] Completed request fetch error:",
+            "[CompletedWork] Worker request fetch error:",
             requestError,
           );
         }
@@ -204,17 +265,19 @@ export default function CompletedWorkGallery() {
           (requestData || []) as CompletedRequest[];
 
         /* ======================================================
-           REQUEST MAP
+           3. REQUEST MAP
         ====================================================== */
 
         const requestMap = new Map<string, CompletedRequest>();
 
         completedRequests.forEach((request) => {
-          requestMap.set(request.id, request);
+          if (request.id) {
+            requestMap.set(request.id, request);
+          }
         });
 
         /* ======================================================
-           LINKED BOOKINGS
+           4. LINKED BOOKINGS
         ====================================================== */
 
         const requestIds = completedRequests
@@ -229,19 +292,21 @@ export default function CompletedWorkGallery() {
             error: linkedBookingError,
           } = await supabase
             .from("bookings")
-            .select(`
-              id,
-              booking_id,
-              worker_request_id,
-              service_type,
-              description,
-              worker_name,
-              worker_photo,
-              customer_name,
-              booking_date,
-              booking_time,
-              created_at
-            `)
+            .select(
+              `
+                id,
+                booking_id,
+                worker_request_id,
+                service_type,
+                description,
+                worker_name,
+                worker_photo,
+                customer_name,
+                booking_date,
+                booking_time,
+                created_at
+              `,
+            )
             .in("worker_request_id", requestIds);
 
           if (linkedBookingError) {
@@ -256,7 +321,7 @@ export default function CompletedWorkGallery() {
         }
 
         /* ======================================================
-           MERGE BOOKINGS
+           5. MERGE BOOKINGS
         ====================================================== */
 
         const allBookings: CompletedBooking[] = [
@@ -274,46 +339,54 @@ export default function CompletedWorkGallery() {
         });
 
         /* ======================================================
-           IDS
-        ====================================================== */
-
-        const bookingIds = allBookings
-          .map((booking) => booking.booking_id)
-          .filter((id): id is string => Boolean(id));
-
-        const workerRequestIds = completedRequests
-          .map((request) => request.id)
-          .filter((id): id is string => Boolean(id));
-
-        /* ======================================================
-           FETCH IMAGES
+           6. FETCH IMAGES
         ====================================================== */
 
         let images: CompletedWorkImage[] = [];
 
         const imageQueries = [];
 
+        const bookingIds = allBookings
+          .map((booking) => booking.booking_id)
+          .filter((id): id is string => Boolean(id));
+
         if (bookingIds.length > 0) {
           imageQueries.push(
             supabase
               .from("completed_work_images")
               .select(
-                "id, booking_id, worker_request_id, image_url, created_at",
+                `
+                  id,
+                  booking_id,
+                  worker_request_id,
+                  image_url,
+                  created_at
+                `,
               )
               .in("booking_id", bookingIds),
           );
         }
 
-        if (workerRequestIds.length > 0) {
+        if (requestIds.length > 0) {
           imageQueries.push(
             supabase
               .from("completed_work_images")
               .select(
-                "id, booking_id, worker_request_id, image_url, created_at",
+                `
+                  id,
+                  booking_id,
+                  worker_request_id,
+                  image_url,
+                  created_at
+                `,
               )
-              .in("worker_request_id", workerRequestIds),
+              .in("worker_request_id", requestIds),
           );
         }
+
+        /* ======================================================
+           7. IMAGE RESULTS
+        ====================================================== */
 
         if (imageQueries.length > 0) {
           const imageResults = await Promise.all(imageQueries);
@@ -326,7 +399,7 @@ export default function CompletedWorkGallery() {
           imageResults.forEach((result) => {
             if (result.error) {
               console.error(
-                "[CompletedWork] Image fetch error:",
+                "[CompletedWork] Image query error:",
                 result.error,
               );
 
@@ -347,7 +420,7 @@ export default function CompletedWorkGallery() {
         }
 
         /* ======================================================
-           IMAGE MAP
+           8. IMAGE MAPS
         ====================================================== */
 
         const bookingImageMap = new Map<
@@ -381,7 +454,9 @@ export default function CompletedWorkGallery() {
 
           if (image.worker_request_id) {
             const existing =
-              requestImageMap.get(image.worker_request_id) || [];
+              requestImageMap.get(
+                image.worker_request_id,
+              ) || [];
 
             existing.push({
               id: image.id,
@@ -397,92 +472,100 @@ export default function CompletedWorkGallery() {
         });
 
         /* ======================================================
-           GALLERY WORKS
+           9. GALLERY WORKS
         ====================================================== */
 
         const galleryWorks: GalleryWork[] = [];
 
         /* ======================================================
-           BOOKING WORKS
+           10. BOOKING WORKS
         ====================================================== */
 
         allBookings.forEach((booking) => {
           const bookingImages =
             bookingImageMap.get(booking.booking_id) || [];
 
-          if (bookingImages.length === 0) return;
+          if (bookingImages.length === 0) {
+            return;
+          }
 
           const request = booking.worker_request_id
             ? requestMap.get(booking.worker_request_id)
             : null;
 
-          const workName =
-            booking.service_type ||
-            request?.project_name ||
-            request?.category ||
-            "Completed Work";
-
-          const customerName =
-            booking.customer_name ||
-            request?.requester_name ||
-            request?.company_name ||
-            "Workkerz Customer";
-
-          const workerName =
-            booking.worker_name ||
-            request?.worker_name ||
-            "Workkerz Professional";
-
-          const completedDate =
-            booking.booking_date ||
-            request?.work_date ||
-            booking.created_at ||
-            request?.created_at ||
-            null;
-
-          const completedTime =
-            booking.booking_time ||
-            request?.start_time ||
-            null;
-
-          const description =
-            booking.description ||
-            request?.requirement ||
-            null;
-
           galleryWorks.push({
             id: `booking-${booking.booking_id}`,
             booking_id: booking.booking_id,
-            worker_request_id: booking.worker_request_id,
-            work_name: workName,
+            worker_request_id:
+              booking.worker_request_id,
+            work_name:
+              booking.service_type ||
+              request?.project_name ||
+              request?.category ||
+              "Completed Work",
             images: bookingImages,
-            worker_name: workerName,
-            worker_photo: booking.worker_photo || null,
-            customer_name: customerName,
-            completed_date: completedDate,
-            completed_time: completedTime,
-            description,
+            worker_name:
+              booking.worker_name ||
+              request?.worker_name ||
+              "Workkerz Professional",
+            worker_photo:
+              booking.worker_photo || null,
+            customer_name:
+              booking.customer_name ||
+              request?.requester_name ||
+              request?.company_name ||
+              "Workkerz Customer",
+            completed_date:
+              booking.booking_date ||
+              request?.work_date ||
+              booking.created_at ||
+              request?.created_at ||
+              null,
+            completed_time:
+              booking.booking_time ||
+              request?.start_time ||
+              null,
+            description:
+              booking.description ||
+              request?.requirement ||
+              null,
             source: "booking",
           });
         });
 
         /* ======================================================
-           REQUEST WORKS
+           11. REQUEST WORKS
         ====================================================== */
 
         completedRequests.forEach((request) => {
           const requestImages =
             requestImageMap.get(request.id) || [];
 
-          if (requestImages.length === 0) return;
+          if (requestImages.length === 0) {
+            return;
+          }
 
-          const hasLinkedBooking = allBookings.some(
-            (booking) =>
-              booking.worker_request_id === request.id &&
-              bookingImageMap.has(booking.booking_id),
+          const hasBookingGallery = allBookings.some(
+            (booking) => {
+              if (
+                booking.worker_request_id !==
+                request.id
+              ) {
+                return false;
+              }
+
+              const bookingImages =
+                bookingImageMap.get(
+                  booking.booking_id,
+                ) || [];
+
+              return bookingImages.length > 0;
+            },
           );
 
-          if (hasLinkedBooking) return;
+          if (hasBookingGallery) {
+            return;
+          }
 
           galleryWorks.push({
             id: `request-${request.id}`,
@@ -491,6 +574,7 @@ export default function CompletedWorkGallery() {
             work_name:
               request.project_name ||
               request.category ||
+              request.project_type ||
               "Completed Work",
             images: requestImages,
             worker_name:
@@ -505,7 +589,8 @@ export default function CompletedWorkGallery() {
               request.work_date ||
               request.created_at ||
               null,
-            completed_time: request.start_time || null,
+            completed_time:
+              request.start_time || null,
             description:
               request.requirement || null,
             source: "request",
@@ -513,7 +598,66 @@ export default function CompletedWorkGallery() {
         });
 
         /* ======================================================
-           UNIQUE
+           12. SAFETY FALLBACK
+        ====================================================== */
+
+        requestImageMap.forEach(
+          (requestImages, requestId) => {
+            if (requestImages.length === 0) {
+              return;
+            }
+
+            const alreadyExists = galleryWorks.some(
+              (work) =>
+                work.worker_request_id ===
+                requestId,
+            );
+
+            if (alreadyExists) {
+              return;
+            }
+
+            const request =
+              requestMap.get(requestId);
+
+            galleryWorks.push({
+              id: `request-${requestId}`,
+              booking_id: null,
+              worker_request_id: requestId,
+              work_name:
+                request?.project_name ||
+                request?.category ||
+                request?.project_type ||
+                "Completed Work",
+              images: requestImages,
+              worker_name:
+                request?.worker_name ||
+                "Workkerz Professional",
+              worker_photo: null,
+              customer_name:
+                request?.requester_name ||
+                request?.company_name ||
+                "Workkerz Customer",
+              completed_date:
+                request?.work_date ||
+                request?.created_at ||
+                images.find(
+                  (image) =>
+                    image.worker_request_id ===
+                    requestId,
+                )?.created_at ||
+                null,
+              completed_time:
+                request?.start_time || null,
+              description:
+                request?.requirement || null,
+              source: "request",
+            });
+          },
+        );
+
+        /* ======================================================
+           13. UNIQUE
         ====================================================== */
 
         const uniqueWorks = Array.from(
@@ -526,7 +670,7 @@ export default function CompletedWorkGallery() {
         );
 
         /* ======================================================
-           SORT
+           14. SORT
         ====================================================== */
 
         uniqueWorks.sort((a, b) => {
@@ -542,7 +686,7 @@ export default function CompletedWorkGallery() {
         });
 
         /* ======================================================
-           INITIAL IMAGE
+           15. INITIAL IMAGE
         ====================================================== */
 
         const initialSelectedImages: Record<
@@ -559,7 +703,9 @@ export default function CompletedWorkGallery() {
 
         if (mounted) {
           setWorks(uniqueWorks);
-          setSelectedImages(initialSelectedImages);
+          setSelectedImages(
+            initialSelectedImages,
+          );
         }
       } catch (error) {
         console.error(
@@ -593,85 +739,40 @@ export default function CompletedWorkGallery() {
   }
 
   /* ============================================================
-     IMPORTANT:
-     4 OR LESS = NORMAL
-     MORE THAN 4 = COMPACT
-  ============================================================ */
-
-  const compact = works.length > 4;
-
-  /* ============================================================
      RENDER
   ============================================================ */
 
   return (
-    <section
-      className={`relative overflow-hidden bg-[#f7f8f5] ${
-        compact
-          ? "px-3 py-8 sm:px-5 sm:py-10"
-          : "px-4 py-12 sm:px-6 sm:py-16 lg:px-8 lg:py-20"
-      }`}
-    >
-      {/* ========================================================
-         BACKGROUND
-      ======================================================== */}
+    <section className="relative overflow-hidden bg-[#f7f8f5] px-3 py-2 sm:px-5 sm:py-10 lg:px-2 lg:py-4">
+      {/* BACKGROUND */}
 
-      <div className="pointer-events-none absolute -left-32 top-20 h-72 w-72 rounded-full bg-green-100/40 blur-3xl" />
+      <div className="pointer-events-none absolute -left-32 top-20 h-64 w-64 rounded-full bg-green-100/40 blur-3xl" />
 
-      <div className="pointer-events-none absolute -right-32 bottom-10 h-72 w-72 rounded-full bg-emerald-100/30 blur-3xl" />
+      <div className="pointer-events-none absolute -right-32 bottom-10 h-64 w-64 rounded-full bg-emerald-100/30 blur-3xl" />
 
       <div className="relative mx-auto max-w-7xl">
+
         {/* ======================================================
            HEADER
         ====================================================== */}
 
-        <div
-          className={`mx-auto text-center ${
-            compact
-              ? "max-w-xl"
-              : "max-w-2xl"
-          }`}
-        >
-          <div
-            className={`inline-flex items-center gap-1.5 rounded-full border border-green-200 bg-white font-bold text-green-700 shadow-sm ${
-              compact
-                ? "px-2.5 py-1 text-[9px]"
-                : "px-3.5 py-2 text-xs"
-            }`}
-          >
-            <CheckCircle2
-              className={
-                compact
-                  ? "h-3 w-3"
-                  : "h-4 w-4"
-              }
-            />
+        <div className="mx-auto max-w-2xl text-center">
 
+          <div className="inline-flex items-center gap-1.5 rounded-full border border-green-200 bg-white px-2.5 py-1 text-[9px] font-bold text-green-700 shadow-sm sm:px-3 sm:py-1.5 sm:text-[10px] lg:px-3.5 lg:py-2 lg:text-xs">
+            <CheckCircle2 className="h-3 w-3 sm:h-3.5 sm:w-3.5 lg:h-4 lg:w-4" />
             Completed Work
           </div>
 
-          <h2
-            className={`font-black tracking-tight text-slate-950 ${
-              compact
-                ? "mt-3 text-2xl sm:text-3xl"
-                : "mt-4 text-3xl sm:text-4xl md:text-5xl"
-            }`}
-          >
+          <h2 className="mt-2.5 text-2xl font-black tracking-tight text-slate-950 sm:mt-3 sm:text-3xl lg:mt-4 lg:text-5xl">
             Real Work.
             <span className="text-green-600">
               {" "}Real Results.
             </span>
           </h2>
 
-          <p
-            className={`mx-auto text-slate-500 ${
-              compact
-                ? "mt-2 max-w-lg text-[10px] leading-4 sm:text-xs"
-                : "mt-3 max-w-xl text-sm leading-6 sm:text-base"
-            }`}
-          >
-            Explore real work completed by professionals
-            through Workkerz.
+          <p className="mx-auto mt-1.5 max-w-xl text-[10px] leading-4 text-slate-500 sm:mt-2 sm:text-xs sm:leading-5 lg:mt-3 lg:text-base lg:leading-6">
+            Explore real work completed by
+            professionals through Workkerz.
           </p>
         </div>
 
@@ -680,7 +781,7 @@ export default function CompletedWorkGallery() {
         ====================================================== */}
 
         {loading && (
-          <div className="mt-10 flex min-h-[180px] items-center justify-center">
+          <div className="mt-8 flex min-h-35 items-center justify-center">
             <div className="flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-xs font-semibold text-slate-500 shadow-sm">
               <Loader2 className="h-4 w-4 animate-spin text-green-600" />
               Loading...
@@ -693,13 +794,8 @@ export default function CompletedWorkGallery() {
         ====================================================== */}
 
         {!loading && works.length > 0 && (
-          <div
-            className={`grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 ${
-              compact
-                ? "mt-6 gap-2.5 sm:gap-3 md:gap-3 lg:gap-4"
-                : "mt-10 gap-4 sm:gap-5 lg:gap-6"
-            }`}
-          >
+          <div className="mt-6 grid grid-cols-2 gap-2 sm:mt-8 sm:grid-cols-2 sm:gap-3 md:grid-cols-3 md:gap-4 lg:mt-10 lg:grid-cols-4 lg:gap-5">
+
             {works.map((work) => {
               const mainImage =
                 selectedImages[work.id] ||
@@ -709,178 +805,129 @@ export default function CompletedWorkGallery() {
               return (
                 <article
                   key={work.id}
-                  className={`group min-w-0 overflow-hidden bg-white transition-all duration-300 ${
-                    compact
-                      ? "rounded-xl border border-slate-200 shadow-[0_2px_10px_rgba(15,23,42,0.05)] hover:-translate-y-0.5 hover:shadow-md"
-                      : "rounded-2xl border border-slate-200 shadow-[0_5px_25px_rgba(15,23,42,0.07)] hover:-translate-y-1 hover:shadow-xl"
-                  }`}
+                  className="group min-w-0 overflow-hidden rounded-xl border border-slate-200 bg-white shadow-[0_2px_10px_rgba(15,23,42,0.05)] transition-all duration-300 hover:-translate-y-0.5 hover:shadow-lg sm:rounded-2xl"
                 >
+
                   {/* ==================================================
                      IMAGE
                   ================================================== */}
 
-                  <div
-                    className={`relative overflow-hidden bg-slate-100 ${
-                      compact
-                        ? "aspect-[1.15/1]"
-                        : "aspect-[4/3]"
-                    }`}
-                  >
+                  <div className="relative aspect-[1.22/1] overflow-hidden bg-slate-100 sm:aspect-[1.3/1] lg:aspect-[4/3]">
+
                     {mainImage ? (
-                      <img
+                      <GalleryImage
                         src={mainImage}
                         alt={
                           work.work_name ||
                           "Completed work"
                         }
-                        loading="lazy"
+                        fallbackIconSize="large"
                         className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
                       />
                     ) : (
                       <div className="flex h-full w-full items-center justify-center">
-                        <ImageIcon
-                          className={
-                            compact
-                              ? "h-6 w-6 text-slate-300"
-                              : "h-10 w-10 text-slate-300"
-                          }
-                        />
+                        <ImageIcon className="h-6 w-6 text-slate-300 lg:h-9 lg:w-9" />
                       </div>
                     )}
 
                     {/* IMAGE GRADIENT */}
 
-                    <div
-                      className={`pointer-events-none absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/60 to-transparent ${
-                        compact
-                          ? "h-12"
-                          : "h-20"
-                      }`}
-                    />
+                    <div className="pointer-events-none absolute inset-x-0 bottom-0 h-12 bg-gradient-to-t from-black/65 to-transparent sm:h-14 lg:h-20" />
 
-                    {/* COMPLETED */}
+                    {/* COMPLETED BADGE */}
 
-                    <div
-                      className={`absolute left-2 top-2 inline-flex items-center gap-1 rounded-full bg-white/95 font-extrabold text-green-700 shadow-sm backdrop-blur ${
-                        compact
-                          ? "px-1.5 py-1 text-[7px]"
-                          : "px-2.5 py-1.5 text-[10px]"
-                      }`}
-                    >
-                      <CheckCircle2
-                        className={
-                          compact
-                            ? "h-2.5 w-2.5"
-                            : "h-3.5 w-3.5"
-                        }
-                      />
-
+                    <div className="absolute left-1.5 top-1.5 inline-flex items-center gap-0.5 rounded-full bg-white/95 px-1.5 py-0.5 text-[6px] font-extrabold text-green-700 shadow-sm backdrop-blur sm:left-2 sm:top-2 sm:gap-1 sm:px-2 sm:py-1 sm:text-[8px] lg:px-2.5 lg:py-1.5 lg:text-[10px]">
+                      <CheckCircle2 className="h-2 w-2 sm:h-2.5 sm:w-2.5 lg:h-3.5 lg:w-3.5" />
                       Completed
                     </div>
 
                     {/* IMAGE COUNT */}
 
                     {work.images.length > 1 && (
-                      <div
-                        className={`absolute right-2 top-2 inline-flex items-center gap-1 rounded-full bg-black/55 font-bold text-white backdrop-blur ${
-                          compact
-                            ? "px-1.5 py-1 text-[7px]"
-                            : "px-2.5 py-1.5 text-[10px]"
-                        }`}
-                      >
-                        <ImageIcon
-                          className={
-                            compact
-                              ? "h-2.5 w-2.5"
-                              : "h-3.5 w-3.5"
-                          }
-                        />
-
+                      <div className="absolute right-1.5 top-1.5 inline-flex items-center gap-0.5 rounded-full bg-black/55 px-1.5 py-0.5 text-[6px] font-bold text-white backdrop-blur sm:right-2 sm:top-2 sm:gap-1 sm:px-2 sm:py-1 sm:text-[8px] lg:px-2.5 lg:py-1.5 lg:text-[10px]">
+                        <ImageIcon className="h-2 w-2 sm:h-2.5 sm:w-2.5 lg:h-3.5 lg:w-3.5" />
                         {work.images.length}
                       </div>
                     )}
 
                     {/* DATE */}
 
-                    <div
-                      className={`absolute bottom-2 left-2 flex max-w-[90%] items-center gap-1 truncate font-semibold text-white drop-shadow-md ${
-                        compact
-                          ? "text-[7px]"
-                          : "text-[10px]"
-                      }`}
-                    >
-                      <CalendarDays
-                        className={
-                          compact
-                            ? "h-2.5 w-2.5 shrink-0"
-                            : "h-3.5 w-3.5 shrink-0"
-                        }
-                      />
+                    <div className="absolute bottom-1.5 left-1.5 flex max-w-[90%] items-center gap-0.5 truncate text-[6px] font-semibold text-white drop-shadow-md sm:bottom-2 sm:left-2 sm:gap-1 sm:text-[8px] lg:text-[10px]">
+                      <CalendarDays className="h-2 w-2 shrink-0 sm:h-2.5 sm:w-2.5 lg:h-3.5 lg:w-3.5" />
 
                       <span className="truncate">
                         {formatDate(
                           work.completed_date,
                         )}
                       </span>
+
+                      {work.completed_time && (
+                        <>
+                          <span className="opacity-60">
+                            •
+                          </span>
+
+                          <span className="truncate">
+                            {work.completed_time}
+                          </span>
+                        </>
+                      )}
                     </div>
                   </div>
 
                   {/* ==================================================
-                     SMALL IMAGE SELECTOR
+                     IMAGE THUMBNAILS
                   ================================================== */}
 
                   {work.images.length > 1 && (
-                    <div
-                      className={`flex overflow-hidden bg-slate-50 ${
-                        compact
-                          ? "gap-1 border-b border-slate-100 p-1"
-                          : "gap-1.5 border-b border-slate-100 p-2"
-                      }`}
-                    >
+                    <div className="flex gap-1 overflow-hidden border-b border-slate-100 bg-slate-50 p-1 sm:gap-1.5 sm:p-1.5 lg:p-2">
+
                       {work.images
                         .slice(0, 5)
-                        .map((image, imageIndex) => {
-                          const isSelected =
-                            mainImage ===
-                            image.image_url;
+                        .map(
+                          (
+                            image,
+                            imageIndex,
+                          ) => {
+                            const isSelected =
+                              mainImage ===
+                              image.image_url;
 
-                          return (
-                            <button
-                              key={image.id}
-                              type="button"
-                              onClick={() =>
-                                setSelectedImages(
-                                  (previous) => ({
-                                    ...previous,
-                                    [work.id]:
-                                      image.image_url,
-                                  }),
-                                )
-                              }
-                              className={`relative shrink-0 overflow-hidden border transition-all ${
-                                compact
-                                  ? "h-7 w-7 rounded-md border"
-                                  : "h-10 w-10 rounded-lg border-2"
-                              } ${
-                                isSelected
-                                  ? "border-green-500 ring-1 ring-green-200"
-                                  : "border-transparent opacity-65 hover:border-slate-300 hover:opacity-100"
-                              }`}
-                              aria-label={`Show image ${
-                                imageIndex + 1
-                              }`}
-                            >
-                              <img
-                                src={image.image_url}
-                                alt={`${work.work_name} image ${
+                            return (
+                              <button
+                                key={image.id}
+                                type="button"
+                                onClick={() =>
+                                  setSelectedImages(
+                                    (previous) => ({
+                                      ...previous,
+                                      [work.id]:
+                                        image.image_url,
+                                    }),
+                                  )
+                                }
+                                className={`relative h-6 w-6 shrink-0 overflow-hidden rounded-md border transition-all sm:h-8 sm:w-8 sm:rounded-lg lg:h-10 lg:w-10 ${
+                                  isSelected
+                                    ? "border-green-500 ring-1 ring-green-200"
+                                    : "border-transparent opacity-60 hover:border-slate-300 hover:opacity-100"
+                                }`}
+                                aria-label={`Show image ${
                                   imageIndex + 1
                                 }`}
-                                loading="lazy"
-                                className="h-full w-full object-cover"
-                              />
-                            </button>
-                          );
-                        })}
+                              >
+                                <GalleryImage
+                                  src={
+                                    image.image_url
+                                  }
+                                  alt={`${work.work_name} image ${
+                                    imageIndex + 1
+                                  }`}
+                                  className="h-full w-full object-cover"
+                                />
+                              </button>
+                            );
+                          },
+                        )}
                     </div>
                   )}
 
@@ -888,36 +935,25 @@ export default function CompletedWorkGallery() {
                      CONTENT
                   ================================================== */}
 
-                  <div
-                    className={
-                      compact
-                        ? "p-2.5"
-                        : "p-4"
-                    }
-                  >
+                  <div className="p-2 sm:p-3 lg:p-4">
+
                     {/* WORK NAME */}
 
                     <h3
                       title={work.work_name}
-                      className={`truncate font-extrabold tracking-tight text-slate-900 ${
-                        compact
-                          ? "text-[10px] leading-3"
-                          : "text-sm leading-5 sm:text-base"
-                      }`}
+                      className="truncate text-[9px] font-extrabold leading-3 tracking-tight text-slate-900 sm:text-xs sm:leading-4 lg:text-base lg:leading-5"
                     >
                       {work.work_name}
                     </h3>
 
-                    {/* DESCRIPTION */}
+                    {/* DESCRIPTION
+                        Hidden on mobile to keep cards compact
+                    */}
 
                     {work.description && (
                       <p
                         title={work.description}
-                        className={`line-clamp-1 text-slate-400 ${
-                          compact
-                            ? "mt-0.5 text-[7px] leading-3"
-                            : "mt-1 text-xs leading-5"
-                        }`}
+                        className="mt-0.5 hidden line-clamp-1 text-xs leading-5 text-slate-400 sm:block"
                       >
                         {work.description}
                       </p>
@@ -927,58 +963,32 @@ export default function CompletedWorkGallery() {
                        WORKER + CUSTOMER
                     ================================================== */}
 
-                    <div
-                      className={`grid grid-cols-2 ${
-                        compact
-                          ? "mt-2 gap-1"
-                          : "mt-4 gap-2"
-                      }`}
-                    >
+                    <div className="mt-1.5 grid grid-cols-2 gap-1 sm:mt-2 sm:gap-1.5 lg:mt-3 lg:gap-2">
+
                       {/* WORKER */}
 
-                      <div
-                        className={`flex min-w-0 items-center overflow-hidden border border-green-100 bg-green-50/70 ${
-                          compact
-                            ? "gap-1 rounded-md p-1"
-                            : "gap-2 rounded-xl p-2"
-                        }`}
-                      >
-                        <div
-                          className={`flex shrink-0 items-center justify-center overflow-hidden rounded-full bg-white text-green-600 ring-1 ring-green-200 ${
-                            compact
-                              ? "h-5 w-5"
-                              : "h-9 w-9"
-                          }`}
-                        >
+                      <div className="flex min-w-0 items-center gap-1 overflow-hidden rounded-md border border-green-100 bg-green-50/70 px-1 py-1 sm:gap-1.5 sm:rounded-lg sm:p-1.5 lg:gap-2 lg:rounded-xl lg:p-2">
+
+                        <div className="flex h-4 w-4 shrink-0 items-center justify-center overflow-hidden rounded-full bg-white text-green-600 ring-1 ring-green-200 sm:h-6 sm:w-6 lg:h-8 lg:w-8">
+
                           {work.worker_photo ? (
-                            <img
-                              src={work.worker_photo}
+                            <GalleryImage
+                              src={
+                                work.worker_photo
+                              }
                               alt={
                                 work.worker_name ||
                                 "Worker"
                               }
-                              loading="lazy"
                               className="h-full w-full object-cover"
                             />
                           ) : (
-                            <UserRound
-                              className={
-                                compact
-                                  ? "h-2.5 w-2.5"
-                                  : "h-4 w-4"
-                              }
-                            />
+                            <UserRound className="h-2.5 w-2.5 sm:h-3.5 sm:w-3.5 lg:h-4 lg:w-4" />
                           )}
                         </div>
 
                         <div className="min-w-0 flex-1">
-                          <p
-                            className={`font-bold uppercase tracking-wide text-green-600 ${
-                              compact
-                                ? "text-[5px]"
-                                : "text-[8px]"
-                            }`}
-                          >
+                          <p className="text-[5px] font-bold uppercase tracking-wide text-green-600 sm:text-[6px] lg:text-[8px]">
                             Worker
                           </p>
 
@@ -987,11 +997,7 @@ export default function CompletedWorkGallery() {
                               work.worker_name ||
                               "Worker"
                             }
-                            className={`truncate font-bold text-slate-800 ${
-                              compact
-                                ? "text-[7px]"
-                                : "text-[10px]"
-                            }`}
+                            className="truncate text-[6px] font-bold text-slate-800 sm:text-[8px] lg:text-[10px]"
                           >
                             {work.worker_name ||
                               "Worker"}
@@ -1001,37 +1007,14 @@ export default function CompletedWorkGallery() {
 
                       {/* CUSTOMER */}
 
-                      <div
-                        className={`flex min-w-0 items-center overflow-hidden border border-slate-200 bg-slate-50 ${
-                          compact
-                            ? "gap-1 rounded-md p-1"
-                            : "gap-2 rounded-xl p-2"
-                        }`}
-                      >
-                        <div
-                          className={`flex shrink-0 items-center justify-center rounded-full bg-white text-slate-500 ring-1 ring-slate-200 ${
-                            compact
-                              ? "h-5 w-5"
-                              : "h-9 w-9"
-                          }`}
-                        >
-                          <UserCheck
-                            className={
-                              compact
-                                ? "h-2.5 w-2.5"
-                                : "h-4 w-4"
-                            }
-                          />
+                      <div className="flex min-w-0 items-center gap-1 overflow-hidden rounded-md border border-slate-200 bg-slate-50 px-1 py-1 sm:gap-1.5 sm:rounded-lg sm:p-1.5 lg:gap-2 lg:rounded-xl lg:p-2">
+
+                        <div className="flex h-4 w-4 shrink-0 items-center justify-center rounded-full bg-white text-slate-500 ring-1 ring-slate-200 sm:h-6 sm:w-6 lg:h-8 lg:w-8">
+                          <UserCheck className="h-2.5 w-2.5 sm:h-3.5 sm:w-3.5 lg:h-4 lg:w-4" />
                         </div>
 
                         <div className="min-w-0 flex-1">
-                          <p
-                            className={`font-bold uppercase tracking-wide text-slate-400 ${
-                              compact
-                                ? "text-[5px]"
-                                : "text-[8px]"
-                            }`}
-                          >
+                          <p className="text-[5px] font-bold uppercase tracking-wide text-slate-400 sm:text-[6px] lg:text-[8px]">
                             Booked By
                           </p>
 
@@ -1040,11 +1023,7 @@ export default function CompletedWorkGallery() {
                               work.customer_name ||
                               "Customer"
                             }
-                            className={`truncate font-bold text-slate-800 ${
-                              compact
-                                ? "text-[7px]"
-                                : "text-[10px]"
-                            }`}
+                            className="truncate text-[6px] font-bold text-slate-800 sm:text-[8px] lg:text-[10px]"
                           >
                             {work.customer_name ||
                               "Customer"}
@@ -1054,30 +1033,14 @@ export default function CompletedWorkGallery() {
                     </div>
 
                     {/* ==================================================
-                       DATE FOOTER
+                       DESKTOP DATE FOOTER
+                       Mobile hidden because date is already on image
                     ================================================== */}
 
-                    <div
-                      className={`flex min-w-0 items-center justify-between border-t border-slate-100 ${
-                        compact
-                          ? "mt-2 pt-1.5"
-                          : "mt-4 pt-3"
-                      }`}
-                    >
-                      <div
-                        className={`flex min-w-0 items-center gap-1 font-medium text-slate-400 ${
-                          compact
-                            ? "text-[7px]"
-                            : "text-[10px]"
-                        }`}
-                      >
-                        <CalendarDays
-                          className={
-                            compact
-                              ? "h-2.5 w-2.5 shrink-0 text-green-600"
-                              : "h-3.5 w-3.5 shrink-0 text-green-600"
-                          }
-                        />
+                    <div className="mt-3 hidden items-center justify-between border-t border-slate-100 pt-2.5 text-[10px] text-slate-400 lg:flex">
+
+                      <div className="flex min-w-0 items-center gap-1">
+                        <CalendarDays className="h-3.5 w-3.5 shrink-0 text-green-600" />
 
                         <span className="truncate">
                           {formatDate(
@@ -1087,13 +1050,7 @@ export default function CompletedWorkGallery() {
                       </div>
 
                       {work.completed_time && (
-                        <span
-                          className={`ml-1 shrink-0 font-semibold text-slate-400 ${
-                            compact
-                              ? "text-[6px]"
-                              : "text-[9px]"
-                          }`}
-                        >
+                        <span className="ml-1 shrink-0 font-semibold">
                           {work.completed_time}
                         </span>
                       )}
@@ -1110,10 +1067,10 @@ export default function CompletedWorkGallery() {
         ====================================================== */}
 
         {!loading && works.length === 0 && (
-          <div className="mt-10 flex min-h-[200px] items-center justify-center">
-            <div className="rounded-2xl border border-slate-200 bg-white px-8 py-7 text-center shadow-sm">
-              <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-slate-50">
-                <ImageIcon className="h-6 w-6 text-slate-300" />
+          <div className="mt-8 flex min-h-[180px] items-center justify-center">
+            <div className="rounded-2xl border border-slate-200 bg-white px-6 py-6 text-center shadow-sm">
+              <div className="mx-auto flex h-11 w-11 items-center justify-center rounded-full bg-slate-50">
+                <ImageIcon className="h-5 w-5 text-slate-300" />
               </div>
 
               <p className="mt-3 text-sm font-bold text-slate-600">
@@ -1132,20 +1089,8 @@ export default function CompletedWorkGallery() {
         ====================================================== */}
 
         {!loading && works.length > 0 && (
-          <div
-            className={`flex items-center justify-center gap-1.5 text-center font-medium text-slate-400 ${
-              compact
-                ? "mt-6 text-[8px]"
-                : "mt-10 text-xs"
-            }`}
-          >
-            <CheckCircle2
-              className={
-                compact
-                  ? "h-3 w-3 text-green-600"
-                  : "h-4 w-4 text-green-600"
-              }
-            />
+          <div className="mt-4 flex items-center justify-center gap-1.5 text-center text-[8px] font-medium text-slate-400 sm:mt-8 sm:text-[10px] lg:mt-10 lg:text-xs">
+            <CheckCircle2 className="h-3 w-3 shrink-0 text-green-600 sm:h-3.5 sm:w-3.5 lg:h-4 lg:w-4" />
 
             <span>
               Completed by professionals on Workkerz
