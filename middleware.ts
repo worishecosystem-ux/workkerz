@@ -13,13 +13,22 @@ export function middleware(req: NextRequest) {
     pathname.startsWith("/_next") ||
     pathname.startsWith("/coming-soon") ||
     pathname.startsWith("/privacy-policy") ||
-    pathname.startsWith("/delete-account") || // ✅ Allow Delete Account page
+    pathname.startsWith("/delete-account") ||
     pathname.startsWith("/favicon") ||
     pathname.startsWith("/robots.txt") ||
     pathname.startsWith("/sitemap.xml") ||
     pathname.includes(".")
   ) {
     return NextResponse.next();
+  }
+
+  // Browser users -> Block E-Aurix page
+  if (
+    process.env.NODE_ENV === "production" &&
+    !isApp &&
+    pathname.startsWith("/eaurix")
+  ) {
+    return NextResponse.rewrite(new URL("/coming-soon", req.url));
   }
 
   // Browser users -> Only Home page
