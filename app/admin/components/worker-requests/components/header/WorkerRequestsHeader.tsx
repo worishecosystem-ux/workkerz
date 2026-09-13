@@ -25,7 +25,13 @@ export default function WorkerRequestsHeader({
   mobile = false,
 }: Props) {
   return (
-    <header className={mobile ? "mb-3" : "mb-4 md:mb-5"}>
+    <header
+      className={
+        mobile
+          ? "pt-13 mb-3"
+          : "pt-4 mb-4 md:pt-4 md:mb-5"
+      }
+    >
       <div className="flex items-center justify-between gap-2.5">
         {/* =================================================
             LEFT

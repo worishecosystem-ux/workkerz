@@ -125,7 +125,6 @@ export default function BookingDetails({
   /*
    * =========================================================
    * FETCH WORKER PHONE
-   * workers.phone is the source of truth.
    * =========================================================
    */
 
@@ -138,8 +137,6 @@ export default function BookingDetails({
         return;
       }
 
-      // If already available in booking object,
-      // don't make another request.
       if (booking.worker_phone) {
         setWorkerPhone(booking.worker_phone);
         return;
@@ -224,7 +221,18 @@ export default function BookingDetails({
 
   return (
     <div
-      className="fixed inset-0 z-[9999] flex justify-end bg-slate-950/55 backdrop-blur-[2px]"
+      className="
+        fixed
+        left-0
+        right-0
+        top-0
+        bottom-0
+        z-[9999]
+        flex
+        justify-end
+        bg-slate-950/55
+        backdrop-blur-[2px]
+      "
       onMouseDown={(e) => {
         if (e.target === e.currentTarget) {
           onClose();
@@ -232,28 +240,83 @@ export default function BookingDetails({
       }}
     >
       <div
-        className="relative flex h-full w-full max-w-[720px] flex-col overflow-hidden border-l border-slate-200 bg-[#f7f8fa] shadow-[-20px_0_70px_rgba(15,23,42,0.18)]"
+        className="
+          relative
+          flex
+          h-[100dvh]
+          w-full
+          flex-col
+          overflow-hidden
+          bg-[#f7f8fa]
+          shadow-[-20px_0_70px_rgba(15,23,42,0.18)]
+          sm:h-full
+          sm:max-w-[720px]
+          sm:border-l
+          sm:border-slate-200
+        "
         onMouseDown={(e) => e.stopPropagation()}
       >
         {/* =================================================
             TOP HEADER
         ================================================= */}
 
-        <header className="shrink-0 bg-white">
-          <div className="flex items-center justify-between border-b border-slate-200 px-5 py-4 sm:px-6">
-            <div className="flex min-w-0 items-center gap-3">
-              <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-slate-950 text-white">
-                <ReceiptText className="h-5 w-5" />
+        <header className="shrink-0 bg-white pt-12">
+          <div
+            className="
+              flex
+              items-center
+              justify-between
+              border-b
+              border-slate-200
+              px-4
+              py-3
+              sm:px-6
+              sm:py-4
+            "
+          >
+            <div className="flex min-w-0 items-center gap-2.5 sm:gap-3">
+              <div
+                className="
+                  flex
+                  h-10
+                  w-10
+                  shrink-0
+                  items-center
+                  justify-center
+                  rounded-xl
+                  bg-slate-950
+                  text-white
+                  sm:h-11
+                  sm:w-11
+                  sm:rounded-2xl
+                "
+              >
+                <ReceiptText className="h-4 w-4 sm:h-5 sm:w-5" />
               </div>
 
               <div className="min-w-0">
                 <div className="flex items-center gap-2">
-                  <h2 className="truncate text-base font-black text-slate-950">
+                  <h2 className="truncate text-sm font-black text-slate-950 sm:text-base">
                     Booking Details
                   </h2>
 
+                  {/* DESKTOP STATUS */}
                   <span
-                    className={`hidden items-center gap-1.5 rounded-full border px-2.5 py-1 text-[10px] font-bold sm:inline-flex ${status.bg} ${status.text} ${status.border}`}
+                    className={`
+                      hidden
+                      items-center
+                      gap-1.5
+                      rounded-full
+                      border
+                      px-2.5
+                      py-1
+                      text-[10px]
+                      font-bold
+                      sm:inline-flex
+                      ${status.bg}
+                      ${status.text}
+                      ${status.border}
+                    `}
                   >
                     <span
                       className={`h-1.5 w-1.5 rounded-full ${status.dot}`}
@@ -263,7 +326,7 @@ export default function BookingDetails({
                   </span>
                 </div>
 
-                <p className="mt-0.5 truncate text-xs text-slate-400">
+                <p className="mt-0.5 truncate text-[11px] text-slate-400 sm:text-xs">
                   Booking #{text(booking.booking_id)}
                 </p>
               </div>
@@ -272,18 +335,51 @@ export default function BookingDetails({
             <button
               type="button"
               onClick={onClose}
-              className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-500 transition hover:bg-slate-50 hover:text-slate-950"
+              className="
+                flex
+                h-9
+                w-9
+                shrink-0
+                items-center
+                justify-center
+                rounded-xl
+                border
+                border-slate-200
+                bg-white
+                text-slate-500
+                transition
+                hover:bg-slate-50
+                hover:text-slate-950
+                active:scale-95
+                sm:h-10
+                sm:w-10
+              "
               aria-label="Close"
             >
-              <X className="h-5 w-5" />
+              <X className="h-4 w-4 sm:h-5 sm:w-5" />
             </button>
           </div>
 
-          {/* MOBILE STATUS */}
+          {/* =================================================
+              MOBILE STATUS
+          ================================================= */}
 
-          <div className="border-b border-slate-100 px-5 py-3 sm:hidden">
+          <div className="border-b border-slate-100 px-4 py-2.5 sm:hidden">
             <span
-              className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-[10px] font-bold ${status.bg} ${status.text} ${status.border}`}
+              className={`
+                inline-flex
+                items-center
+                gap-1.5
+                rounded-full
+                border
+                px-2.5
+                py-1
+                text-[10px]
+                font-bold
+                ${status.bg}
+                ${status.text}
+                ${status.border}
+              `}
             >
               <span
                 className={`h-1.5 w-1.5 rounded-full ${status.dot}`}
@@ -298,53 +394,75 @@ export default function BookingDetails({
             SCROLL CONTENT
         ================================================= */}
 
-        <main className="min-h-0 flex-1 overflow-y-auto">
-          <div className="space-y-4 p-4 sm:p-5">
+        <main className="min-h-0 flex-1 overflow-y-auto overscroll-contain">
+          <div
+            className="
+              space-y-3
+              p-3
+              pb-4
+              sm:space-y-4
+              sm:p-5
+            "
+          >
             {/* =================================================
                 BOOKING HERO
             ================================================= */}
 
             <section className="overflow-hidden rounded-2xl border border-slate-200 bg-white">
-              <div className="bg-slate-950 px-5 py-5 text-white sm:px-6">
-                <div className="flex items-start justify-between gap-4">
-                  <div className="flex min-w-0 items-center gap-3">
-                    <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-orange-500">
-                      <Wrench className="h-5 w-5" />
+              <div className="bg-slate-950 px-4 py-4 text-white sm:px-6 sm:py-5">
+                <div className="flex items-start justify-between gap-3 sm:gap-4">
+                  <div className="flex min-w-0 items-center gap-2.5 sm:gap-3">
+                    <div
+                      className="
+                        flex
+                        h-10
+                        w-10
+                        shrink-0
+                        items-center
+                        justify-center
+                        rounded-xl
+                        bg-orange-500
+                        sm:h-12
+                        sm:w-12
+                        sm:rounded-2xl
+                      "
+                    >
+                      <Wrench className="h-4 w-4 sm:h-5 sm:w-5" />
                     </div>
 
                     <div className="min-w-0">
-                      <p className="text-[10px] font-bold uppercase tracking-[0.14em] text-slate-400">
+                      <p className="text-[9px] font-bold uppercase tracking-[0.14em] text-slate-400">
                         Requested Service
                       </p>
 
-                      <h3 className="mt-1 truncate text-lg font-black">
+                      <h3 className="mt-1 truncate text-base font-black sm:text-lg">
                         {text(booking.service_type)}
                       </h3>
 
-                      <p className="mt-1 truncate text-xs text-slate-400">
+                      <p className="mt-0.5 truncate text-[11px] text-slate-400 sm:mt-1 sm:text-xs">
                         {text(booking.worker_specialty)}
                       </p>
                     </div>
                   </div>
 
                   <div className="shrink-0 text-right">
-                    <p className="text-[9px] font-bold uppercase tracking-wider text-slate-500">
+                    <p className="text-[8px] font-bold uppercase tracking-wider text-slate-500 sm:text-[9px]">
                       Total
                     </p>
 
-                    <p className="mt-1 text-xl font-black">
+                    <p className="mt-0.5 text-lg font-black sm:mt-1 sm:text-xl">
                       {amount(booking.grand_total)}
                     </p>
                   </div>
                 </div>
 
-                <div className="mt-5 flex items-center justify-between border-t border-white/10 pt-4">
-                  <div>
-                    <p className="text-[9px] font-bold uppercase tracking-wider text-slate-500">
+                <div className="mt-4 flex items-center justify-between border-t border-white/10 pt-3 sm:mt-5 sm:pt-4">
+                  <div className="min-w-0">
+                    <p className="text-[8px] font-bold uppercase tracking-wider text-slate-500 sm:text-[9px]">
                       Booking ID
                     </p>
 
-                    <p className="mt-1 text-xs font-bold text-slate-200">
+                    <p className="mt-1 truncate text-[11px] font-bold text-slate-200 sm:text-xs">
                       #{text(booking.booking_id)}
                     </p>
                   </div>
@@ -352,7 +470,23 @@ export default function BookingDetails({
                   <button
                     type="button"
                     onClick={copyId}
-                    className="flex h-8 items-center gap-1.5 rounded-lg bg-white/10 px-2.5 text-[10px] font-bold text-slate-300 hover:bg-white/15 hover:text-white"
+                    className="
+                      flex
+                      h-8
+                      shrink-0
+                      items-center
+                      gap-1.5
+                      rounded-lg
+                      bg-white/10
+                      px-2.5
+                      text-[10px]
+                      font-bold
+                      text-slate-300
+                      transition
+                      hover:bg-white/15
+                      hover:text-white
+                      active:scale-95
+                    "
                   >
                     <Copy className="h-3 w-3" />
                     Copy ID
@@ -360,7 +494,9 @@ export default function BookingDetails({
                 </div>
               </div>
 
-              {/* SCHEDULE */}
+              {/* =================================================
+                  SCHEDULE
+              ================================================= */}
 
               <div className="grid grid-cols-1 divide-y divide-slate-100 sm:grid-cols-2 sm:divide-x sm:divide-y-0">
                 <ScheduleItem
@@ -381,13 +517,13 @@ export default function BookingDetails({
                 CUSTOMER / WORKER
             ================================================= */}
 
-            <section className="rounded-2xl border border-slate-200 bg-white p-5 sm:p-6">
+            <section className="rounded-2xl border border-slate-200 bg-white p-4 sm:p-6">
               <SectionHeader
                 icon={<UserRound />}
                 title="People"
               />
 
-              <div className="mt-5 space-y-3">
+              <div className="mt-4 space-y-2.5 sm:mt-5 sm:space-y-3">
                 {/* CUSTOMER */}
 
                 <ProfileRow
@@ -399,7 +535,20 @@ export default function BookingDetails({
                     booking.customer_phone ? (
                       <a
                         href={`tel:${booking.customer_phone}`}
-                        className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-emerald-50 text-emerald-600 transition hover:bg-emerald-100"
+                        className="
+                          flex
+                          h-9
+                          w-9
+                          shrink-0
+                          items-center
+                          justify-center
+                          rounded-xl
+                          bg-emerald-50
+                          text-emerald-600
+                          transition
+                          hover:bg-emerald-100
+                          active:scale-95
+                        "
                         aria-label="Call customer"
                       >
                         <Phone className="h-4 w-4" />
@@ -429,10 +578,22 @@ export default function BookingDetails({
                     workerPhone ? (
                       <a
                         href={`tel:${workerPhone}`}
-                        className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-emerald-50 text-emerald-600 transition hover:bg-emerald-100"
-                        aria-label={`Call ${
-                          booking.worker_name || "worker"
-                        }`}
+                        className="
+                          flex
+                          h-9
+                          w-9
+                          shrink-0
+                          items-center
+                          justify-center
+                          rounded-xl
+                          bg-emerald-50
+                          text-emerald-600
+                          transition
+                          hover:bg-emerald-100
+                          active:scale-95
+                        "
+                        aria-label={`Call ${booking.worker_name || "worker"
+                          }`}
                       >
                         <Phone className="h-4 w-4" />
                       </a>
@@ -446,24 +607,24 @@ export default function BookingDetails({
                 LOCATION
             ================================================= */}
 
-            <section className="rounded-2xl border border-slate-200 bg-white p-5 sm:p-6">
+            <section className="rounded-2xl border border-slate-200 bg-white p-4 sm:p-6">
               <SectionHeader
                 icon={<MapPin />}
                 title="Work Location"
               />
 
-              <div className="mt-5 rounded-2xl border border-slate-100 bg-slate-50 p-4">
+              <div className="mt-4 rounded-2xl border border-slate-100 bg-slate-50 p-3.5 sm:mt-5 sm:p-4">
                 {hasAddress ? (
-                  <div className="space-y-4">
+                  <div className="space-y-3 sm:space-y-4">
                     {/* MAIN ADDRESS */}
 
                     <div className="flex items-start gap-3">
-                      <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-white text-orange-500 shadow-sm">
-                        <MapPin className="h-5 w-5" />
+                      <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-white text-orange-500 shadow-sm sm:h-11 sm:w-11">
+                        <MapPin className="h-4 w-4 sm:h-5 sm:w-5" />
                       </div>
 
                       <div className="min-w-0 flex-1">
-                        <div className="flex items-center gap-2">
+                        <div className="flex flex-wrap items-center gap-2">
                           <p className="text-[9px] font-bold uppercase tracking-wider text-slate-400">
                             Service Address
                           </p>
@@ -475,14 +636,14 @@ export default function BookingDetails({
                           )}
                         </div>
 
-                        <p className="mt-1 text-sm font-bold leading-5 text-slate-800">
+                        <p className="mt-1 text-xs font-bold leading-5 text-slate-800 sm:text-sm">
                           {[booking.house_no, booking.address]
                             .filter(Boolean)
                             .join(", ")}
                         </p>
 
                         {booking.landmark && (
-                          <p className="mt-1 text-xs text-slate-500">
+                          <p className="mt-1 text-[11px] text-slate-500 sm:text-xs">
                             Landmark: {booking.landmark}
                           </p>
                         )}
@@ -491,7 +652,7 @@ export default function BookingDetails({
 
                     {/* LOCATION DETAILS */}
 
-                    <div className="grid grid-cols-2 gap-3 border-t border-slate-200 pt-4">
+                    <div className="grid grid-cols-2 gap-3 border-t border-slate-200 pt-3 sm:pt-4">
                       {booking.city && (
                         <LocationItem
                           label="City"
@@ -530,16 +691,16 @@ export default function BookingDetails({
                   </div>
                 ) : (
                   <div className="flex items-center gap-3">
-                    <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-white text-slate-400 shadow-sm">
-                      <MapPin className="h-5 w-5" />
+                    <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-white text-slate-400 shadow-sm">
+                      <MapPin className="h-4 w-4" />
                     </div>
 
                     <div className="min-w-0">
-                      <p className="text-sm font-bold text-slate-700">
+                      <p className="text-xs font-bold text-slate-700 sm:text-sm">
                         Address not available
                       </p>
 
-                      <p className="mt-1 text-xs text-slate-400">
+                      <p className="mt-1 text-[11px] text-slate-400 sm:text-xs">
                         No address was saved with this booking.
                       </p>
                     </div>
@@ -552,13 +713,13 @@ export default function BookingDetails({
                 BILL
             ================================================= */}
 
-            <section className="rounded-2xl border border-slate-200 bg-white p-5 sm:p-6">
+            <section className="rounded-2xl border border-slate-200 bg-white p-4 sm:p-6">
               <SectionHeader
                 icon={<ReceiptText />}
                 title="Payment Summary"
               />
 
-              <div className="mt-5 rounded-2xl bg-slate-50 p-4">
+              <div className="mt-4 rounded-2xl bg-slate-50 p-3.5 sm:mt-5 sm:p-4">
                 <PriceLine
                   label="Worker Charges"
                   value={booking.total_cost}
@@ -571,20 +732,20 @@ export default function BookingDetails({
                   />
                 )}
 
-                <div className="my-4 border-t border-dashed border-slate-200" />
+                <div className="my-3 border-t border-dashed border-slate-200 sm:my-4" />
 
                 <div className="flex items-end justify-between gap-3">
                   <div>
-                    <p className="text-xs font-bold text-slate-400">
+                    <p className="text-[11px] font-bold text-slate-400 sm:text-xs">
                       Grand Total
                     </p>
 
-                    <p className="mt-1 text-2xl font-black tracking-tight text-slate-950">
+                    <p className="mt-1 text-xl font-black tracking-tight text-slate-950 sm:text-2xl">
                       {amount(booking.grand_total)}
                     </p>
                   </div>
 
-                  <span className="rounded-lg bg-emerald-50 px-2.5 py-1 text-[10px] font-bold text-emerald-700">
+                  <span className="rounded-lg bg-emerald-50 px-2.5 py-1 text-[9px] font-bold text-emerald-700 sm:text-[10px]">
                     Total Amount
                   </span>
                 </div>
@@ -596,14 +757,14 @@ export default function BookingDetails({
             ================================================= */}
 
             {booking.description && (
-              <section className="rounded-2xl border border-slate-200 bg-white p-5 sm:p-6">
+              <section className="rounded-2xl border border-slate-200 bg-white p-4 sm:p-6">
                 <SectionHeader
                   icon={<FileText />}
                   title="Work Request"
                 />
 
-                <div className="mt-5 rounded-2xl border border-slate-100 bg-slate-50 p-4">
-                  <p className="whitespace-pre-wrap text-sm leading-6 text-slate-600">
+                <div className="mt-4 rounded-2xl border border-slate-100 bg-slate-50 p-3.5 sm:mt-5 sm:p-4">
+                  <p className="whitespace-pre-wrap text-xs leading-5 text-slate-600 sm:text-sm sm:leading-6">
                     {booking.description}
                   </p>
                 </div>
@@ -615,14 +776,14 @@ export default function BookingDetails({
             ================================================= */}
 
             {booking.notes && (
-              <section className="rounded-2xl border border-slate-200 bg-white p-5 sm:p-6">
+              <section className="rounded-2xl border border-slate-200 bg-white p-4 sm:p-6">
                 <SectionHeader
                   icon={<FileText />}
                   title="Customer Notes"
                 />
 
-                <div className="mt-5 rounded-2xl border border-amber-100 bg-amber-50/60 p-4">
-                  <p className="whitespace-pre-wrap text-sm leading-6 text-slate-600">
+                <div className="mt-4 rounded-2xl border border-amber-100 bg-amber-50/60 p-3.5 sm:mt-5 sm:p-4">
+                  <p className="whitespace-pre-wrap text-xs leading-5 text-slate-600 sm:text-sm sm:leading-6">
                     {booking.notes}
                   </p>
                 </div>
@@ -633,13 +794,13 @@ export default function BookingDetails({
                 BOOKING META
             ================================================= */}
 
-            <section className="rounded-2xl border border-slate-200 bg-white p-5 sm:p-6">
+            <section className="rounded-2xl border border-slate-200 bg-white p-4 sm:p-6">
               <SectionHeader
                 icon={<CheckCircle2 />}
                 title="Booking Information"
               />
 
-              <div className="mt-5 grid grid-cols-2 gap-3">
+              <div className="mt-4 grid grid-cols-2 gap-2.5 sm:mt-5 sm:gap-3">
                 <MetaBox
                   label="Booking Type"
                   value={text(booking.booking_type)}
@@ -666,7 +827,7 @@ export default function BookingDetails({
               </div>
             </section>
 
-            <div className="h-2" />
+            <div className="h-1 sm:h-2" />
           </div>
         </main>
 
@@ -674,7 +835,7 @@ export default function BookingDetails({
             FOOTER
         ================================================= */}
 
-        <footer className="shrink-0 border-t border-slate-200 bg-white p-4 sm:px-5">
+        <footer className="shrink-0 border-t border-slate-200 bg-white p-3 sm:px-5 sm:py-4">
           <div className="flex items-center justify-between gap-3">
             <div className="hidden sm:block">
               <p className="text-[9px] font-bold uppercase tracking-wider text-slate-400">
@@ -689,7 +850,27 @@ export default function BookingDetails({
             <button
               type="button"
               onClick={onClose}
-              className="ml-auto flex h-11 items-center justify-center gap-2 rounded-xl bg-slate-950 px-6 text-xs font-bold text-white transition hover:bg-slate-800 active:scale-[0.98]"
+              className="
+                ml-auto
+                flex
+                h-10
+                w-full
+                items-center
+                justify-center
+                gap-2
+                rounded-xl
+                bg-slate-950
+                px-5
+                text-xs
+                font-bold
+                text-white
+                transition
+                hover:bg-slate-800
+                active:scale-[0.98]
+                sm:h-11
+                sm:w-auto
+                sm:px-6
+              "
             >
               Close Details
               <X className="h-4 w-4" />
@@ -713,8 +894,24 @@ function SectionHeader({
   title: string;
 }) {
   return (
-    <div className="flex items-center gap-3">
-      <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-slate-100 text-slate-600 [&>svg]:h-4 [&>svg]:w-4">
+    <div className="flex items-center gap-2.5 sm:gap-3">
+      <div
+        className="
+          flex
+          h-8
+          w-8
+          items-center
+          justify-center
+          rounded-lg
+          bg-slate-100
+          text-slate-600
+          [&>svg]:h-4
+          [&>svg]:w-4
+          sm:h-9
+          sm:w-9
+          sm:rounded-xl
+        "
+      >
         {icon}
       </div>
 
@@ -739,17 +936,33 @@ function ScheduleItem({
   value: string;
 }) {
   return (
-    <div className="flex items-center gap-3 px-5 py-4 sm:px-6">
-      <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-orange-50 text-orange-500 [&>svg]:h-4 [&>svg]:w-4">
+    <div className="flex items-center gap-3 px-4 py-3.5 sm:px-6 sm:py-4">
+      <div
+        className="
+          flex
+          h-9
+          w-9
+          shrink-0
+          items-center
+          justify-center
+          rounded-xl
+          bg-orange-50
+          text-orange-500
+          [&>svg]:h-4
+          [&>svg]:w-4
+          sm:h-10
+          sm:w-10
+        "
+      >
         {icon}
       </div>
 
       <div className="min-w-0">
-        <p className="text-[9px] font-bold uppercase tracking-wider text-slate-400">
+        <p className="text-[8px] font-bold uppercase tracking-wider text-slate-400 sm:text-[9px]">
           {label}
         </p>
 
-        <p className="mt-1 truncate text-xs font-bold text-slate-800">
+        <p className="mt-1 truncate text-[11px] font-bold text-slate-800 sm:text-xs">
           {value}
         </p>
       </div>
@@ -779,8 +992,21 @@ function ProfileRow({
   action?: React.ReactNode;
 }) {
   return (
-    <div className="flex items-center gap-3 rounded-2xl border border-slate-100 bg-slate-50 p-3.5">
-      <div className="h-12 w-12 shrink-0 overflow-hidden rounded-xl bg-white shadow-sm">
+    <div
+      className="
+        flex
+        items-center
+        gap-2.5
+        rounded-2xl
+        border
+        border-slate-100
+        bg-slate-50
+        p-3
+        sm:gap-3
+        sm:p-3.5
+      "
+    >
+      <div className="h-11 w-11 shrink-0 overflow-hidden rounded-xl bg-white shadow-sm sm:h-12 sm:w-12">
         {image ? (
           <img
             src={image}
@@ -795,21 +1021,21 @@ function ProfileRow({
       </div>
 
       <div className="min-w-0 flex-1">
-        <p className="text-[9px] font-bold uppercase tracking-wider text-slate-400">
+        <p className="text-[8px] font-bold uppercase tracking-wider text-slate-400 sm:text-[9px]">
           {label}
         </p>
 
-        <p className="mt-1 truncate text-sm font-black text-slate-900">
+        <p className="mt-1 truncate text-xs font-black text-slate-900 sm:text-sm">
           {text(name)}
         </p>
 
-        <p className="mt-0.5 truncate text-xs text-slate-500">
+        <p className="mt-0.5 truncate text-[11px] text-slate-500 sm:text-xs">
           {text(subtitle)}
         </p>
       </div>
 
       {rating && (
-        <span className="shrink-0 rounded-lg bg-white px-2 py-1 text-[10px] font-black text-amber-500 shadow-sm">
+        <span className="shrink-0 rounded-lg bg-white px-2 py-1 text-[9px] font-black text-amber-500 shadow-sm sm:text-[10px]">
           {rating}
         </span>
       )}
@@ -834,11 +1060,11 @@ function LocationItem({
 
   return (
     <div>
-      <p className="text-[9px] font-bold uppercase tracking-wider text-slate-400">
+      <p className="text-[8px] font-bold uppercase tracking-wider text-slate-400 sm:text-[9px]">
         {label}
       </p>
 
-      <p className="mt-1 text-xs font-semibold text-slate-700">
+      <p className="mt-1 text-[11px] font-semibold text-slate-700 sm:text-xs">
         {value}
       </p>
     </div>
@@ -857,12 +1083,12 @@ function PriceLine({
   value: number | null | undefined;
 }) {
   return (
-    <div className="flex items-center justify-between gap-4 py-1.5">
-      <span className="text-sm text-slate-500">
+    <div className="flex items-center justify-between gap-4 py-1">
+      <span className="text-xs text-slate-500 sm:text-sm">
         {label}
       </span>
 
-      <span className="text-sm font-bold text-slate-800">
+      <span className="text-xs font-bold text-slate-800 sm:text-sm">
         {amount(value)}
       </span>
     </div>
@@ -881,12 +1107,12 @@ function MetaBox({
   value: string;
 }) {
   return (
-    <div className="rounded-xl border border-slate-100 bg-slate-50 p-3">
-      <p className="text-[9px] font-bold uppercase tracking-wider text-slate-400">
+    <div className="min-w-0 rounded-xl border border-slate-100 bg-slate-50 p-2.5 sm:p-3">
+      <p className="text-[8px] font-bold uppercase tracking-wider text-slate-400 sm:text-[9px]">
         {label}
       </p>
 
-      <p className="mt-1.5 truncate text-xs font-bold text-slate-700">
+      <p className="mt-1.5 truncate text-[11px] font-bold text-slate-700 sm:text-xs">
         {value}
       </p>
     </div>

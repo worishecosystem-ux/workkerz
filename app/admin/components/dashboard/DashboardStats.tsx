@@ -20,9 +20,16 @@ type StatData = {
   workers: number;
   availableWorkers: number;
   shops: number;
+
   bookings: number;
+  bookingsCompleted: number;
+
   orders: number;
+  ordersCompleted: number;
+
   workerRequests: number;
+  workerRequestsCompleted: number;
+
   workersDaily: Daily[];
   shopsDaily: Daily[];
   bookingsDaily: Daily[];
@@ -36,9 +43,16 @@ const EMPTY: StatData = {
   workers: 0,
   availableWorkers: 0,
   shops: 0,
+
   bookings: 0,
+  bookingsCompleted: 0,
+
   orders: 0,
+  ordersCompleted: 0,
+
   workerRequests: 0,
+  workerRequestsCompleted: 0,
+
   workersDaily: [],
   shopsDaily: [],
   bookingsDaily: [],
@@ -88,7 +102,6 @@ export default function DashboardStats() {
       const date = new Date();
 
       date.setHours(0, 0, 0, 0);
-
       date.setDate(date.getDate() - (6 - i));
 
       return date;
@@ -106,11 +119,17 @@ export default function DashboardStats() {
       const from = days[0].toISOString();
       const to = new Date().toISOString();
 
-      const { data: rows, error } = await supabase
+      let query = supabase
         .from(table)
         .select("created_at")
         .gte("created_at", from)
         .lte("created_at", to);
+
+      if (table === "worker_requests") {
+        query = query.eq("is_deleted", false);
+      }
+
+      const { data: rows, error } = await query;
 
       if (error) {
         console.error(`${table} daily stats error:`, error);
@@ -157,6 +176,8 @@ export default function DashboardStats() {
 
   const fetchStats = useCallback(async () => {
     try {
+      setLoading(true);
+
       const today = new Date();
 
       today.setHours(0, 0, 0, 0);
@@ -172,15 +193,28 @@ export default function DashboardStats() {
         workers,
         availableWorkers,
         shops,
-        bookings,
-        orders,
-        workerRequests,
+
+        /* TODAY */
+        bookingsToday,
+        ordersToday,
+        workerRequestsToday,
+
+        /* COMPLETED - ALL */
+        bookingsCompleted,
+        ordersCompleted,
+        workerRequestsCompleted,
+
+        /* DAILY */
         workersDaily,
         shopsDaily,
         bookingsDaily,
         ordersDaily,
         requestsDaily,
       ] = await Promise.all([
+        /* =================================================
+           WORKERS
+        ================================================= */
+
         supabase
           .from("workers")
           .select("*", { count: "exact", head: true }),
@@ -190,9 +224,17 @@ export default function DashboardStats() {
           .select("*", { count: "exact", head: true })
           .eq("available", true),
 
+        /* =================================================
+           SHOPS
+        ================================================= */
+
         supabase
           .from("shops")
           .select("*", { count: "exact", head: true }),
+
+        /* =================================================
+           TODAY BOOKINGS
+        ================================================= */
 
         supabase
           .from("bookings")
@@ -200,17 +242,58 @@ export default function DashboardStats() {
           .gte("created_at", from)
           .lt("created_at", to),
 
+        /* =================================================
+           TODAY ORDERS
+        ================================================= */
+
         supabase
           .from("orders")
           .select("*", { count: "exact", head: true })
           .gte("created_at", from)
           .lt("created_at", to),
 
+        /* =================================================
+           TODAY WORKER REQUESTS
+        ================================================= */
+
         supabase
           .from("worker_requests")
           .select("*", { count: "exact", head: true })
+          .eq("is_deleted", false)
           .gte("created_at", from)
           .lt("created_at", to),
+
+        /* =================================================
+           ALL COMPLETED BOOKINGS
+        ================================================= */
+
+        supabase
+          .from("bookings")
+          .select("*", { count: "exact", head: true })
+          .eq("booking_status", "completed"),
+
+        /* =================================================
+           ALL COMPLETED ORDERS
+        ================================================= */
+
+        supabase
+          .from("orders")
+          .select("*", { count: "exact", head: true })
+          .ilike("status", "completed"),
+
+        /* =================================================
+           ALL COMPLETED WORKER REQUESTS
+        ================================================= */
+
+        supabase
+          .from("worker_requests")
+          .select("*", { count: "exact", head: true })
+          .eq("is_deleted", false)
+          .ilike("status", "completed"),
+
+        /* =================================================
+           DAILY
+        ================================================= */
 
         fetchDaily("workers"),
         fetchDaily("shops"),
@@ -219,28 +302,49 @@ export default function DashboardStats() {
         fetchDaily("worker_requests"),
       ]);
 
+      /* =====================================================
+         ERROR CHECK
+      ===================================================== */
+
       const errors = [
         workers.error,
         availableWorkers.error,
         shops.error,
-        bookings.error,
-        orders.error,
-        workerRequests.error,
+
+        bookingsToday.error,
+        ordersToday.error,
+        workerRequestsToday.error,
+
+        bookingsCompleted.error,
+        ordersCompleted.error,
+        workerRequestsCompleted.error,
       ].filter(Boolean);
 
       if (errors.length) {
-        console.error("Dashboard stats error:", errors);
-
+        console.error("Dashboard stats errors:", errors);
         return;
       }
+
+      /* =====================================================
+         SET DATA
+      ===================================================== */
 
       setData({
         workers: workers.count ?? 0,
         availableWorkers: availableWorkers.count ?? 0,
+
         shops: shops.count ?? 0,
-        bookings: bookings.count ?? 0,
-        orders: orders.count ?? 0,
-        workerRequests: workerRequests.count ?? 0,
+
+        bookings: bookingsToday.count ?? 0,
+        bookingsCompleted: bookingsCompleted.count ?? 0,
+
+        orders: ordersToday.count ?? 0,
+        ordersCompleted: ordersCompleted.count ?? 0,
+
+        workerRequests: workerRequestsToday.count ?? 0,
+        workerRequestsCompleted:
+          workerRequestsCompleted.count ?? 0,
+
         workersDaily: workersDaily || [],
         shopsDaily: shopsDaily || [],
         bookingsDaily: bookingsDaily || [],
@@ -263,6 +367,7 @@ export default function DashboardStats() {
 
     const channel = supabase
       .channel("dashboard-stats-live")
+
       .on(
         "postgres_changes",
         {
@@ -272,6 +377,7 @@ export default function DashboardStats() {
         },
         fetchStats,
       )
+
       .on(
         "postgres_changes",
         {
@@ -281,6 +387,7 @@ export default function DashboardStats() {
         },
         fetchStats,
       )
+
       .on(
         "postgres_changes",
         {
@@ -290,6 +397,7 @@ export default function DashboardStats() {
         },
         fetchStats,
       )
+
       .on(
         "postgres_changes",
         {
@@ -299,6 +407,7 @@ export default function DashboardStats() {
         },
         fetchStats,
       )
+
       .on(
         "postgres_changes",
         {
@@ -308,6 +417,7 @@ export default function DashboardStats() {
         },
         fetchStats,
       )
+
       .subscribe();
 
     return () => {
@@ -353,42 +463,51 @@ export default function DashboardStats() {
       label: "Workers",
       value: data.workers,
       sub: `${data.availableWorkers} available`,
+      completed: null,
       daily: data.workersDaily || [],
       icon: Users,
       iconClass: "bg-orange-50 text-orange-500",
       barClass: "bg-orange-400",
     },
+
     {
       label: "Shops",
       value: data.shops,
       sub: "Registered shops",
+      completed: null,
       daily: data.shopsDaily || [],
       icon: Store,
       iconClass: "bg-violet-50 text-violet-500",
       barClass: "bg-violet-400",
     },
+
     {
       label: "New Bookings",
       value: data.bookings,
       sub: "Today",
+      completed: data.bookingsCompleted,
       daily: data.bookingsDaily || [],
       icon: CalendarCheck,
       iconClass: "bg-emerald-50 text-emerald-500",
       barClass: "bg-emerald-400",
     },
+
     {
       label: "New Orders",
       value: data.orders,
       sub: "Today",
+      completed: data.ordersCompleted,
       daily: data.ordersDaily || [],
       icon: ShoppingBag,
       iconClass: "bg-blue-50 text-blue-500",
       barClass: "bg-blue-400",
     },
+
     {
       label: "Worker Requests",
       value: data.workerRequests,
       sub: "Today",
+      completed: data.workerRequestsCompleted,
       daily: data.requestsDaily || [],
       icon: UserRoundPlus,
       iconClass: "bg-rose-50 text-rose-500",
@@ -397,105 +516,129 @@ export default function DashboardStats() {
   ];
 
   /* =====================================================
-     MOBILE / TABLET / ANDROID CARD
+     MOBILE / TABLET / ANDROID
   ===================================================== */
 
   const renderAppCards = () => {
-  return (
-    <div className="mb-5 grid grid-cols-2 gap-2.5 sm:grid-cols-4">
-      {cards.map((card, index) => {
-        const Icon = card.icon;
-        const daily = card.daily || [];
-        const max = Math.max(...daily.map((item) => item?.value || 0), 1);
-        const growth = getGrowth(daily);
-        const positive = growth >= 0;
-        const isFifthCard = index === 4;
+    return (
+      <div className="mb-5 grid grid-cols-2 gap-2.5 sm:grid-cols-4">
+        {cards.map((card, index) => {
+          const Icon = card.icon;
+          const daily = card.daily || [];
 
-        return (
-          <div
-            key={card.label}
-            className={`rounded-xl border border-[#E7EAF0] bg-white p-3 shadow-[0_2px_10px_rgba(15,23,42,0.04)] transition hover:shadow-md ${
-              isFifthCard ? "col-span-2 sm:col-span-4" : "col-span-1"
-            }`}
-          >
-            {/* LINE 1 */}
-            <div className="flex min-w-0 items-center justify-between gap-2">
-              <div className="flex min-w-0 items-center gap-2">
-                <div
-                  className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-lg ${card.iconClass}`}
-                >
-                  <Icon className="h-4 w-4" />
+          const max = Math.max(
+            ...daily.map((item) => item?.value || 0),
+            1,
+          );
+
+          const growth = getGrowth(daily);
+          const positive = growth >= 0;
+          const isFifthCard = index === 4;
+
+          return (
+            <div
+              key={card.label}
+              className={`rounded-xl border border-[#E7EAF0] bg-white p-3 shadow-[0_2px_10px_rgba(15,23,42,0.04)] transition hover:shadow-md ${
+                isFifthCard
+                  ? "col-span-2 sm:col-span-4"
+                  : "col-span-1"
+              }`}
+            >
+              {/* LINE 1 */}
+
+              <div className="flex min-w-0 items-center justify-between gap-2">
+                <div className="flex min-w-0 items-center gap-2">
+                  <div
+                    className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-lg ${card.iconClass}`}
+                  >
+                    <Icon className="h-4 w-4" />
+                  </div>
+
+                  <p className="min-w-0 truncate text-[10px] font-bold leading-none text-[#475569]">
+                    {card.label}
+                  </p>
                 </div>
-
-                <p className="min-w-0 truncate text-[10px] font-bold leading-none text-[#475569]">
-                  {card.label}
-                </p>
               </div>
-            </div>
 
-            {/* LINE 2 */}
-            <div className="mt-3 flex items-end justify-between gap-2">
-              <div className="min-w-0">
-                <div className="flex items-baseline gap-1.5">
-                  <span className="text-[23px] font-black leading-none tracking-tight text-[#172033]">
-                    {loading ? "—" : card.value.toLocaleString("en-IN")}
-                  </span>
+              {/* LINE 2 */}
 
-                  {!loading && (
-                    <span
-                      className={`text-[8px] font-bold ${
-                        positive ? "text-emerald-500" : "text-rose-500"
-                      }`}
-                    >
-                      {positive ? "+" : ""}
-                      {growth}%
+              <div className="mt-3 flex items-end justify-between gap-2">
+                <div className="min-w-0">
+                  <div className="flex items-baseline gap-1.5">
+                    <span className="text-[23px] font-black leading-none tracking-tight text-[#172033]">
+                      {loading
+                        ? "—"
+                        : card.value.toLocaleString("en-IN")}
                     </span>
-                  )}
+
+                    {!loading && (
+                      <span
+                        className={`text-[8px] font-bold ${
+                          positive
+                            ? "text-emerald-500"
+                            : "text-rose-500"
+                        }`}
+                      >
+                        {positive ? "+" : ""}
+                        {growth}%
+                      </span>
+                    )}
+                  </div>
+
+                  <div className="mt-1 flex items-center gap-1.5 text-[8px] font-medium">
+                    <span className="text-[#94A3B8]">
+                      {loading ? "Loading..." : card.sub}
+                    </span>
+
+                    {!loading && card.completed !== null && (
+                      <span className="font-bold text-emerald-500">
+                        Completed: {card.completed}
+                      </span>
+                    )}
+                  </div>
                 </div>
 
-                <p className="mt-1 text-[8px] font-medium text-[#94A3B8]">
-                  {loading ? "Loading..." : card.sub}
-                </p>
-              </div>
+                {/* GRAPH */}
 
-              {/* GRAPH */}
-              <div className="w-[70px] shrink-0">
-                <div className="flex h-8 items-end gap-[3px]">
-                  {daily.length ? (
-                    daily.map((point, index) => (
-                      <div
-                        key={`${point.day}-${index}`}
-                        className={`flex-1 rounded-t-sm ${card.barClass} opacity-65`}
-                        style={{
-                          height: `${Math.max(
-                            5,
-                            ((point?.value || 0) / max) * 100,
-                          )}%`,
-                        }}
-                        title={`${point.day}: ${point.value}`}
-                      />
-                    ))
-                  ) : (
-                    <div className="h-1 w-full rounded-full bg-[#E5E7EB]" />
-                  )}
-                </div>
+                <div className="w-[70px] shrink-0">
+                  <div className="flex h-8 items-end gap-[3px]">
+                    {daily.length ? (
+                      daily.map((point, index) => (
+                        <div
+                          key={`${point.day}-${index}`}
+                          className={`flex-1 rounded-t-sm ${card.barClass} opacity-65`}
+                          style={{
+                            height: `${Math.max(
+                              5,
+                              ((point?.value || 0) / max) * 100,
+                            )}%`,
+                          }}
+                          title={`${point.day}: ${point.value}`}
+                        />
+                      ))
+                    ) : (
+                      <div className="h-1 w-full rounded-full bg-[#E5E7EB]" />
+                    )}
+                  </div>
 
-                <div className="mt-1 flex justify-between text-[6px] font-medium text-[#CBD5E1]">
-                  {daily.map((point, index) => (
-                    <span key={`${point.day}-${index}`}>{point.day}</span>
-                  ))}
+                  <div className="mt-1 flex justify-between text-[6px] font-medium text-[#CBD5E1]">
+                    {daily.map((point, index) => (
+                      <span key={`${point.day}-${index}`}>
+                        {point.day}
+                      </span>
+                    ))}
+                  </div>
                 </div>
               </div>
             </div>
-          </div>
-        );
-      })}
-    </div>
-  );
-};
+          );
+        })}
+      </div>
+    );
+  };
 
   /* =====================================================
-     BROWSER CARD
+     BROWSER
   ===================================================== */
 
   const renderBrowserCards = () => {
@@ -512,7 +655,6 @@ export default function DashboardStats() {
           );
 
           const growth = getGrowth(daily);
-
           const positive = growth >= 0;
 
           return (
@@ -559,11 +701,19 @@ export default function DashboardStats() {
                 </div>
               </div>
 
-              {/* SUBTEXT */}
+              {/* TODAY + COMPLETED */}
 
-              <p className="mt-3 text-[10px] font-medium text-[#94A3B8]">
-                {loading ? "Loading..." : card.sub}
-              </p>
+              <div className="mt-3 flex items-center gap-2 text-[10px] font-medium">
+                <span className="text-[#94A3B8]">
+                  {loading ? "Loading..." : card.sub}
+                </span>
+
+                {!loading && card.completed !== null && (
+                  <span className="font-bold text-emerald-500">
+                    Completed: {card.completed}
+                  </span>
+                )}
+              </div>
 
               {/* GRAPH */}
 

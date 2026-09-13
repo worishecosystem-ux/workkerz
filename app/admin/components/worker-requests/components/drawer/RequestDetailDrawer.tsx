@@ -14,16 +14,9 @@ import {
 } from "lucide-react";
 import { useState } from "react";
 
-import type {
-  DeviceType,
-  StatusType,
-  WorkerRequest,
-} from "../../types";
+import type { DeviceType, StatusType, WorkerRequest } from "../../types";
 
-import {
-  getRequestTitle,
-  normalizeStatus,
-} from "../../utils/requestHelpers";
+import { getRequestTitle, normalizeStatus } from "../../utils/requestHelpers";
 
 import RequestStatusBadge from "../card/RequestStatusBadge";
 import RequestTimeline from "../timeline/RequestTimeline";
@@ -62,14 +55,11 @@ export default function RequestDetailDrawer({
   onUpdate,
   onTrash,
 }: Props) {
-  const [showDeleteModal, setShowDeleteModal] =
-    useState(false);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
 
-  const [deleteReason, setDeleteReason] =
-    useState("");
+  const [deleteReason, setDeleteReason] = useState("");
 
-  const [customReason, setCustomReason] =
-    useState("");
+  const [customReason, setCustomReason] = useState("");
 
   const status = normalizeStatus(request.status);
   const isUpdating = updating === request.id;
@@ -83,31 +73,19 @@ export default function RequestDetailDrawer({
 
   const title = getRequestTitle(request);
 
-  const customer =
-    request.requester_name ||
-    request.company_name ||
-    "Customer";
+  const customer = request.requester_name || request.company_name || "Customer";
 
   const location =
-    request.location ||
-    request.locality ||
-    "Location not specified";
+    request.location || request.locality || "Location not specified";
 
-  const date =
-    request.work_date ||
-    "Date not specified";
+  const date = request.work_date || "Date not specified";
 
-  const time =
-    request.start_time ||
-    "Time not specified";
+  const time = request.start_time || "Time not specified";
 
-  const workers =
-    request.workers_required || 0;
+  const workers = request.workers_required || 0;
 
   const finalReason =
-    deleteReason === "Other"
-      ? customReason.trim()
-      : deleteReason;
+    deleteReason === "Other" ? customReason.trim() : deleteReason;
 
   const update = (nextStatus: StatusType) => {
     if (!isUpdating) {
@@ -116,18 +94,11 @@ export default function RequestDetailDrawer({
   };
 
   const handleTrash = async () => {
-    if (
-      !finalReason ||
-      !onTrash ||
-      isUpdating
-    ) {
+    if (!finalReason || !onTrash || isUpdating) {
       return;
     }
 
-    const success = await onTrash(
-      request.id,
-      finalReason,
-    );
+    const success = await onTrash(request.id, finalReason);
 
     if (success) {
       setShowDeleteModal(false);
@@ -163,47 +134,49 @@ export default function RequestDetailDrawer({
       >
         {/* HEADER */}
 
+        {/* HEADER */}
+
         <header
           className="
-            flex h-[60px] shrink-0
-            items-center justify-between
-            gap-4
-            border-b border-gray-100
-            bg-white
-            px-4 lg:px-7
-          "
+    flex min-h-[60px] h-auto shrink-0
+    items-center justify-between
+    gap-4
+    border-b border-gray-100
+    bg-white
+    px-4
+    pt-12
+    pb-3
+    lg:h-[60px]
+    lg:min-h-0
+    lg:px-7
+    lg:py-0
+  "
         >
           <div className="min-w-0">
             <div className="flex items-center gap-2">
               <h1
                 className="
-                  text-sm font-extrabold
-                  text-[#1C1C1C]
-                  md:text-base
-                "
+          text-sm font-extrabold
+          text-[#1C1C1C]
+          md:text-base
+        "
               >
                 Booking Details
               </h1>
 
-              <RequestStatusBadge
-                status={status}
-                size="sm"
-                showIcon
-              />
+              <RequestStatusBadge status={status} size="sm" showIcon />
             </div>
 
             <p
               className="
-                mt-0.5 truncate
-                text-[8px] font-medium
-                text-[#828282]
-              "
+        mt-0.5 truncate
+        text-[8px] font-medium
+        text-[#828282]
+      "
             >
               {title}
 
-              <span className="mx-1 text-[#D1D5DB]">
-                •
-              </span>
+              <span className="mx-1 text-[#D1D5DB]">•</span>
 
               {customer}
             </p>
@@ -214,13 +187,13 @@ export default function RequestDetailDrawer({
             onClick={onClose}
             aria-label="Close"
             className="
-              flex h-8 w-8 shrink-0
-              items-center justify-center
-              rounded-lg
-              bg-gray-50
-              text-gray-500
-              hover:bg-gray-100
-            "
+      flex h-8 w-8 shrink-0
+      items-center justify-center
+      rounded-lg
+      bg-gray-50
+      text-gray-500
+      hover:bg-gray-100
+    "
           >
             <X className="h-4 w-4" />
           </button>
@@ -335,17 +308,9 @@ export default function RequestDetailDrawer({
                   sm:grid-cols-4
                 "
               >
-                <QuickInfo
-                  icon={<CalendarDays />}
-                  label="Date"
-                  value={date}
-                />
+                <QuickInfo icon={<CalendarDays />} label="Date" value={date} />
 
-                <QuickInfo
-                  icon={<Clock3 />}
-                  label="Time"
-                  value={time}
-                />
+                <QuickInfo icon={<Clock3 />} label="Time" value={time} />
 
                 <QuickInfo
                   icon={<MapPin />}
@@ -404,15 +369,10 @@ export default function RequestDetailDrawer({
                   </p>
                 </div>
 
-                <RequestStatusBadge
-                  status={status}
-                  size="sm"
-                />
+                <RequestStatusBadge status={status} size="sm" />
               </div>
 
-              <RequestTimeline
-                status={status}
-              />
+              <RequestTimeline status={status} />
             </section>
 
             {/* DETAILS */}
@@ -426,45 +386,27 @@ export default function RequestDetailDrawer({
               "
             >
               <div className="min-w-0 lg:col-span-7">
-                <ProjectCard
-                  request={request}
-                  compact
-                />
+                <ProjectCard request={request} compact />
               </div>
 
               <div className="min-w-0 lg:col-span-5">
-                <RequesterCard
-                  request={request}
-                  compact
-                />
+                <RequesterCard request={request} compact />
               </div>
 
               <div className="min-w-0 lg:col-span-7">
-                <WorkDetailsCard
-                  request={request}
-                  compact
-                />
+                <WorkDetailsCard request={request} compact />
               </div>
 
               <div className="min-w-0 lg:col-span-5">
-                <SourceCard
-                  request={request}
-                  compact
-                />
+                <SourceCard request={request} compact />
               </div>
 
               <div className="min-w-0 lg:col-span-7">
-                <WorkLocationCard
-                  request={request}
-                  compact
-                />
+                <WorkLocationCard request={request} compact />
               </div>
 
               <div className="min-w-0 lg:col-span-5">
-                <WorkerGroupsCard
-                  request={request}
-                  compact
-                />
+                <WorkerGroupsCard request={request} compact />
               </div>
             </div>
 
@@ -514,16 +456,23 @@ export default function RequestDetailDrawer({
 
         {/* ACTION BAR */}
 
-        {(isPending ||
-          isUnderReview ||
-          isAccepted) && (
+        {(isPending || isUnderReview || isAccepted) && (
           <footer
             className="
               shrink-0
+
+              /* MOBILE */
               border-t border-gray-100
-              bg-white
-              px-4 py-2.5
+              bg-transparent
+              px-3
+              pt-3
+              pb-[calc(18px+env(safe-area-inset-bottom))]
+
+              /* DESKTOP */
+              lg:border-t
+              lg:bg-white
               lg:px-7
+              lg:py-2.5
             "
           >
             <div
@@ -532,6 +481,20 @@ export default function RequestDetailDrawer({
                 flex w-full max-w-[1180px]
                 items-center
                 justify-end gap-2
+
+                /* MOBILE FLOATING BAR */
+                rounded-2xl
+                bg-white
+                px-3
+                py-2.5
+                shadow-[0_-2px_12px_rgba(0,0,0,0.04)]
+
+                /* DESKTOP RESET */
+                lg:rounded-none
+                lg:bg-transparent
+                lg:px-0
+                lg:py-0
+                lg:shadow-none
               "
             >
               {/* TRASH */}
@@ -540,9 +503,7 @@ export default function RequestDetailDrawer({
                 <button
                   type="button"
                   disabled={isUpdating}
-                  onClick={() =>
-                    setShowDeleteModal(true)
-                  }
+                  onClick={() => setShowDeleteModal(true)}
                   className="
                     flex h-9
                     items-center
@@ -562,7 +523,6 @@ export default function RequestDetailDrawer({
                   "
                 >
                   <Trash2 className="h-3.5 w-3.5" />
-
                   Move to Trash
                 </button>
               )}
@@ -574,9 +534,7 @@ export default function RequestDetailDrawer({
                   <button
                     type="button"
                     disabled={isUpdating}
-                    onClick={() =>
-                      update("rejected")
-                    }
+                    onClick={() => update("rejected")}
                     className="
                       flex h-9
                       items-center
@@ -597,16 +555,13 @@ export default function RequestDetailDrawer({
                     ) : (
                       <X className="h-3.5 w-3.5" />
                     )}
-
                     Reject
                   </button>
 
                   <button
                     type="button"
                     disabled={isUpdating}
-                    onClick={() =>
-                      update("under_review")
-                    }
+                    onClick={() => update("under_review")}
                     className="
                       flex h-9
                       items-center
@@ -627,7 +582,6 @@ export default function RequestDetailDrawer({
                     ) : (
                       <Clock3 className="h-3.5 w-3.5" />
                     )}
-
                     Under Review
                   </button>
                 </>
@@ -640,9 +594,7 @@ export default function RequestDetailDrawer({
                   <button
                     type="button"
                     disabled={isUpdating}
-                    onClick={() =>
-                      update("cancelled")
-                    }
+                    onClick={() => update("cancelled")}
                     className="
                       flex h-9
                       items-center
@@ -664,16 +616,13 @@ export default function RequestDetailDrawer({
                     ) : (
                       <X className="h-3.5 w-3.5" />
                     )}
-
                     Cancel Booking
                   </button>
 
                   <button
                     type="button"
                     disabled={isUpdating}
-                    onClick={() =>
-                      update("accepted")
-                    }
+                    onClick={() => update("accepted")}
                     className="
                       flex h-9
                       items-center
@@ -695,7 +644,6 @@ export default function RequestDetailDrawer({
                     ) : (
                       <CheckCircle2 className="h-3.5 w-3.5" />
                     )}
-
                     Confirm Booking
                   </button>
                 </>
@@ -707,9 +655,7 @@ export default function RequestDetailDrawer({
                 <button
                   type="button"
                   disabled={isUpdating}
-                  onClick={() =>
-                    update("completed")
-                  }
+                  onClick={() => update("completed")}
                   className="
                     flex h-9
                     items-center
@@ -730,7 +676,6 @@ export default function RequestDetailDrawer({
                   ) : (
                     <CheckCircle2 className="h-3.5 w-3.5" />
                   )}
-
                   Mark Work Completed
                 </button>
               )}
@@ -798,8 +743,7 @@ export default function RequestDetailDrawer({
                       text-[#94A3B8]
                     "
                   >
-                    Select a reason before moving
-                    this request.
+                    Select a reason before moving this request.
                   </p>
                 </div>
               </div>
@@ -824,17 +768,12 @@ export default function RequestDetailDrawer({
               </p>
 
               <div className="grid gap-1.5">
-                {DELETE_REASONS.map(
-                  (reason) => (
-                    <button
-                      key={reason}
-                      type="button"
-                      onClick={() =>
-                        setDeleteReason(
-                          reason,
-                        )
-                      }
-                      className={`
+                {DELETE_REASONS.map((reason) => (
+                  <button
+                    key={reason}
+                    type="button"
+                    onClick={() => setDeleteReason(reason)}
+                    className={`
                         flex
                         items-center
                         justify-between
@@ -846,33 +785,25 @@ export default function RequestDetailDrawer({
                         font-bold
                         transition
                         ${
-                          deleteReason ===
-                          reason
+                          deleteReason === reason
                             ? "border-red-200 bg-red-50 text-red-600"
                             : "border-gray-100 bg-gray-50 text-[#64748B] hover:bg-gray-100"
                         }
                       `}
-                    >
-                      {reason}
+                  >
+                    {reason}
 
-                      {deleteReason ===
-                        reason && (
-                        <Check className="h-3.5 w-3.5" />
-                      )}
-                    </button>
-                  ),
-                )}
+                    {deleteReason === reason && (
+                      <Check className="h-3.5 w-3.5" />
+                    )}
+                  </button>
+                ))}
               </div>
 
-              {deleteReason ===
-                "Other" && (
+              {deleteReason === "Other" && (
                 <textarea
                   value={customReason}
-                  onChange={(e) =>
-                    setCustomReason(
-                      e.target.value,
-                    )
-                  }
+                  onChange={(e) => setCustomReason(e.target.value)}
                   placeholder="Enter reason..."
                   rows={3}
                   className="
@@ -922,10 +853,7 @@ export default function RequestDetailDrawer({
 
               <button
                 type="button"
-                disabled={
-                  isUpdating ||
-                  !finalReason
-                }
+                disabled={isUpdating || !finalReason}
                 onClick={handleTrash}
                 className="
                   flex h-9
@@ -947,7 +875,6 @@ export default function RequestDetailDrawer({
                     "
                   />
                 )}
-
                 Move to Trash
               </button>
             </div>
@@ -1028,45 +955,30 @@ function StatusMessage({
   title,
   message,
 }: {
-  type:
-    | "success"
-    | "danger"
-    | "neutral";
+  type: "success" | "danger" | "neutral";
   title: string;
   message: string;
 }) {
   const styles = {
     success: {
-      wrapper:
-        "border-emerald-100 bg-emerald-50",
-      title:
-        "text-emerald-700",
-      text:
-        "text-emerald-600",
-      icon:
-        "bg-emerald-500",
+      wrapper: "border-emerald-100 bg-emerald-50",
+      title: "text-emerald-700",
+      text: "text-emerald-600",
+      icon: "bg-emerald-500",
     },
 
     danger: {
-      wrapper:
-        "border-red-100 bg-red-50",
-      title:
-        "text-red-700",
-      text:
-        "text-red-600",
-      icon:
-        "bg-red-500",
+      wrapper: "border-red-100 bg-red-50",
+      title: "text-red-700",
+      text: "text-red-600",
+      icon: "bg-red-500",
     },
 
     neutral: {
-      wrapper:
-        "border-gray-200 bg-gray-50",
-      title:
-        "text-gray-700",
-      text:
-        "text-gray-500",
-      icon:
-        "bg-gray-400",
+      wrapper: "border-gray-200 bg-gray-50",
+      title: "text-gray-700",
+      text: "text-gray-500",
+      icon: "bg-gray-400",
     },
   };
 

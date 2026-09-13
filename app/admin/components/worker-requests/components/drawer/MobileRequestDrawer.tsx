@@ -49,7 +49,7 @@ export default function MobileRequestDrawer({ request, updating = null, onClose,
       <div className="flex h-full flex-col">
         {/* HEADER */}
         <header className="flex h-[58px] shrink-0 items-center justify-between gap-3 border-b border-gray-100 bg-white px-4">
-          <div className="min-w-0">
+          <div className="min-w-0 pt-12">
             <div className="flex items-center gap-2">
               <p className="text-[15px] font-black text-[#172033]">Booking Details</p>
               <RequestStatusBadge status={status} size="sm" />

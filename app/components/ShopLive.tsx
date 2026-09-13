@@ -253,26 +253,26 @@ function ShopCard({
         </div>
 
         {/* ACTION BUTTONS */}
-        <div className="mt-4 flex gap-3">
-          {/* CALL NOW */}
-          <a
-            href={`tel:${shop.phone}`}
-            className="flex h-11 flex-1 items-center justify-center gap-2 rounded-[13px] border-2 border-emerald-600 bg-white px-3 text-[15px] font-extrabold text-emerald-600 shadow-sm transition active:scale-[0.98]"
-          >
-            <Phone size={18} strokeWidth={2.3} />
-            Call us now
-          </a>
+       <div className="mt-4 flex gap-3">
+  {/* CALL NOW */}
+  <a
+    href="tel:7000543603"
+    className="flex h-11 flex-1 items-center justify-center gap-2 rounded-[13px] border-2 border-emerald-600 bg-white px-3 text-[15px] font-extrabold text-emerald-600 shadow-sm transition active:scale-[0.98]"
+  >
+    <Phone size={18} strokeWidth={2.3} />
+    Call us now
+  </a>
 
-          {/* VIEW SHOP */}
-          <button
-            type="button"
-            onClick={onShopNow}
-            className="flex h-11 flex-1 items-center justify-center gap-1.5 rounded-[13px] bg-emerald-600 px-3 text-[15px] font-extrabold text-white shadow-[0_4px_12px_rgba(79,70,229,0.25)] transition active:scale-[0.98]"
-          >
-            View shop
-            <ChevronRight size={17} strokeWidth={2.8} />
-          </button>
-        </div>
+  {/* VIEW SHOP */}
+  <button
+    type="button"
+    onClick={onShopNow}
+    className="flex h-11 flex-1 items-center justify-center gap-1.5 rounded-[13px] bg-emerald-600 px-3 text-[15px] font-extrabold text-white shadow-[0_4px_12px_rgba(79,70,229,0.25)] transition active:scale-[0.98]"
+  >
+    View shop
+    <ChevronRight size={17} strokeWidth={2.8} />
+  </button>
+</div>
       </div>
     </div>
   );

@@ -1,0 +1,98 @@
+{
+  "project_info": {
+    "project_number": "536709780550",
+    "project_id": "workkerz-a7dc2",
+    "storage_bucket": "workkerz-a7dc2.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:536709780550:android:2f60d74f4524b8f474e647",
+        "android_client_info": {
+          "package_name": "com.workkerz.admin"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "536709780550-7qbit6avd8r32hao09vves7v7akegcq0.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyB7om3GvnMn-t3yh0hIQnakioPYEyy0COA"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "536709780550-7qbit6avd8r32hao09vves7v7akegcq0.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "536709780550-jobniicesginfc90b62177o565b82bf5.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.workkerz.app"
+              }
+            }
+          ]
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:536709780550:android:319f7e6b38a698ae74e647",
+        "android_client_info": {
+          "package_name": "com.workkerz.app"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "536709780550-jsherj3td1d6obueggs9cnmm10r8mp9j.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.workkerz.app",
+            "certificate_hash": "600991f5db12a5a95e68884c24f324254226d08d"
+          }
+        },
+        {
+          "client_id": "536709780550-kmb6mm0toi0tauftmu0m4qcjuirb5qp3.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.workkerz.app",
+            "certificate_hash": "69f39c8b10347e7d7f95a391523e6db8c6f76484"
+          }
+        },
+        {
+          "client_id": "536709780550-7qbit6avd8r32hao09vves7v7akegcq0.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyB7om3GvnMn-t3yh0hIQnakioPYEyy0COA"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "536709780550-7qbit6avd8r32hao09vves7v7akegcq0.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "536709780550-jobniicesginfc90b62177o565b82bf5.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.workkerz.app"
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

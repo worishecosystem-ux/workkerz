@@ -56,6 +56,7 @@ type RecentBooking = {
   id: string;
   created_at?: string | null;
   status?: string | null;
+  booking_status?: string | null;
   worker_name?: string | null;
   customer_name?: string | null;
   user_name?: string | null;
@@ -83,6 +84,7 @@ type WorkerRequest = {
   start_time?: string | null;
   workers_required?: number | string | null;
   budget?: number | string | null;
+  is_deleted?: boolean | null;
   [key: string]: any;
 };
 
@@ -97,17 +99,33 @@ const EMPTY: Stats = {
   bookingsToday: 0,
 };
 
-export default function DashboardTab({ onNavigate }: Props) {
-  const [platform, setPlatform] = useState<Platform>("browser");
+export default function DashboardTab({
+  onNavigate,
+}: Props) {
+  const [platform, setPlatform] =
+    useState<Platform>("browser");
 
-  const [stats, setStats] = useState<Stats>(EMPTY);
-  const [orders, setOrders] = useState<RecentOrder[]>([]);
-  const [bookings, setBookings] = useState<RecentBooking[]>([]);
-  const [requests, setRequests] = useState<WorkerRequest[]>([]);
+  const [stats, setStats] =
+    useState<Stats>(EMPTY);
 
-  const [loading, setLoading] = useState(true);
-  const [refreshing, setRefreshing] = useState(false);
-  const [error, setError] = useState("");
+  const [orders, setOrders] =
+    useState<RecentOrder[]>([]);
+
+  const [bookings, setBookings] =
+    useState<RecentBooking[]>([]);
+
+  // Latest 5 worker requests, all statuses
+  const [recentRequests, setRecentRequests] =
+    useState<WorkerRequest[]>([]);
+
+  const [loading, setLoading] =
+    useState(true);
+
+  const [refreshing, setRefreshing] =
+    useState(false);
+
+  const [error, setError] =
+    useState("");
 
   /* =====================================================
      PLATFORM DETECTION
@@ -116,15 +134,23 @@ export default function DashboardTab({ onNavigate }: Props) {
   useEffect(() => {
     if (typeof window === "undefined") return;
 
-    const ua = navigator.userAgent.toLowerCase();
+    const ua =
+      navigator.userAgent.toLowerCase();
 
-    const native = Capacitor.isNativePlatform();
-    const capacitorPlatform = Capacitor.getPlatform();
+    const native =
+      Capacitor.isNativePlatform();
 
-    const isAndroid = native && capacitorPlatform === "android";
+    const capacitorPlatform =
+      Capacitor.getPlatform();
+
+    const isAndroid =
+      native &&
+      capacitorPlatform === "android";
 
     const isTablet =
-      /ipad|tablet|android(?!.*mobile)/i.test(ua) ||
+      /ipad|tablet|android(?!.*mobile)/i.test(
+        ua,
+      ) ||
       (navigator.maxTouchPoints > 1 &&
         /macintosh/i.test(ua) &&
         navigator.maxTouchPoints > 1);
@@ -142,165 +168,278 @@ export default function DashboardTab({ onNavigate }: Props) {
     setPlatform("browser");
   }, []);
 
-  const isApp = platform === "android" || platform === "tablet";
-  const isBrowser = platform === "browser";
+  const isApp =
+    platform === "android" ||
+    platform === "tablet";
+
+  const isBrowser =
+    platform === "browser";
 
   /* =====================================================
      FETCH DASHBOARD
   ===================================================== */
 
-  const fetchDashboard = useCallback(async (refresh = false) => {
-    try {
-      if (refresh) {
-        setRefreshing(true);
-      } else {
-        setLoading(true);
-      }
+  const fetchDashboard = useCallback(
+    async (refresh = false) => {
+      try {
+        if (refresh) {
+          setRefreshing(true);
+        } else {
+          setLoading(true);
+        }
 
-      setError("");
+        setError("");
 
-      const now = new Date();
+        const now = new Date();
 
-      const start = new Date(
-        now.getFullYear(),
-        now.getMonth(),
-        now.getDate(),
-      ).toISOString();
+        const start = new Date(
+          now.getFullYear(),
+          now.getMonth(),
+          now.getDate(),
+        ).toISOString();
 
-      const end = new Date(
-        now.getFullYear(),
-        now.getMonth(),
-        now.getDate() + 1,
-      ).toISOString();
+        const end = new Date(
+          now.getFullYear(),
+          now.getMonth(),
+          now.getDate() + 1,
+        ).toISOString();
 
-      const [
-        workers,
-        workersToday,
-        orderCount,
-        ordersToday,
-        shops,
-        shopsToday,
-        bookingCount,
-        bookingsToday,
-      ] = await Promise.all([
-        supabase
-          .from("workers")
-          .select("*", { count: "exact", head: true }),
+        /* =================================================
+           MAIN COUNTS
+        ================================================= */
 
-        supabase
-          .from("workers")
-          .select("*", { count: "exact", head: true })
-          .gte("created_at", start)
-          .lt("created_at", end),
+        const [
+          workers,
+          workersToday,
+          orderCount,
+          ordersToday,
+          shops,
+          shopsToday,
+          bookingCount,
+          bookingsToday,
+        ] = await Promise.all([
+          supabase
+            .from("workers")
+            .select("*", {
+              count: "exact",
+              head: true,
+            }),
 
-        supabase
-          .from("orders")
-          .select("*", { count: "exact", head: true }),
+          supabase
+            .from("workers")
+            .select("*", {
+              count: "exact",
+              head: true,
+            })
+            .gte("created_at", start)
+            .lt("created_at", end),
 
-        supabase
-          .from("orders")
-          .select("*", { count: "exact", head: true })
-          .gte("created_at", start)
-          .lt("created_at", end),
+          supabase
+            .from("orders")
+            .select("*", {
+              count: "exact",
+              head: true,
+            }),
 
-        supabase
-          .from("shops")
-          .select("*", { count: "exact", head: true }),
+          supabase
+            .from("orders")
+            .select("*", {
+              count: "exact",
+              head: true,
+            })
+            .gte("created_at", start)
+            .lt("created_at", end),
 
-        supabase
-          .from("shops")
-          .select("*", { count: "exact", head: true })
-          .gte("created_at", start)
-          .lt("created_at", end),
+          supabase
+            .from("shops")
+            .select("*", {
+              count: "exact",
+              head: true,
+            }),
 
-        supabase
-          .from("bookings")
-          .select("*", { count: "exact", head: true }),
+          supabase
+            .from("shops")
+            .select("*", {
+              count: "exact",
+              head: true,
+            })
+            .gte("created_at", start)
+            .lt("created_at", end),
 
-        supabase
-          .from("bookings")
-          .select("*", { count: "exact", head: true })
-          .gte("created_at", start)
-          .lt("created_at", end),
-      ]);
+          supabase
+            .from("bookings")
+            .select("*", {
+              count: "exact",
+              head: true,
+            }),
 
-      const statErrors = [
-        workers,
-        workersToday,
-        orderCount,
-        ordersToday,
-        shops,
-        shopsToday,
-        bookingCount,
-        bookingsToday,
-      ].filter((x) => x.error);
+          supabase
+            .from("bookings")
+            .select("*", {
+              count: "exact",
+              head: true,
+            })
+            .gte("created_at", start)
+            .lt("created_at", end),
+        ]);
 
-      if (statErrors.length) {
-        throw new Error(
-          statErrors[0]?.error?.message ||
-            "Unable to load dashboard.",
+        /* =================================================
+           ERROR CHECK
+        ================================================= */
+
+        const statErrors = [
+          workers,
+          workersToday,
+          orderCount,
+          ordersToday,
+          shops,
+          shopsToday,
+          bookingCount,
+          bookingsToday,
+        ].filter((x) => x.error);
+
+        if (statErrors.length) {
+          throw new Error(
+            statErrors[0]?.error?.message ||
+              "Unable to load dashboard.",
+          );
+        }
+
+        /* =================================================
+           SET STATS
+        ================================================= */
+
+        setStats({
+          workers:
+            workers.count ?? 0,
+
+          workersToday:
+            workersToday.count ?? 0,
+
+          orders:
+            orderCount.count ?? 0,
+
+          ordersToday:
+            ordersToday.count ?? 0,
+
+          shops:
+            shops.count ?? 0,
+
+          shopsToday:
+            shopsToday.count ?? 0,
+
+          bookings:
+            bookingCount.count ?? 0,
+
+          bookingsToday:
+            bookingsToday.count ?? 0,
+        });
+
+        /* =================================================
+           RECENT DATA
+        ================================================= */
+
+        const [
+          recentBookings,
+          recentOrders,
+          latestWorkerRequests,
+        ] = await Promise.all([
+          /* RECENT BOOKINGS */
+
+          supabase
+            .from("bookings")
+            .select("*")
+            .order("created_at", {
+              ascending: false,
+            })
+            .limit(6),
+
+          /* RECENT ORDERS */
+
+          supabase
+            .from("orders")
+            .select("*")
+            .order("created_at", {
+              ascending: false,
+            })
+            .limit(6),
+
+          /* RECENT WORKER REQUESTS
+             ALL STATUS
+             DELETED EXCLUDED
+             MAX 5
+          */
+
+          supabase
+            .from("worker_requests")
+            .select("*")
+            .eq("is_deleted", false)
+            .order("created_at", {
+              ascending: false,
+            })
+            .limit(5),
+        ]);
+
+        /* =================================================
+           LOG ERRORS
+        ================================================= */
+
+        if (recentBookings.error) {
+          console.error(
+            "Recent bookings error:",
+            recentBookings.error,
+          );
+        }
+
+        if (recentOrders.error) {
+          console.error(
+            "Recent orders error:",
+            recentOrders.error,
+          );
+        }
+
+        if (latestWorkerRequests.error) {
+          console.error(
+            "Recent worker requests error:",
+            latestWorkerRequests.error,
+          );
+        }
+
+        /* =================================================
+           SET DATA
+        ================================================= */
+
+        setBookings(
+          (recentBookings.data ||
+            []) as RecentBooking[],
         );
+
+        setOrders(
+          (recentOrders.data ||
+            []) as RecentOrder[],
+        );
+
+        setRecentRequests(
+          (latestWorkerRequests.data ||
+            []) as WorkerRequest[],
+        );
+      } catch (err: any) {
+        console.error(
+          "Dashboard:",
+          err,
+        );
+
+        setError(
+          err?.message ||
+            "Unable to load dashboard data.",
+        );
+      } finally {
+        setLoading(false);
+        setRefreshing(false);
       }
-
-      setStats({
-        workers: workers.count ?? 0,
-        workersToday: workersToday.count ?? 0,
-        orders: orderCount.count ?? 0,
-        ordersToday: ordersToday.count ?? 0,
-        shops: shops.count ?? 0,
-        shopsToday: shopsToday.count ?? 0,
-        bookings: bookingCount.count ?? 0,
-        bookingsToday: bookingsToday.count ?? 0,
-      });
-
-      const [
-        recentBookings,
-        recentOrders,
-        workerRequests,
-      ] = await Promise.all([
-        supabase
-          .from("bookings")
-          .select("*")
-          .order("created_at", { ascending: false })
-          .limit(6),
-
-        supabase
-          .from("orders")
-          .select("*")
-          .order("created_at", { ascending: false })
-          .limit(6),
-
-        supabase
-          .from("worker_requests")
-          .select("*")
-          .in("status", ["pending", "new"])
-          .order("created_at", { ascending: false })
-          .limit(8),
-      ]);
-
-      setBookings(
-        (recentBookings.data || []) as RecentBooking[],
-      );
-
-      setOrders(
-        (recentOrders.data || []) as RecentOrder[],
-      );
-
-      setRequests(
-        (workerRequests.data || []) as WorkerRequest[],
-      );
-    } catch (err: any) {
-      console.error("Dashboard:", err);
-
-      setError(
-        err?.message ||
-          "Unable to load dashboard data.",
-      );
-    } finally {
-      setLoading(false);
-      setRefreshing(false);
-    }
-  }, []);
+    },
+    [],
+  );
 
   /* =====================================================
      REALTIME
@@ -311,6 +450,7 @@ export default function DashboardTab({ onNavigate }: Props) {
 
     const channel = supabase
       .channel("admin-dashboard")
+
       .on(
         "postgres_changes",
         {
@@ -320,6 +460,7 @@ export default function DashboardTab({ onNavigate }: Props) {
         },
         () => fetchDashboard(true),
       )
+
       .on(
         "postgres_changes",
         {
@@ -329,6 +470,7 @@ export default function DashboardTab({ onNavigate }: Props) {
         },
         () => fetchDashboard(true),
       )
+
       .on(
         "postgres_changes",
         {
@@ -338,6 +480,7 @@ export default function DashboardTab({ onNavigate }: Props) {
         },
         () => fetchDashboard(true),
       )
+
       .on(
         "postgres_changes",
         {
@@ -347,6 +490,7 @@ export default function DashboardTab({ onNavigate }: Props) {
         },
         () => fetchDashboard(true),
       )
+
       .on(
         "postgres_changes",
         {
@@ -356,10 +500,13 @@ export default function DashboardTab({ onNavigate }: Props) {
         },
         () => fetchDashboard(true),
       )
+
       .subscribe();
 
     return () => {
-      supabase.removeChannel(channel);
+      supabase.removeChannel(
+        channel,
+      );
     };
   }, [fetchDashboard]);
 
@@ -367,61 +514,101 @@ export default function DashboardTab({ onNavigate }: Props) {
      HELPERS
   ===================================================== */
 
-  const formatDate = (date?: string | null) => {
+  const formatDate = (
+    date?: string | null,
+  ) => {
     if (!date) return "—";
 
-    const value = new Date(date);
+    const value =
+      new Date(date);
 
-    if (Number.isNaN(value.getTime())) {
+    if (
+      Number.isNaN(
+        value.getTime(),
+      )
+    ) {
       return "—";
     }
 
-    return value.toLocaleString("en-IN", {
-      day: "2-digit",
-      month: "short",
-      hour: "2-digit",
-      minute: "2-digit",
-    });
+    return value.toLocaleString(
+      "en-IN",
+      {
+        day: "2-digit",
+        month: "short",
+        hour: "2-digit",
+        minute: "2-digit",
+      },
+    );
   };
 
-  const orderName = (x: RecentOrder) =>
+  const orderName = (
+    x: RecentOrder,
+  ) =>
     x.customer_name ||
     x.user_name ||
     x.name ||
     x.customer_id ||
-    `Order #${x.id?.slice(0, 8)}`;
+    `Order #${x.id?.slice(
+      0,
+      8,
+    )}`;
 
-  const bookingName = (x: RecentBooking) =>
+  const bookingName = (
+    x: RecentBooking,
+  ) =>
     x.worker_name ||
     x.customer_name ||
     x.user_name ||
     x.worker_id ||
     x.customer_id ||
-    `Booking #${x.id?.slice(0, 8)}`;
+    `Booking #${x.id?.slice(
+      0,
+      8,
+    )}`;
 
   const amount = (
-    x: RecentOrder | RecentBooking,
+    x:
+      | RecentOrder
+      | RecentBooking,
   ) => {
     const value =
       x.total_amount ??
       x.total ??
       x.amount;
 
-    if (value == null || value === "") {
+    if (
+      value == null ||
+      value === ""
+    ) {
       return null;
     }
 
-    const number = Number(value);
+    const number =
+      Number(value);
 
     return Number.isNaN(number)
       ? String(value)
-      : `₹${number.toLocaleString("en-IN")}`;
+      : `₹${number.toLocaleString(
+          "en-IN",
+        )}`;
   };
 
-  const statusClass = (status?: string | null) => {
-    const value = String(status || "")
-      .toLowerCase()
-      .trim();
+  const getBookingStatus = (
+    x: RecentBooking,
+  ) =>
+    x.booking_status ||
+    x.status ||
+    "pending";
+
+  const statusClass = (
+    status?: string | null,
+  ) => {
+    const value =
+      String(
+        status || "",
+      )
+        .toLowerCase()
+        .trim();
 
     if (
       [
@@ -464,9 +651,14 @@ export default function DashboardTab({ onNavigate }: Props) {
   ) =>
     status
       ? String(status)
-          .replace(/_/g, " ")
-          .replace(/\b\w/g, (c) =>
-            c.toUpperCase(),
+          .replace(
+            /_/g,
+            " ",
+          )
+          .replace(
+            /\b\w/g,
+            (c) =>
+              c.toUpperCase(),
           )
       : "Pending";
 
@@ -486,7 +678,9 @@ export default function DashboardTab({ onNavigate }: Props) {
         <DashboardHeader
           refreshing={false}
           onRefresh={() =>
-            fetchDashboard(true)
+            fetchDashboard(
+              true,
+            )
           }
         />
 
@@ -513,7 +707,9 @@ export default function DashboardTab({ onNavigate }: Props) {
         <DashboardHeader
           refreshing={refreshing}
           onRefresh={() =>
-            fetchDashboard(true)
+            fetchDashboard(
+              true,
+            )
           }
         />
 
@@ -537,7 +733,9 @@ export default function DashboardTab({ onNavigate }: Props) {
 
             <button
               onClick={() =>
-                fetchDashboard(true)
+                fetchDashboard(
+                  true,
+                )
               }
               className="mt-5 rounded-xl bg-[#0F172A] px-5 py-2.5 text-sm font-bold text-white"
             >
@@ -550,7 +748,7 @@ export default function DashboardTab({ onNavigate }: Props) {
   }
 
   /* =====================================================
-     APP / ANDROID / TABLET
+     APP / TABLET
   ===================================================== */
 
   if (isApp) {
@@ -559,7 +757,9 @@ export default function DashboardTab({ onNavigate }: Props) {
         <DashboardHeader
           refreshing={refreshing}
           onRefresh={() =>
-            fetchDashboard(true)
+            fetchDashboard(
+              true,
+            )
           }
         />
 
@@ -601,70 +801,57 @@ export default function DashboardTab({ onNavigate }: Props) {
             <div className="grid grid-cols-1 gap-3">
               <RecentBookingsBoard
                 bookings={bookings}
-                bookingName={bookingName}
+                bookingName={
+                  bookingName
+                }
                 amount={amount}
-                formatDate={formatDate}
-                statusClass={statusClass}
-                statusLabel={statusLabel}
-                onNavigate={onNavigate}
+                formatDate={
+                  formatDate
+                }
+                statusClass={
+                  statusClass
+                }
+                statusLabel={
+                  statusLabel
+                }
+                getBookingStatus={
+                  getBookingStatus
+                }
+                onNavigate={
+                  onNavigate
+                }
               />
 
               <RecentOrdersBoard
                 orders={orders}
-                orderName={orderName}
+                orderName={
+                  orderName
+                }
                 amount={amount}
-                formatDate={formatDate}
-                statusClass={statusClass}
-                statusLabel={statusLabel}
-                onNavigate={onNavigate}
+                formatDate={
+                  formatDate
+                }
+                statusClass={
+                  statusClass
+                }
+                statusLabel={
+                  statusLabel
+                }
+                onNavigate={
+                  onNavigate
+                }
               />
 
-              <NewWorkerRequestsBoard
-                requests={requests}
-                formatDate={formatDate}
-                onNavigate={onNavigate}
-              />
-            </div>
-          </section>
-
-          <section className="mt-4 overflow-hidden rounded-2xl border border-gray-100 bg-white shadow-sm">
-            <div className="flex items-center justify-between border-b border-gray-100 px-4 py-4">
-              <div>
-                <h2 className="text-sm font-black text-[#0F172A]">
-                  Platform Activity
-                </h2>
-
-                <p className="mt-0.5 text-[10px] text-[#64748B]">
-                  New activity today
-                </p>
-              </div>
-
-              <CheckCircle2 className="h-4 w-4 text-emerald-500" />
-            </div>
-
-            <div className="grid grid-cols-2 gap-2.5 p-3">
-              <ActivityItem
-                label="Worker Registrations"
-                value={stats.workersToday}
-                icon={Users}
-              />
-
-              <ActivityItem
-                label="New Orders"
-                value={stats.ordersToday}
-                icon={ShoppingBag}
-              />
-
-              <ActivityItem
-                label="New Bookings"
-                value={stats.bookingsToday}
-                icon={CalendarCheck}
-              />
-
-              <ActivityItem
-                label="New Shops"
-                value={stats.shopsToday}
-                icon={Store}
+              <RecentWorkerRequestsBoard
+                requests={
+                  recentRequests
+                }
+                formatDate={
+                  formatDate
+                }
+                onNavigate={
+                  onNavigate
+                }
               />
             </div>
           </section>
@@ -682,7 +869,9 @@ export default function DashboardTab({ onNavigate }: Props) {
       <DashboardHeader
         refreshing={refreshing}
         onRefresh={() =>
-          fetchDashboard(true)
+          fetchDashboard(
+            true,
+          )
         }
       />
 
@@ -732,72 +921,59 @@ export default function DashboardTab({ onNavigate }: Props) {
           <div className="grid grid-cols-1 gap-5 lg:grid-cols-2">
             <RecentBookingsBoard
               bookings={bookings}
-              bookingName={bookingName}
+              bookingName={
+                bookingName
+              }
               amount={amount}
-              formatDate={formatDate}
-              statusClass={statusClass}
-              statusLabel={statusLabel}
-              onNavigate={onNavigate}
+              formatDate={
+                formatDate
+              }
+              statusClass={
+                statusClass
+              }
+              statusLabel={
+                statusLabel
+              }
+              getBookingStatus={
+                getBookingStatus
+              }
+              onNavigate={
+                onNavigate
+              }
             />
 
             <RecentOrdersBoard
               orders={orders}
-              orderName={orderName}
+              orderName={
+                orderName
+              }
               amount={amount}
-              formatDate={formatDate}
-              statusClass={statusClass}
-              statusLabel={statusLabel}
-              onNavigate={onNavigate}
+              formatDate={
+                formatDate
+              }
+              statusClass={
+                statusClass
+              }
+              statusLabel={
+                statusLabel
+              }
+              onNavigate={
+                onNavigate
+              }
             />
           </div>
 
           <div className="mt-5">
-            <NewWorkerRequestsBoard
-              requests={requests}
-              formatDate={formatDate}
-              onNavigate={onNavigate}
-            />
-          </div>
-        </section>
-
-        <section className="mt-6 overflow-hidden rounded-2xl border border-gray-100 bg-white shadow-sm">
-          <div className="flex items-center justify-between border-b border-gray-100 px-5 py-4">
-            <div>
-              <h2 className="text-sm font-black text-[#0F172A]">
-                Platform Activity
-              </h2>
-
-              <p className="mt-0.5 text-[10px] text-[#64748B]">
-                New activity today
-              </p>
-            </div>
-
-            <CheckCircle2 className="h-4 w-4 text-emerald-500" />
-          </div>
-
-          <div className="grid grid-cols-2 gap-3 p-4 md:grid-cols-4">
-            <ActivityItem
-              label="Worker Registrations"
-              value={stats.workersToday}
-              icon={Users}
-            />
-
-            <ActivityItem
-              label="New Orders"
-              value={stats.ordersToday}
-              icon={ShoppingBag}
-            />
-
-            <ActivityItem
-              label="New Bookings"
-              value={stats.bookingsToday}
-              icon={CalendarCheck}
-            />
-
-            <ActivityItem
-              label="New Shops"
-              value={stats.shopsToday}
-              icon={Store}
+            <RecentWorkerRequestsBoard
+              requests={
+                recentRequests
+              }
+              formatDate={
+                formatDate
+              }
+              onNavigate={
+                onNavigate
+              }
             />
           </div>
         </section>
@@ -818,7 +994,7 @@ function DashboardHeader({
   onRefresh: () => void;
 }) {
   return (
-   <header className="sticky top-0 z-30 flex min-h-16 items-center justify-between border-b border-gray-100 bg-white/95 px-3 pt-14 py-2.5 backdrop-blur-md sm:px-5 sm:pt-8">
+    <header className="sticky top-0 z-30 flex min-h-16 items-center justify-between border-b border-gray-100 bg-white/95 px-3 pt-14 py-2.5 backdrop-blur-md sm:px-5 sm:pt-8">
       <div className="min-w-0">
         <div className="flex items-center gap-2">
           <span className="h-2 w-2 rounded-full bg-[#FF5C39]" />
@@ -842,7 +1018,9 @@ function DashboardHeader({
       >
         <RefreshCw
           className={`h-4 w-4 ${
-            refreshing ? "animate-spin" : ""
+            refreshing
+              ? "animate-spin"
+              : ""
           }`}
         />
       </button>
@@ -851,7 +1029,7 @@ function DashboardHeader({
 }
 
 /* =====================================================
-   BOOKINGS
+   RECENT BOOKINGS
 ===================================================== */
 
 function RecentBookingsBoard({
@@ -861,6 +1039,7 @@ function RecentBookingsBoard({
   formatDate,
   statusClass,
   statusLabel,
+  getBookingStatus,
   onNavigate,
 }: any) {
   return (
@@ -870,36 +1049,51 @@ function RecentBookingsBoard({
       icon={CalendarCheck}
       color="emerald"
       onView={() =>
-        onNavigate?.("bookings")
+        onNavigate?.(
+          "bookings",
+        )
       }
     >
       {bookings.length ? (
         bookings.map(
-          (x: RecentBooking) => (
-            <ActivityRow
-              key={x.id}
-              icon={Users}
-              iconBg="bg-emerald-50"
-              iconColor="text-emerald-600"
-              title={bookingName(x)}
-              meta={`#${x.id.slice(
-                0,
-                8,
-              )} • ${formatDate(
-                x.created_at,
-              )}`}
-              price={amount(x)}
-              status={statusLabel(
-                x.status,
-              )}
-              statusClass={statusClass(
-                x.status,
-              )}
-              onClick={() =>
-                onNavigate?.("bookings")
-              }
-            />
-          ),
+          (
+            x: RecentBooking,
+          ) => {
+            const status =
+              getBookingStatus(
+                x,
+              );
+
+            return (
+              <ActivityRow
+                key={x.id}
+                icon={Users}
+                iconBg="bg-emerald-50"
+                iconColor="text-emerald-600"
+                title={bookingName(
+                  x,
+                )}
+                meta={`#${x.id.slice(
+                  0,
+                  8,
+                )} • ${formatDate(
+                  x.created_at,
+                )}`}
+                price={amount(x)}
+                status={statusLabel(
+                  status,
+                )}
+                statusClass={statusClass(
+                  status,
+                )}
+                onClick={() =>
+                  onNavigate?.(
+                    "bookings",
+                  )
+                }
+              />
+            );
+          },
         )
       ) : (
         <EmptyActivity
@@ -912,7 +1106,7 @@ function RecentBookingsBoard({
 }
 
 /* =====================================================
-   ORDERS
+   RECENT ORDERS
 ===================================================== */
 
 function RecentOrdersBoard({
@@ -931,18 +1125,24 @@ function RecentOrdersBoard({
       icon={ShoppingBag}
       color="blue"
       onView={() =>
-        onNavigate?.("orders")
+        onNavigate?.(
+          "orders",
+        )
       }
     >
       {orders.length ? (
         orders.map(
-          (x: RecentOrder) => (
+          (
+            x: RecentOrder,
+          ) => (
             <ActivityRow
               key={x.id}
               icon={Package}
               iconBg="bg-blue-50"
               iconColor="text-blue-600"
-              title={orderName(x)}
+              title={orderName(
+                x,
+              )}
               meta={`#${x.id.slice(
                 0,
                 8,
@@ -957,7 +1157,9 @@ function RecentOrdersBoard({
                 x.status,
               )}
               onClick={() =>
-                onNavigate?.("orders")
+                onNavigate?.(
+                  "orders",
+                )
               }
             />
           ),
@@ -1084,35 +1286,37 @@ function ActivityRow({
 }
 
 /* =====================================================
-   WORKER REQUESTS
+   RECENT WORKER REQUESTS
 ===================================================== */
 
-function NewWorkerRequestsBoard({
+function RecentWorkerRequestsBoard({
   requests,
   formatDate,
   onNavigate,
-}: any) {
+}: {
+  requests: WorkerRequest[];
+  formatDate: (
+    date?: string | null,
+  ) => string;
+  onNavigate?: (
+    tab: string,
+  ) => void;
+}) {
   return (
-    <section className="overflow-hidden rounded-2xl border border-orange-100 bg-white shadow-sm">
-      <div className="flex items-center justify-between border-b border-orange-100 bg-orange-50/50 px-4 py-4">
+    <section className="overflow-hidden rounded-2xl border border-purple-100 bg-white shadow-sm">
+      <div className="flex items-center justify-between border-b border-purple-100 bg-purple-50/40 px-4 py-4">
         <div className="flex items-center gap-3">
-          <div className="relative flex h-10 w-10 items-center justify-center rounded-xl bg-orange-100">
-            <UserRoundPlus className="h-5 w-5 text-[#FF5C39]" />
-
-            {requests.length > 0 && (
-              <span className="absolute -right-1 -top-1 flex h-4 min-w-4 items-center justify-center rounded-full bg-[#FF5C39] px-1 text-[8px] font-black text-white">
-                {requests.length}
-              </span>
-            )}
+          <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-purple-100">
+            <Clock3 className="h-5 w-5 text-purple-600" />
           </div>
 
           <div>
             <h2 className="text-sm font-black text-[#0F172A]">
-              New Worker Requests
+              Recent Worker Requests
             </h2>
 
             <p className="text-[10px] text-[#64748B]">
-              Latest customer requests for workers
+              Latest 5 requests
             </p>
           </div>
         </div>
@@ -1123,106 +1327,147 @@ function NewWorkerRequestsBoard({
               "worker-requests",
             )
           }
-          className="text-[10px] font-bold text-[#FF5C39]"
+          className="flex items-center gap-1 text-[10px] font-bold text-[#FF5C39]"
         >
           View all
+          <ArrowUpRight className="h-3.5 w-3.5" />
         </button>
       </div>
 
       {requests.length ? (
-        <div className="grid grid-cols-1 divide-y md:grid-cols-2 md:divide-x md:divide-y-0 xl:grid-cols-3">
-          {requests.map(
-            (x: WorkerRequest) => (
-              <button
-                key={x.id}
-                onClick={() =>
-                  onNavigate?.(
-                    "worker-requests",
+        <div className="divide-y divide-gray-100">
+          {requests
+            .slice(0, 5)
+            .map((x) => {
+              const rawStatus =
+                String(
+                  x.status ||
+                    "pending",
+                )
+                  .toLowerCase()
+                  .trim();
+
+              const status =
+                rawStatus
+                  .replace(
+                    /_/g,
+                    " ",
                   )
-                }
-                className="p-4 text-left transition hover:bg-orange-50/30"
-              >
-                <div className="flex items-start gap-3">
-                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-orange-50">
-                    <Users className="h-5 w-5 text-[#FF5C39]" />
+                  .replace(
+                    /\b\w/g,
+                    (c) =>
+                      c.toUpperCase(),
+                  );
+
+              const statusStyle =
+                rawStatus ===
+                  "completed" ||
+                rawStatus ===
+                  "complete"
+                  ? "bg-emerald-50 text-emerald-700"
+                  : [
+                        "rejected",
+                        "cancelled",
+                        "canceled",
+                      ].includes(
+                        rawStatus,
+                      )
+                    ? "bg-rose-50 text-rose-700"
+                    : [
+                          "confirmed",
+                          "accepted",
+                          "approved",
+                        ].includes(
+                          rawStatus,
+                        )
+                      ? "bg-blue-50 text-blue-700"
+                      : "bg-amber-50 text-amber-700";
+
+              return (
+                <button
+                  key={x.id}
+                  onClick={() =>
+                    onNavigate?.(
+                      "worker-requests",
+                    )
+                  }
+                  className="flex w-full items-center gap-3 px-4 py-3 text-left transition hover:bg-[#F8FAFC] active:bg-gray-100"
+                >
+                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-purple-50">
+                    <UserRoundPlus className="h-5 w-5 text-purple-600" />
                   </div>
 
                   <div className="min-w-0 flex-1">
-                    <h3 className="truncate text-xs font-black text-[#0F172A]">
-                      {x.project_name ||
-                        x.category ||
-                        x.subcategory ||
-                        "Worker Request"}
-                    </h3>
+                    <div className="flex min-w-0 items-center gap-2">
+                      <p className="truncate text-xs font-black text-[#0F172A]">
+                        {x.project_name ||
+                          x.category ||
+                          x.subcategory ||
+                          "Worker Request"}
+                      </p>
 
-                    <p className="truncate text-[10px] text-[#64748B]">
+                      <span
+                        className={`shrink-0 rounded-full px-2 py-0.5 text-[8px] font-bold ${statusStyle}`}
+                      >
+                        {status}
+                      </span>
+                    </div>
+
+                    <p className="mt-1 truncate text-[9px] text-[#64748B]">
                       {x.requester_name ||
                         x.customer_name ||
                         x.company_name ||
                         "Customer"}
                     </p>
+
+                    <div className="mt-1 flex items-center gap-3">
+                      <span className="flex items-center gap-1 text-[8px] text-[#94A3B8]">
+                        <Users className="h-3 w-3" />
+                        {x.workers_required ??
+                          "—"}{" "}
+                        workers
+                      </span>
+
+                      <span className="flex min-w-0 items-center gap-1 text-[8px] text-[#94A3B8]">
+                        <MapPin className="h-3 w-3 shrink-0" />
+
+                        <span className="max-w-[120px] truncate">
+                          {x.location ||
+                            "Location pending"}
+                        </span>
+                      </span>
+                    </div>
                   </div>
 
-                  <span className="rounded-full bg-orange-50 px-2 py-1 text-[8px] font-black text-[#FF5C39]">
-                    New
-                  </span>
-                </div>
+                  <div className="shrink-0 text-right">
+                    <p className="text-[9px] font-bold text-[#94A3B8]">
+                      {formatDate(
+                        x.created_at,
+                      )}
+                    </p>
 
-                <div className="mt-4 grid grid-cols-2 gap-2">
-                  <Info
-                    icon={Users}
-                    text={`${x.workers_required ?? "—"} workers`}
-                  />
-
-                  <Info
-                    icon={Clock3}
-                    text={formatDate(
-                      x.created_at,
+                    {x.budget !=
+                      null && (
+                      <p className="mt-1 text-[10px] font-black text-[#0F172A]">
+                        ₹
+                        {Number(
+                          x.budget,
+                        ).toLocaleString(
+                          "en-IN",
+                        )}
+                      </p>
                     )}
-                  />
 
-                  <Info
-                    icon={MapPin}
-                    text={
-                      x.location ||
-                      "Location pending"
-                    }
-                  />
-
-                  <Info
-                    icon={IndianRupee}
-                    text={
-                      x.budget != null
-                        ? `₹${Number(
-                            x.budget,
-                          ).toLocaleString(
-                            "en-IN",
-                          )}`
-                        : "Budget —"
-                    }
-                  />
-                </div>
-
-                <div className="mt-4 flex justify-between border-t pt-3 text-[9px] font-black">
-                  <span className="text-[#94A3B8]">
-                    {x.project_type ||
-                      x.category ||
-                      "Worker Request"}
-                  </span>
-
-                  <span className="text-[#FF5C39]">
-                    Review{" "}
-                    <ChevronRight className="inline h-3 w-3" />
-                  </span>
-                </div>
-              </button>
-            ),
-          )}
+                    <ChevronRight className="ml-auto mt-1 h-3.5 w-3.5 text-gray-300" />
+                  </div>
+                </button>
+              );
+            })}
         </div>
       ) : (
         <EmptyActivity
-          title="No new worker requests"
-          description="New customer worker requests will appear here automatically."
+          title="No recent worker requests"
+          description="Worker requests will appear here automatically."
         />
       )}
     </section>
@@ -1270,7 +1515,9 @@ function ActivityItem({
       </div>
 
       <p className="mt-2 text-lg font-black text-[#0F172A]">
-        {value.toLocaleString("en-IN")}
+        {value.toLocaleString(
+          "en-IN",
+        )}
       </p>
 
       <div className="mt-1 flex items-center gap-1">

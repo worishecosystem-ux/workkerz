@@ -502,53 +502,119 @@ export default function WorkerBookingManagement() {
    */
 
   const createNewBookingNotification = useCallback(
-    (booking: WorkerBooking) => {
-      if (!booking.id) {
-        return;
-      }
+  async (booking: WorkerBooking) => {
+    if (!booking.id) {
+      return;
+    }
 
-      if (notifiedBookingIdsRef.current.has(booking.id)) {
-        return;
-      }
+    if (notifiedBookingIdsRef.current.has(booking.id)) {
+      return;
+    }
 
-      notifiedBookingIdsRef.current.add(booking.id);
+    notifiedBookingIdsRef.current.add(booking.id);
 
-      const notification: BookingNotification = {
-        id: `${booking.id}-new`,
+    const notification: BookingNotification = {
+      id: `${booking.id}-new`,
+      type: "new",
+      title: "New booking request",
+      message: `${booking.customer_name || "Customer"} • ${booking.service_type || "Worker service"} • #${booking.booking_id || booking.id}`,
+      bookingId: booking.id,
+      createdAt: booking.created_at || new Date().toISOString(),
+      read: false,
+    };
 
-        type: "new",
+    setNotifications((current) => [
+      notification,
+      ...current,
+    ]);
 
-        title: "New booking request",
+    setLiveNotification(notification);
+    setShowLiveNotification(true);
 
-        message: `${booking.customer_name || "Customer"} • ${
-          booking.service_type || "Worker service"
-        } • #${booking.booking_id || booking.id}`,
+    void playNotificationSound();
 
-        bookingId: booking.id,
+    if (notificationTimerRef.current !== null) {
+      window.clearTimeout(
+        notificationTimerRef.current
+      );
+    }
 
-        createdAt: booking.created_at || new Date().toISOString(),
-
-        read: false,
-      };
-
-      setNotifications((current) => [notification, ...current]);
-
-      setLiveNotification(notification);
-
-      setShowLiveNotification(true);
-
-      void playNotificationSound();
-
-      if (notificationTimerRef.current !== null) {
-        window.clearTimeout(notificationTimerRef.current);
-      }
-
-      notificationTimerRef.current = window.setTimeout(() => {
+    notificationTimerRef.current =
+      window.setTimeout(() => {
         setShowLiveNotification(false);
       }, 6000);
-    },
-    [playNotificationSound],
-  );
+
+    /* =====================================================
+       SEND ADMIN MOBILE PUSH
+    ===================================================== */
+
+    try {
+      const {
+        data: sessionData,
+        error: sessionError,
+      } = await supabase.auth.getSession();
+
+      if (sessionError) {
+        console.error(
+          "[BOOKING PUSH] Session error:",
+          sessionError
+        );
+        return;
+      }
+
+      const accessToken =
+        sessionData.session?.access_token;
+
+      if (!accessToken) {
+        console.error(
+          "[BOOKING PUSH] No Supabase access token found."
+        );
+        return;
+      }
+
+      const response = await fetch(
+        "/api/admin/notifications",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type":
+              "application/json",
+            Authorization: `Bearer ${accessToken}`,
+          },
+          body: JSON.stringify({
+            title: "New Booking Request",
+            message: `${booking.customer_name || "Customer"} • ${booking.service_type || "Worker service"} • #${booking.booking_id || booking.id}`,
+            type: "booking",
+            icon: "📋",
+            booking_id: booking.id,
+            is_global: true,
+          }),
+        }
+      );
+
+      const result = await response.json();
+
+      if (!response.ok) {
+        console.error(
+          "[BOOKING PUSH] API FAILED:",
+          result
+        );
+        return;
+      }
+
+      console.log(
+        "[BOOKING PUSH] ADMIN PUSH SENT:",
+        result
+      );
+    } catch (error) {
+      console.error(
+        "[BOOKING PUSH] API ERROR:",
+        error
+      );
+    }
+  },
+  [playNotificationSound],
+);
 
   /*
    * =========================================================
@@ -590,7 +656,7 @@ export default function WorkerBookingManagement() {
             return [newBooking, ...current];
           });
 
-          createNewBookingNotification(newBooking);
+          void createNewBookingNotification(newBooking);
 
           setActiveTab("pending");
         },

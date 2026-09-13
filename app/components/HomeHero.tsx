@@ -59,6 +59,7 @@ export const districtsByState: Record<string, string[]> = {
     "Sagar",
     "Other",
   ],
+
   Chhattisgarh: [
     "Bilaspur",
     "Raipur",
@@ -67,6 +68,7 @@ export const districtsByState: Record<string, string[]> = {
     "Rajnandgaon",
     "Other",
   ],
+
   Rajasthan: [
     "Jaipur",
     "Kota",
@@ -74,6 +76,7 @@ export const districtsByState: Record<string, string[]> = {
     "Jodhpur",
     "Other",
   ],
+
   Maharashtra: [
     "Mumbai",
     "Pune",
@@ -81,6 +84,7 @@ export const districtsByState: Record<string, string[]> = {
     "Nashik",
     "Other",
   ],
+
   "Uttar Pradesh": [
     "Lucknow",
     "Kanpur",
@@ -88,6 +92,7 @@ export const districtsByState: Record<string, string[]> = {
     "Varanasi",
     "Other",
   ],
+
   Other: ["Other"],
 };
 
@@ -264,6 +269,7 @@ export default function HomeHero({
 
     document.documentElement.style.overflow =
       "hidden";
+
     document.documentElement.style.height =
       "100dvh";
 
@@ -353,6 +359,7 @@ export default function HomeHero({
         await hide.remove();
         await didShow.remove();
         await didHide.remove();
+
         return;
       }
 
@@ -690,7 +697,16 @@ export default function HomeHero({
   ) {
     event.preventDefault();
 
-    if (submitting) return;
+    console.log(
+      "[WORKER REQUEST] SUBMIT BUTTON CLICKED",
+    );
+
+    if (submitting) {
+      console.log(
+        "[WORKER REQUEST] Already submitting",
+      );
+      return;
+    }
 
     setError("");
 
@@ -698,6 +714,11 @@ export default function HomeHero({
       validateForm();
 
     if (validationError) {
+      console.error(
+        "[WORKER REQUEST] VALIDATION ERROR:",
+        validationError,
+      );
+
       showError(validationError);
       return;
     }
@@ -705,9 +726,34 @@ export default function HomeHero({
     try {
       setSubmitting(true);
 
+      console.log(
+        "[WORKER REQUEST] Starting submit...",
+      );
+
+      /* ===================================================
+         CURRENT USER
+      =================================================== */
+
       const {
         data: { user },
+        error: authError,
       } = await supabase.auth.getUser();
+
+      if (authError) {
+        console.warn(
+          "[WORKER REQUEST] AUTH ERROR:",
+          authError,
+        );
+      }
+
+      console.log(
+        "[WORKER REQUEST] USER:",
+        user?.id ?? "guest",
+      );
+
+      /* ===================================================
+         TOTAL WORKERS
+      =================================================== */
 
       const totalWorkers =
         workerGroups.reduce(
@@ -722,10 +768,16 @@ export default function HomeHero({
           0,
         );
 
+      /* ===================================================
+         REQUIREMENTS
+      =================================================== */
+
       const requirements =
         workerGroups.map(
           (group) => ({
-            category: group.category,
+            category:
+              group.category.trim(),
+
             workers_required:
               Math.max(
                 1,
@@ -736,150 +788,391 @@ export default function HomeHero({
           }),
         );
 
+      /* ===================================================
+         CATEGORIES
+      =================================================== */
+
       const categories =
         workerGroups
           .map(
             (group) =>
-              group.category,
+              group.category.trim(),
           )
           .filter(Boolean)
           .join(", ");
 
-      const { error: insertError } =
-        await supabase
-          .from("worker_requests")
-          .insert({
-            project_name:
-              projectName.trim(),
+      console.log(
+        "[WORKER REQUEST] PAYLOAD:",
+        {
+          project_name:
+            projectName.trim(),
+          total_workers:
+            totalWorkers,
+          categories,
+          location:
+            requestLocation,
+        },
+      );
 
-            project_type:
-              projectType,
+      /* ===================================================
+         CREATE WORKER REQUEST
+      =================================================== */
 
-            workers_required:
-              totalWorkers,
+      const {
+        data: workerRequest,
+        error: insertError,
+      } = await supabase
+        .from("worker_requests")
+        .insert({
+          project_name:
+            projectName.trim(),
 
-            total_workers:
-              totalWorkers,
+          project_type:
+            projectType,
 
-            category:
-              categories,
+          workers_required:
+            totalWorkers,
 
-            requirements:
-              requirements,
+          total_workers:
+            totalWorkers,
 
-            location:
-              requestLocation,
+          category:
+            categories,
 
-            requester_type:
-              requesterType,
+          requirements:
+            requirements,
 
-            requester_name:
-              requesterName.trim(),
+          location:
+            requestLocation,
 
-            requester_mobile:
-              requesterMobile
-                .replace(/\D/g, "")
-                .slice(0, 10),
+          requester_type:
+            requesterType,
 
-            requester_email:
-              requesterEmail.trim() ||
-              null,
+          requester_name:
+            requesterName.trim(),
 
-            company_name:
-              requesterType ===
-              "individual"
-                ? null
-                : companyName.trim() ||
-                  null,
+          requester_mobile:
+            requesterMobile
+              .replace(/\D/g, "")
+              .slice(0, 10),
 
-            gstin:
-              requesterType ===
-              "individual"
-                ? null
-                : gstin
-                    .replace(/\s/g, "")
-                    .toUpperCase() ||
-                  null,
+          requester_email:
+            requesterEmail.trim() ||
+            null,
 
-            requester_address:
-              requesterAddress.trim() ||
-              null,
+          company_name:
+            requesterType ===
+            "individual"
+              ? null
+              : companyName.trim() ||
+                null,
 
-            requester_user_id:
-              user?.id || null,
+          gstin:
+            requesterType ===
+            "individual"
+              ? null
+              : gstin
+                  .replace(/\s/g, "")
+                  .toUpperCase() ||
+                null,
 
-            full_address:
-              fullAddress.trim(),
+          requester_address:
+            requesterAddress.trim() ||
+            null,
 
-            locality:
-              locality.trim(),
+          requester_user_id:
+            user?.id || null,
 
-            district,
+          full_address:
+            fullAddress.trim(),
 
-            state,
+          locality:
+            locality.trim(),
 
-            pincode,
+          district,
 
-            work_date:
-              workDate,
+          state,
 
-            start_time:
-              startTime || null,
+          pincode,
 
-            duration,
+          work_date:
+            workDate,
 
-            budget:
-              budget
-                ? Number(budget)
-                : null,
+          start_time:
+            startTime || null,
 
-            requirement:
-              requirement.trim(),
+          duration,
 
-            status:
-              "pending",
+          budget:
+            budget
+              ? Number(budget)
+              : null,
 
-            source:
-              "home",
+          requirement:
+            requirement.trim(),
 
-            is_deleted:
-              false,
-          });
+          status:
+            "pending",
+
+          source:
+            "home",
+
+          is_deleted:
+            false,
+        })
+        .select("id")
+        .single();
+
+      /* ===================================================
+         INSERT ERROR
+      =================================================== */
 
       if (insertError) {
         console.error(
-          "WORKER REQUEST ERROR:",
+          "[WORKER REQUEST] SUPABASE INSERT ERROR:",
           insertError,
         );
 
         setError(
-          "Request submit nahi ho payi. Please try again.",
+          `Request submit nahi ho payi: ${
+            insertError.message ||
+            "Database error"
+          }`,
         );
 
         return;
       }
 
-      setSubmitted(true);
+      /* ===================================================
+         REQUEST ID CHECK
+      =================================================== */
+
+      if (!workerRequest?.id) {
+        console.error(
+          "[WORKER REQUEST] ID NOT RETURNED:",
+          workerRequest,
+        );
+
+        setError(
+          "Request create hui, but request ID nahi mili.",
+        );
+
+        return;
+      }
+
+      const workerRequestId =
+        workerRequest.id;
+
+      console.log(
+        "[WORKER REQUEST] CREATED:",
+        workerRequestId,
+      );
+
+      /* ===================================================
+         SEND ADMIN NOTIFICATION
+      =================================================== */
+
+      try {
+        console.log(
+          "[WORKER REQUEST] Sending admin notification...",
+        );
+
+    const {
+  data: { session },
+} = await supabase.auth.getSession();
+
+const notificationResponse = await fetch(
+  "/api/admin/notifications",
+  {
+    method: "POST",
+
+    headers: {
+      "Content-Type": "application/json",
+
+      ...(session?.access_token
+        ? {
+            Authorization: `Bearer ${session.access_token}`,
+          }
+        : {}),
+    },
+
+    body: JSON.stringify({
+      type: "worker_request",
+
+      title: "New Worker Request",
+
+      message: `${requesterName.trim()} requested ${totalWorkers} worker${
+        totalWorkers > 1 ? "s" : ""
+      } for ${projectName.trim()}.`,
+
+      worker_request_id: workerRequestId,
+
+      requester_name: requesterName.trim(),
+
+      requester_mobile: requesterMobile
+        .replace(/\D/g, "")
+        .slice(0, 10),
+
+      requester_email:
+        requesterEmail.trim() || null,
+
+      requester_type: requesterType,
+
+      company_name:
+        requesterType === "individual"
+          ? null
+          : companyName.trim() || null,
+
+      project_name: projectName.trim(),
+
+      project_type: projectType,
+
+      category: categories,
+
+      workers_required: totalWorkers,
+
+      requirements,
+
+      location: requestLocation,
+
+      full_address: fullAddress.trim(),
+
+      locality: locality.trim(),
+
+      district,
+
+      state,
+
+      pincode,
+
+      work_date: workDate,
+
+      start_time: startTime || null,
+
+      duration,
+
+      budget: budget ? Number(budget) : null,
+
+      requirement: requirement.trim(),
+
+      source: "home",
+
+      // VERY IMPORTANT
+      is_global: true,
+    }),
+  }
+);
+
+        const notificationText =
+          await notificationResponse.text();
+
+        let notificationResult:
+          | unknown
+          | null = null;
+
+        if (
+          notificationText.trim()
+            .length > 0
+        ) {
+          try {
+            notificationResult =
+              JSON.parse(
+                notificationText,
+              );
+          } catch (parseError) {
+            console.error(
+              "[ADMIN NOTIFICATION] INVALID JSON:",
+              parseError,
+            );
+
+            console.error(
+              "[ADMIN NOTIFICATION] RAW RESPONSE:",
+              notificationText,
+            );
+          }
+        }
+
+        if (
+          !notificationResponse.ok
+        ) {
+          console.error(
+            "[ADMIN NOTIFICATION] API ERROR:",
+            {
+              status:
+                notificationResponse.status,
+
+              statusText:
+                notificationResponse.statusText,
+
+              response:
+                notificationResult,
+
+              raw:
+                notificationText,
+            },
+          );
+        } else {
+          console.log(
+            "[ADMIN NOTIFICATION] SENT:",
+            notificationResult,
+          );
+        }
+      } catch (
+        notificationError
+      ) {
+        console.error(
+          "[ADMIN NOTIFICATION] FETCH ERROR:",
+          notificationError,
+        );
+      }
+
+      /* ===================================================
+         LOCAL SUCCESS EVENT
+      =================================================== */
 
       window.dispatchEvent(
         new CustomEvent(
           "workkerz-request-success",
+          {
+            detail: {
+              workerRequestId,
+            },
+          },
         ),
       );
 
+      /* ===================================================
+         SUCCESS
+      =================================================== */
+
+      setSubmitted(true);
+
+      console.log(
+        "[WORKER REQUEST] SUCCESS:",
+        workerRequestId,
+      );
+
+      /* ===================================================
+         CLOSE AFTER SUCCESS
+      =================================================== */
+
       setTimeout(() => {
         resetForm();
+
         setRequestOpen(false);
+
         onRequestClose?.();
       }, 1200);
     } catch (submitError) {
       console.error(
-        "WORKER REQUEST ERROR:",
+        "[WORKER REQUEST] UNEXPECTED ERROR:",
         submitError,
       );
 
       setError(
-        "Something went wrong. Please try again.",
+        submitError instanceof Error
+          ? submitError.message
+          : "Something went wrong. Please try again.",
       );
     } finally {
       setSubmitting(false);
@@ -965,7 +1258,7 @@ export default function HomeHero({
               </div>
 
               {/* =================================================
-                  FIXED FORM AREA
+                  FORM AREA
               ================================================= */}
 
               <div
@@ -973,8 +1266,9 @@ export default function HomeHero({
                 className="relative z-20 min-h-0 flex-1 overflow-hidden overscroll-none"
               >
                 <form
+                  id="worker-request-form"
                   onSubmit={submitRequest}
-                  className="relative mx-auto h-full w-full max-w-5xl overflow-hidden px-3 pb-24 pt-12 sm:px-5 sm:pb-24 sm:pt-4 lg:pt-5"
+                  className="relative mx-auto h-full w-full max-w-5xl overflow-hidden px-3 pt-8 sm:px-5 sm:pb-24 sm:pt-4 lg:pt-5"
                 >
                   {/* =================================================
                       STEP 1
@@ -1073,7 +1367,9 @@ export default function HomeHero({
                       setFullAddress={
                         setFullAddress
                       }
-                      locality={locality}
+                      locality={
+                        locality
+                      }
                       setLocality={
                         setLocality
                       }
@@ -1132,7 +1428,9 @@ export default function HomeHero({
                   {currentStep === 5 && (
                     <RequestStep5
                       budget={budget}
-                      setBudget={setBudget}
+                      setBudget={
+                        setBudget
+                      }
                       requirement={
                         requirement
                       }
@@ -1179,7 +1477,7 @@ export default function HomeHero({
                   {error && (
                     <div
                       data-request-error
-                      className="absolute bottom-24 left-3 right-3 z-[90] rounded-xl border border-red-100 bg-red-50/95 px-3 py-2.5 shadow-lg backdrop-blur-md sm:left-5 sm:right-5"
+                      className="absolute bottom-30 left-3 right-3 z-[90] rounded-xl border border-red-100 bg-red-50/95 px-3 py-2.5 shadow-lg backdrop-blur-md sm:left-5 sm:right-5"
                     >
                       <p className="text-[11px] font-bold text-red-600">
                         {error}
@@ -1231,7 +1529,7 @@ export default function HomeHero({
                         </button>
                       )}
 
-                      {/* CONTINUE / SUBMIT */}
+                      {/* CONTINUE */}
 
                       {currentStep <
                       TOTAL_STEPS ? (
@@ -1248,19 +1546,22 @@ export default function HomeHero({
                           Continue
                         </button>
                       ) : (
+                        /* =================================================
+                           SUBMIT BUTTON
+                           
+                           IMPORTANT:
+                           Form is above this fixed bar.
+                           Therefore form="worker-request-form"
+                           is required.
+                        ================================================= */
+
                         <button
                           type="submit"
+                          form="worker-request-form"
                           disabled={
                             submitting ||
                             submitted
                           }
-                          onClick={() => {
-                            document
-                              .querySelector(
-                                "form",
-                              )
-                              ?.requestSubmit();
-                          }}
                           className="flex h-12 flex-1 items-center justify-center rounded-xl bg-gradient-to-r from-[#078c43] to-[#09b653] text-xs font-black text-white shadow-lg shadow-emerald-600/20 transition active:scale-[.99] hover:brightness-105 disabled:cursor-not-allowed disabled:opacity-60"
                         >
                           {submitting

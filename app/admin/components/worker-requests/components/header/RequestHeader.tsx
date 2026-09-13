@@ -15,7 +15,7 @@ export default function RequestHeader({
   onPendingClick,
 }: Props) {
   return (
-    <header className="mb-3 md:mb-4">
+    <header className="pt-3 mb-3 md:pt-4 md:mb-4">
       <div
         className="
           flex

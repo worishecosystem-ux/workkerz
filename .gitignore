@@ -63,3 +63,4 @@ node_modules/
 # Firebase (only if repo is public)
 android/app/google-services.json
 .firebase/
+.firebase-admin/
