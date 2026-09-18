@@ -9,7 +9,7 @@ import {
   Pencil,
   Check,
 } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { supabase } from "@/lib/supabase";
 
 interface Props {
@@ -29,10 +29,12 @@ export default function BookingCustomerInfoMobile({
     "name" | "phone" | null
   >(null);
 
+  const nameInputRef = useRef<HTMLInputElement>(null);
+  const phoneInputRef = useRef<HTMLInputElement>(null);
+
   /*
    * FETCH PREVIOUS PROFILE
    *
-   * Second order:
    * email -> customer_profiles
    * -> previous name + phone
    */
@@ -42,9 +44,7 @@ export default function BookingCustomerInfoMobile({
     let cancelled = false;
 
     const fetchCustomerProfile = async () => {
-      const email = String(form.email)
-        .trim()
-        .toLowerCase();
+      const email = String(form.email).trim().toLowerCase();
 
       if (!email) return;
 
@@ -89,9 +89,6 @@ export default function BookingCustomerInfoMobile({
 
   /*
    * SAVE UPDATED PROFILE
-   *
-   * Pencil -> edit
-   * Check -> update customer_profiles
    */
   const saveField = async (
     field: "name" | "phone"
@@ -139,6 +136,30 @@ export default function BookingCustomerInfoMobile({
   };
 
   /*
+   * OPEN EDIT MODE + FOCUS INPUT
+   */
+  const startEditing = (
+    field: "name" | "phone"
+  ) => {
+    if (savingField === field) return;
+
+    setEditingField(field);
+
+    // Focus input after React updates readOnly/edit state
+    setTimeout(() => {
+      if (field === "name") {
+        nameInputRef.current?.focus();
+        nameInputRef.current?.select();
+      }
+
+      if (field === "phone") {
+        phoneInputRef.current?.focus();
+        phoneInputRef.current?.select();
+      }
+    }, 0);
+  };
+
+  /*
    * PENCIL / CHECK
    */
   const toggleEdit = (
@@ -151,7 +172,7 @@ export default function BookingCustomerInfoMobile({
       return;
     }
 
-    setEditingField(field);
+    startEditing(field);
   };
 
   return (
@@ -169,24 +190,32 @@ export default function BookingCustomerInfoMobile({
 
       {/* CONTACT CARD */}
       <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
-        {/* NAME */}
+        {/* ==================== NAME ==================== */}
         <div className="border-b border-slate-100 px-4 py-3.5">
           <label className="mb-1.5 block text-[10px] font-bold uppercase tracking-[0.07em] text-slate-400">
             Full Name
           </label>
 
           <div
-            className={`relative flex h-12 items-center rounded-xl border transition ${
+            onClick={() => {
+              if (editingField !== "name") {
+                startEditing("name");
+              }
+            }}
+            className={`relative flex h-12 cursor-text items-center rounded-xl border transition ${
               editingField === "name"
                 ? "border-orange-300 bg-white ring-2 ring-orange-500/10"
                 : "border-slate-200 bg-slate-50"
             }`}
           >
+            {/* ICON */}
             <div className="ml-2.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-orange-50">
               <User className="h-4 w-4 text-[#FF5C39]" />
             </div>
 
+            {/* INPUT */}
             <input
+              ref={nameInputRef}
               type="text"
               value={form.name || ""}
               readOnly={editingField !== "name"}
@@ -194,8 +223,22 @@ export default function BookingCustomerInfoMobile({
               enterKeyHint="done"
               autoCapitalize="words"
               autoCorrect="on"
+              onClick={(e) => {
+                e.stopPropagation();
+
+                if (editingField !== "name") {
+                  startEditing("name");
+                }
+              }}
+              onFocus={() => {
+                if (editingField !== "name") {
+                  setEditingField("name");
+                }
+              }}
               onKeyDown={(e) => {
                 if (e.key === "Enter") {
+                  e.preventDefault();
+
                   (e.target as HTMLInputElement).blur();
 
                   if (editingField === "name") {
@@ -206,17 +249,17 @@ export default function BookingCustomerInfoMobile({
               onChange={(e) =>
                 updateField("name", e.target.value)
               }
-              className={`h-full min-w-0 flex-1 bg-transparent px-3 pr-11 text-[14px] font-medium text-slate-900 outline-none placeholder:text-slate-400 ${
-                editingField !== "name"
-                  ? "cursor-default"
-                  : ""
-              }`}
+              className="h-full min-w-0 flex-1 bg-transparent px-3 pr-11 text-[14px] font-medium text-slate-900 outline-none placeholder:text-slate-400"
             />
 
+            {/* EDIT / SAVE */}
             <button
               type="button"
               disabled={savingField === "name"}
-              onClick={() => toggleEdit("name")}
+              onClick={(e) => {
+                e.stopPropagation();
+                toggleEdit("name");
+              }}
               className={`absolute right-2 flex h-8 w-8 items-center justify-center rounded-lg transition ${
                 editingField === "name"
                   ? "bg-emerald-50 text-emerald-600"
@@ -239,28 +282,37 @@ export default function BookingCustomerInfoMobile({
           </div>
         </div>
 
-        {/* PHONE */}
+        {/* ==================== PHONE ==================== */}
         <div className="border-b border-slate-100 px-4 py-3.5">
           <label className="mb-1.5 block text-[10px] font-bold uppercase tracking-[0.07em] text-slate-400">
             Mobile Number
           </label>
 
           <div
-            className={`relative flex h-12 items-center rounded-xl border transition ${
+            onClick={() => {
+              if (editingField !== "phone") {
+                startEditing("phone");
+              }
+            }}
+            className={`relative flex h-12 cursor-text items-center rounded-xl border transition ${
               editingField === "phone"
                 ? "border-orange-300 bg-white ring-2 ring-orange-500/10"
                 : "border-slate-200 bg-slate-50"
             }`}
           >
+            {/* PHONE ICON */}
             <div className="ml-2.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-orange-50">
               <Phone className="h-4 w-4 text-[#FF5C39]" />
             </div>
 
+            {/* COUNTRY CODE */}
             <span className="ml-3 text-[13px] font-bold text-slate-700">
               +91
             </span>
 
+            {/* PHONE INPUT */}
             <input
+              ref={phoneInputRef}
               type="tel"
               inputMode="numeric"
               enterKeyHint="done"
@@ -268,8 +320,22 @@ export default function BookingCustomerInfoMobile({
               value={form.phone || ""}
               readOnly={editingField !== "phone"}
               placeholder="9876543210"
+              onClick={(e) => {
+                e.stopPropagation();
+
+                if (editingField !== "phone") {
+                  startEditing("phone");
+                }
+              }}
+              onFocus={() => {
+                if (editingField !== "phone") {
+                  setEditingField("phone");
+                }
+              }}
               onKeyDown={(e) => {
                 if (e.key === "Enter") {
+                  e.preventDefault();
+
                   (e.target as HTMLInputElement).blur();
 
                   if (editingField === "phone") {
@@ -285,17 +351,17 @@ export default function BookingCustomerInfoMobile({
                     .slice(0, 10)
                 )
               }
-              className={`h-full min-w-0 flex-1 bg-transparent px-2 pr-11 text-[14px] font-medium tracking-wide text-slate-900 outline-none placeholder:text-slate-400 ${
-                editingField !== "phone"
-                  ? "cursor-default"
-                  : ""
-              }`}
+              className="h-full min-w-0 flex-1 bg-transparent px-2 pr-11 text-[14px] font-medium tracking-wide text-slate-900 outline-none placeholder:text-slate-400"
             />
 
+            {/* EDIT / SAVE */}
             <button
               type="button"
               disabled={savingField === "phone"}
-              onClick={() => toggleEdit("phone")}
+              onClick={(e) => {
+                e.stopPropagation();
+                toggleEdit("phone");
+              }}
               className={`absolute right-2 flex h-8 w-8 items-center justify-center rounded-lg transition ${
                 editingField === "phone"
                   ? "bg-emerald-50 text-emerald-600"
@@ -318,7 +384,7 @@ export default function BookingCustomerInfoMobile({
           </div>
         </div>
 
-        {/* EMAIL */}
+        {/* ==================== EMAIL ==================== */}
         <div className="px-4 py-3.5">
           <label className="mb-1.5 block text-[10px] font-bold uppercase tracking-[0.07em] text-slate-400">
             Email
@@ -342,7 +408,7 @@ export default function BookingCustomerInfoMobile({
         </div>
       </div>
 
-      {/* NOTES */}
+      {/* ==================== NOTES ==================== */}
       <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
         <div className="mb-3 flex items-center gap-2">
           <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-orange-50">
@@ -383,7 +449,7 @@ export default function BookingCustomerInfoMobile({
         />
       </div>
 
-      {/* SECURITY INFO */}
+      {/* ==================== SECURITY INFO ==================== */}
       <div className="flex gap-3 rounded-2xl border border-blue-100 bg-blue-50 p-4">
         <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-blue-100">
           <Info className="h-4 w-4 text-blue-600" />

@@ -4,9 +4,8 @@ import android.app.NotificationChannel;
 import android.app.NotificationManager;
 import android.app.PendingIntent;
 import android.content.Intent;
-import android.media.AudioAttributes;
-import android.net.Uri;
 import android.os.Build;
+import android.util.Log;
 
 import androidx.core.app.NotificationCompat;
 
@@ -18,30 +17,50 @@ import java.util.Map;
 public class WorkkerzFirebaseMessagingService
         extends FirebaseMessagingService {
 
+    private static final String TAG = "WorkkerzFCM";
+
+    /*
+     * IMPORTANT:
+     *
+     * v5 is a fresh channel.
+     *
+     * Android does not allow changing some channel settings
+     * after the channel has already been created.
+     */
     private static final String BOOKING_CHANNEL =
-            "workkerz_admin_booking_v3";
+            "workkerz_admin_booking_v5";
 
     private static final String ORDER_CHANNEL =
-            "workkerz_admin_order_v3";
+            "workkerz_admin_order_v5";
 
     private static final String WORKER_CHANNEL =
-            "workkerz_admin_worker_v3";
+            "workkerz_admin_worker_v5";
 
     private static final String SYSTEM_CHANNEL =
-            "workkerz_admin_system_v3";
+            "workkerz_admin_system_v5";
 
     @Override
-    public void onMessageReceived(
-            RemoteMessage remoteMessage
-    ) {
+    public void onMessageReceived(RemoteMessage remoteMessage) {
+
+        Log.e(TAG, "========================================");
+        Log.e(TAG, "FCM MESSAGE RECEIVED");
+        Log.e(TAG, "Message ID = " + remoteMessage.getMessageId());
+        Log.e(TAG, "From = " + remoteMessage.getFrom());
+        Log.e(TAG, "Data = " + remoteMessage.getData());
+        Log.e(
+                TAG,
+                "Has notification payload = "
+                        + (remoteMessage.getNotification() != null)
+        );
+        Log.e(TAG, "========================================");
 
         Map<String, String> data =
                 remoteMessage.getData();
 
         /*
-         * =====================================================
+         * =========================================================
          * TYPE
-         * =====================================================
+         * =========================================================
          */
 
         String type = getValue(
@@ -50,9 +69,6 @@ public class WorkkerzFirebaseMessagingService
                 "system"
         ).toLowerCase().trim();
 
-        /*
-         * Support alternate worker request names
-         */
         if (
                 type.equals("worker-request")
                         || type.equals("workerrequest")
@@ -62,9 +78,9 @@ public class WorkkerzFirebaseMessagingService
         }
 
         /*
-         * =====================================================
+         * =========================================================
          * BASIC DATA
-         * =====================================================
+         * =========================================================
          */
 
         String title = getValue(
@@ -111,16 +127,28 @@ public class WorkkerzFirebaseMessagingService
                 )
         );
 
+        String workDate = getValue(
+                data,
+                "work_date",
+                ""
+        );
+
         String amount = getValue(
                 data,
                 "amount",
                 "₹0"
         );
 
+        String note = getValue(
+                data,
+                "note",
+                ""
+        );
+
         /*
-         * =====================================================
-         * IDs
-         * =====================================================
+         * =========================================================
+         * IDS
+         * =========================================================
          */
 
         String bookingId = getValue(
@@ -152,60 +180,72 @@ public class WorkkerzFirebaseMessagingService
         );
 
         /*
-         * =====================================================
-         * CHANNEL
-         * =====================================================
+         * =========================================================
+         * LOG IMPORTANT DATA
+         * =========================================================
          */
 
-        String channelId =
-                getChannelId(type);
+        Log.e(
+                TAG,
+                "TYPE = " + type
+                        + " | bookingId = " + bookingId
+                        + " | orderId = " + orderId
+                        + " | workerRequestId = " + workerRequestId
+                        + " | notificationId = " + notificationId
+        );
+
+        /*
+         * =========================================================
+         * CHANNEL
+         * =========================================================
+         */
+
+        String channelId = getChannelId(type);
 
         createNotificationChannel(
                 channelId,
-                getChannelName(type),
-                getSoundName(type)
+                getChannelName(type)
         );
 
         /*
-         * =====================================================
-         * OPEN APP INTENT
-         * =====================================================
+         * =========================================================
+         * STABLE NOTIFICATION ID
+         * =========================================================
          */
 
-        Intent openIntent =
-                new Intent(
-                        this,
-                        MainActivity.class
-                );
-
-        openIntent.putExtra(
-                "notification_type",
-                type
-        );
-
-        /*
-         * IMPORTANT:
-         * Send ALL IDs so MainActivity can decide
-         * which screen to open.
-         */
-
-        openIntent.putExtra(
-                "booking_id",
-                bookingId
-        );
-
-        openIntent.putExtra(
-                "order_id",
-                orderId
-        );
-
-        openIntent.putExtra(
-                "worker_request_id",
+        int notificationIntId = getStableId(
+                notificationId,
+                bookingId,
+                orderId,
                 workerRequestId
         );
 
-        openIntent.putExtra(
-                "notification_id",
+        /*
+         * =========================================================
+         * NORMAL OPEN APP INTENT
+         * =========================================================
+         */
+
+        Intent openIntent = new Intent(
+                this,
+                MainActivity.class
+        );
+
+        putNotificationExtras(
+                openIntent,
+                type,
+                title,
+                body,
+                customer,
+                service,
+                location,
+                bookingTime,
+                workDate,
+                amount,
+                note,
+                bookingId,
+                orderId,
+                workerRequestId,
                 notificationId
         );
 
@@ -215,251 +255,75 @@ public class WorkkerzFirebaseMessagingService
                         | Intent.FLAG_ACTIVITY_SINGLE_TOP
         );
 
-        int stableId =
-                getStableId(
-                        notificationId,
-                        bookingId,
-                        orderId,
-                        workerRequestId
-                );
-
-        PendingIntent openPendingIntent =
+        PendingIntent contentPendingIntent =
                 PendingIntent.getActivity(
                         this,
-                        stableId + 1003,
+                        notificationIntId + 1000,
                         openIntent,
                         PendingIntent.FLAG_UPDATE_CURRENT
                                 | PendingIntent.FLAG_IMMUTABLE
                 );
 
         /*
-         * =====================================================
-         * ACTION PERMISSION
-         * =====================================================
+         * =========================================================
+         * FULL SCREEN ALERT INTENT
+         *
+         * IMPORTANT:
+         *
+         * DO NOT call startActivity() from this Firebase service.
+         *
+         * Android NotificationManager will decide when the
+         * FullScreenAlertActivity should be launched.
+         * =========================================================
          */
 
-        boolean canAccept =
-                type.equals("booking")
-                        || type.equals("order")
-                        || type.equals("worker_request");
+        Intent fullScreenIntent = new Intent(
+                this,
+                FullScreenAlertActivity.class
+        );
 
-        boolean canReject = canAccept;
+        putNotificationExtras(
+                fullScreenIntent,
+                type,
+                title,
+                body,
+                customer,
+                service,
+                location,
+                bookingTime,
+                workDate,
+                amount,
+                note,
+                bookingId,
+                orderId,
+                workerRequestId,
+                notificationId
+        );
 
-        PendingIntent acceptPendingIntent = null;
-        PendingIntent rejectPendingIntent = null;
+        fullScreenIntent.putExtra(
+                "notification_action",
+                "fullscreen"
+        );
 
-        /*
-         * =====================================================
-         * ACTION ID
-         * =====================================================
-         */
+        fullScreenIntent.addFlags(
+                Intent.FLAG_ACTIVITY_NEW_TASK
+                        | Intent.FLAG_ACTIVITY_CLEAR_TOP
+                        | Intent.FLAG_ACTIVITY_SINGLE_TOP
+        );
 
-        String actionId =
-                getPrimaryId(
-                        notificationId,
-                        bookingId,
-                        orderId,
-                        workerRequestId
+        PendingIntent fullScreenPendingIntent =
+                PendingIntent.getActivity(
+                        this,
+                        notificationIntId + 2000,
+                        fullScreenIntent,
+                        PendingIntent.FLAG_UPDATE_CURRENT
+                                | PendingIntent.FLAG_IMMUTABLE
                 );
 
         /*
-         * =====================================================
-         * ACCEPT ACTION
-         * =====================================================
-         */
-
-        if (
-                canAccept
-                        && !actionId.isEmpty()
-        ) {
-
-            Intent acceptIntent =
-                    new Intent(
-                            this,
-                            BookingActionReceiver.class
-                    );
-
-            acceptIntent.setAction(
-                    "WORKKERZ_ACCEPT"
-            );
-
-            acceptIntent.putExtra(
-                    "notification_type",
-                    type
-            );
-
-            acceptIntent.putExtra(
-                    "booking_id",
-                    bookingId
-            );
-
-            acceptIntent.putExtra(
-                    "order_id",
-                    orderId
-            );
-
-            acceptIntent.putExtra(
-                    "worker_request_id",
-                    workerRequestId
-            );
-
-            acceptIntent.putExtra(
-                    "notification_id",
-                    notificationId
-            );
-
-            acceptPendingIntent =
-                    PendingIntent.getBroadcast(
-                            this,
-                            getStableId(
-                                    actionId + "_accept",
-                                    "",
-                                    "",
-                                    ""
-                            ),
-                            acceptIntent,
-                            PendingIntent.FLAG_UPDATE_CURRENT
-                                    | PendingIntent.FLAG_IMMUTABLE
-                    );
-        }
-
-        /*
-         * =====================================================
-         * REJECT ACTION
-         * =====================================================
-         */
-
-        if (
-                canReject
-                        && !actionId.isEmpty()
-        ) {
-
-            Intent rejectIntent =
-                    new Intent(
-                            this,
-                            BookingActionReceiver.class
-                    );
-
-            rejectIntent.setAction(
-                    "WORKKERZ_REJECT"
-            );
-
-            rejectIntent.putExtra(
-                    "notification_type",
-                    type
-            );
-
-            rejectIntent.putExtra(
-                    "booking_id",
-                    bookingId
-            );
-
-            rejectIntent.putExtra(
-                    "order_id",
-                    orderId
-            );
-
-            rejectIntent.putExtra(
-                    "worker_request_id",
-                    workerRequestId
-            );
-
-            rejectIntent.putExtra(
-                    "notification_id",
-                    notificationId
-            );
-
-            rejectPendingIntent =
-                    PendingIntent.getBroadcast(
-                            this,
-                            getStableId(
-                                    actionId + "_reject",
-                                    "",
-                                    "",
-                                    ""
-                            ),
-                            rejectIntent,
-                            PendingIntent.FLAG_UPDATE_CURRENT
-                                    | PendingIntent.FLAG_IMMUTABLE
-                    );
-        }
-
-        /*
-         * =====================================================
-         * DETAILS
-         * =====================================================
-         */
-
-        String details;
-
-        switch (type) {
-
-            case "booking":
-
-                details =
-                        "Customer: "
-                                + customer
-                                + "\nService: "
-                                + service
-                                + "\nLocation: "
-                                + location
-                                + "\nTime: "
-                                + bookingTime
-                                + "\nAmount: "
-                                + amount;
-
-                break;
-
-            case "order":
-
-                details =
-                        "Customer: "
-                                + customer
-                                + "\nOrder ID: "
-                                + valueOrDash(orderId)
-                                + "\nLocation: "
-                                + location
-                                + "\nAmount: "
-                                + amount;
-
-                break;
-
-            case "worker_request":
-
-                details =
-                        "Worker: "
-                                + customer
-                                + "\nService: "
-                                + service
-                                + "\nLocation: "
-                                + location
-                                + "\nTime: "
-                                + bookingTime
-                                + "\nAmount: "
-                                + amount;
-
-                break;
-
-            default:
-
-                details = body;
-
-                break;
-        }
-
-        /*
-         * =====================================================
-         * NOTIFICATION ID
-         * =====================================================
-         */
-
-        int notificationIntId =
-                stableId;
-
-        /*
-         * =====================================================
-         * BUILD NOTIFICATION
-         * =====================================================
+         * =========================================================
+         * NOTIFICATION BUILDER
+         * =========================================================
          */
 
         NotificationCompat.Builder builder =
@@ -483,102 +347,367 @@ public class WorkkerzFirebaseMessagingService
                         )
                         .setStyle(
                                 new NotificationCompat.BigTextStyle()
-                                        .setBigContentTitle(
-                                                title
-                                        )
+                                        .setBigContentTitle(title)
                                         .bigText(
-                                                details
+                                                buildDetails(
+                                                        type,
+                                                        body,
+                                                        customer,
+                                                        service,
+                                                        location,
+                                                        bookingTime,
+                                                        workDate,
+                                                        amount,
+                                                        note,
+                                                        bookingId,
+                                                        orderId,
+                                                        workerRequestId
+                                                )
                                         )
                         )
                         .setPriority(
                                 NotificationCompat.PRIORITY_MAX
                         )
                         .setCategory(
-                                getCategory(type)
+                                NotificationCompat.CATEGORY_EVENT
                         )
                         .setVisibility(
                                 NotificationCompat.VISIBILITY_PUBLIC
                         )
-                        .setAutoCancel(
-                                true
-                        )
-                        .setOngoing(
-                                false
-                        )
-                        .setOnlyAlertOnce(
-                                false
-                        )
+                        .setAutoCancel(true)
+                        .setOngoing(false)
+                        .setShowWhen(true)
                         .setContentIntent(
-                                openPendingIntent
+                                contentPendingIntent
+                        )
+                        /*
+                         * Android controls whether this PendingIntent
+                         * is actually launched fullscreen.
+                         *
+                         * true = request fullscreen behaviour.
+                         */
+                        .setFullScreenIntent(
+                                fullScreenPendingIntent,
+                                true
                         );
 
         /*
-         * =====================================================
-         * ACCEPT BUTTON
-         * =====================================================
+         * =========================================================
+         * ACTION BUTTONS
+         * =========================================================
          */
 
-        if (
-                canAccept
-                        && acceptPendingIntent != null
-        ) {
+        String actionId = getPrimaryId(
+                notificationId,
+                bookingId,
+                orderId,
+                workerRequestId
+        );
+
+        boolean canAction =
+                (
+                        type.equals("booking")
+                                || type.equals("order")
+                                || type.equals("worker_request")
+                )
+                        && !actionId.isEmpty();
+
+        if (canAction) {
+
+            Intent acceptIntent =
+                    new Intent(
+                            this,
+                            BookingActionReceiver.class
+                    );
+
+            acceptIntent.setAction(
+                    "WORKKERZ_ACCEPT"
+            );
+
+            putActionExtras(
+                    acceptIntent,
+                    type,
+                    bookingId,
+                    orderId,
+                    workerRequestId,
+                    notificationId
+            );
+
+            PendingIntent acceptPendingIntent =
+                    PendingIntent.getBroadcast(
+                            this,
+                            getStableId(
+                                    actionId + "_accept",
+                                    "",
+                                    "",
+                                    ""
+                            ),
+                            acceptIntent,
+                            PendingIntent.FLAG_UPDATE_CURRENT
+                                    | PendingIntent.FLAG_IMMUTABLE
+                    );
+
+            Intent rejectIntent =
+                    new Intent(
+                            this,
+                            BookingActionReceiver.class
+                    );
+
+            rejectIntent.setAction(
+                    "WORKKERZ_REJECT"
+            );
+
+            putActionExtras(
+                    rejectIntent,
+                    type,
+                    bookingId,
+                    orderId,
+                    workerRequestId,
+                    notificationId
+            );
+
+            PendingIntent rejectPendingIntent =
+                    PendingIntent.getBroadcast(
+                            this,
+                            getStableId(
+                                    actionId + "_reject",
+                                    "",
+                                    "",
+                                    ""
+                            ),
+                            rejectIntent,
+                            PendingIntent.FLAG_UPDATE_CURRENT
+                                    | PendingIntent.FLAG_IMMUTABLE
+                    );
 
             builder.addAction(
-                    android.R.drawable.ic_menu_send,
-                    getAcceptText(type),
-                    acceptPendingIntent
+                    new NotificationCompat.Action.Builder(
+                            0,
+                            "Accept",
+                            acceptPendingIntent
+                    ).build()
+            );
+
+            builder.addAction(
+                    new NotificationCompat.Action.Builder(
+                            0,
+                            "Reject",
+                            rejectPendingIntent
+                    ).build()
             );
         }
 
         /*
-         * =====================================================
-         * REJECT BUTTON
-         * =====================================================
+         * =========================================================
+         * POST NOTIFICATION
+         * =========================================================
          */
 
-        if (
-                canReject
-                        && rejectPendingIntent != null
-        ) {
-
-            builder.addAction(
-                    android.R.drawable.ic_menu_close_clear_cancel,
-                    "REJECT",
-                    rejectPendingIntent
-            );
-        }
-
-        /*
-         * =====================================================
-         * SHOW NOTIFICATION
-         * =====================================================
-         */
-
-        NotificationManager manager =
+        NotificationManager notificationManager =
                 (NotificationManager)
                         getSystemService(
                                 NOTIFICATION_SERVICE
                         );
 
-        if (manager != null) {
+        if (notificationManager == null) {
 
-            manager.notify(
+            Log.e(
+                    TAG,
+                    "NotificationManager is NULL"
+            );
+
+            return;
+        }
+
+        try {
+
+            Log.e(
+                    TAG,
+                    "BEFORE NOTIFICATION POST"
+            );
+
+            Log.e(
+                    TAG,
+                    "channelId = " + channelId
+            );
+
+            Log.e(
+                    TAG,
+                    "notificationIntId = "
+                            + notificationIntId
+            );
+
+            Log.e(
+                    TAG,
+                    "posting fullScreenIntent = true"
+            );
+
+            notificationManager.notify(
                     notificationIntId,
                     builder.build()
+            );
+
+            Log.e(
+                    TAG,
+                    "NOTIFICATION POSTED id="
+                            + notificationIntId
+            );
+
+        } catch (Throwable e) {
+
+            Log.e(
+                    TAG,
+                    "NOTIFICATION POST FAILED",
+                    e
             );
         }
     }
 
     /*
      * =========================================================
-     * CREATE NOTIFICATION CHANNEL
+     * EXTRA DATA
+     * =========================================================
+     */
+
+    private void putNotificationExtras(
+            Intent intent,
+            String type,
+            String title,
+            String body,
+            String customer,
+            String service,
+            String location,
+            String bookingTime,
+            String workDate,
+            String amount,
+            String note,
+            String bookingId,
+            String orderId,
+            String workerRequestId,
+            String notificationId
+    ) {
+
+        intent.putExtra(
+                "notification_type",
+                type
+        );
+
+        intent.putExtra(
+                "title",
+                title
+        );
+
+        intent.putExtra(
+                "body",
+                body
+        );
+
+        intent.putExtra(
+                "customer_name",
+                customer
+        );
+
+        intent.putExtra(
+                "service",
+                service
+        );
+
+        intent.putExtra(
+                "location",
+                location
+        );
+
+        intent.putExtra(
+                "booking_time",
+                bookingTime
+        );
+
+        intent.putExtra(
+                "work_date",
+                workDate
+        );
+
+        intent.putExtra(
+                "amount",
+                amount
+        );
+
+        intent.putExtra(
+                "note",
+                note
+        );
+
+        intent.putExtra(
+                "booking_id",
+                bookingId
+        );
+
+        intent.putExtra(
+                "order_id",
+                orderId
+        );
+
+        intent.putExtra(
+                "worker_request_id",
+                workerRequestId
+        );
+
+        intent.putExtra(
+                "notification_id",
+                notificationId
+        );
+    }
+
+    /*
+     * =========================================================
+     * ACTION EXTRAS
+     * =========================================================
+     */
+
+    private void putActionExtras(
+            Intent intent,
+            String type,
+            String bookingId,
+            String orderId,
+            String workerRequestId,
+            String notificationId
+    ) {
+
+        intent.putExtra(
+                "notification_type",
+                type
+        );
+
+        intent.putExtra(
+                "booking_id",
+                bookingId
+        );
+
+        intent.putExtra(
+                "order_id",
+                orderId
+        );
+
+        intent.putExtra(
+                "worker_request_id",
+                workerRequestId
+        );
+
+        intent.putExtra(
+                "notification_id",
+                notificationId
+        );
+    }
+
+    /*
+     * =========================================================
+     * CHANNEL CREATION
      * =========================================================
      */
 
     private void createNotificationChannel(
             String channelId,
-            String channelName,
-            String soundName
+            String channelName
     ) {
 
         if (
@@ -598,11 +727,12 @@ public class WorkkerzFirebaseMessagingService
         }
 
         /*
-         * Existing channels cannot have their sound
-         * changed programmatically.
+         * IMPORTANT:
          *
-         * Therefore the channel ID must be changed
-         * whenever notification sound configuration changes.
+         * New channel = fresh Android channel.
+         *
+         * We intentionally keep notification sound disabled.
+         * FullScreenAlertActivity handles the booking alert sound.
          */
 
         if (
@@ -610,26 +740,9 @@ public class WorkkerzFirebaseMessagingService
                         channelId
                 ) != null
         ) {
+
             return;
         }
-
-        Uri soundUri =
-                Uri.parse(
-                        "android.resource://"
-                                + getPackageName()
-                                + "/raw/"
-                                + soundName
-        );
-
-        AudioAttributes audioAttributes =
-                new AudioAttributes.Builder()
-                        .setUsage(
-                                AudioAttributes.USAGE_NOTIFICATION
-                        )
-                        .setContentType(
-                                AudioAttributes.CONTENT_TYPE_SONIFICATION
-                        )
-                        .build();
 
         NotificationChannel channel =
                 new NotificationChannel(
@@ -639,18 +752,15 @@ public class WorkkerzFirebaseMessagingService
                 );
 
         channel.setDescription(
-                "Workkerz Admin "
-                        + channelName
+                "Workkerz Admin " + channelName
         );
 
         channel.setSound(
-                soundUri,
-                audioAttributes
+                null,
+                null
         );
 
-        channel.enableVibration(
-                true
-        );
+        channel.enableVibration(true);
 
         channel.setVibrationPattern(
                 new long[]{
@@ -661,16 +771,17 @@ public class WorkkerzFirebaseMessagingService
                 }
         );
 
-        channel.enableLights(
-                true
-        );
+        channel.enableLights(true);
 
-        channel.setShowBadge(
-                true
-        );
+        channel.setShowBadge(true);
 
         manager.createNotificationChannel(
                 channel
+        );
+
+        Log.e(
+                TAG,
+                "CHANNEL CREATED: " + channelId
         );
     }
 
@@ -728,28 +839,229 @@ public class WorkkerzFirebaseMessagingService
 
     /*
      * =========================================================
-     * SOUND NAME
+     * SHORT TEXT
      * =========================================================
      */
 
-    private String getSoundName(
-            String type
+    private String getShortText(
+            String type,
+            String customer,
+            String service,
+            String amount
     ) {
 
         switch (type) {
 
             case "booking":
-                return "booking";
+                return customer
+                        + " booked "
+                        + service
+                        + " • "
+                        + amount;
 
             case "order":
-                return "order";
+                return "New order from "
+                        + customer
+                        + " • "
+                        + amount;
 
             case "worker_request":
-                return "worker_request";
+                return "New worker request • "
+                        + service;
 
             default:
-                return "notification";
+                return "New Workkerz Admin alert";
         }
+    }
+
+    /*
+     * =========================================================
+     * DETAILS
+     * =========================================================
+     */
+
+    private String buildDetails(
+            String type,
+            String body,
+            String customer,
+            String service,
+            String location,
+            String bookingTime,
+            String workDate,
+            String amount,
+            String note,
+            String bookingId,
+            String orderId,
+            String workerRequestId
+    ) {
+
+        StringBuilder details =
+                new StringBuilder();
+
+        if (!body.isEmpty()) {
+
+            details.append(body);
+        }
+
+        if (type.equals("booking")) {
+
+            appendLine(
+                    details,
+                    "Customer",
+                    customer
+            );
+
+            appendLine(
+                    details,
+                    "Service",
+                    service
+            );
+
+            appendLine(
+                    details,
+                    "Location",
+                    location
+            );
+
+            appendLine(
+                    details,
+                    "Date",
+                    workDate
+            );
+
+            appendLine(
+                    details,
+                    "Time",
+                    bookingTime
+            );
+
+            appendLine(
+                    details,
+                    "Amount",
+                    amount
+            );
+
+            if (!bookingId.isEmpty()) {
+
+                appendLine(
+                        details,
+                        "Booking ID",
+                        bookingId
+                );
+            }
+
+        } else if (type.equals("order")) {
+
+            appendLine(
+                    details,
+                    "Customer",
+                    customer
+            );
+
+            appendLine(
+                    details,
+                    "Location",
+                    location
+            );
+
+            appendLine(
+                    details,
+                    "Amount",
+                    amount
+            );
+
+            if (!orderId.isEmpty()) {
+
+                appendLine(
+                        details,
+                        "Order ID",
+                        orderId
+                );
+            }
+
+        } else if (
+                type.equals("worker_request")
+        ) {
+
+            appendLine(
+                    details,
+                    "Worker",
+                    customer
+            );
+
+            appendLine(
+                    details,
+                    "Service",
+                    service
+            );
+
+            appendLine(
+                    details,
+                    "Location",
+                    location
+            );
+
+            appendLine(
+                    details,
+                    "Date",
+                    workDate
+            );
+
+            appendLine(
+                    details,
+                    "Time",
+                    bookingTime
+            );
+
+            appendLine(
+                    details,
+                    "Amount",
+                    amount
+            );
+
+            if (!workerRequestId.isEmpty()) {
+
+                appendLine(
+                        details,
+                        "Request ID",
+                        workerRequestId
+                );
+            }
+        }
+
+        if (!note.isEmpty()) {
+
+            appendLine(
+                    details,
+                    "Note",
+                    note
+            );
+        }
+
+        return details.toString();
+    }
+
+    private void appendLine(
+            StringBuilder builder,
+            String label,
+            String value
+    ) {
+
+        if (
+                value == null
+                        || value.trim().isEmpty()
+        ) {
+            return;
+        }
+
+        if (builder.length() > 0) {
+
+            builder.append("\n");
+        }
+
+        builder.append(label)
+                .append(": ")
+                .append(value);
     }
 
     /*
@@ -765,16 +1077,16 @@ public class WorkkerzFirebaseMessagingService
         switch (type) {
 
             case "booking":
-                return "New Workkerz Booking";
+                return "New Booking";
 
             case "order":
-                return "New E-Aurix Order";
+                return "New Order";
 
             case "worker_request":
                 return "New Worker Request";
 
             default:
-                return "Workkerz Admin Alert";
+                return "Workkerz Admin";
         }
     }
 
@@ -791,120 +1103,22 @@ public class WorkkerzFirebaseMessagingService
         switch (type) {
 
             case "booking":
-                return "A new booking requires your attention.";
+                return "A new booking has arrived.";
 
             case "order":
-                return "A new E-Aurix order has been received.";
+                return "A new order has arrived.";
 
             case "worker_request":
-                return "A new worker request has been received.";
+                return "A new worker request has arrived.";
 
             default:
-                return "You have a new Workkerz notification.";
+                return "You have a new Workkerz Admin notification.";
         }
     }
 
     /*
      * =========================================================
-     * SHORT TEXT
-     * =========================================================
-     */
-
-    private String getShortText(
-            String type,
-            String customer,
-            String service,
-            String amount
-    ) {
-
-        switch (type) {
-
-            case "booking":
-
-                return customer
-                        + " • "
-                        + service
-                        + " • "
-                        + amount;
-
-            case "order":
-
-                return "New order • "
-                        + customer
-                        + " • "
-                        + amount;
-
-            case "worker_request":
-
-                return customer
-                        + " • "
-                        + service;
-
-            default:
-
-                return "Workkerz Admin";
-        }
-    }
-
-    /*
-     * =========================================================
-     * ACCEPT TEXT
-     * =========================================================
-     */
-
-    private String getAcceptText(
-            String type
-    ) {
-
-        if (
-                type.equals("order")
-        ) {
-            return "ACCEPT ORDER";
-        }
-
-        if (
-                type.equals("worker_request")
-        ) {
-            return "ACCEPT";
-        }
-
-        return "ACCEPT";
-    }
-
-    /*
-     * =========================================================
-     * CATEGORY
-     * =========================================================
-     */
-
-    private String getCategory(
-            String type
-    ) {
-
-        if (
-                type.equals("booking")
-        ) {
-            return NotificationCompat.CATEGORY_EVENT;
-        }
-
-        if (
-                type.equals("order")
-        ) {
-            return NotificationCompat.CATEGORY_MESSAGE;
-        }
-
-        if (
-                type.equals("worker_request")
-        ) {
-            return NotificationCompat.CATEGORY_EVENT;
-        }
-
-        return NotificationCompat.CATEGORY_STATUS;
-    }
-
-    /*
-     * =========================================================
-     * GET VALUE
+     * VALUE
      * =========================================================
      */
 
@@ -918,8 +1132,7 @@ public class WorkkerzFirebaseMessagingService
             return fallback;
         }
 
-        String value =
-                data.get(key);
+        String value = data.get(key);
 
         if (
                 value == null
@@ -928,27 +1141,7 @@ public class WorkkerzFirebaseMessagingService
             return fallback;
         }
 
-        return value.trim();
-    }
-
-    /*
-     * =========================================================
-     * VALUE OR DASH
-     * =========================================================
-     */
-
-    private String valueOrDash(
-            String value
-    ) {
-
-        if (
-                value == null
-                        || value.trim().isEmpty()
-        ) {
-            return "-";
-        }
-
-        return value.trim();
+        return value;
     }
 
     /*
@@ -965,31 +1158,31 @@ public class WorkkerzFirebaseMessagingService
     ) {
 
         if (
+                notificationId != null
+                        && !notificationId.trim().isEmpty()
+        ) {
+            return notificationId;
+        }
+
+        if (
                 bookingId != null
                         && !bookingId.trim().isEmpty()
         ) {
-            return bookingId.trim();
+            return bookingId;
         }
 
         if (
                 orderId != null
                         && !orderId.trim().isEmpty()
         ) {
-            return orderId.trim();
+            return orderId;
         }
 
         if (
                 workerRequestId != null
                         && !workerRequestId.trim().isEmpty()
         ) {
-            return workerRequestId.trim();
-        }
-
-        if (
-                notificationId != null
-                        && !notificationId.trim().isEmpty()
-        ) {
-            return notificationId.trim();
+            return workerRequestId;
         }
 
         return "";
@@ -997,7 +1190,7 @@ public class WorkkerzFirebaseMessagingService
 
     /*
      * =========================================================
-     * STABLE NOTIFICATION ID
+     * STABLE ID
      * =========================================================
      */
 
@@ -1008,24 +1201,45 @@ public class WorkkerzFirebaseMessagingService
             String workerRequestId
     ) {
 
-        String id =
-                getPrimaryId(
-                        notificationId,
-                        bookingId,
-                        orderId,
-                        workerRequestId
-                );
+        String id = getPrimaryId(
+                notificationId,
+                bookingId,
+                orderId,
+                workerRequestId
+        );
 
         if (id.isEmpty()) {
 
-            id =
-                    String.valueOf(
-                            System.currentTimeMillis()
-                    );
+            id = String.valueOf(
+                    System.currentTimeMillis()
+            );
         }
 
-        return Math.abs(
-                id.hashCode()
+        int hash = id.hashCode();
+
+        if (hash == Integer.MIN_VALUE) {
+            return Integer.MAX_VALUE;
+        }
+
+        return Math.abs(hash);
+    }
+
+    /*
+     * =========================================================
+     * TOKEN REFRESH
+     * =========================================================
+     */
+
+    @Override
+    public void onNewToken(
+            String token
+    ) {
+
+        super.onNewToken(token);
+
+        Log.e(
+                TAG,
+                "FCM TOKEN REFRESHED = " + token
         );
     }
 }

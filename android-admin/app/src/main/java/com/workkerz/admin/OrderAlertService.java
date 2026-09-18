@@ -13,7 +13,6 @@ import android.os.IBinder;
 import android.os.VibrationEffect;
 import android.os.Vibrator;
 import android.os.VibratorManager;
-import android.provider.Settings;
 import android.util.Log;
 
 import androidx.annotation.Nullable;
@@ -86,7 +85,7 @@ public class OrderAlertService extends Service {
 
             mediaPlayer = MediaPlayer.create(
                     this,
-                    Settings.System.DEFAULT_NOTIFICATION_URI
+                    R.raw.order
             );
 
             if (mediaPlayer == null) {

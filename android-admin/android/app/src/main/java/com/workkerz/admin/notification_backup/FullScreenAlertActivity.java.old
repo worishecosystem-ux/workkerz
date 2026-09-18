@@ -1,0 +1,1020 @@
+package com.workkerz.admin;
+
+import android.app.Activity;
+import android.content.Intent;
+import android.graphics.Color;
+import android.graphics.Typeface;
+import android.media.MediaPlayer;
+import android.os.Bundle;
+import android.os.CountDownTimer;
+import android.view.Gravity;
+import android.view.Window;
+import android.view.WindowManager;
+import android.widget.LinearLayout;
+import android.widget.TextView;
+
+import java.util.Locale;
+
+public class FullScreenAlertActivity extends Activity {
+
+    private String type = "";
+    private String title = "";
+    private String body = "";
+
+    private String customerName = "";
+    private String service = "";
+    private String location = "";
+    private String bookingTime = "";
+    private String workDate = "";
+    private String amount = "";
+
+    private String serialNumber = "";
+    private String shopName = "";
+    private String deliveryType = "";
+    private String quantity = "";
+    private String duration = "";
+    private String workersNeeded = "";
+    private String expectedRate = "";
+    private String note = "";
+
+    private String bookingId = "";
+    private String orderId = "";
+    private String workerRequestId = "";
+    private String notificationId = "";
+
+    private MediaPlayer alertPlayer;
+    private CountDownTimer timer;
+
+    private LinearLayout root;
+    private LinearLayout card;
+
+    @Override
+    protected void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+
+        android.util.Log.e(
+                "FullScreenAlertActivity",
+                "========== ONCREATE =========="
+        );
+
+        Window window = getWindow();
+
+        window.addFlags(
+                WindowManager.LayoutParams.FLAG_SHOW_WHEN_LOCKED
+                        | WindowManager.LayoutParams.FLAG_TURN_SCREEN_ON
+                        | WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON
+        );
+
+        if (android.os.Build.VERSION.SDK_INT >= 27) {
+            setShowWhenLocked(true);
+            setTurnScreenOn(true);
+        }
+
+        android.util.Log.e(
+                "FullScreenAlertActivity",
+                "ONCREATE BEFORE readIntent"
+        );
+
+        readIntent(getIntent());
+
+        android.util.Log.e(
+                "FullScreenAlertActivity",
+                "ONCREATE BEFORE buildCard"
+        );
+
+        buildCard();
+
+        android.util.Log.e(
+                "FullScreenAlertActivity",
+                "ONCREATE AFTER buildCard"
+        );
+
+        startAlertSound();
+
+        android.util.Log.e(
+                "FullScreenAlertActivity",
+                "ONCREATE AFTER startAlertSound"
+        );
+
+        addTimer();
+
+        android.util.Log.e(
+                "FullScreenAlertActivity",
+                "ONCREATE COMPLETE"
+        );
+    }
+
+    @Override
+    protected void onNewIntent(Intent intent) {
+        super.onNewIntent(intent);
+        setIntent(intent);
+
+        stopAlertSound();
+
+        if (timer != null) {
+            timer.cancel();
+        }
+
+        readIntent(intent);
+        buildCard();
+        startAlertSound();
+        addTimer();
+    }
+
+    private void readIntent(Intent intent) {
+
+        type = getExtra(intent, "notification_type");
+        title = getExtra(intent, "title");
+        body = getExtra(intent, "body");
+
+        customerName = getExtra(intent, "customer_name");
+        service = getExtra(intent, "service");
+        location = getExtra(intent, "location");
+        bookingTime = getExtra(intent, "booking_time");
+        workDate = getExtra(intent, "work_date");
+        amount = getExtra(intent, "amount");
+
+        serialNumber = getExtra(intent, "serial_number");
+        shopName = getExtra(intent, "shop_name");
+        deliveryType = getExtra(intent, "delivery_type");
+        quantity = getExtra(intent, "quantity");
+        duration = getExtra(intent, "duration");
+        workersNeeded = getExtra(intent, "workers_needed");
+        expectedRate = getExtra(intent, "expected_rate");
+        note = getExtra(intent, "note");
+
+        bookingId = getExtra(intent, "booking_id");
+        orderId = getExtra(intent, "order_id");
+        workerRequestId = getExtra(intent, "worker_request_id");
+        notificationId = getExtra(intent, "notification_id");
+
+        if (title.trim().isEmpty()) {
+            title = getHeaderTitle();
+        }
+    }
+
+    private String getExtra(Intent intent, String key) {
+        if (intent == null) return "";
+        String value = intent.getStringExtra(key);
+        return value == null ? "" : value;
+    }
+
+    private String getHeaderTitle() {
+
+        if ("order".equals(type)) {
+            return "New Order";
+        }
+
+        if ("booking".equals(type)) {
+            return "New Booking";
+        }
+
+        if ("worker_request".equals(type)) {
+            return "New Worker Request";
+        }
+
+        return "New Request";
+    }
+
+    private void buildCard() {
+
+        root = new LinearLayout(this);
+        root.setOrientation(LinearLayout.VERTICAL);
+        root.setGravity(Gravity.CENTER);
+        root.setPadding(dp(16), dp(20), dp(16), dp(20));
+        root.setBackgroundColor(Color.rgb(246, 248, 250));
+
+        card = new LinearLayout(this);
+        card.setOrientation(LinearLayout.VERTICAL);
+        card.setPadding(dp(18), dp(18), dp(18), dp(16));
+        card.setBackground(roundColor(Color.WHITE, 22));
+
+        LinearLayout.LayoutParams cardParams =
+                new LinearLayout.LayoutParams(
+                        -1,
+                        -2
+                );
+
+        cardParams.gravity = Gravity.CENTER;
+
+        root.addView(card, cardParams);
+
+        addHeader();
+        addSummary();
+        addDetails();
+
+        addActionButtons();
+
+        addViewDetails();
+
+        TextView live = text(
+                "●  Live notification",
+                13,
+                Color.rgb(126, 145, 164),
+                Typeface.BOLD
+        );
+
+        live.setGravity(Gravity.CENTER);
+        live.setPadding(0, dp(14), 0, 0);
+
+        card.addView(
+                live,
+                new LinearLayout.LayoutParams(
+                        -1,
+                        -2
+                )
+        );
+
+        setContentView(root);
+
+        android.util.Log.e(
+                "FullScreenAlertActivity",
+                "setContentView COMPLETE"
+        );
+    }
+
+    private void addHeader() {
+
+        LinearLayout header = new LinearLayout(this);
+        header.setOrientation(LinearLayout.HORIZONTAL);
+        header.setGravity(Gravity.CENTER_VERTICAL);
+
+        TextView icon = text(
+                getTypeIcon(),
+                27,
+                Color.WHITE,
+                Typeface.BOLD
+        );
+
+        icon.setGravity(Gravity.CENTER);
+        icon.setBackground(roundColor(getTypeColor(), 18));
+
+        LinearLayout.LayoutParams iconParams =
+                new LinearLayout.LayoutParams(
+                        dp(56),
+                        dp(56)
+                );
+
+        header.addView(icon, iconParams);
+
+        LinearLayout titleBox = new LinearLayout(this);
+        titleBox.setOrientation(LinearLayout.VERTICAL);
+        titleBox.setPadding(dp(12), 0, 0, 0);
+
+        TextView heading = text(
+                title,
+                20,
+                Color.rgb(20, 29, 45),
+                Typeface.BOLD
+        );
+
+        titleBox.addView(heading);
+
+        String person = customerName.trim();
+
+        if (person.isEmpty()) {
+            person = getSourceName();
+        }
+
+        TextView sub = text(
+                person + "  •  " + getSourceName(),
+                13,
+                Color.rgb(90, 108, 130),
+                Typeface.BOLD
+        );
+
+        titleBox.addView(sub);
+
+        header.addView(
+                titleBox,
+                new LinearLayout.LayoutParams(
+                        0,
+                        -2,
+                        1
+                )
+        );
+
+        TextView close = text(
+                "×",
+                28,
+                Color.rgb(115, 130, 150),
+                Typeface.NORMAL
+        );
+
+        close.setGravity(Gravity.CENTER);
+        close.setOnClickListener(v -> finish());
+
+        header.addView(
+                close,
+                new LinearLayout.LayoutParams(
+                        dp(34),
+                        dp(50)
+                )
+        );
+
+        card.addView(header);
+    }
+
+    private void addSummary() {
+
+        LinearLayout box = new LinearLayout(this);
+        box.setOrientation(LinearLayout.VERTICAL);
+        box.setPadding(dp(13), dp(11), dp(13), dp(11));
+        box.setBackground(roundColor(
+                getSoftColor(),
+                16
+        ));
+
+        String main;
+        String secondary;
+
+        if ("order".equals(type)) {
+
+            main = service.trim().isEmpty()
+                    ? "Material Order"
+                    : service;
+
+            secondary = quantity.trim().isEmpty()
+                    ? "E-Aurix Material"
+                    : quantity;
+
+        } else if ("worker_request".equals(type)) {
+
+            main = service.trim().isEmpty()
+                    ? "Worker Required"
+                    : service;
+
+            secondary = workersNeeded.trim().isEmpty()
+                    ? "Worker Request"
+                    : workersNeeded + " workers required";
+
+        } else {
+
+            main = service.trim().isEmpty()
+                    ? "Service Booking"
+                    : service;
+
+            secondary = workDate.trim().isEmpty()
+                    ? bookingTime
+                    : workDate + "  •  " + bookingTime;
+        }
+
+        TextView mainText = text(
+                main,
+                16,
+                Color.rgb(35, 48, 68),
+                Typeface.BOLD
+        );
+
+        box.addView(mainText);
+
+        TextView secondText = text(
+                secondary,
+                13,
+                Color.rgb(82, 104, 130),
+                Typeface.NORMAL
+        );
+
+        secondText.setPadding(0, dp(3), 0, 0);
+
+        box.addView(secondText);
+
+        if (!body.trim().isEmpty()) {
+
+            TextView bodyText = text(
+                    body,
+                    12,
+                    Color.rgb(91, 108, 130),
+                    Typeface.NORMAL
+            );
+
+            bodyText.setPadding(0, dp(5), 0, 0);
+            box.addView(bodyText);
+        }
+
+        LinearLayout.LayoutParams params =
+                new LinearLayout.LayoutParams(
+                        -1,
+                        -2
+                );
+
+        params.setMargins(0, dp(14), 0, dp(10));
+
+        card.addView(box, params);
+    }
+
+    private void addDetails() {
+
+        LinearLayout details = new LinearLayout(this);
+        details.setOrientation(LinearLayout.VERTICAL);
+
+        if ("order".equals(type)) {
+
+            addRow(details, "Shop", shopName);
+            addRow(details, "Delivery", deliveryType);
+            addRow(details, "Location", location);
+            addRow(details, "Order Date", workDate);
+            addRow(details, "Items", quantity);
+            addRow(details, "Amount", amount);
+
+        } else if ("worker_request".equals(type)) {
+
+            addRow(details, "Requester", customerName);
+            addRow(details, "Work Date", workDate);
+            addRow(details, "Duration", duration);
+            addRow(details, "Location", location);
+            addRow(details, "Workers", workersNeeded);
+            addRow(details, "Expected Rate", expectedRate);
+
+        } else {
+
+            addRow(details, "Customer", customerName);
+            addRow(details, "Work Date", workDate);
+            addRow(details, "Time", bookingTime);
+            addRow(details, "Location", location);
+            addRow(details, "Work Type", service);
+            addRow(details, "Budget", amount);
+        }
+
+        if (!note.trim().isEmpty()) {
+
+            TextView noteText = text(
+                    "Note  •  " + note,
+                    12,
+                    Color.rgb(78, 98, 122),
+                    Typeface.NORMAL
+            );
+
+            noteText.setPadding(
+                    dp(10),
+                    dp(8),
+                    dp(10),
+                    dp(8)
+            );
+
+            noteText.setBackground(
+                    roundColor(
+                            Color.rgb(246, 248, 251),
+                            12
+                    )
+            );
+
+            details.addView(noteText);
+        }
+
+        card.addView(details);
+    }
+
+    private void addRow(
+            LinearLayout parent,
+            String label,
+            String value
+    ) {
+
+        if (value == null || value.trim().isEmpty()) {
+            return;
+        }
+
+        LinearLayout row = new LinearLayout(this);
+        row.setOrientation(LinearLayout.HORIZONTAL);
+        row.setGravity(Gravity.CENTER_VERTICAL);
+
+        TextView left = text(
+                label,
+                12,
+                Color.rgb(91, 109, 133),
+                Typeface.NORMAL
+        );
+
+        TextView right = text(
+                value,
+                12,
+                Color.rgb(29, 40, 57),
+                Typeface.BOLD
+        );
+
+        right.setGravity(Gravity.END);
+
+        row.addView(
+                left,
+                new LinearLayout.LayoutParams(
+                        0,
+                        -2,
+                        1
+                )
+        );
+
+        row.addView(
+                right,
+                new LinearLayout.LayoutParams(
+                        0,
+                        -2,
+                        1
+                )
+        );
+
+        LinearLayout.LayoutParams params =
+                new LinearLayout.LayoutParams(
+                        -1,
+                        -2
+                );
+
+        params.setMargins(0, dp(5), 0, dp(5));
+
+        parent.addView(row, params);
+    }
+
+    private void addTimer() {
+
+        LinearLayout timerBox = new LinearLayout(this);
+        timerBox.setOrientation(LinearLayout.HORIZONTAL);
+        timerBox.setGravity(Gravity.CENTER_VERTICAL);
+        timerBox.setPadding(
+                dp(12),
+                dp(9),
+                dp(12),
+                dp(9)
+        );
+
+        timerBox.setBackground(
+                roundColor(
+                        Color.rgb(232, 250, 243),
+                        15
+                )
+        );
+
+        TextView waiting = text(
+                "●  WAITING\n   Waiting for your action",
+                12,
+                Color.rgb(36, 151, 111),
+                Typeface.BOLD
+        );
+
+        waiting.setGravity(Gravity.CENTER_VERTICAL);
+
+        timerBox.addView(
+                waiting,
+                new LinearLayout.LayoutParams(
+                        0,
+                        dp(48),
+                        1
+                )
+        );
+
+        TextView countdown = text(
+                "00:15",
+                21,
+                Color.rgb(8, 132, 91),
+                Typeface.BOLD
+        );
+
+        countdown.setGravity(
+                Gravity.CENTER_VERTICAL
+                        | Gravity.END
+        );
+
+        timerBox.addView(
+                countdown,
+                new LinearLayout.LayoutParams(
+                        dp(90),
+                        dp(48)
+                )
+        );
+
+        LinearLayout.LayoutParams params =
+                new LinearLayout.LayoutParams(
+                        -1,
+                        -2
+                );
+
+        params.setMargins(
+                0,
+                dp(12),
+                0,
+                dp(12)
+        );
+
+        card.addView(timerBox, params);
+
+        timer = new CountDownTimer(15000, 1000) {
+
+            @Override
+            public void onTick(long millisUntilFinished) {
+
+                long seconds =
+                        millisUntilFinished / 1000;
+
+                countdown.setText(
+                        String.format(
+                                Locale.US,
+                                "00:%02d",
+                                seconds
+                        )
+                );
+            }
+
+            @Override
+            public void onFinish() {
+                countdown.setText("00:00");
+            }
+        };
+
+        timer.start();
+    }
+
+    private void addActionButtons() {
+
+        LinearLayout buttons = new LinearLayout(this);
+        buttons.setOrientation(LinearLayout.HORIZONTAL);
+
+        TextView reject = text(
+                "✕  Reject",
+                16,
+                Color.rgb(215, 38, 48),
+                Typeface.BOLD
+        );
+
+        reject.setGravity(Gravity.CENTER);
+        reject.setBackground(
+                roundStroke(
+                        Color.rgb(255, 255, 255),
+                        Color.rgb(245, 180, 185),
+                        16
+                )
+        );
+
+        reject.setOnClickListener(
+                v -> performAction("reject")
+        );
+
+        TextView accept = text(
+                "✓  Accept",
+                16,
+                Color.WHITE,
+                Typeface.BOLD
+        );
+
+        accept.setGravity(Gravity.CENTER);
+        accept.setBackground(
+                roundColor(
+                        Color.rgb(8, 164, 113),
+                        16
+                )
+        );
+
+        accept.setOnClickListener(
+                v -> performAction("accept")
+        );
+
+        LinearLayout.LayoutParams buttonParams =
+                new LinearLayout.LayoutParams(
+                        0,
+                        dp(54),
+                        1
+                );
+
+        buttonParams.setMargins(
+                0,
+                0,
+                dp(6),
+                0
+        );
+
+        buttons.addView(reject, buttonParams);
+
+        LinearLayout.LayoutParams acceptParams =
+                new LinearLayout.LayoutParams(
+                        0,
+                        dp(54),
+                        1
+                );
+
+        acceptParams.setMargins(
+                dp(6),
+                0,
+                0,
+                0
+        );
+
+        buttons.addView(accept, acceptParams);
+
+        card.addView(buttons);
+    }
+
+    private void addViewDetails() {
+
+        TextView view = text(
+                "◉   View "
+                        + getDetailsLabel()
+                        + " Details     ›",
+                14,
+                Color.rgb(65, 82, 108),
+                Typeface.BOLD
+        );
+
+        view.setGravity(Gravity.CENTER_VERTICAL);
+        view.setPadding(
+                dp(14),
+                0,
+                dp(14),
+                0
+        );
+
+        view.setBackground(
+                roundColor(
+                        Color.rgb(249, 250, 252),
+                        14
+                )
+        );
+
+        view.setOnClickListener(
+                v -> openApp()
+        );
+
+        LinearLayout.LayoutParams params =
+                new LinearLayout.LayoutParams(
+                        -1,
+                        dp(48)
+                );
+
+        params.setMargins(
+                0,
+                dp(10),
+                0,
+                0
+        );
+
+        card.addView(view, params);
+    }
+
+    private String getDetailsLabel() {
+
+        if ("order".equals(type)) {
+            return "Order";
+        }
+
+        if ("worker_request".equals(type)) {
+            return "Request";
+        }
+
+        return "Booking";
+    }
+
+    private void performAction(String action) {
+
+        stopAlertSound();
+
+        if (timer != null) {
+            timer.cancel();
+        }
+
+        Intent intent =
+                new Intent(
+                        this,
+                        BookingActionReceiver.class
+                );
+
+        intent.setAction(
+                "accept".equals(action)
+                        ? "WORKKERZ_ACCEPT"
+                        : "WORKKERZ_REJECT"
+        );
+
+        intent.putExtra(
+                "notification_type",
+                type
+        );
+
+        intent.putExtra(
+                "booking_id",
+                bookingId
+        );
+
+        intent.putExtra(
+                "order_id",
+                orderId
+        );
+
+        intent.putExtra(
+                "worker_request_id",
+                workerRequestId
+        );
+
+        intent.putExtra(
+                "notification_id",
+                notificationId
+        );
+
+        sendBroadcast(intent);
+
+        finish();
+    }
+
+    private void openApp() {
+
+        stopAlertSound();
+
+        Intent intent =
+                getPackageManager()
+                        .getLaunchIntentForPackage(
+                                getPackageName()
+                        );
+
+        if (intent != null) {
+            intent.addFlags(
+                    Intent.FLAG_ACTIVITY_NEW_TASK
+                            | Intent.FLAG_ACTIVITY_CLEAR_TOP
+            );
+            startActivity(intent);
+        }
+
+        finish();
+    }
+
+    private void startAlertSound() {
+
+        stopAlertSound();
+
+        int sound;
+
+        if ("booking".equals(type)) {
+            sound = getRawId("booking");
+        } else if ("order".equals(type)) {
+            sound = getRawId("order");
+        } else if ("worker_request".equals(type)) {
+            sound = getRawId("worker_request");
+        } else {
+            sound = getRawId("notification");
+        }
+
+        if (sound == 0) {
+            return;
+        }
+
+        try {
+            alertPlayer = MediaPlayer.create(this, sound);
+
+            if (alertPlayer != null) {
+                alertPlayer.setLooping(true);
+                alertPlayer.start();
+            }
+        } catch (Exception ignored) {
+        }
+    }
+
+    private int getRawId(String name) {
+
+        return getResources().getIdentifier(
+                name,
+                "raw",
+                getPackageName()
+        );
+    }
+
+    private void stopAlertSound() {
+
+        if (alertPlayer != null) {
+
+            try {
+                if (alertPlayer.isPlaying()) {
+                    alertPlayer.stop();
+                }
+            } catch (Exception ignored) {
+            }
+
+            try {
+                alertPlayer.release();
+            } catch (Exception ignored) {
+            }
+
+            alertPlayer = null;
+        }
+    }
+
+    @Override
+    protected void onDestroy() {
+
+        stopAlertSound();
+
+        if (timer != null) {
+            timer.cancel();
+        }
+
+        super.onDestroy();
+    }
+
+    @Override
+    public void onBackPressed() {
+        // Back button disabled.
+        // User must Accept or Reject.
+    }
+
+    private String getSourceName() {
+
+        if ("order".equals(type)) {
+            return "E-Aurix";
+        }
+
+        return "Workkerz";
+    }
+
+    private String getTypeIcon() {
+
+        if ("order".equals(type)) {
+            return "🛍";
+        }
+
+        if ("worker_request".equals(type)) {
+            return "👥";
+        }
+
+        return "⚒";
+    }
+
+    private int getTypeColor() {
+
+        if ("order".equals(type)) {
+            return Color.rgb(255, 116, 0);
+        }
+
+        if ("worker_request".equals(type)) {
+            return Color.rgb(35, 116, 230);
+        }
+
+        return Color.rgb(8, 164, 113);
+    }
+
+    private int getSoftColor() {
+
+        if ("order".equals(type)) {
+            return Color.rgb(255, 247, 239);
+        }
+
+        if ("worker_request".equals(type)) {
+            return Color.rgb(241, 247, 255);
+        }
+
+        return Color.rgb(237, 251, 246);
+    }
+
+    private TextView text(
+            String value,
+            float size,
+            int color,
+            int style
+    ) {
+
+        TextView t = new TextView(this);
+
+        t.setText(value);
+        t.setTextSize(size);
+        t.setTextColor(color);
+        t.setTypeface(
+                Typeface.DEFAULT,
+                style
+        );
+
+        return t;
+    }
+
+    private android.graphics.drawable.GradientDrawable roundColor(
+            int color,
+            int radius
+    ) {
+
+        android.graphics.drawable.GradientDrawable d =
+                new android.graphics.drawable.GradientDrawable();
+
+        d.setColor(color);
+        d.setCornerRadius(dp(radius));
+
+        return d;
+    }
+
+    private android.graphics.drawable.GradientDrawable roundStroke(
+            int color,
+            int strokeColor,
+            int radius
+    ) {
+
+        android.graphics.drawable.GradientDrawable d =
+                new android.graphics.drawable.GradientDrawable();
+
+        d.setColor(color);
+        d.setCornerRadius(dp(radius));
+        d.setStroke(dp(1), strokeColor);
+
+        return d;
+    }
+
+    private int dp(int value) {
+
+        return (int) (
+                value
+                        * getResources()
+                        .getDisplayMetrics()
+                        .density
+                        + 0.5f
+        );
+    }
+}
