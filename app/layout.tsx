@@ -9,7 +9,7 @@ import CapacitorRouteGuard from "./components/CapacitorRouteGuard";
 import AutoAppUpdate from "./components/AutoAppUpdate";
 import PushNotificationInitializer from "./components/PushNotificationInitializer";
 import OfflineGuard from "./components/OfflineGuard";
-import PlatformSwipe from "./components/PlatformSwipe";
+
 
 export const metadata: Metadata = {
   title: "Workkerz",
@@ -40,7 +40,7 @@ export default function RootLayout({
       <body className="min-h-dvh overflow-x-hidden bg-white antialiased">
         <PlatformProvider>
           <AdminProvider>
-            <PlatformSwipe />
+          
 
             <BackButtonHandler />
 

@@ -7,8 +7,9 @@ const config: CapacitorConfig = {
   webDir: "public",
 
   server: {
-    url: "https://workkerz.com",
-  },
+  url: "https://workkerz.com",
+  cleartext: false,
+},
 
   android: {
     appendUserAgent: " WorkkerzAdmin",

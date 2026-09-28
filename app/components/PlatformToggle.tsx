@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { usePlatform } from "./context/PlatformContext";
 import AddressCard from "@/app/components/address/AddressCard";
@@ -17,15 +17,6 @@ export default function PlatformToggle({ isApp }: Props) {
   const [hideCart, setHideCart] = useState(false);
 
   /* =========================================================
-     SWIPE STATE
-  ========================================================= */
-
-  const touchStartX = useRef(0);
-  const touchStartY = useRef(0);
-  const touchCurrentX = useRef(0);
-  const isSwiping = useRef(false);
-
-  /* =========================================================
      PLATFORM TOGGLE
   ========================================================= */
 
@@ -38,107 +29,12 @@ export default function PlatformToggle({ isApp }: Props) {
   };
 
   /* =========================================================
-     TOUCH START
-  ========================================================= */
-
-  const handleTouchStart = (e: React.TouchEvent<HTMLDivElement>) => {
-    if (!isApp) return;
-
-    const touch = e.touches[0];
-
-    touchStartX.current = touch.clientX;
-    touchStartY.current = touch.clientY;
-    touchCurrentX.current = touch.clientX;
-    isSwiping.current = false;
-  };
-
-  /* =========================================================
-     TOUCH MOVE
-  ========================================================= */
-
-  const handleTouchMove = (e: React.TouchEvent<HTMLDivElement>) => {
-    if (!isApp) return;
-
-    const touch = e.touches[0];
-
-    const deltaX = touch.clientX - touchStartX.current;
-    const deltaY = touch.clientY - touchStartY.current;
-
-    touchCurrentX.current = touch.clientX;
-
-    /*
-     * Only detect horizontal movement.
-     * Normal vertical page scrolling will continue normally.
-     */
-    if (Math.abs(deltaX) > Math.abs(deltaY) && Math.abs(deltaX) > 10) {
-      isSwiping.current = true;
-    }
-  };
-
-  /* =========================================================
-     TOUCH END
-  ========================================================= */
-
-  const handleTouchEnd = () => {
-    if (!isApp) return;
-
-    const deltaX = touchCurrentX.current - touchStartX.current;
-
-    const SWIPE_THRESHOLD = 70;
-
-    if (!isSwiping.current) {
-      resetTouch();
-      return;
-    }
-
-    /*
-     * LEFT SWIPE
-     *
-     * Workkerz
-     *     ↓
-     * E-Aurix
-     */
-    if (deltaX < -SWIPE_THRESHOLD && !isEaurix) {
-      handleToggle("eaurix");
-    }
-
-    /*
-     * RIGHT SWIPE
-     *
-     * E-Aurix
-     *     ↓
-     * Workkerz
-     */
-    if (deltaX > SWIPE_THRESHOLD && isEaurix) {
-      handleToggle("workkerz");
-    }
-
-    resetTouch();
-  };
-
-  /* =========================================================
-     RESET TOUCH
-  ========================================================= */
-
-  const resetTouch = () => {
-    touchStartX.current = 0;
-    touchStartY.current = 0;
-    touchCurrentX.current = 0;
-    isSwiping.current = false;
-  };
-
-  /* =========================================================
      APP VERSION
   ========================================================= */
 
   if (isApp) {
     return (
-      <div
-        className="w-full"
-        onTouchStart={handleTouchStart}
-        onTouchMove={handleTouchMove}
-        onTouchEnd={handleTouchEnd}
-      >
+      <div className="w-full">
         {/* =====================================================
             PLATFORM SWITCH
         ===================================================== */}

@@ -7,9 +7,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import {
   ArrowRight,
   Check,
-  ChevronDown,
   ChevronRight,
-  Grid2X2,
   MapPin,
   Search,
   Sparkles,
@@ -21,6 +19,7 @@ import {
 } from "lucide-react";
 
 import HomeHero from "@/app/components/HomeHero";
+import PropertyComingSoon from "./PropertyComingSoon";
 
 import {
   getWorkers,
@@ -420,7 +419,6 @@ export default function HomeCategories() {
 
   /* =========================================
      SORT CATEGORIES
-     DATA FROM workers.ts
   ========================================= */
 
   const categories = useMemo(() => {
@@ -448,7 +446,7 @@ export default function HomeCategories() {
   }, [filteredWorkers]);
 
   /* =========================================
-     FEATURED FROM workers.ts
+     FEATURED
   ========================================= */
 
   const featured = categories.filter(
@@ -511,23 +509,23 @@ export default function HomeCategories() {
         onRequestClose={closeRequestForm}
       />
 
-      <section className="bg-[#f7f8f6] py-8 sm:py-12 lg:py-16">
-        <div className="mx-auto mt-25 max-w-7xl px-4 sm:px-6 lg:px-8">
+      <section className="bg-[#f7f8f6] py-5 sm:py-8 lg:py-10">
+        <div className="mx-auto mt-20 max-w-7xl px-3 sm:mt-24 sm:px-5 lg:px-8">
           {/* SUCCESS */}
 
           {requestSuccess && (
-            <div className="mb-6 overflow-hidden rounded-2xl border border-emerald-200 bg-white shadow-sm">
-              <div className="flex items-center gap-3 px-4 py-3.5 sm:px-5">
-                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-emerald-100">
-                  <Check className="h-5 w-5 text-emerald-600" />
+            <div className="mb-3 overflow-hidden rounded-xl border border-emerald-200 bg-white shadow-sm">
+              <div className="flex items-center gap-2 px-3 py-2.5">
+                <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-emerald-100">
+                  <Check className="h-4 w-4 text-emerald-600" />
                 </div>
 
                 <div className="min-w-0 flex-1">
-                  <p className="text-sm font-extrabold text-gray-900">
+                  <p className="text-xs font-extrabold text-gray-900">
                     Request submitted successfully
                   </p>
 
-                  <p className="mt-0.5 text-xs text-gray-500">
+                  <p className="text-[9px] text-gray-500">
                     Workkerz team will contact you soon.
                   </p>
                 </div>
@@ -535,38 +533,44 @@ export default function HomeCategories() {
                 <button
                   type="button"
                   onClick={() => setRequestSuccess(false)}
-                  className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-gray-400 transition hover:bg-gray-100 hover:text-gray-700"
+                  className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-gray-400 hover:bg-gray-100"
                   aria-label="Close"
                 >
-                  <X className="h-4 w-4" />
+                  <X className="h-3.5 w-3.5" />
                 </button>
               </div>
             </div>
           )}
 
-          {/* HEADER */}
+          {/* =========================================
+              COMPACT WORKKERZ HERO
+          ========================================= */}
 
-          <div className="mb-4 sm:mb-8">
-            <div className="relative min-h-38 overflow-hidden sm:min-h-57.5 lg:min-h-66.25">
-              <div className="relative z-10 max-w-140 pt-1 sm:pt-2">
-                <div className="mb-2 inline-flex items-center gap-1 rounded-full border border-emerald-200 bg-emerald-50 px-2.5 py-1 text-[9px] font-extrabold uppercase tracking-wider text-emerald-800 sm:mb-3 sm:gap-1.5 sm:px-3 sm:py-1.5 sm:text-[10px] lg:px-4 lg:py-2 lg:text-[11px]">
-                  <Sparkles className="h-3 w-3 sm:h-3.5 sm:w-3.5 lg:h-4 lg:w-4" />
+          <div className="mb-2 sm:mb-4">
+            <div className="relative min-h-[105px] overflow-hidden sm:min-h-[135px] lg:min-h-[155px]">
+              {/* LEFT CONTENT */}
+
+              <div className="relative z-10 max-w-[260px] pt-1 sm:max-w-[360px] sm:pt-2 lg:max-w-[500px]">
+                <div className="mb-1.5 inline-flex items-center gap-1 rounded-full border border-emerald-200 bg-emerald-50 px-2 py-0.5 text-[8px] font-extrabold uppercase tracking-wide text-emerald-800 sm:mb-2 sm:px-2.5 sm:py-1 sm:text-[9px] lg:text-[10px]">
+                  <Sparkles className="h-2.5 w-2.5 sm:h-3 sm:w-3" />
                   WORKKERZ SERVICES
                 </div>
 
-                <h2 className="translate-y-2 text-[24px] font-black leading-none tracking-tight text-slate-950 sm:translate-y-5 sm:text-[34px] lg:translate-y-6 lg:text-[48px] lg:leading-[1.05]">
+                <h2 className="text-[22px] font-black leading-none tracking-tight text-slate-950 sm:text-[28px] lg:text-[36px]">
                   Worker <span className="text-emerald-600">Chahiye?</span>
                 </h2>
 
-                <p className="mt-3 max-w-51.25 translate-y-3 text-[9px] font-medium leading-4 text-slate-700 sm:mt-4 sm:max-w-[320px] sm:translate-y-5 sm:text-[13px] sm:leading-5 lg:mt-5 lg:max-w-[500px] lg:translate-y-6 lg:text-xl lg:leading-8">
+                <p className="mt-2 max-w-[230px] text-[8px] font-medium leading-3.5 text-slate-700 sm:max-w-[300px] sm:text-[10px] sm:leading-4 lg:max-w-[400px] lg:text-[13px] lg:leading-5">
                   Aapko kis kaam ke liye worker chahiye, batayein
                   <br />
                   hum aapko sahi worker dhoondhne mein help karenge.
                 </p>
               </div>
 
-              <div className="pointer-events-none absolute -right-3.75 -top-8 h-47.5 w-55 sm:right-0 sm:h-58.75 sm:w-[320px] lg:h-66.25 lg:w-[390px]">
-                <div className="absolute right-4 h-38.75 w-38.75 rounded-full bg-emerald-50 sm:right-6 sm:top-3 sm:h-[200px] sm:w-[200px] lg:right-8 lg:h-57.5 lg:w-[230px]" />
+              {/* WORKER IMAGE */}
+
+              <div className="pointer-events-none absolute -right-2 -top-3 h-[125px] w-[150px] sm:right-0 sm:h-[145px] sm:w-[190px] lg:h-[160px] lg:w-[220px]">
+                <div className="absolute right-3 top-2 h-[90px] w-[90px] rounded-full bg-emerald-50 sm:h-[110px] sm:w-[110px] lg:h-[125px] lg:w-[125px]" />
 
                 <Image
                   src="/categories/worker-service.png"
@@ -574,319 +578,145 @@ export default function HomeCategories() {
                   fill
                   priority
                   className="object-contain object-bottom-right"
-                  sizes="(max-width: 640px) 220px, (max-width: 1024px) 300px, 390px"
+                  sizes="(max-width: 640px) 150px, (max-width: 1024px) 190px, 220px"
                 />
               </div>
             </div>
 
-            {/* REQUEST CARD */}
+            {/* =========================================
+                COMPACT REQUEST CARD
+            ========================================= */}
 
-            <div className="relative z-20 overflow-hidden rounded-[18px] border border-emerald-700/70 bg-white shadow-[0_3px_18px_rgba(16,185,129,0.06)] sm:rounded-[20px] lg:rounded-[24px]">
-              <div className="flex items-center gap-2.5 px-2.5 py-2.5 sm:gap-3 sm:px-4 sm:py-3 lg:gap-5 lg:px-7 lg:py-5">
-                <div className="relative flex h-[50px] w-[50px] shrink-0 items-center justify-center rounded-full bg-emerald-50 text-emerald-600 sm:h-[62px] sm:w-[62px] lg:h-[92px] lg:w-[92px]">
-                  <UserRound className="h-7 w-7 stroke-[1.8] sm:h-8 sm:w-8 lg:h-11 lg:w-11" />
+            <div className="relative z-20 overflow-hidden rounded-[14px] border border-emerald-600/60 bg-white shadow-[0_2px_12px_rgba(16,185,129,0.05)] sm:rounded-[16px]">
+              {/* MAIN ROW */}
 
-                  <div className="absolute bottom-0 right-0 flex h-4 w-4 items-center justify-center rounded-full border-2 border-white bg-emerald-600 sm:h-5 sm:w-5 lg:h-7 lg:w-7">
-                    <Check className="h-2.5 w-2.5 text-white sm:h-3 sm:w-3 lg:h-4 lg:w-4" />
+              <div className="flex items-center gap-2 px-2 py-2 sm:gap-2.5 sm:px-3 sm:py-2.5 lg:gap-4 lg:px-5 lg:py-3">
+                {/* ICON */}
+
+                <div className="relative flex h-[38px] w-[38px] shrink-0 items-center justify-center rounded-full bg-emerald-50 text-emerald-600 sm:h-[44px] sm:w-[44px] lg:h-[55px] lg:w-[55px]">
+                  <UserRound className="h-5 w-5 stroke-[1.8] sm:h-6 sm:w-6 lg:h-7 lg:w-7" />
+
+                  <div className="absolute bottom-[-1px] right-[-1px] flex h-3.5 w-3.5 items-center justify-center rounded-full border-2 border-white bg-emerald-600 sm:h-4 sm:w-4">
+                    <Check className="h-2 w-2 text-white sm:h-2.5 sm:w-2.5" />
                   </div>
                 </div>
 
+                {/* TEXT */}
+
                 <div className="min-w-0 flex-1">
-                  <h3 className="text-[14px] font-black leading-tight text-gray-950 sm:text-[16px] lg:text-2xl">
+                  <h3 className="text-[12px] font-black leading-tight text-gray-950 sm:text-[14px] lg:text-[17px]">
                     Need a Worker?
                   </h3>
 
-                  <p className="mt-1 line-clamp-2 text-[10px] leading-4 text-gray-600 sm:text-[11px] sm:leading-5 lg:mt-1.5 lg:max-w-[360px] lg:text-base lg:leading-6">
+                  <p className="mt-0.5 line-clamp-1 text-[8px] leading-3 text-gray-600 sm:text-[9px] sm:leading-3.5 lg:text-[11px]">
                     Apni requirement bhejiye, sahi worker se connect ho jaiye.
                   </p>
                 </div>
+
+                {/* REQUEST BUTTON */}
 
                 <button
                   type="button"
                   onClick={openRequestForm}
                   disabled={requestSuccess}
                   className={[
-                    "group flex h-11 shrink-0 items-center justify-center gap-1 rounded-lg bg-emerald-600 px-2.5 text-[10px] font-extrabold text-white shadow-sm transition-all duration-200 sm:h-[50px] sm:gap-1.5 sm:rounded-xl sm:px-3 sm:text-[11px] lg:h-[82px] lg:w-[440px] lg:gap-3 lg:rounded-2xl lg:px-6 lg:text-lg",
+                    "group flex h-9 shrink-0 items-center justify-center gap-1 rounded-lg bg-emerald-600 px-2 text-[8px] font-extrabold text-white shadow-sm transition-all duration-200 sm:h-10 sm:gap-1.5 sm:px-2.5 sm:text-[9px] lg:h-12 lg:w-[230px] lg:gap-2 lg:rounded-xl lg:px-4 lg:text-[13px]",
                     requestSuccess
                       ? "cursor-default bg-emerald-500"
-                      : "hover:bg-emerald-700 hover:shadow-lg active:scale-[0.98]",
+                      : "hover:bg-emerald-700 hover:shadow-md active:scale-[0.98]",
                   ].join(" ")}
                 >
                   {requestSuccess ? (
                     <>
-                      <Check className="h-3.5 w-3.5 sm:h-4 sm:w-4 lg:h-6 lg:w-6" />
-                      <span className="whitespace-nowrap">Submitted</span>
+                      <Check className="h-3 w-3 sm:h-3.5 sm:w-3.5 lg:h-4 lg:w-4" />
+
+                      <span className="whitespace-nowrap">
+                        Submitted
+                      </span>
                     </>
                   ) : (
                     <>
-                      <Users className="h-4 w-4 stroke-[1.8] sm:h-5 sm:w-5 lg:h-7 lg:w-7" />
+                      <Users className="h-3.5 w-3.5 sm:h-4 sm:w-4 lg:h-5 lg:w-5" />
+
                       <span className="whitespace-nowrap">
                         Request Worker
                       </span>
-                      <ArrowRight className="h-4 w-4 transition-transform duration-200 group-hover:translate-x-1 sm:h-5 sm:w-5 lg:h-7 lg:w-7" />
+
+                      <ArrowRight className="h-3 w-3 transition-transform duration-200 group-hover:translate-x-0.5 sm:h-3.5 sm:w-3.5 lg:h-4 lg:w-4" />
                     </>
                   )}
                 </button>
               </div>
 
-              <div className="mx-2.5 border-t border-gray-100 sm:mx-4 lg:mx-7">
+              {/* TRUST ROW */}
+
+              <div className="mx-2 border-t border-gray-100 sm:mx-3">
                 <div className="grid grid-cols-3">
-                  <div className="flex min-w-0 items-center justify-center gap-1 px-1 py-2.5 sm:gap-1.5 sm:py-3 lg:gap-3 lg:py-4">
-                    <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-emerald-50 text-emerald-600 sm:h-7 sm:w-7 lg:h-9 lg:w-9">
-                      <ShieldCheck className="h-3 w-3 sm:h-3.5 sm:w-3.5 lg:h-5 lg:w-5" />
+                  {/* VERIFIED */}
+
+                  <div className="flex min-w-0 items-center justify-center gap-1 px-1 py-1.5 sm:gap-1.5 sm:py-2">
+                    <div className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-emerald-50 text-emerald-600 sm:h-6 sm:w-6">
+                      <ShieldCheck className="h-2.5 w-2.5 sm:h-3 sm:w-3" />
                     </div>
 
-                    <span className="text-[8px] font-semibold leading-3 text-gray-800 sm:text-[9px] lg:text-sm lg:leading-normal">
-                      Verified
-                      <span className="hidden lg:inline"> Workers</span>
+                    <span className="truncate text-[7px] font-semibold text-gray-700 sm:text-[8px] lg:text-[10px]">
+                      Verified Workers
                     </span>
                   </div>
 
-                  <div className="flex min-w-0 items-center justify-center gap-1 border-x border-gray-100 px-1 py-2.5 sm:gap-1.5 sm:py-3 lg:gap-3 lg:py-4">
-                    <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-emerald-50 text-emerald-600 sm:h-7 sm:w-7 lg:h-9 lg:w-9">
-                      <Sparkles className="h-3 w-3 sm:h-3.5 sm:w-3.5 lg:h-5 lg:w-5" />
+                  {/* TRUSTED */}
+
+                  <div className="flex min-w-0 items-center justify-center gap-1 border-x border-gray-100 px-1 py-1.5 sm:gap-1.5 sm:py-2">
+                    <div className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-emerald-50 text-emerald-600 sm:h-6 sm:w-6">
+                      <Sparkles className="h-2.5 w-2.5 sm:h-3 sm:w-3" />
                     </div>
 
-                    <span className="text-[8px] font-semibold leading-3 text-gray-800 sm:text-[9px] lg:text-sm lg:leading-normal">
-                      Trusted
-                      <span className="hidden sm:inline"> by Thousands</span>
-                      <span className="sm:hidden"> Trusted</span>
+                    <span className="truncate text-[7px] font-semibold text-gray-700 sm:text-[8px] lg:text-[10px]">
+                      Trusted Workers
                     </span>
                   </div>
 
-                  <div className="flex min-w-0 items-center justify-center gap-1 px-1 py-2.5 sm:gap-1.5 sm:py-3 lg:gap-3 lg:py-4">
-                    <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-emerald-50 text-emerald-600 sm:h-7 sm:w-7 lg:h-9 lg:w-9">
-                      <ShieldCheck className="h-3 w-3 sm:h-3.5 sm:w-3.5 lg:h-5 lg:w-5" />
+                  {/* SAFE */}
+
+                  <div className="flex min-w-0 items-center justify-center gap-1 px-1 py-1.5 sm:gap-1.5 sm:py-2">
+                    <div className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-emerald-50 text-emerald-600 sm:h-6 sm:w-6">
+                      <ShieldCheck className="h-2.5 w-2.5 sm:h-3 sm:w-3" />
                     </div>
 
-                    <span className="text-[8px] font-semibold leading-3 text-gray-800 sm:text-[9px] lg:text-sm lg:leading-normal">
-                      Safe
-                      <span className="hidden lg:inline"> & Reliable</span>
-                      <span className="lg:hidden"> & Reliable</span>
+                    <span className="truncate text-[7px] font-semibold text-gray-700 sm:text-[8px] lg:text-[10px]">
+                      Safe & Reliable
                     </span>
                   </div>
                 </div>
               </div>
+            </div>
+
+            {/* =========================================
+                PROPERTY BUY / RENT — COMING SOON
+            ========================================= */}
+
+            <div className="mt-3 sm:mt-4">
+              <PropertyComingSoon />
             </div>
           </div>
 
-          {/* QUICK ACTIONS */}
+          {/* =========================================
+              POPULAR SERVICES
+          ========================================= */}
 
-          <div className="relative z-40 mb-5 grid grid-cols-2 gap-2.5 sm:gap-3">
-            <Link
-              href="/browse"
-              className="group flex h-11 items-center justify-between rounded-xl border border-gray-200 bg-white px-3 shadow-sm transition hover:border-emerald-200 hover:shadow-md sm:h-12 sm:rounded-2xl sm:px-4"
-            >
-              <div className="flex min-w-0 items-center gap-2">
-                <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-emerald-50 text-emerald-600 sm:h-8 sm:w-8">
-                  <Grid2X2 className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
-                </div>
-
-                <span className="truncate text-[10px] font-bold text-slate-900 sm:text-xs">
-                  View All Workers
-                </span>
-              </div>
-
-              <ChevronRight className="h-4 w-4 shrink-0 text-gray-400 transition-transform group-hover:translate-x-0.5" />
-            </Link>
-
-            {/* LOCATION */}
-
-            <div ref={locationRef} className="relative">
-              <button
-                type="button"
-                onClick={() => setLocationOpen((value) => !value)}
-                className="flex h-11 w-full items-center justify-between rounded-xl border border-gray-200 bg-white px-3 shadow-sm transition hover:border-emerald-200 hover:shadow-md sm:h-12 sm:rounded-2xl sm:px-4"
-              >
-                <div className="flex min-w-0 items-center gap-2">
-                  <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-emerald-50 text-emerald-600 sm:h-8 sm:w-8">
-                    <MapPin className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
-                  </div>
-
-                  <div className="min-w-0 text-left">
-                    <p className="text-[8px] font-semibold uppercase tracking-wide text-gray-400 sm:text-[9px]">
-                      Location
-                    </p>
-
-                    <p className="truncate text-[10px] font-bold text-gray-900 sm:text-xs">
-                      {selectedLocation || "Near You"}
-                    </p>
-                  </div>
-                </div>
-
-                {selectedLocation ? (
-                  <span
-                    onClick={(event) => {
-                      event.stopPropagation();
-                      clearLocation();
-                    }}
-                    className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-gray-100 text-gray-500 hover:bg-gray-200"
-                  >
-                    <X className="h-3 w-3" />
-                  </span>
-                ) : (
-                  <ChevronDown
-                    className={[
-                      "h-4 w-4 shrink-0 text-gray-400 transition",
-                      locationOpen ? "rotate-180" : "",
-                    ].join(" ")}
-                  />
-                )}
-              </button>
-
-              {locationOpen && (
-                <div className="absolute right-0 top-full z-[100] mt-2 w-[230px] overflow-hidden rounded-2xl border border-gray-200 bg-white p-2 shadow-xl sm:w-[270px]">
-                  <button
-                    type="button"
-                    onClick={clearLocation}
-                    className={[
-                      "flex w-full items-center gap-2 rounded-xl px-3 py-2.5 text-left transition",
-                      !selectedLocation
-                        ? "bg-emerald-50 text-emerald-700"
-                        : "text-gray-700 hover:bg-gray-50",
-                    ].join(" ")}
-                  >
-                    <MapPin className="h-4 w-4 shrink-0" />
-
-                    <div className="min-w-0">
-                      <p className="text-xs font-bold">Near You</p>
-
-                      <p className="text-[9px] text-gray-400">
-                        Show workers from all locations
-                      </p>
-                    </div>
-                  </button>
-
-                  {locations.length > 0 && (
-                    <div className="mt-1 max-h-56 overflow-y-auto border-t border-gray-100 pt-1">
-                      {locations.map((location) => (
-                        <button
-                          key={location}
-                          type="button"
-                          onClick={() => handleLocationSelect(location)}
-                          className={[
-                            "flex w-full items-center gap-2 rounded-xl px-3 py-2.5 text-left transition",
-                            selectedLocation === location
-                              ? "bg-emerald-50 text-emerald-700"
-                              : "text-gray-700 hover:bg-gray-50",
-                          ].join(" ")}
-                        >
-                          <MapPin className="h-3.5 w-3.5 shrink-0 text-emerald-600" />
-
-                          <span className="truncate text-xs font-semibold">
-                            {location}
-                          </span>
-                        </button>
-                      ))}
-                    </div>
-                  )}
-
-                  {locations.length === 0 && !loadingWorkers && (
-                    <div className="border-t border-gray-100 px-3 py-3">
-                      <span className="text-[10px] text-gray-400">
-                        No locations available
-                      </span>
-                    </div>
-                  )}
-
-                  {loadingWorkers && (
-                    <div className="border-t border-gray-100 px-3 py-3">
-                      <div className="flex items-center gap-2">
-                        <div className="h-4 w-4 animate-spin rounded-full border-2 border-gray-200 border-t-emerald-600" />
-
-                        <span className="text-[10px] text-gray-400">
-                          Loading workers...
-                        </span>
-                      </div>
-                    </div>
-                  )}
-                </div>
-              )}
-            </div>
-
-            {/* SEARCH */}
-
-            <div ref={searchRef} className="relative col-span-2">
-              <div
-                className={[
-                  "flex h-11 items-center gap-2 rounded-xl border bg-white px-3 shadow-sm transition sm:h-12 sm:rounded-2xl sm:px-4",
-                  searchOpen
-                    ? "border-emerald-300 ring-2 ring-emerald-100"
-                    : "border-gray-200",
-                ].join(" ")}
-              >
-                <Search className="h-4 w-4 shrink-0 text-gray-400 sm:h-5 sm:w-5" />
-
-                <input
-                  type="text"
-                  value={search}
-                  onChange={(event) =>
-                    handleSearchChange(event.target.value)
-                  }
-                  onFocus={() => {
-                    if (search.trim()) {
-                      setSearchOpen(true);
-                    }
-                  }}
-                  placeholder="Search worker, category or service..."
-                  className="w-full min-w-0 bg-transparent text-xs font-medium text-gray-900 outline-none placeholder:text-gray-400 sm:text-sm"
-                />
-
-                {search && (
-                  <button
-                    type="button"
-                    onClick={clearSearch}
-                    className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-gray-100 text-gray-400 transition hover:bg-gray-200 hover:text-gray-700"
-                  >
-                    <X className="h-3.5 w-3.5" />
-                  </button>
-                )}
-              </div>
-
-              {searchOpen && search.trim() && (
-                <SearchDropdown
-                  workers={workers}
-                  search={search}
-                  selectedLocation={selectedLocation}
-                  onClose={() => setSearchOpen(false)}
-                />
-              )}
-            </div>
-          </div>
-
-          {/* SELECTED LOCATION */}
-
-          {selectedLocation && (
-            <div className="mb-4 flex items-center justify-between rounded-xl border border-emerald-100 bg-emerald-50 px-3 py-2 sm:px-4 sm:py-2.5">
-              <div className="flex min-w-0 items-center gap-1.5">
-                <MapPin className="h-3.5 w-3.5 shrink-0 text-emerald-600 sm:h-4 sm:w-4" />
-
-                <p className="truncate text-[10px] font-semibold text-gray-800 sm:text-xs">
-                  {selectedLocation}
-                </p>
-              </div>
-
-              <span className="ml-2 shrink-0 text-[9px] font-bold text-emerald-700 sm:text-xs">
-                {filteredWorkers.length} workers
-              </span>
-            </div>
-          )}
-
-          {/* POPULAR */}
-
-          <div className="mb-10">
-            <div className="mb-4">
-              <h3 className="text-lg font-extrabold text-gray-950 sm:text-xl">
+          <div className="mb-6">
+            <div className="mb-2.5">
+              <h3 className="text-[16px] font-extrabold text-gray-950 sm:text-[19px]">
                 Popular services
               </h3>
 
-              <p className="mt-0.5 text-xs text-gray-500 sm:text-sm">
+              <p className="mt-0.5 text-[10px] text-gray-500 sm:text-xs">
                 Most booked workers
                 {selectedLocation ? ` at ${selectedLocation}` : ""}
               </p>
             </div>
 
-            <div className="grid grid-cols-2 gap-3 sm:grid-cols-4 sm:gap-4 lg:gap-5">
+            <div className="grid grid-cols-2 gap-2 sm:grid-cols-4 sm:gap-3 lg:gap-4">
               {featured.map((category) => (
                 <CategoryCard
                   key={category.id}
@@ -900,26 +730,28 @@ export default function HomeCategories() {
             </div>
           </div>
 
-          {/* ALL SERVICES */}
+          {/* =========================================
+              ALL SERVICES
+          ========================================= */}
 
           <div>
-            <div className="mb-4 flex items-center justify-between">
+            <div className="mb-2.5 flex items-center justify-between">
               <div>
-                <h3 className="text-lg font-extrabold text-gray-950 sm:text-xl">
+                <h3 className="text-[16px] font-extrabold text-gray-950 sm:text-[19px]">
                   All services
                 </h3>
 
-                <p className="mt-0.5 text-xs text-gray-500 sm:text-sm">
+                <p className="mt-0.5 text-[10px] text-gray-500 sm:text-xs">
                   Choose the service you need
                 </p>
               </div>
 
-              <span className="text-xs font-semibold text-gray-400">
+              <span className="text-[9px] font-semibold text-gray-400 sm:text-xs">
                 {categories.length} services
               </span>
             </div>
 
-            <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
+            <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-4">
               {remaining.map((category) => (
                 <CategoryCard
                   key={category.id}
@@ -938,7 +770,7 @@ export default function HomeCategories() {
 }
 
 /* =========================================
-   CATEGORY CARD
+   COMPACT CATEGORY CARD
 ========================================= */
 
 function CategoryCard({
@@ -970,28 +802,31 @@ function CategoryCard({
           ? `&labourChauk=${encodeURIComponent(selectedLocation)}`
           : ""
       }`}
-      className="group"
+      className="group block"
     >
       <div
         className={[
-          "relative overflow-hidden rounded-2xl border bg-white transition-all duration-300",
-          "hover:-translate-y-1 hover:border-emerald-200 hover:shadow-xl hover:shadow-emerald-100/40",
+          "relative overflow-hidden rounded-[13px] border border-gray-100 bg-white",
+          "transition-all duration-200",
+          "hover:-translate-y-0.5 hover:border-emerald-200 hover:shadow-md",
           featured
-            ? "min-h-57.5 border-gray-100 sm:min-h-65"
-            : "min-h-47.5 border-gray-100 sm:min-h-53.75",
+            ? "min-h-[190px] sm:min-h-[215px]"
+            : "min-h-[165px] sm:min-h-[195px]",
         ].join(" ")}
       >
         {/* IMAGE */}
 
         <div
           className={[
-            "relative overflow-hidden bg-linear-to-br from-emerald-50 via-white to-lime-50",
-            featured ? "h-36.25 sm:h-41.25" : "h-28.75 sm:h-33.75",
+            "relative overflow-hidden bg-gradient-to-br from-emerald-50 via-white to-lime-50",
+            featured
+              ? "h-[95px] sm:h-[110px]"
+              : "h-[82px] sm:h-[100px]",
           ].join(" ")}
         >
-          <div className="absolute -right-8 -top-8 h-24 w-24 rounded-full bg-emerald-100/60" />
+          <div className="absolute -right-6 -top-6 h-16 w-16 rounded-full bg-emerald-100/50" />
 
-          <div className="absolute -bottom-10 -left-8 h-24 w-24 rounded-full bg-lime-100/50" />
+          <div className="absolute -bottom-7 -left-6 h-16 w-16 rounded-full bg-lime-100/40" />
 
           {category.image ? (
             <Image
@@ -999,16 +834,18 @@ function CategoryCard({
               alt={category.label}
               fill
               sizes="(max-width: 640px) 50vw, 25vw"
-              className="relative z-10 object-contain p-3 transition duration-500 group-hover:scale-110"
+              className="relative z-10 object-contain p-2 transition duration-300 group-hover:scale-105"
             />
           ) : (
-            <div className="flex h-full items-center justify-center text-4xl">
+            <div className="flex h-full items-center justify-center text-3xl">
               👷
             </div>
           )}
 
+          {/* POPULAR */}
+
           {featured && (
-            <div className="absolute left-3 top-3 z-20 rounded-full bg-white/90 px-2.5 py-1 text-[9px] font-extrabold uppercase tracking-wide text-emerald-700 shadow-sm backdrop-blur">
+            <div className="absolute left-2 top-2 z-20 rounded-full bg-white/90 px-2 py-0.5 text-[7px] font-extrabold uppercase tracking-wide text-emerald-700 shadow-sm backdrop-blur">
               Popular
             </div>
           )}
@@ -1016,38 +853,40 @@ function CategoryCard({
 
         {/* CONTENT */}
 
-        <div className="p-3.5 sm:p-4">
-          <div className="flex items-start justify-between gap-2">
-            <div className="min-w-0">
-              <h4 className="truncate text-sm font-extrabold text-gray-950 sm:text-base">
+        <div className="px-2 py-2 sm:px-2.5 sm:py-2.5">
+          {/* TITLE */}
+
+          <div className="flex items-center justify-between gap-1">
+            <div className="min-w-0 flex-1">
+              <h4 className="truncate text-[11px] font-extrabold leading-tight text-gray-950 sm:text-[13px]">
                 {category.label}
               </h4>
 
-              <p className="mt-1 line-clamp-2 text-[11px] leading-4 text-gray-500 sm:text-xs">
+              <p className="mt-0.5 line-clamp-1 text-[8px] leading-3 text-gray-500 sm:text-[10px]">
                 {category.description}
               </p>
             </div>
 
-            <div className="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-gray-50 transition group-hover:bg-emerald-600 group-hover:text-white">
-              <ArrowRight className="h-3.5 w-3.5" />
+            <div className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-gray-50 transition group-hover:bg-emerald-600 group-hover:text-white sm:h-6 sm:w-6">
+              <ArrowRight className="h-2.5 w-2.5 sm:h-3 sm:w-3" />
             </div>
           </div>
 
           {/* LOCATION */}
 
-          <div className="mt-3 flex items-center justify-between border-t border-gray-100 pt-2.5">
-            <div className="flex min-w-0 items-center gap-1.5">
-              <MapPin className="h-3 w-3 shrink-0 text-emerald-600" />
+          <div className="mt-1.5 flex items-center justify-between border-t border-gray-100 pt-1.5">
+            <div className="flex min-w-0 items-center gap-1">
+              <MapPin className="h-2.5 w-2.5 shrink-0 text-emerald-600 sm:h-3 sm:w-3" />
 
               <span
-                className="truncate text-[10px] font-semibold text-gray-400"
+                className="truncate text-[7.5px] font-semibold text-gray-400 sm:text-[9px]"
                 title={location}
               >
                 {location}
               </span>
             </div>
 
-            <span className="shrink-0 text-[10px] font-bold text-emerald-600">
+            <span className="shrink-0 text-[7.5px] font-bold text-emerald-600 sm:text-[9px]">
               Explore
             </span>
           </div>
@@ -1055,37 +894,37 @@ function CategoryCard({
           {/* WORKER LIST */}
 
           {!loading && categoryWorkers.length > 0 && (
-            <div className="mt-2 space-y-1.5">
-              {categoryWorkers.slice(0, 3).map((worker) => (
+            <div className="mt-1.5 space-y-1">
+              {categoryWorkers.slice(0, 2).map((worker) => (
                 <div
                   key={worker.id}
-                  className="flex items-center gap-2 rounded-lg bg-gray-50 px-2 py-1.5"
+                  className="flex items-center gap-1.5 rounded-md bg-gray-50 px-1.5 py-1"
                 >
-                  <div className="relative h-7 w-7 shrink-0 overflow-hidden rounded-full bg-gray-200">
+                  <div className="relative h-5 w-5 shrink-0 overflow-hidden rounded-full bg-gray-200 sm:h-6 sm:w-6">
                     {worker.photo ? (
                       <Image
                         src={worker.photo}
                         alt={worker.name}
                         fill
-                        sizes="28px"
+                        sizes="24px"
                         className="object-cover"
                       />
                     ) : (
-                      <div className="flex h-full w-full items-center justify-center text-[10px]">
+                      <div className="flex h-full w-full items-center justify-center text-[7px]">
                         👷
                       </div>
                     )}
                   </div>
 
                   <div className="min-w-0 flex-1">
-                    <p className="truncate text-[10px] font-bold text-gray-800">
+                    <p className="truncate text-[7.5px] font-bold leading-tight text-gray-800 sm:text-[9px]">
                       {worker.name}
                     </p>
 
-                    <div className="flex items-center gap-1">
-                      <Star className="h-2.5 w-2.5 fill-yellow-400 text-yellow-400" />
+                    <div className="flex items-center gap-0.5">
+                      <Star className="h-2 w-2 fill-yellow-400 text-yellow-400" />
 
-                      <span className="text-[9px] text-gray-500">
+                      <span className="text-[7px] text-gray-500 sm:text-[8px]">
                         {worker.rating > 0
                           ? worker.rating.toFixed(1)
                           : "New"}
@@ -1094,11 +933,13 @@ function CategoryCard({
                   </div>
 
                   <div className="shrink-0 text-right">
-                    <p className="text-[10px] font-extrabold text-emerald-600">
+                    <p className="text-[8px] font-extrabold leading-tight text-emerald-600 sm:text-[9px]">
                       ₹{worker.fullDayPrice || worker.startingPrice || 0}
                     </p>
 
-                    <p className="text-[8px] text-gray-400">/day</p>
+                    <p className="text-[6px] text-gray-400 sm:text-[7px]">
+                      /day
+                    </p>
                   </div>
                 </div>
               ))}
@@ -1108,9 +949,9 @@ function CategoryCard({
           {/* NO WORKERS */}
 
           {!loading && categoryWorkers.length === 0 && (
-            <p className="mt-2 text-[9px] text-gray-400">
+            <p className="mt-1 text-[7px] text-gray-400 sm:text-[8px]">
               {selectedLocation
-                ? "No workers available at this location"
+                ? "No workers at this location"
                 : "Available nearby"}
             </p>
           )}
@@ -1118,22 +959,21 @@ function CategoryCard({
           {/* LOADING */}
 
           {loading && (
-            <div className="mt-2.5 space-y-1.5">
-              <div className="h-9 animate-pulse rounded-lg bg-gray-100" />
-              <div className="h-9 animate-pulse rounded-lg bg-gray-100" />
+            <div className="mt-1.5">
+              <div className="h-6 animate-pulse rounded-md bg-gray-100" />
             </div>
           )}
 
           {/* FOOTER */}
 
-          <div className="mt-3 flex items-center justify-between border-t border-gray-100 pt-2.5">
-            <span className="text-[10px] font-semibold text-gray-400">
+          <div className="mt-1.5 flex items-center justify-between border-t border-gray-100 pt-1.5">
+            <span className="truncate text-[7px] font-semibold text-gray-400 sm:text-[8px]">
               {categoryWorkers.length > 0
                 ? `${categoryWorkers.length} workers nearby`
                 : "Available nearby"}
             </span>
 
-            <span className="text-[10px] font-bold text-emerald-600">
+            <span className="shrink-0 text-[7px] font-bold text-emerald-600 sm:text-[8px]">
               Explore
             </span>
           </div>
