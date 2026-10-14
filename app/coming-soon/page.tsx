@@ -16,7 +16,7 @@ import {
   Building2,
 } from "lucide-react";
 
-import CompletedWorkGallery from "@/app/coming-soon/components/CompletedWorkGallery";
+import CompletedWorkGallery from "@/app/coming-soon/components/completed-work/CompletedWorkGallery";
 
 const PLAY_STORE_URL =
   "https://play.google.com/store/apps/details?id=com.workkerz.app&pcampaignid=web_share";

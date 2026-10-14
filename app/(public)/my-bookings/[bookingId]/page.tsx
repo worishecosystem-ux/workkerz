@@ -1,356 +1,602 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
+
+import type { FormEvent } from "react";
 import { useParams, useRouter } from "next/navigation";
-import Image from "next/image";
+import Link from "next/link";
 
 import {
-  CheckCircle,
-  MapPin,
-  BadgeCheck,
-  Clock3,
-  CheckCircle2,
+  AlertTriangle,
+  ArrowLeft,
+  BriefcaseBusiness,
+  ChevronRight,
+  RefreshCw,
+  UserRound,
+  ShieldCheck,
   XCircle,
-  ArrowRight,
 } from "lucide-react";
 
 import { supabase } from "@/lib/supabase";
+
+import BookingOverview from "@/app/components/BookingOverview";
+import BookingDetailCards from "@/app/components/BookingDetailCards";
+
+import BookingDetailsModal, {
+  type ModalType,
+  type RefundFormValues,
+} from "@/app/components/BookingDetailsModal";
+
+import type { Booking, RefundRequest } from "@/lib/booking-details";
+
+import {
+  getAddress,
+  getBookingCharge,
+  isWithinRefundWindow,
+} from "@/lib/booking-details";
+
+const POLICY_VERSION = "workkerz-booking-refund-49-v1";
+
+const PAID_STATUSES = [
+  "paid",
+  "captured",
+  "success",
+  "successful",
+  "completed",
+];
+
+const CANCELLED_STATUSES = ["cancelled", "canceled"];
+
+const COMPLETED_STATUSES = ["completed", "complete", "work_completed"];
 
 export default function BookingDetailsPage() {
   const params = useParams();
   const router = useRouter();
 
-  const [booking, setBooking] = useState<any>(null);
+  const bookingIdParam = Array.isArray(params.bookingId)
+    ? params.bookingId[0]
+    : params.bookingId;
+
+  const [booking, setBooking] = useState<Booking | null>(null);
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState("");
 
-  const formatDate = (dateStr: string) => {
-    if (!dateStr) return "—";
+  const [refundReason, setRefundReason] = useState("");
+  const [submittingRefund, setSubmittingRefund] = useState(false);
 
-    return new Date(dateStr + "T00:00:00").toLocaleDateString("en-US", {
-      weekday: "long",
-      month: "long",
-      day: "numeric",
-      year: "numeric",
-    });
-  };
+  const [refundError, setRefundError] = useState("");
+  const [refundSuccess, setRefundSuccess] = useState("");
 
-  useEffect(() => {
-    if (params.bookingId) {
-      loadBooking();
-    }
-  }, [params.bookingId]);
+  const [refundRequest, setRefundRequest] = useState<RefundRequest | null>(
+    null,
+  );
 
-  async function loadBooking() {
-    setLoading(true);
+  const [activeModal, setActiveModal] = useState<ModalType>(null);
 
-    const { data, error } = await supabase
-      .from("bookings")
-      .select(
-        `
-        *,
-        customer_addresses (
-          house_no,
-          address,
-          landmark,
-          city,
-          district,
-          state,
-          pincode
-        )
-      `,
-      )
-      .eq("booking_id", params.bookingId)
-      .single();
-
-    if (!error) {
-      setBooking(data);
-    } else {
-      console.error(error);
-    }
-
-    setLoading(false);
-  }
-
-  // AGAIN BOOK
-  function handleAgainBook() {
-    if (!booking) return;
-
-    // Worker page par worker_id ke through bhejo
-    if (booking.worker_id) {
-      router.push(`/workers/${booking.worker_id}`);
+  const loadBooking = useCallback(async () => {
+    if (!bookingIdParam) {
+      setBooking(null);
+      setRefundRequest(null);
+      setLoadError("Booking ID is missing.");
+      setLoading(false);
       return;
     }
 
-    // Agar worker_id available nahi hai to service page
-    if (booking.service_type) {
-      router.push(
-        `/workers?service=${encodeURIComponent(booking.service_type)}`
+    setLoading(true);
+    setLoadError("");
+
+    try {
+      const { data, error } = await supabase
+        .from("bookings")
+        .select("*")
+        .eq("booking_id", bookingIdParam)
+        .maybeSingle();
+
+      if (error) {
+        throw error;
+      }
+
+      if (!data) {
+        setBooking(null);
+        setRefundRequest(null);
+        setLoadError("Booking not found.");
+        return;
+      }
+
+      setBooking(data as Booking);
+
+      const { data: requestData, error: requestError } = await supabase
+        .from("booking_cancellation_requests")
+        .select(
+          [
+            "id",
+            "booking_id",
+            "status",
+            "refund_status",
+            "refund_amount",
+            "refund_expected_from",
+            "refund_expected_by",
+            "cancellation_reason",
+            "reason",
+            "requested_at",
+          ].join(","),
+        )
+        .eq("booking_id", data.id)
+        .order("requested_at", { ascending: false })
+        .limit(1);
+
+      if (requestError) {
+        console.error("REFUND REQUEST LOAD ERROR:", requestError.message);
+
+        setRefundRequest(null);
+      } else {
+        const row = requestData?.[0];
+
+        setRefundRequest(row ? (row as unknown as RefundRequest) : null);
+      }
+    } catch (error) {
+      console.error("BOOKING DETAILS ERROR:", error);
+
+      setLoadError(
+        error instanceof Error ? error.message : "Unable to load booking.",
+      );
+
+      setBooking(null);
+      setRefundRequest(null);
+    } finally {
+      setLoading(false);
+    }
+  }, [bookingIdParam]);
+
+  useEffect(() => {
+    void loadBooking();
+  }, [loadBooking]);
+
+  const address = useMemo(
+    () => (booking ? getAddress(booking) : ""),
+    [booking],
+  );
+
+  const totalAmount =
+    booking?.grand_total ??
+    booking?.payable_amount ??
+    booking?.total_amount ??
+    booking?.booking_fee ??
+    0;
+
+  const workerName =
+    booking?.worker_name ||
+    booking?.worker?.full_name ||
+    booking?.worker?.name ||
+    booking?.worker?.worker_name ||
+    "Assigned worker";
+
+  const workerPhone =
+    booking?.worker_phone ||
+    booking?.worker?.phone ||
+    booking?.worker?.mobile_number ||
+    "";
+
+  const serviceName =
+    booking?.service_name ||
+    booking?.service ||
+    booking?.category ||
+    "Work booking";
+
+  const bookingReference =
+    booking?.booking_number || booking?.booking_id || booking?.id || "";
+
+  const normalizedStatus = String(booking?.booking_status || "")
+    .trim()
+    .toLowerCase();
+
+  const alreadyCancelled = CANCELLED_STATUSES.includes(normalizedStatus);
+
+  const completed = COMPLETED_STATUSES.includes(normalizedStatus);
+
+  const paid = PAID_STATUSES.includes(
+    String(booking?.payment_status || "")
+      .trim()
+      .toLowerCase(),
+  );
+
+  const withinWindow = booking ? isWithinRefundWindow(booking) : false;
+
+  const hasRefundRequest = Boolean(refundRequest);
+
+  const canApply = Boolean(
+    booking &&
+    paid &&
+    !alreadyCancelled &&
+    !completed &&
+    withinWindow &&
+    !hasRefundRequest,
+  );
+
+  const handleRefundSubmit = async (
+    event: FormEvent<HTMLFormElement>,
+    values?: RefundFormValues,
+  ) => {
+    event.preventDefault();
+
+    if (submittingRefund) return;
+
+    setRefundError("");
+    setRefundSuccess("");
+
+    // Fix: prevent undefined values.reason crash.
+    if (
+      !values ||
+      typeof values.reason !== "string" ||
+      !values.refundDetails ||
+      (values.refundMethod !== "upi" && values.refundMethod !== "bank")
+    ) {
+      console.error("Invalid refund form payload:", values);
+      setRefundError(
+        "Form data missing. Please close and reopen the refund form.",
       );
       return;
     }
 
-    router.push("/workers");
-  }
+    if (!booking?.id) {
+      setRefundError("Booking ID is missing.");
+      return;
+    }
+
+    if (!paid) {
+      setRefundError(
+        "A successful payment is required before requesting a refund.",
+      );
+      return;
+    }
+
+    if (!isWithinRefundWindow(booking)) {
+      setRefundError(
+        "Refund requests are allowed only within 5 hours of booking creation.",
+      );
+      return;
+    }
+
+    if (alreadyCancelled || completed || refundRequest) {
+      setRefundError("This booking is not eligible for a new refund request.");
+      return;
+    }
+
+    const reason = values.reason.trim();
+
+    if (reason.length < 5 || reason.length > 150) {
+      setRefundError(
+        "Please enter a refund reason between 5 and 150 characters.",
+      );
+      return;
+    }
+
+    let refundDetails: RefundFormValues["refundDetails"];
+
+    if (values.refundMethod === "upi") {
+      if (
+        !("upiId" in values.refundDetails) ||
+        typeof values.refundDetails.upiId !== "string"
+      ) {
+        setRefundError("Please enter your UPI ID.");
+        return;
+      }
+
+      const upiId = values.refundDetails.upiId.trim();
+
+      if (!/^[a-zA-Z0-9._-]{2,}@[a-zA-Z0-9.-]{2,}$/.test(upiId)) {
+        setRefundError("Please enter a valid UPI ID.");
+        return;
+      }
+
+      refundDetails = { upiId };
+    } else {
+      if (
+        !("accountHolder" in values.refundDetails) ||
+        typeof values.refundDetails.accountHolder !== "string" ||
+        typeof values.refundDetails.accountNumber !== "string" ||
+        typeof values.refundDetails.ifsc !== "string"
+      ) {
+        setRefundError("Please enter your bank account details.");
+        return;
+      }
+
+      const accountHolder = values.refundDetails.accountHolder.trim();
+
+      const accountNumber = values.refundDetails.accountNumber.replace(
+        /\s/g,
+        "",
+      );
+
+      const ifsc = values.refundDetails.ifsc.trim().toUpperCase();
+
+      if (!accountHolder || accountHolder.length > 100) {
+        setRefundError("Please enter a valid account holder name.");
+        return;
+      }
+
+      if (!/^\d{9,18}$/.test(accountNumber)) {
+        setRefundError("Please enter a valid bank account number.");
+        return;
+      }
+
+      if (!/^[A-Z]{4}0[A-Z0-9]{6}$/.test(ifsc)) {
+        setRefundError("Please enter a valid IFSC code.");
+        return;
+      }
+
+      refundDetails = {
+        accountHolder,
+        accountNumber,
+        ifsc,
+      };
+    }
+
+    setSubmittingRefund(true);
+
+    try {
+      const {
+        data: { session },
+        error: sessionError,
+      } = await supabase.auth.getSession();
+
+      if (sessionError || !session?.access_token) {
+        throw new Error("Please log in again to submit your refund request.");
+      }
+
+      const response = await fetch("/api/bookings/cancellation-request", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${session.access_token}`,
+        },
+        body: JSON.stringify({
+          bookingId: booking.id,
+          reason,
+          refundType: "booking_charge",
+          refundAmount: getBookingCharge(),
+          refundMethod: values.refundMethod,
+          refundDetails,
+          policyVersion: POLICY_VERSION,
+          policyAccepted: true,
+        }),
+      });
+
+      const result = await response.json().catch(() => ({}));
+
+      if (!response.ok || result?.success !== true) {
+        throw new Error(
+          result?.error ||
+            result?.message ||
+            `Refund request failed (${response.status}).`,
+        );
+      }
+
+      setRefundSuccess(
+        result?.message ||
+          "₹49 booking charge refund request submitted for admin review.",
+      );
+
+      setRefundReason("");
+      setActiveModal(null);
+
+      void loadBooking();
+    } catch (error) {
+      console.error("REFUND REQUEST ERROR:", error);
+
+      setRefundError(
+        error instanceof Error
+          ? error.message
+          : "Unable to submit refund request.",
+      );
+    } finally {
+      setSubmittingRefund(false);
+    }
+  };
 
   if (loading) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-slate-100">
-        <div className="rounded-xl bg-white px-5 py-3 text-sm font-medium text-slate-600 shadow-sm">
-          Loading...
+      <main className="min-h-screen bg-emerald-50/50 p-4 sm:p-6">
+        <div className="mx-auto max-w-5xl animate-pulse space-y-3">
+          <div className="h-8 w-48 rounded-lg bg-emerald-100" />
+          <div className="h-28 rounded-2xl bg-emerald-100" />
+          <div className="h-56 rounded-2xl bg-white" />
         </div>
-      </div>
+      </main>
     );
   }
 
   if (!booking) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-slate-100 p-5">
-        <div className="rounded-2xl bg-white p-6 text-center shadow-sm">
-          <p className="font-semibold text-slate-900">
+      <main className="min-h-screen bg-emerald-50/50 px-4 py-12">
+        <div className="mx-auto max-w-md rounded-2xl border border-emerald-100 bg-white p-6 text-center shadow-sm">
+          <AlertTriangle className="mx-auto h-10 w-10 text-red-600" />
+
+          <h1 className="mt-3 text-lg font-bold text-gray-900">
             Booking not found
+          </h1>
+
+          <p className="mt-2 break-words text-xs text-gray-600">
+            {loadError || "Unable to find this booking."}
           </p>
+
+          <button
+            type="button"
+            onClick={() => void loadBooking()}
+            className="mt-4 inline-flex items-center gap-2 rounded-xl bg-emerald-700 px-4 py-2.5 text-xs font-bold text-white hover:bg-emerald-800"
+          >
+            <RefreshCw size={14} />
+            Try again
+          </button>
+
+          <Link
+            href="/my-bookings"
+            className="mt-3 block text-xs font-semibold text-emerald-800 hover:underline"
+          >
+            Back to all bookings
+          </Link>
         </div>
-      </div>
+      </main>
     );
   }
 
   return (
-    <div className="min-h-screen bg-slate-100">
-      <div className="sticky top-0 z-50 bg-white/90 backdrop-blur-xl border-b">
-        <div className="sticky top-0 z-20 mt-15 overflow-hidden rounded-2xl border border-emerald-100 bg-white shadow-sm">
-          <div className="h-1 bg-linear-to-r from-emerald-500 via-green-500 to-lime-400" />
+    <main className="min-h-screen bg-emerald-50/60 px-3 py-4 text-gray-900 sm:px-6 sm:py-6">
+      <div className="mx-auto max-w-5xl space-y-4 pt-12">
+        <div className="flex items-center justify-between gap-3">
+          <button
+            type="button"
+            onClick={() => router.back()}
+            className="inline-flex items-center gap-1.5 text-xs font-semibold text-emerald-900 hover:text-emerald-700"
+          >
+            <ArrowLeft size={16} />
+            Back
+          </button>
 
-          <div className="p-4">
-            <div className="flex items-center gap-3">
-              <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-emerald-50">
-                <CheckCircle className="h-6 w-6 text-emerald-600" />
-              </div>
-
-              <div className="min-w-0 flex-1">
-                <div className="flex items-center gap-2">
-                  <h1 className="text-[16px] font-bold text-slate-900">
-                    Booking ID :
-                  </h1>
-
-                  <span className="font-mono text-[14px] font-bold tracking-wide text-slate-900">
-                    {booking.booking_id}
-                  </span>
-                </div>
-              </div>
-            </div>
-
-            <div className="mt-3 rounded-2xl border border-slate-100 bg-slate-50 px-4 py-3">
-              <div className="flex items-center justify-between">
-                <p className="text-[13px] font-semibold text-slate-500">
-                  Booking Status
-                </p>
-
-                <div className="flex items-center gap-2">
-                  {booking.booking_status === "confirmed" && (
-                    <CheckCircle2 className="h-4 w-4 text-emerald-600" />
-                  )}
-
-                  {booking.booking_status === "pending" && (
-                    <Clock3 className="h-4 w-4 text-amber-500" />
-                  )}
-
-                  {booking.booking_status === "completed" && (
-                    <CheckCircle2 className="h-4 w-4 text-blue-600" />
-                  )}
-
-                  {booking.booking_status === "rejected" && (
-                    <XCircle className="h-4 w-4 text-red-500" />
-                  )}
-
-                  <span
-                    className={`text-[14px] font-bold capitalize ${
-                      booking.booking_status === "confirmed"
-                        ? "text-emerald-700"
-                        : booking.booking_status === "completed"
-                          ? "text-blue-700"
-                          : booking.booking_status === "pending"
-                            ? "text-amber-700"
-                            : "text-red-700"
-                    }`}
-                  >
-                    {booking.booking_status}
-                  </span>
-                </div>
-              </div>
-            </div>
-          </div>
+          <Link
+            href="/my-bookings"
+            className="text-xs font-semibold text-emerald-800 hover:underline"
+          >
+            All bookings
+          </Link>
         </div>
-      </div>
 
-      <div className="mx-auto max-w-3xl space-y-4 p-3 sm:p-4 md:p-6">
-        {/* WORKER */}
-        <div className="rounded-2xl border border-emerald-100 bg-linear-to-r from-white to-emerald-50 p-3 shadow-sm">
-          <div className="flex gap-3">
-            <div className="relative">
-              <img
-                src={booking.worker_photo}
-                alt={booking.worker_name || "Worker"}
-                className="h-16 w-16 rounded-2xl object-cover ring-2 ring-emerald-100"
-              />
+        <BookingOverview
+          booking={booking}
+          bookingReference={String(bookingReference)}
+          serviceName={serviceName}
+          totalAmount={totalAmount}
+        />
 
-              <span className="absolute bottom-2 -right-1 h-4 w-4 rounded-full border-2 border-white bg-green-500" />
-            </div>
+        <section className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+          <button
+            type="button"
+            onClick={() => setActiveModal("user")}
+            className="group rounded-2xl border border-emerald-200 bg-white p-4 text-left shadow-sm transition hover:border-emerald-500 hover:shadow-md"
+          >
+            <div className="flex items-center gap-3">
+              <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-emerald-100 text-emerald-800">
+                <UserRound size={19} />
+              </span>
 
-            <div className="min-w-0 flex-1">
-              <div className="flex items-start justify-between gap-2">
-                <div className="min-w-0">
-                  <h2 className="truncate text-[15px] font-bold text-gray-900">
-                    {booking.worker_name}
-                  </h2>
-
-                  <p className="mt-0.5 truncate text-xs text-gray-500">
-                    {booking.worker_specialty}
-                  </p>
-                </div>
-
-                <div className="flex items-center gap-1 rounded bg-green-600 px-2 py-0.5 text-[11px] font-medium text-white">
-                  ⭐ {booking.worker_rating}
-                </div>
-              </div>
-
-              <div className="mt-3 flex items-center justify-between">
-                <div className="inline-flex items-center gap-1 rounded-full bg-green-100 px-2.5 py-1 text-[11px] font-semibold text-green-700">
-                  Ready to Work
-                </div>
-
-                <span className="inline-flex items-center gap-1 rounded-full bg-blue-100 px-2.5 py-1 text-[11px] font-semibold text-blue-700">
-                  <BadgeCheck className="h-3.5 w-3.5" />
-                  Verified
+              <span className="min-w-0 flex-1">
+                <span className="block text-[10px] font-semibold uppercase tracking-wide text-emerald-700">
+                  Customer
                 </span>
-              </div>
+
+                <span className="mt-0.5 block truncate text-sm font-bold">
+                  {booking.customer_name || "User details"}
+                </span>
+
+                <span className="mt-0.5 block text-[10px] text-gray-500">
+                  View full customer details
+                </span>
+              </span>
+
+              <ChevronRight size={17} className="text-emerald-700" />
             </div>
-          </div>
-        </div>
+          </button>
 
-        {/* DETAILS */}
-        <div className="mt-2 rounded-2xl border border-slate-100 bg-white p-3 shadow-sm">
-          <div className="space-y-1.5">
-            <MiniRow label="Service" value={booking.service_type} />
-            <MiniRow label="Date" value={formatDate(booking.booking_date)} />
-            <MiniRow label="Time" value={booking.booking_time} />
-            <MiniRow label="Customer" value={booking.customer_name} />
-            <MiniRow label="Phone" value={booking.customer_phone} />
-            <MiniRow
-              label="Description"
-              value={booking.description || "—"}
-            />
-            <MiniRow label="Notes" value={booking.notes || "—"} />
-
-            <div className="flex items-start gap-2 rounded-xl bg-slate-50 px-2.5 py-2">
-              <MapPin className="mt-0.5 h-3.5 w-3.5 shrink-0 text-emerald-600" />
-
-              <p className="text-[11px] leading-4 text-slate-600">
-                {[
-                  booking?.customer_addresses?.house_no,
-                  booking?.customer_addresses?.address,
-                  booking?.customer_addresses?.landmark,
-                  booking?.customer_addresses?.city,
-                  booking?.customer_addresses?.district,
-                  booking?.customer_addresses?.state,
-                  booking?.customer_addresses?.pincode,
-                ]
-                  .filter(Boolean)
-                  .join(", ") || "Address not available"}
-              </p>
-            </div>
-          </div>
-        </div>
-
-        {/* PRICE */}
-        <div className="mt-2 rounded-2xl bg-[#072566] p-3.5 text-white shadow-xl">
-          <PriceRow
-            label="Worker Fee"
-            value={`₹${Number(
-              booking.total_cost || 0
-            ).toLocaleString("en-IN")}`}
-          />
-
-          <PriceRow
-            label="Platform Fee"
-            value={`₹${Number(
-              booking.service_fee || 0
-            ).toLocaleString("en-IN")}`}
-          />
-
-          <div className="my-3 h-px bg-white/10" />
-
-          <div className="flex items-center justify-between">
+          <button
+            type="button"
+            onClick={() => setActiveModal("worker")}
+            className="group rounded-2xl border border-emerald-200 bg-white p-4 text-left shadow-sm transition hover:border-emerald-500 hover:shadow-md"
+          >
             <div className="flex items-center gap-3">
-              <span className="text-[15px] font-medium text-white/60">
-                Grand Total
+              <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-emerald-100 text-emerald-800">
+                <BriefcaseBusiness size={19} />
               </span>
 
-              <span className="text-[15px] font-bold text-white">
-                ₹
-                {Number(booking.grand_total || 0).toLocaleString(
-                  "en-IN"
-                )}
-              </span>
-            </div>
+              <span className="min-w-0 flex-1">
+                <span className="block text-[10px] font-semibold uppercase tracking-wide text-emerald-700">
+                  Assigned worker
+                </span>
 
-            <div className="rounded-lg bg-white/10 px-2.5 py-1.5 backdrop-blur-sm">
-              <p className="text-[11px] font-semibold capitalize leading-none text-white">
-                {booking.booking_type?.replaceAll("_", " ") ||
-                  "Quick Service"}
-              </p>
+                <span className="mt-0.5 block truncate text-sm font-bold">
+                  {workerName}
+                </span>
+
+                <span className="mt-0.5 block text-[10px] text-gray-500">
+                  View full worker details
+                </span>
+              </span>
+
+              <ChevronRight size={17} className="text-emerald-700" />
             </div>
+          </button>
+        </section>
+
+        <BookingDetailCards
+          booking={booking}
+          address={address}
+          bookingReference={String(bookingReference)}
+          serviceName={serviceName}
+          totalAmount={totalAmount}
+          refundRequest={refundRequest}
+          withinWindow={withinWindow}
+          canApply={canApply}
+          onApply={() => {
+            setRefundError("");
+            setRefundSuccess("");
+            setActiveModal("refund");
+          }}
+        />
+
+        {alreadyCancelled && (
+          <div className="flex items-start gap-2 rounded-xl border border-red-200 bg-red-50 p-3 text-xs text-red-800">
+            <XCircle size={16} className="mt-0.5 shrink-0" />
+            <p>
+              This booking has already been cancelled. Check the refund status
+              in the booking details.
+            </p>
           </div>
+        )}
+
+        {refundSuccess && (
+          <p
+            role="status"
+            className="rounded-xl border border-emerald-200 bg-emerald-50 p-3 text-xs text-emerald-800"
+          >
+            {refundSuccess}
+          </p>
+        )}
+
+        {refundError && (
+          <p
+            role="alert"
+            className="break-words rounded-xl border border-red-200 bg-red-50 p-3 text-xs text-red-800"
+          >
+            {refundError}
+          </p>
+        )}
+
+        <div className="flex items-start gap-2 rounded-xl border border-emerald-200 bg-emerald-50 p-3 text-[10px] leading-4 text-emerald-900">
+          <ShieldCheck size={15} className="mt-0.5 shrink-0" />
+          <p>
+            Refund requests are reviewed by admin. Submitting a request does not
+            itself cancel the booking or initiate a Razorpay refund. Only the
+            ₹49 booking charge is covered by this form.
+          </p>
         </div>
-
-        {/* AGAIN BOOK BUTTON */}
-        <button
-          type="button"
-          onClick={handleAgainBook}
-          className="group flex w-full items-center justify-center gap-2 rounded-2xl bg-emerald-600 px-4 py-3.5 text-[14px] font-bold text-white shadow-lg shadow-emerald-600/20 transition active:scale-[0.98] hover:bg-emerald-700"
-        >
-          <span>Book Again</span>
-
-          <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5" />
-        </button>
       </div>
-    </div>
-  );
-}
 
-function PriceRow({
-  label,
-  value,
-}: {
-  label: string;
-  value: string;
-}) {
-  return (
-    <div className="flex items-center justify-between py-1">
-      <span className="text-[13px] leading-none text-white/65">
-        {label}
-      </span>
-
-      <span className="text-[13px] font-semibold leading-none text-white">
-        {value}
-      </span>
-    </div>
-  );
-}
-
-function MiniRow({
-  label,
-  value,
-}: {
-  label: string;
-  value: React.ReactNode;
-}) {
-  return (
-    <div className="flex items-center justify-between rounded-lg px-2 py-1.5">
-      <span className="text-[11px] text-slate-500">{label}</span>
-
-      <span className="max-w-[60%] truncate text-right text-[11px] font-semibold text-slate-900">
-        {value}
-      </span>
-    </div>
+      <BookingDetailsModal
+        activeModal={activeModal}
+        setActiveModal={setActiveModal}
+        booking={booking}
+        address={address}
+        bookingReference={String(bookingReference)}
+        serviceName={serviceName}
+        workerName={workerName}
+        workerPhone={workerPhone}
+        reason={refundReason}
+        setReason={setRefundReason}
+        submitting={submittingRefund}
+        error={refundError}
+        success={refundSuccess}
+        onClearError={() => setRefundError("")}
+        onSubmit={handleRefundSubmit}
+      />
+    </main>
   );
 }

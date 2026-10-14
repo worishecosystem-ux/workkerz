@@ -1,0 +1,177 @@
+package com.workkerz.app
+
+import android.app.Activity
+import android.content.Intent
+import android.os.Bundle
+import android.view.Gravity
+import android.view.ViewGroup
+import android.webkit.WebView
+import android.widget.Button
+import android.widget.LinearLayout
+import android.widget.TextView
+import android.widget.Toast
+import com.razorpay.PaymentData
+import com.razorpay.PaymentResultWithDataListener
+import com.razorpay.Razorpay
+import org.json.JSONArray
+import org.json.JSONObject
+
+class CustomRazorpayActivity : Activity(), PaymentResultWithDataListener {
+
+    private lateinit var razorpay: Razorpay
+    private lateinit var webView: WebView
+    private lateinit var keyId: String
+    private lateinit var orderId: String
+    private lateinit var amount: String
+    private lateinit var currency: String
+    private lateinit var customerName: String
+    private lateinit var customerEmail: String
+    private lateinit var customerPhone: String
+
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+
+        keyId = intent.getStringExtra("keyId").orEmpty()
+        orderId = intent.getStringExtra("orderId").orEmpty()
+        amount = intent.getStringExtra("amount").orEmpty()
+        currency = intent.getStringExtra("currency") ?: "INR"
+        customerName = intent.getStringExtra("customerName").orEmpty()
+        customerEmail = intent.getStringExtra("customerEmail").orEmpty()
+        customerPhone = intent.getStringExtra("customerPhone").orEmpty()
+
+        if (keyId.isBlank() || orderId.isBlank() ||
+            amount.toLongOrNull() == null || amount.toLong() <= 0
+        ) {
+            finishWithError("Invalid payment order details.")
+            return
+        }
+
+        try {
+            razorpay = Razorpay(this, keyId)
+            showPaymentScreen()
+        } catch (e: Exception) {
+            finishWithError(e.message ?: "Unable to initialize payment.")
+        }
+    }
+
+    private fun showPaymentScreen() {
+        val root = LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL
+            gravity = Gravity.CENTER
+            setPadding(32, 32, 32, 32)
+        }
+
+        val heading = TextView(this).apply {
+            text = "Workkerz Payment"
+            textSize = 24f
+            gravity = Gravity.CENTER
+        }
+
+        val description = TextView(this).apply {
+            text = "Booking fee: ₹${"%.2f".format(amount.toLong() / 100.0)}\n\nPay securely using UPI Intent."
+            textSize = 17f
+            gravity = Gravity.CENTER
+            setPadding(0, 24, 0, 24)
+        }
+
+        webView = WebView(this).apply {
+            layoutParams = LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT, 1
+            )
+        }
+
+        val payButton = Button(this).apply {
+            text = "Continue with UPI"
+            setOnClickListener { startUpiPayment() }
+        }
+
+        root.addView(heading)
+        root.addView(description)
+        root.addView(payButton)
+        root.addView(webView)
+        setContentView(root)
+
+        razorpay.setWebView(webView)
+    }
+
+    private fun startUpiPayment() {
+        try {
+            val payload = JSONObject().apply {
+                put("key", keyId)
+                put("order_id", orderId)
+                put("amount", amount.toLong())
+                put("currency", currency)
+                put("method", "upi")
+                put("_[flow]", "intent")
+                put("email", customerEmail)
+                put("contact", customerPhone)
+                put("preferred_apps_order", JSONArray())
+                put("other_apps_order", JSONArray())
+            }
+
+            razorpay.validateFields(
+                payload,
+                object : Razorpay.ValidationListener {
+                    override fun onValidationSuccess() {
+                        try {
+                            razorpay.submit(
+                                payload,
+                                object : PaymentResultWithDataListener {
+                                    override fun onPaymentSuccess(
+                                        paymentId: String?,
+                                        paymentData: PaymentData?
+                                    ) {
+                                        val result = Intent().apply {
+                                            putExtra("success", true)
+                                            putExtra("razorpay_order_id", paymentData?.orderId ?: orderId)
+                                            putExtra("razorpay_payment_id", paymentData?.paymentId ?: paymentId)
+                                            putExtra("razorpay_signature", paymentData?.signature)
+                                        }
+                                        setResult(RESULT_OK, result)
+                                        finish()
+                                    }
+
+                                    override fun onPaymentError(
+                                        code: Int,
+                                        message: String?,
+                                        paymentData: PaymentData?
+                                    ) {
+                                        finishWithError(message ?: "Payment failed.")
+                                    }
+                                }
+                            )
+                        } catch (e: Exception) {
+                            finishWithError(e.message ?: "Could not start payment.")
+                        }
+                    }
+
+                    override fun onValidationError(error: Map<String?, String>) {
+                        val message = error["description"] ?: "Payment details are invalid."
+                        Toast.makeText(this@CustomRazorpayActivity, message, Toast.LENGTH_LONG).show()
+                    }
+                }
+            )
+        } catch (e: Exception) {
+            finishWithError(e.message ?: "Unable to process payment.")
+        }
+    }
+
+    private fun finishWithError(message: String) {
+        val result = Intent().apply {
+            putExtra("success", false)
+            putExtra("error", message)
+        }
+        setResult(RESULT_OK, result)
+        finish()
+    }
+
+    @Deprecated("Deprecated in Android")
+    override fun onPaymentSuccess(paymentId: String?) {
+        finishWithError("Payment response did not include payment details.")
+    }
+
+    @Deprecated("Deprecated in Android")
+    override fun onPaymentError(code: Int, response: String?) {
+        finishWithError(response ?: "Payment failed.")
+    }
+}

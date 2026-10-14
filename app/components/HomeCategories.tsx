@@ -509,7 +509,7 @@ export default function HomeCategories() {
         onRequestClose={closeRequestForm}
       />
 
-      <section className="bg-[#f7f8f6] py-5 sm:py-8 lg:py-10">
+      <section className="bg-[#f7f8f6] py-10 sm:py-8 lg:py-10">
         <div className="mx-auto mt-20 max-w-7xl px-3 sm:mt-24 sm:px-5 lg:px-8">
           {/* SUCCESS */}
 

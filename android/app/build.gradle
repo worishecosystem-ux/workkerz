@@ -51,6 +51,7 @@ dependencies {
     implementation "androidx.core:core-splashscreen:$coreSplashScreenVersion"
 
     implementation project(':capacitor-android')
+    implementation 'com.razorpay:customui:3.9.22'
     implementation project(':capacitor-cordova-android-plugins')
 
     implementation platform('com.google.firebase:firebase-bom:33.10.0')

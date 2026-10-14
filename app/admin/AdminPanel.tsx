@@ -8,7 +8,7 @@ import { Capacitor } from "@capacitor/core";
 import MarketingTab from "./components/MarketingTab";
 import WorkerRequestsTab from "./components/worker-requests/WorkerRequestsTab";
 import CompletedWorkTab from "./components/completed-work/CompletedWorkTab";
-
+import FinanceDashboard from "./components/finance/FinanceDashboard";
 import {
   LayoutDashboard,
   User,
@@ -24,6 +24,7 @@ import {
   ChevronRight,
   UsersRound,
   Images,
+  WalletCards,
 } from "lucide-react";
 
 import { supabase } from "@/lib/supabase";
@@ -152,6 +153,11 @@ const NAV: {
     icon: Megaphone,
   },
   {
+    id: "finance",
+    label: "Finance",
+    icon: WalletCards,
+  },
+  {
     id: "admins",
     label: "Admins",
     icon: ShieldCheck,
@@ -209,9 +215,7 @@ export default function AdminPanel() {
      NOTIFICATIONS
   ======================================================= */
 
-  const [notifications, setNotifications] = useState<NotificationOrder[]>(
-    [],
-  );
+  const [notifications, setNotifications] = useState<NotificationOrder[]>([]);
 
   const notificationsRef = useRef<NotificationOrder[]>([]);
 
@@ -233,8 +237,7 @@ export default function AdminPanel() {
      REALTIME
   ======================================================= */
 
-  const channelRef =
-    useRef<ReturnType<typeof supabase.channel> | null>(null);
+  const channelRef = useRef<ReturnType<typeof supabase.channel> | null>(null);
 
   const realtimeStarted = useRef(false);
 
@@ -750,7 +753,9 @@ export default function AdminPanel() {
 
               if (
                 REMOVE.includes(
-                  String(order.status ?? "").trim().toLowerCase(),
+                  String(order.status ?? "")
+                    .trim()
+                    .toLowerCase(),
                 )
               ) {
                 removeNotification(order.id);
@@ -1074,13 +1079,9 @@ export default function AdminPanel() {
             </div>
 
             <div>
-              <p className="text-sm font-black text-[#0F172A]">
-                Workkerz
-              </p>
+              <p className="text-sm font-black text-[#0F172A]">Workkerz</p>
 
-              <p className="text-[10px] text-[#94A3B8]">
-                Admin Panel
-              </p>
+              <p className="text-[10px] text-[#94A3B8]">Admin Panel</p>
             </div>
           </div>
 
@@ -1273,9 +1274,7 @@ export default function AdminPanel() {
                     Workkerz
                   </h1>
 
-                  <p className="text-xs text-[#94A3B8]">
-                    Admin Panel
-                  </p>
+                  <p className="text-xs text-[#94A3B8]">Admin Panel</p>
                 </div>
               </div>
             )}
@@ -1454,9 +1453,7 @@ export default function AdminPanel() {
             aria-label={
               sidebarCollapsed ? "Expand sidebar" : "Collapse sidebar"
             }
-            title={
-              sidebarCollapsed ? "Expand sidebar" : "Collapse sidebar"
-            }
+            title={sidebarCollapsed ? "Expand sidebar" : "Collapse sidebar"}
             className="
               absolute
               -right-3
@@ -1538,12 +1535,9 @@ export default function AdminPanel() {
 
         {/* WORKER REQUESTS */}
 
-        {tab === "worker-requests" &&
-          hasAccess("worker-requests") && (
-            <WorkerRequestsTab
-              device={isAndroidApp ? "mobile" : "desktop"}
-            />
-          )}
+        {tab === "worker-requests" && hasAccess("worker-requests") && (
+          <WorkerRequestsTab device={isAndroidApp ? "mobile" : "desktop"} />
+        )}
 
         {/* ORDERS */}
 
@@ -1579,10 +1573,8 @@ export default function AdminPanel() {
 
         {/* MARKETING */}
 
-        {tab === "marketing" && hasAccess("marketing") && (
-          <MarketingTab />
-        )}
-
+        {tab === "marketing" && hasAccess("marketing") && <MarketingTab />}
+        {tab === "finance" && hasAccess("finance") && <FinanceDashboard />}
         {/* ADMINS */}
 
         {tab === "admins" && hasAccess("admins") && <AdminsTab />}
@@ -1595,14 +1587,7 @@ export default function AdminPanel() {
       {isAndroidApp && !workerFormOpen && !keyboardOpen && (
         <nav className="fixed inset-x-0 bottom-0 z-50 border-t border-gray-100 bg-white/95 pb-[env(safe-area-inset-bottom)] backdrop-blur-xl md:max-lg:inset-x-6 md:max-lg:bottom-3 md:max-lg:rounded-2xl md:max-lg:border md:max-lg:shadow-[0_8px_30px_rgba(15,23,42,0.10)]">
           <div className="grid h-15 w-full grid-cols-5 px-1 md:max-lg:px-8">
-            {(
-              [
-                "dashboard",
-                "workers",
-                "orders",
-                "bookings",
-              ] as AdminModule[]
-            )
+            {(["dashboard", "workers", "orders", "bookings"] as AdminModule[])
               .map((id) => visible.find((item) => item.id === id))
               .filter(Boolean)
               .map((item) => navButton(item!, true))}

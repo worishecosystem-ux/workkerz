@@ -1,3 +1,4 @@
+
 import type { CapacitorConfig } from "@capacitor/cli";
 import { KeyboardResize } from "@capacitor/keyboard";
 
@@ -7,9 +8,9 @@ const config: CapacitorConfig = {
   webDir: "public",
 
   server: {
-  url: "https://workkerz.com",
-  cleartext: false,
-},
+    url: "http://192.168.137.60:3000",
+    cleartext: true,
+  },
 
   android: {
     appendUserAgent: " WorkkerzAdmin",

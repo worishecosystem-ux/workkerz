@@ -9,18 +9,24 @@ import android.webkit.WebView;
 
 import com.getcapacitor.BridgeActivity;
 import com.google.firebase.FirebaseApp;
+import com.ionicframework.capacitor.Checkout;
 
 public class MainActivity extends BridgeActivity {
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
+
+        // Register Razorpay Capacitor plugin
+        registerPlugin(Checkout.class);
+
         super.onCreate(savedInstanceState);
 
-        // Initialize Firebase before Capacitor Push Notifications registration
+        // Initialize Firebase
         if (FirebaseApp.getApps(this).isEmpty()) {
             FirebaseApp.initializeApp(this);
         }
 
+        // Workkerz WebView User Agent
         WebView webView = getBridge().getWebView();
 
         if (webView != null) {
@@ -36,6 +42,7 @@ public class MainActivity extends BridgeActivity {
             }
         }
 
+        // Workkerz Notification Channel
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
 
             NotificationChannel channel =
