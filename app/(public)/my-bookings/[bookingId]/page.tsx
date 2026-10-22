@@ -35,7 +35,7 @@ import {
   isWithinRefundWindow,
 } from "@/lib/booking-details";
 
-const POLICY_VERSION = "workkerz-booking-refund-49-v1";
+const POLICY_VERSION = "workkerz-booking-refund-19-v1";
 
 const PAID_STATUSES = [
   "paid",

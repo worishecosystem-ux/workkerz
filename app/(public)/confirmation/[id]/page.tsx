@@ -212,7 +212,7 @@ export default function Confirmation() {
   ========================================================== */
 
   const [bookingPricing, setBookingPricing] = useState<BookingPricing>({
-    bookingCharge: 49,
+    bookingCharge: 19,
   });
 
   /* ============================================================
@@ -294,11 +294,11 @@ export default function Confirmation() {
         (parsed as any).bookingCharge ??
           (parsed as any).bookingFee ??
           parsed.form?.bookingCharge ??
-          49,
+          19,
       );
 
       setBookingPricing({
-        bookingCharge: Number.isFinite(savedBookingCharge) ? savedBookingCharge : 49,
+        bookingCharge: Number.isFinite(savedBookingCharge) ? savedBookingCharge : 19,
       });
 
     } catch (error) {
