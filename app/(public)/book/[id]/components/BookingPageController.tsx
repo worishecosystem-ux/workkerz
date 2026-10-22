@@ -1185,7 +1185,7 @@ const handleCreateBooking = async () => {
       serviceFee: 0,
       materialsCost: finalMaterialsCost,
       grandTotal: finalGrandTotal,
-      payableAmount: 49,
+      payableAmount: 19,
       bookingReference,
     };
 
@@ -1204,7 +1204,7 @@ const handleCreateBooking = async () => {
       materialsCost: finalMaterialsCost,
       grandTotal: finalGrandTotal,
       paymentType,
-      payableAmount: 49,
+      payableAmount: 19,
       paymentStatus: "pending",
       paymentVerified: false,
     };
@@ -2155,7 +2155,7 @@ const handleCreateBooking = async () => {
 
             <>
 
-              Complete Booking · Pay ₹49
+              only · Pay ₹19
 
               <CheckCircle className="w-5 h-5" />
 

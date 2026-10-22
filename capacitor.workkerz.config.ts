@@ -4,12 +4,12 @@ const config: CapacitorConfig = {
   appId: "com.workkerz.app",
   appName: "Workkerz",
   webDir: "public",
-
+  appendUserAgent: " WorkkerzApp",
   server: {
-     url: "https://workkerz.com",
-    cleartext: true,
-  },
+    url: "https://workkerz.com",
 
+    cleartext: false,
+  },
   android: {
     allowMixedContent: true,
   },
