@@ -17,9 +17,15 @@ type RefundRequestBody = {
   cancellationRequestId?: string;
 };
 
+type RazorpayRefundResponse = {
+  id: string;
+  status: string;
+  amount?: number;
+};
+
 export async function POST(req: NextRequest) {
   try {
-    // 1. Authenticate the admin.
+    // 1. Authenticate admin.
     const authorization = req.headers.get("authorization");
     const token = authorization
       ?.match(/^Bearer\s+(.+)$/i)?.[1]
@@ -51,7 +57,7 @@ export async function POST(req: NextRequest) {
       .maybeSingle();
 
     if (adminError) {
-      console.error("Refund admin lookup failed:", adminError.message);
+      console.error("Admin lookup failed:", adminError.message);
       return NextResponse.json(
         { success: false, message: "Unable to verify admin." },
         { status: 500 }
@@ -61,7 +67,7 @@ export async function POST(req: NextRequest) {
     if (
       !admin ||
       !admin.is_active ||
-      !["admin", "super_admin"].includes(admin.role)
+      !["admin", "super_admin"].includes(String(admin.role))
     ) {
       return NextResponse.json(
         { success: false, message: "Admin access denied." },
@@ -70,17 +76,29 @@ export async function POST(req: NextRequest) {
     }
 
     // 2. Validate request.
-    const body = (await req.json()) as RefundRequestBody;
+    let body: RefundRequestBody;
+
+    try {
+      body = await req.json();
+    } catch {
+      return NextResponse.json(
+        { success: false, message: "Invalid JSON request body." },
+        { status: 400 }
+      );
+    }
+
     const transactionId =
       typeof body.transactionId === "string"
         ? body.transactionId.trim()
         : "";
+
     const cancellationRequestId =
       typeof body.cancellationRequestId === "string"
         ? body.cancellationRequestId.trim()
         : "";
+
     const refundReason =
-      typeof body.refundReason === "string"
+      typeof body.refundReason === "string" && body.refundReason.trim()
         ? body.refundReason.trim().slice(0, 500)
         : "Customer refund";
 
@@ -91,7 +109,7 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // 3. Load the transaction.
+    // 3. Fetch transaction.
     const { data: transaction, error: transactionError } =
       await supabaseAdmin
         .from("financial_transactions")
@@ -115,14 +133,12 @@ export async function POST(req: NextRequest) {
     }
 
     if (
-      transaction.status !== "paid" &&
-      transaction.status !== "partially_refunded"
+      !["paid", "partially_refunded"].includes(
+        String(transaction.status)
+      )
     ) {
       return NextResponse.json(
-        {
-          success: false,
-          message: "Transaction is not eligible for a refund.",
-        },
+        { success: false, message: "Transaction is not eligible for a refund." },
         { status: 400 }
       );
     }
@@ -134,14 +150,13 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // 4. Cancellation refunds require a matching approved request.
+    // 4. Verify approved booking cancellation.
     if (transaction.source_type === "booking") {
       if (!cancellationRequestId) {
         return NextResponse.json(
           {
             success: false,
-            message:
-              "Cancellation request ID is required for booking refunds.",
+            message: "Cancellation request ID is required for booking refunds.",
           },
           { status: 400 }
         );
@@ -150,18 +165,13 @@ export async function POST(req: NextRequest) {
       const { data: cancellation, error: cancellationError } =
         await supabaseAdmin
           .from("booking_cancellation_requests")
-          .select(
-            "id, booking_id, status, refund_status, admin_reviewed_by"
-          )
+          .select("id, booking_id, status, admin_reviewed_by")
           .eq("id", cancellationRequestId)
           .eq("booking_id", transaction.source_id)
           .maybeSingle();
 
       if (cancellationError) {
-        console.error(
-          "Cancellation lookup failed:",
-          cancellationError.message
-        );
+        console.error("Cancellation lookup failed:", cancellationError.message);
         return NextResponse.json(
           { success: false, message: "Unable to verify cancellation." },
           { status: 500 }
@@ -196,10 +206,7 @@ export async function POST(req: NextRequest) {
           .maybeSingle();
 
       if (existingRefundError) {
-        console.error(
-          "Existing refund lookup failed:",
-          existingRefundError.message
-        );
+        console.error("Refund lookup failed:", existingRefundError.message);
         return NextResponse.json(
           { success: false, message: "Unable to verify refund history." },
           { status: 500 }
@@ -211,7 +218,7 @@ export async function POST(req: NextRequest) {
           {
             success: false,
             message:
-              "A refund record already exists for this cancellation. Check its status before retrying.",
+              "A refund record already exists. Check its status before retrying.",
             refundStatus: existingRefund.status,
             refundId: existingRefund.razorpay_refund_id,
           },
@@ -220,7 +227,7 @@ export async function POST(req: NextRequest) {
       }
     }
 
-    // 5. Verify the current Razorpay payment state.
+    // 5. Verify captured payment and amount.
     const payment = await razorpay.payments.fetch(
       transaction.razorpay_payment_id
     );
@@ -244,6 +251,7 @@ export async function POST(req: NextRequest) {
       !Number.isFinite(originalAmount) ||
       originalAmount <= 0 ||
       !Number.isFinite(capturedAmount) ||
+      capturedAmount <= 0 ||
       Math.abs(capturedAmount - originalAmount) > 0.01
     ) {
       return NextResponse.json(
@@ -256,9 +264,33 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const refundableAmount = Math.round(
-      (capturedAmount - alreadyRefunded) * 100
-    ) / 100;
+    if (
+      !Number.isFinite(alreadyRefunded) ||
+      alreadyRefunded < 0 ||
+      alreadyRefunded > capturedAmount
+    ) {
+      return NextResponse.json(
+        {
+          success: false,
+          message: "Stored refund amount is invalid. Manual review is required.",
+        },
+        { status: 409 }
+      );
+    }
+
+    const refundableAmount =
+      Math.round((capturedAmount - alreadyRefunded) * 100) / 100;
+
+    if (refundableAmount <= 0) {
+      return NextResponse.json(
+        {
+          success: false,
+          message: "No refundable balance remains.",
+          refundableAmount: 0,
+        },
+        { status: 409 }
+      );
+    }
 
     const requestedRefund =
       body.refundAmount == null
@@ -280,11 +312,24 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // 6. Create a pending record before calling Razorpay.
-    // A unique cancellation_request_id prevents a second record
-    // for the same cancellation. It is not a complete concurrency lock.
+    const requestedRefundPaise = Math.round(requestedRefund * 100);
+
+    if (
+      Math.abs(requestedRefundPaise / 100 - requestedRefund) > 0.001
+    ) {
+      return NextResponse.json(
+        {
+          success: false,
+          message: "Refund amount can have at most two decimal places.",
+        },
+        { status: 400 }
+      );
+    }
+
+    // 6. Reserve refund record for booking cancellations.
     const now = new Date().toISOString();
-    const refundNumber = `REF-${Date.now()}-${crypto.randomUUID().slice(0, 8)}`;
+    const refundNumber =
+      `REF-${Date.now()}-${crypto.randomUUID().slice(0, 8)}`;
 
     let refundRecordId: string | null = null;
 
@@ -296,7 +341,7 @@ export async function POST(req: NextRequest) {
             refund_number: refundNumber,
             financial_transaction_id: transaction.id,
             cancellation_request_id: cancellationRequestId,
-            approved_by: transaction.source_id ? user.id : null,
+            approved_by: user.id,
             approved_at: now,
             source_type: transaction.source_type,
             source_id: transaction.source_id,
@@ -325,8 +370,7 @@ export async function POST(req: NextRequest) {
         return NextResponse.json(
           {
             success: false,
-            message:
-              "Could not reserve refund processing. No refund was initiated.",
+            message: "Could not reserve refund processing. No refund was initiated.",
           },
           { status: 409 }
         );
@@ -334,21 +378,23 @@ export async function POST(req: NextRequest) {
 
       refundRecordId = insertedRefund.id;
 
-      const { error: cancellationUpdateError } = await supabaseAdmin
-        .from("booking_cancellation_requests")
-        .update({
-          refund_status: "processing",
-          refund_initiated_at: now,
-          updated_at: now,
-        })
-        .eq("id", cancellationRequestId)
-        .eq("status", "approved");
+      const { error: cancellationUpdateError } =
+        await supabaseAdmin
+          .from("booking_cancellation_requests")
+          .update({
+            refund_status: "processing",
+            refund_initiated_at: now,
+            updated_at: now,
+          })
+          .eq("id", cancellationRequestId)
+          .eq("status", "approved");
 
       if (cancellationUpdateError) {
         console.error(
           "Cancellation status update failed:",
           cancellationUpdateError.message
         );
+
         return NextResponse.json(
           {
             success: false,
@@ -361,30 +407,30 @@ export async function POST(req: NextRequest) {
       }
     }
 
-    // 7. Initiate the Razorpay refund.
-    // Do not automatically retry if the provider call fails or times out:
-    // the result may be uncertain and must be reconciled first.
-    let refund;
+    // 7. Initiate Razorpay refund.
+    // Some Razorpay SDK typings incorrectly declare this method as void.
+    // Convert the response to unknown, then validate its runtime shape.
+    let rawRefundResponse: unknown;
 
     try {
-      refund = await razorpay.payments.refund(
+      rawRefundResponse = await razorpay.payments.refund(
         transaction.razorpay_payment_id,
         {
-          amount: Math.round(requestedRefund * 100),
+          amount: requestedRefundPaise,
           notes: {
             reason: refundReason,
-            source_type: transaction.source_type,
-            source_id: transaction.source_id || "",
+            source_type: String(transaction.source_type || ""),
+            source_id: String(transaction.source_id || ""),
             cancellation_request_id: cancellationRequestId,
             initiated_by: user.id,
           },
         }
-      );
+      ) as unknown;
     } catch (providerError) {
       console.error("Razorpay refund result uncertain:", providerError);
 
       if (refundRecordId) {
-        await supabaseAdmin
+        const { error: pendingUpdateError } = await supabaseAdmin
           .from("refunds")
           .update({
             failure_reason:
@@ -392,6 +438,13 @@ export async function POST(req: NextRequest) {
             updated_at: new Date().toISOString(),
           })
           .eq("id", refundRecordId);
+
+        if (pendingUpdateError) {
+          console.error(
+            "Failed to update uncertain refund record:",
+            pendingUpdateError.message
+          );
+        }
       }
 
       return NextResponse.json(
@@ -405,10 +458,35 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // 8. Save the actual provider response.
-    const totalRefunded = Math.round(
-      (alreadyRefunded + requestedRefund) * 100
-    ) / 100;
+    const refund =
+      rawRefundResponse as RazorpayRefundResponse | null;
+
+    if (
+      !refund ||
+      typeof refund.id !== "string" ||
+      !refund.id ||
+      typeof refund.status !== "string" ||
+      !refund.status
+    ) {
+      console.error(
+        "Unexpected Razorpay refund response:",
+        rawRefundResponse
+      );
+
+      return NextResponse.json(
+        {
+          success: false,
+          message:
+            "Refund response could not be verified. Check Razorpay Dashboard before retrying.",
+          refundRecordId,
+        },
+        { status: 502 }
+      );
+    }
+
+    // 8. Save refund result and transaction totals.
+    const totalRefunded =
+      Math.round((alreadyRefunded + requestedRefund) * 100) / 100;
 
     const isFullyRefunded =
       totalRefunded >= capturedAmount - 0.01;
@@ -417,15 +495,12 @@ export async function POST(req: NextRequest) {
       ? "refunded"
       : "partially_refunded";
 
-    const finalRefundStatus =
-      refund.status === "processed"
-        ? "processed"
-        : "processing";
-
     const processedAt =
       refund.status === "processed"
         ? new Date().toISOString()
         : null;
+
+    const updatedAt = new Date().toISOString();
 
     const { error: financialError } = await supabaseAdmin
       .from("financial_transactions")
@@ -436,7 +511,7 @@ export async function POST(req: NextRequest) {
         refund_status: refund.status,
         razorpay_refund_id: refund.id,
         refunded_at: processedAt,
-        updated_at: new Date().toISOString(),
+        updated_at: updatedAt,
       })
       .eq("id", transaction.id);
 
@@ -447,52 +522,59 @@ export async function POST(req: NextRequest) {
       );
     }
 
+    let refundUpdateError: { message: string } | null = null;
+    let cancellationFinalError: { message: string } | null = null;
+
     if (refundRecordId) {
-      const { error: refundUpdateError } = await supabaseAdmin
+      const { error } = await supabaseAdmin
         .from("refunds")
         .update({
-          status: finalRefundStatus,
+          status: refund.status === "processed" ? "processed" : "processing",
           razorpay_refund_id: refund.id,
           razorpay_status: refund.status,
           processed_at: processedAt,
-          updated_at: new Date().toISOString(),
+          updated_at: updatedAt,
         })
         .eq("id", refundRecordId);
 
-      if (refundUpdateError) {
-        console.error(
-          "Refund record update failed:",
-          refundUpdateError.message
-        );
+      refundUpdateError = error;
+
+      if (error) {
+        console.error("Refund record update failed:", error.message);
       }
 
-      const { error: cancellationFinalError } = await supabaseAdmin
-        .from("booking_cancellation_requests")
-        .update({
-          refund_status: refund.status,
-          razorpay_refund_id: refund.id,
-          ...(processedAt ? { refund_processed_at: processedAt } : {}),
-          updated_at: new Date().toISOString(),
-        })
-        .eq("id", cancellationRequestId);
+      const { error: cancellationFinalUpdateError } =
+        await supabaseAdmin
+          .from("booking_cancellation_requests")
+          .update({
+            refund_status: refund.status,
+            razorpay_refund_id: refund.id,
+            ...(processedAt ? { refund_processed_at: processedAt } : {}),
+            updated_at: updatedAt,
+          })
+          .eq("id", cancellationRequestId);
 
-      if (cancellationFinalError) {
+      cancellationFinalError = cancellationFinalUpdateError;
+
+      if (cancellationFinalUpdateError) {
         console.error(
-          "Cancellation final status update failed:",
-          cancellationFinalError.message
+          "Cancellation final update failed:",
+          cancellationFinalUpdateError.message
         );
       }
     }
 
-    // Do not report full success if the refund was accepted but
-    // database reconciliation failed.
-    if (financialError) {
+    if (
+      financialError ||
+      refundUpdateError ||
+      cancellationFinalError
+    ) {
       return NextResponse.json(
         {
           success: false,
           refundSubmitted: true,
           message:
-            "Razorpay accepted the refund, but the financial transaction update failed. Reconciliation is required.",
+            "Razorpay accepted the refund, but a database update failed. Reconciliation is required; do not retry blindly.",
           refundId: refund.id,
           refundRecordId,
           razorpayStatus: refund.status,
@@ -520,7 +602,8 @@ export async function POST(req: NextRequest) {
     return NextResponse.json(
       {
         success: false,
-        message: "Refund request failed. Check server logs and Razorpay Dashboard before retrying.",
+        message:
+          "Refund request failed. Check server logs and Razorpay Dashboard before retrying.",
       },
       { status: 500 }
     );

@@ -63,7 +63,7 @@ export async function POST(req: NextRequest) {
   let razorpayOrderId: string | null = null;
 
   try {
-    // 1. Environment validation
+    // 1. Validate environment configuration
     const keyId = process.env.RAZORPAY_KEY_ID;
     const keySecret = process.env.RAZORPAY_KEY_SECRET;
 
@@ -78,7 +78,7 @@ export async function POST(req: NextRequest) {
       return jsonError("Supabase server configuration is missing.", 500);
     }
 
-    // 2. Parse body
+    // 2. Parse request body
     let body: CreateOrderBody;
 
     try {
@@ -132,7 +132,7 @@ export async function POST(req: NextRequest) {
       ? { ...body.metadata }
       : {};
 
-    // 3. Existing booking draft validation
+    // 3. Validate booking draft
     if (sourceType === "booking") {
       const draft = metadata.bookingDraft;
 
@@ -159,6 +159,7 @@ export async function POST(req: NextRequest) {
 
       const missingFields = requiredFields.filter((field) => {
         const value = draft[field];
+
         return (
           value === undefined ||
           value === null ||
@@ -171,11 +172,15 @@ export async function POST(req: NextRequest) {
           missingFields,
         });
       }
+
+      // Fixed customer booking charge: ₹19
+      metadata.bookingChargeType = "booking";
+      metadata.bookingChargeAmount = 19;
+      metadata.currency = "INR";
     }
 
-    // 4. Worker Request draft validation
-    // Request is not inserted into worker_requests until
-    // payment verification succeeds in the next integration step.
+    // 4. Validate Worker Request draft
+    // The request is inserted only after payment verification.
     if (sourceType === "worker_request") {
       const draft = metadata.workerRequestDraft;
 
@@ -234,17 +239,18 @@ export async function POST(req: NextRequest) {
         return jsonError("Valid work location and category are required.");
       }
 
-      // The client cannot change the Worker Request booking charge.
+      // Fixed Worker Request charge: ₹19
       metadata.bookingChargeType = "worker_request";
-      metadata.bookingChargeAmount = 49;
+      metadata.bookingChargeAmount = 19;
       metadata.currency = "INR";
     }
 
-    // 5. Amount calculation
-    // Both booking types use the existing fixed ₹49 charge.
+    // 5. Calculate payment amount
+    // Booking and Worker Request use a fixed ₹19 charge.
+    // Other payment types retain their supplied amount.
     const amountInRupees =
       sourceType === "booking" || sourceType === "worker_request"
-        ? 49
+        ? 19
         : Number(body.amount);
 
     if (!Number.isFinite(amountInRupees) || amountInRupees <= 0) {
@@ -303,8 +309,7 @@ export async function POST(req: NextRequest) {
         ? Math.floor(parsedQuantity)
         : 1;
 
-    // Draft requests do not exist in worker_requests yet.
-    // Do not store a draft UUID as a real request foreign key.
+    // Draft requests do not yet have a real database foreign key.
     const databaseSourceId = isDraftPayment
       ? null
       : isUuid(sourceId)
@@ -361,7 +366,7 @@ export async function POST(req: NextRequest) {
       description: description || null,
       quantity: transactionQuantity,
 
-      // Keep the draft available for verification and later insertion.
+      // Keep draft details for verification and later insertion.
       metadata: {
         ...metadata,
         sourceId,

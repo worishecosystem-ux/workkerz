@@ -393,7 +393,7 @@ export default function BookingPaymentStep({
         body: JSON.stringify({
           sourceType: "booking",
           sourceId: draftId,
-          amount: 49,
+          amount: 19,
           customerName: customerName || bookingDraft.customer_name || "",
           customerEmail: customerEmail || bookingDraft.customer_email || "",
           customerPhone: customerPhone || bookingDraft.customer_phone || "",
@@ -439,7 +439,7 @@ export default function BookingPaymentStep({
         amount: String(orderData.amount),
         currency: String(orderData.currency || "INR"),
         name: "Workkerz",
-        description: "₹49 Booking Charge",
+        description: "₹19 Booking Charge",
         order_id: String(orderData.orderId),
         prefill: {
           name: customerName,
@@ -602,9 +602,9 @@ export default function BookingPaymentStep({
 
         bookingPaymentStatus: "paid",
 
-        bookingCharge: 49,
+        bookingCharge: 19,
 
-        booking_charge: 49,
+        booking_charge: 19,
 
         razorpay_order_id: razorpayOrderId,
 
@@ -704,7 +704,7 @@ export default function BookingPaymentStep({
 
       // booking-success screen or advance its step.
 
-      showToast("₹49 booking charge paid successfully.", "success");
+      showToast("₹19 booking charge paid successfully.", "success");
 
       onPaymentSuccess?.({
 
@@ -948,7 +948,7 @@ export default function BookingPaymentStep({
 
             <span className="text-[42px] font-extrabold leading-none tracking-tight">
 
-              ₹49
+              ₹19
 
             </span>
 
@@ -1098,7 +1098,7 @@ export default function BookingPaymentStep({
 
           <span className="text-xs text-slate-500">Booking charge</span>
 
-          <span className="text-sm font-semibold">₹49.00</span>
+          <span className="text-sm font-semibold">₹19.00</span>
 
         </div>
 
@@ -1130,7 +1130,7 @@ export default function BookingPaymentStep({
 
           </div>
 
-          <span className="text-2xl font-extrabold tracking-tight">₹49</span>
+          <span className="text-2xl font-extrabold tracking-tight">₹19</span>
 
         </div>
 
