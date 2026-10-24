@@ -1,6 +1,6 @@
 import { CalendarDays, Clock3, CreditCard, IndianRupee } from "lucide-react";
-import type { Booking } from "../../../Downloads/workkerz-booking-components 2/lib/booking-details";
-import { formatCurrency, formatDate, formatLabel } from "../../../Downloads/workkerz-booking-components 2/lib/booking-details";
+import type { Booking } from "../../lib/booking-details";
+import { formatCurrency, formatDate, formatLabel } from "../../lib/booking-details";
 
 export default function BookingOverview({ booking, bookingReference, serviceName, totalAmount }: {
   booking: Booking; bookingReference: string; serviceName: string; totalAmount: unknown;
