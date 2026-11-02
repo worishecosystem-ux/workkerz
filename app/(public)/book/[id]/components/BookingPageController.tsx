@@ -9,12 +9,11 @@ import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 
 import BookingReviewStep from "./BookingReviewStep";
+import BookingSuccessScreen from "./BookingSuccessScreen";
 
 import BookingScheduleStep from "./BookingScheduleStep";
 
 import BookingCustomerInfoMobile from "./BookingCustomerInfoMobile";
-
-import BookingPaymentStep from "./BookingPaymentStep";
 
 import BookingAddressCard from "./BookingAddressCard";
 
@@ -31,7 +30,7 @@ import { Keyboard } from "@capacitor/keyboard";
 
 import { Capacitor } from "@capacitor/core";
 
-import { ChevronRight, Check, X, CheckCircle } from "lucide-react";
+import { ChevronRight, Check, X } from "lucide-react";
 
 import { useAdmin } from "@/app/components/context/AdminContext";
 
@@ -80,6 +79,8 @@ export default function BookingPageController() {
   const [showCalendar, setShowCalendar] = useState(false);
 
   const [step, setStep] = useState(1);
+  const [bookingSubmitting, setBookingSubmitting] = useState(false);
+  const [bookingSuccess, setBookingSuccess] = useState<{ bookingId: string; bookingReference: string; total: number } | null>(null);
 
   const [keyboardOpen, setKeyboardOpen] = useState(false);
 
@@ -110,7 +111,6 @@ export default function BookingPageController() {
 
   const stepRef = useRef(1);
 
-  const paymentActionRef = useRef<(() => Promise<void>) | null>(null);
 
   const [form, setForm] = useState({
 
@@ -784,6 +784,19 @@ export default function BookingPageController() {
 
   // ============================================================
 
+  if (bookingSuccess) {
+    return (
+      <BookingSuccessScreen
+        bookingId={bookingSuccess.bookingId}
+        bookingReference={bookingSuccess.bookingReference}
+        total={bookingSuccess.total}
+        workerName={worker.name || "your worker"}
+        onViewDetails={() => router.replace(`/confirmation/${encodeURIComponent(bookingSuccess.bookingId)}`)}
+        onHome={() => router.replace("/")}
+      />
+    );
+  }
+
   const serviceOptions = worker.services || [];
 
   // ============================================================
@@ -1038,56 +1051,51 @@ export default function BookingPageController() {
 
   
 const handleCreateBooking = async () => {
+  if (bookingSubmitting) return;
+
   try {
-    // 1. Validate booking details
+    // Validate all required booking details before inserting the booking.
     if (!selectedAddress && !form.address.trim()) {
       alert("Please select a service address.");
       return;
     }
-
     if (!form.name.trim()) {
       alert("Please enter customer name.");
       return;
     }
-
     if (!form.phone.trim()) {
       alert("Please enter customer phone number.");
       return;
     }
-
     if (!form.email.trim()) {
       alert("Please enter customer email.");
       return;
     }
-
     if (!form.serviceType.trim()) {
       alert("Please select service type.");
       return;
     }
-
     if (!form.date.trim()) {
       alert("Please select booking date.");
       return;
     }
-
     if (!form.time.trim()) {
       alert("Please select booking time.");
       return;
     }
-
     if (!form.bookingType.trim()) {
       alert("Please select booking type.");
       return;
     }
 
     const finalWorkerFee = Number(getWorkerFee());
-
     if (!Number.isFinite(finalWorkerFee) || finalWorkerFee <= 0) {
       alert("Worker price is not available for the selected booking type.");
       return;
     }
 
-    // 2. Resolve the selected service address
+    setBookingSubmitting(true);
+
     const bookingAddress = {
       house_no: selectedAddress?.house_no ?? form.houseNo ?? "",
       address: selectedAddress?.address ?? form.address ?? "",
@@ -1097,149 +1105,135 @@ const handleCreateBooking = async () => {
       state: selectedAddress?.state ?? form.state ?? "",
       country: selectedAddress?.country ?? form.country ?? "India",
       pincode: selectedAddress?.pincode ?? form.pincode ?? "",
-      address_type:
-        selectedAddress?.address_type ?? form.addressType ?? "home",
+      address_type: selectedAddress?.address_type ?? form.addressType ?? "home",
     };
 
-    // 3. Generate a draft ID, NOT a database booking UUID
-   const draftId = `draft_${Date.now()}_${Math.random()
-  .toString(36)
-  .slice(2, 12)}`;
-
-    // 4. Generate the human-readable booking reference
-    const {
-      data: bookingReferenceData,
-      error: bookingReferenceError,
-    } = await supabase.rpc("generate_workkerz_booking_id");
+    // Generate the human-readable Workkerz booking reference.
+    const { data: bookingReferenceData, error: bookingReferenceError } =
+      await supabase.rpc("generate_workkerz_booking_id");
 
     if (bookingReferenceError || !bookingReferenceData) {
-      console.error(
-        "BOOKING REFERENCE GENERATION ERROR:",
-        bookingReferenceError,
-      );
-      alert("Booking reference could not be generated. Please try again.");
-      return;
+      console.error("BOOKING REFERENCE GENERATION ERROR:", bookingReferenceError);
+      throw new Error("Booking reference could not be generated. Please try again.");
     }
 
     const bookingReference = String(bookingReferenceData);
     const finalMaterialsCost = 0;
     const finalGrandTotal = finalWorkerFee + finalMaterialsCost;
 
-    // 5. Prepare the booking payload only.
-    // IMPORTANT: Do not insert this payload into Supabase here.
+    // Submit the booking through the authenticated server API.
+    // No Razorpay order or booking charge is created.
+    const {
+      data: { session },
+      error: sessionError,
+    } = await supabase.auth.getSession();
+
+    if (sessionError || !session?.access_token) {
+      throw new Error("Please sign in again before confirming your booking.");
+    }
+
     const bookingDraft = {
       booking_id: bookingReference,
       booking_status: "pending",
-
-      worker_id: worker.id,
+      worker_id: String(worker.id),
       worker_name: worker.name ?? null,
       worker_photo: worker.photo ?? null,
       worker_specialty: worker.specialty ?? null,
       worker_rating: worker.rating ?? null,
-
-      service_type: form.serviceType || null,
-      description: form.description || null,
-      booking_date: form.date || null,
-      booking_time: form.time || null,
-      booking_type: form.bookingType || null,
-
-      customer_name: form.name || null,
-      customer_phone: form.phone || null,
-      customer_email: form.email || null,
-      notes: form.notes || null,
-
+      service_type: form.serviceType || "",
+      description: form.description || "",
+      booking_date: form.date || "",
+      booking_time: form.time || "",
+      booking_type: form.bookingType || "",
+      customer_name: form.name || "",
+      customer_phone: form.phone || "",
+      customer_email: form.email || "",
+      notes: form.notes || "",
       selected_materials: form.selectedMaterials ?? {},
-
       total_cost: finalWorkerFee,
       service_fee: 0,
       materials_cost: finalMaterialsCost,
       package_price: finalWorkerFee,
       grand_total: finalGrandTotal,
-
       work_status: "active",
       worker_available: false,
-
-      house_no: bookingAddress.house_no,
-      address: bookingAddress.address,
-      landmark: bookingAddress.landmark,
-      city: bookingAddress.city,
-      district: bookingAddress.district,
-      state: bookingAddress.state,
-      country: bookingAddress.country,
-      pincode: bookingAddress.pincode,
-      address_type: bookingAddress.address_type,
-    };
-
-    // 6. Attach the draft to the form for the payment component
-    const updatedForm = {
-      ...form,
-
-      // This is a temporary draft ID, not a booking table UUID.
-      bookingId: draftId,
-      draftId,
-      bookingDraft,
-
-      // Keep address and pricing details available to the payment UI.
       ...bookingAddress,
-      totalCost: finalWorkerFee,
-      serviceFee: 0,
-      materialsCost: finalMaterialsCost,
-      grandTotal: finalGrandTotal,
-      payableAmount: 19,
-      bookingReference,
     };
 
-    setForm(updatedForm);
-
-    // 7. Save the draft locally; no booking row is created here.
-    const bookingData = {
-      form: updatedForm,
-      worker,
-      selectedAddress: bookingAddress,
-      draftId,
-      bookingDraft,
-      bookingReference,
-      totalCost: finalWorkerFee,
-      serviceFee: 0,
-      materialsCost: finalMaterialsCost,
-      grandTotal: finalGrandTotal,
-      paymentType,
-      payableAmount: 19,
-      paymentStatus: "pending",
-      paymentVerified: false,
-    };
-
-    sessionStorage.setItem(
-      "booking-data",
-      JSON.stringify(bookingData),
-    );
-
-    sessionStorage.setItem(
-      "workkerz_booking_form",
-      JSON.stringify(updatedForm),
-    );
-
-    localStorage.setItem(
-      STORAGE_KEY,
-      JSON.stringify({
-        form: updatedForm,
-        step: 5,
-        paymentStatus: "pending",
-        paymentVerified: false,
-      }),
-    );
-
-    // 8. Open payment step
-    setStep(5);
-
-    requestAnimationFrame(() => {
-      window.scrollTo({ top: 0, left: 0, behavior: "auto" });
-      document.documentElement.scrollTop = 0;
-      document.body.scrollTop = 0;
+    const response = await fetch("/api/bookings/create-free", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${session.access_token}`,
+      },
+      body: JSON.stringify({ bookingDraft }),
     });
-  } catch (error) {
-    console.error("BOOKING DRAFT ERROR:", error);
-    alert("Booking details could not be prepared. Please try again.");
+
+    const result = await response.json().catch(() => null);
+
+    if (!response.ok || !result?.success || !result?.bookingId) {
+      throw new Error(
+        result?.message || "Booking could not be submitted. Please try again.",
+      );
+    }
+
+    const confirmedBookingId = String(result.bookingId);
+    const confirmedReference = String(result.bookingNumber || bookingReference);
+
+    const successfulForm = {
+      ...form,
+      ...bookingAddress,
+      bookingId: confirmedBookingId,
+      booking_id: confirmedBookingId,
+      bookingReference: confirmedReference,
+      bookingStatus: "pending",
+      paymentStatus: "not_required",
+      payment_status: "not_required",
+      paymentRequired: false,
+      paymentVerified: false,
+      bookingCharge: 0,
+      totalCost: finalWorkerFee,
+      serviceFee: 0,
+      materialsCost: finalMaterialsCost,
+      grandTotal: finalGrandTotal,
+      payableAmount: 0,
+    };
+
+    setForm(successfulForm);
+
+    try {
+      sessionStorage.setItem("workkerz_booking_form", JSON.stringify(successfulForm));
+      sessionStorage.setItem(
+        "booking-data",
+        JSON.stringify({
+          form: successfulForm,
+          worker,
+          selectedAddress: bookingAddress,
+          bookingId: confirmedBookingId,
+          bookingReference: confirmedReference,
+          paymentStatus: "not_required",
+          paymentRequired: false,
+          paymentVerified: false,
+          totalCost: finalWorkerFee,
+          grandTotal: finalGrandTotal,
+          payableAmount: 0,
+        }),
+      );
+      localStorage.setItem(
+        STORAGE_KEY,
+        JSON.stringify({ form: successfulForm, step: 4, paymentStatus: "not_required" }),
+      );
+    } catch (storageError) {
+      console.error("FREE BOOKING SESSION STORAGE ERROR:", storageError);
+    }
+
+    // Open the existing confirmation page using the real Supabase row UUID.
+    setBookingSuccess({ bookingId: confirmedBookingId, bookingReference: confirmedReference, total: finalGrandTotal });
+  } catch (error: any) {
+    console.error("FREE BOOKING SUBMISSION ERROR:", error);
+    alert(error?.message || "Booking could not be submitted. Please try again.");
+  } finally {
+    setBookingSubmitting(false);
   }
 };
 
@@ -1270,17 +1264,7 @@ const handleCreateBooking = async () => {
 
     }
 
-    // Step 4 → create booking → Step 5 payment
-
-    if (step === 4) {
-
-      await handleCreateBooking();
-
-      return;
-
-    }
-
-    // Step 5 is handled by BookingPaymentStep.
+    // Step 4 is submitted only by BookingReviewStep Complete Booking button.
 
   };
 
@@ -1319,14 +1303,6 @@ const handleCreateBooking = async () => {
       id: 4,
 
       label: "Review",
-
-    },
-
-    {
-
-      id: 5,
-
-      label: "Payment",
 
     },
 
@@ -1382,15 +1358,7 @@ const handleCreateBooking = async () => {
 
     }
 
-    // Payment validation
-
     if (step === 4) {
-
-      return true;
-
-    }
-
-    if (step === 5) {
 
       return true;
 
@@ -1399,16 +1367,6 @@ const handleCreateBooking = async () => {
     return true;
 
   };
-
-  // ============================================================
-
-  // INPUT
-
-  // ============================================================
-
-  const inp =
-
-    "w-full bg-[#F8FAFC] border border-gray-200 rounded-xl px-4 py-3 text-sm text-[#0F172A] placeholder-gray-400 outline-none focus:border-[#FF5C39] transition-colors";
 
   // ============================================================
 
@@ -1947,133 +1905,19 @@ const handleCreateBooking = async () => {
         \==================================================== */}
 
         {step === 4 && (
-
           <BookingReviewStep
-
             worker={worker}
-
             form={form}
-
             address={selectedAddress}
-
             totalCost={totalCost}
-
-            serviceFee={0}
-
             grandTotal={grandTotal}
-
-            payableAmount={payableAmount}
-
-            paymentType={paymentType}
-
-            onProceed={handleCreateBooking}
-
+            bookingSubmitting={bookingSubmitting}
+            onComplete={() => void handleCreateBooking()}
             onEdit={(editStep) => setStep(editStep)}
-
           />
-
         )}
 
-        {/* ====================================================
 
-            STEP 5
-
-        \==================================================== */}
-
-        {step === 5 && (
-
-          <BookingPaymentStep
-
-            form={form}
-
-            setForm={setForm}
-
-            paymentActionRef={paymentActionRef}
-
-            paymentType={paymentType}
-
-            setPaymentType={setPaymentType}
-
-            payableAmount={payableAmount}
-
-            grandTotal={grandTotal}
-
-            inp={inp}
-
-            onPaymentSuccess={(data) => {
-              const successfulBookingId = String(
-                data.bookingId || form.bookingId || "",
-              );
-
-              if (!successfulBookingId) {
-                console.error(
-                  "Confirmation redirect failed: database booking UUID is missing.",
-                );
-                alert(
-                  "Payment was verified, but the booking reference is missing. Please contact Workkerz support.",
-                );
-                return;
-              }
-
-              const successfulForm = {
-                ...form,
-                bookingId: successfulBookingId,
-                paymentStatus: "paid",
-                payment_status: "paid",
-                paymentVerified: true,
-                payment_verified: true,
-                razorpay_payment_id: data.paymentId,
-                transactionId: data.transactionId || form.transactionId || "",
-              };
-
-              setForm(successfulForm);
-
-              try {
-                sessionStorage.setItem(
-                  "workkerz_booking_form",
-                  JSON.stringify(successfulForm),
-                );
-
-                const existingBookingData = sessionStorage.getItem("booking-data");
-                const previousBookingData = existingBookingData
-                  ? JSON.parse(existingBookingData)
-                  : {};
-
-                sessionStorage.setItem(
-                  "booking-data",
-                  JSON.stringify({
-                    ...previousBookingData,
-                    form: successfulForm,
-                    bookingId: successfulBookingId,
-                    paymentStatus: "paid",
-                    paymentVerified: true,
-                    razorpay_payment_id: data.paymentId,
-                    transactionId: data.transactionId || null,
-                    paymentVerification: data.verification,
-                  }),
-                );
-
-                localStorage.setItem(
-                  STORAGE_KEY,
-                  JSON.stringify({
-                    form: successfulForm,
-                    step: 5,
-                    paymentStatus: "paid",
-                    paymentVerified: true,
-                  }),
-                );
-              } catch (storageError) {
-                console.error("PAYMENT SUCCESS STORAGE ERROR:", storageError);
-              }
-
-              router.replace(
-                `/confirmation/${encodeURIComponent(successfulBookingId)}`,
-              );
-            }}
-
-          />
-
-        )}
 
       </div>
 
@@ -2118,14 +1962,10 @@ const handleCreateBooking = async () => {
         <button
 
           onClick={() => {
-            if (step === 5) {
-              void paymentActionRef.current?.();
-              return;
-            }
             void handleNext();
           }}
 
-          disabled={!canProceed() || (step === 5 && !form.bookingId)}
+          disabled={!canProceed() || bookingSubmitting}
 
           className={`
 
@@ -2151,26 +1991,13 @@ const handleCreateBooking = async () => {
 
         >
 
-          {step === 5 ? (
-
-            <>
-
-              only · Pay ₹19
-
-              <CheckCircle className="w-5 h-5" />
-
-            </>
-
+          {bookingSubmitting ? (
+            "Submitting booking..."
           ) : (
-
             <>
-
               Continue
-
               <ChevronRight className="w-5 h-5" />
-
             </>
-
           )}
 
         </button>

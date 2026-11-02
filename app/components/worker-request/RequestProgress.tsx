@@ -1,7 +1,7 @@
 "use client";
 
 type Props = { currentStep: number };
-const STEPS = ["Contact", "Project", "Address", "Schedule", "Details", "Payment"];
+const STEPS = ["Contact", "Project", "Address", "Schedule", "Details", "Submit"];
 
 export default function RequestProgress({ currentStep }: Props) {
   return (

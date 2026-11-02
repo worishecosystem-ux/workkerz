@@ -173,14 +173,12 @@ export async function POST(req: NextRequest) {
         });
       }
 
-      // Fixed customer booking charge: ₹19
       metadata.bookingChargeType = "booking";
       metadata.bookingChargeAmount = 19;
       metadata.currency = "INR";
     }
 
     // 4. Validate Worker Request draft
-    // The request is inserted only after payment verification.
     if (sourceType === "worker_request") {
       const draft = metadata.workerRequestDraft;
 
@@ -239,19 +237,31 @@ export async function POST(req: NextRequest) {
         return jsonError("Valid work location and category are required.");
       }
 
-      // Fixed Worker Request charge: ₹19
-      metadata.bookingChargeType = "worker_request";
-      metadata.bookingChargeAmount = 19;
-      metadata.currency = "INR";
+      // Worker Request is FREE.
+      // Do not create Razorpay order or Finance payment transaction.
+      console.log("FREE WORKER REQUEST - RAZORPAY SKIPPED:", {
+        sourceType,
+        sourceId,
+      });
+
+      return NextResponse.json(
+        {
+          success: false,
+          paymentRequired: false,
+          code: "WORKER_REQUEST_PAYMENT_REMOVED",
+          message:
+            "Worker Requests are free. Submit the request directly without payment.",
+          sourceType,
+          sourceId,
+          amount: 0,
+        },
+        { status: 400 },
+      );
     }
 
     // 5. Calculate payment amount
-    // Booking and Worker Request use a fixed ₹19 charge.
-    // Other payment types retain their supplied amount.
-    const amountInRupees =
-      sourceType === "booking" || sourceType === "worker_request"
-        ? 19
-        : Number(body.amount);
+    // Only non-worker_request payment flows reach this section.
+    const amountInRupees = Number(body.amount);
 
     if (!Number.isFinite(amountInRupees) || amountInRupees <= 0) {
       return jsonError("Invalid payment amount.");
@@ -269,12 +279,9 @@ export async function POST(req: NextRequest) {
       key_secret: keySecret,
     });
 
-    const receipt =
-      `WK-${Date.now()}-${Math.floor(1000 + Math.random() * 9000)}`;
-
-    const isDraftPayment =
-      sourceType === "booking" ||
-      sourceType === "worker_request";
+    const receipt = `WK-${Date.now()}-${Math.floor(
+      1000 + Math.random() * 9000,
+    )}`;
 
     const razorpayOrder = await razorpay.orders.create({
       amount: amountInPaise,
@@ -282,16 +289,8 @@ export async function POST(req: NextRequest) {
       receipt,
       notes: {
         source_type: sourceType,
-        source_id: isDraftPayment
-          ? `draft:${sourceId}`
-          : sourceId,
-        item_name:
-          itemName ||
-          (sourceType === "worker_request"
-            ? "Workkerz Worker Request Booking Charge"
-            : sourceType === "booking"
-              ? "Workkerz Booking Charge"
-              : "Workkerz Payment"),
+        source_id: sourceId,
+        item_name: itemName || "Workkerz Payment",
       },
     });
 
@@ -309,16 +308,12 @@ export async function POST(req: NextRequest) {
         ? Math.floor(parsedQuantity)
         : 1;
 
-    // Draft requests do not yet have a real database foreign key.
-    const databaseSourceId = isDraftPayment
-      ? null
-      : isUuid(sourceId)
-        ? sourceId
-        : null;
+    const databaseSourceId = isUuid(sourceId) ? sourceId : null;
 
     const financialTransaction = {
-      transaction_number:
-        `TXN-${Date.now()}-${Math.floor(1000 + Math.random() * 9000)}`,
+      transaction_number: `TXN-${Date.now()}-${Math.floor(
+        1000 + Math.random() * 9000,
+      )}`,
 
       source_type: sourceType,
       source_id: databaseSourceId,
@@ -354,23 +349,14 @@ export async function POST(req: NextRequest) {
       refund_reason: null,
       refund_status: null,
 
-      item_name:
-        itemName ||
-        (sourceType === "worker_request"
-          ? "Worker Request Booking Charge"
-          : sourceType === "booking"
-            ? "Workkerz Booking Charge"
-            : "Workkerz Payment"),
-
+      item_name: itemName || "Workkerz Payment",
       category: category || null,
       description: description || null,
       quantity: transactionQuantity,
 
-      // Keep draft details for verification and later insertion.
       metadata: {
         ...metadata,
         sourceId,
-        draftId: isDraftPayment ? sourceId : metadata.draftId || null,
       },
 
       paid_at: null,
